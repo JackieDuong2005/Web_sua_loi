@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js build output
+.next/
+out/
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Database files (will be created at runtime)
+prisma/vihand.db
+prisma/vihand.db-shm
+prisma/vihand.db-wal
+prisma/*.db
+prisma/prisma/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter notebooks (large)
+*.ipynb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Build artifacts
+.vercel/
+.snowflake/
+.v0-trash/

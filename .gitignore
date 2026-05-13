@@ -1,0 +1,40 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+next.user-config.*
+
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env*.local
+
+# Common ignores
+node_modules/
+.next/
+.DS_Store
+Thumbs.db
+
+# Generated Prisma client
+/lib/generated/prisma
+
+# Database files (created at runtime)
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
+prisma/prisma/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
