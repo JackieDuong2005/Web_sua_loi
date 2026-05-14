@@ -13,6 +13,10 @@ npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss --skip-gen
 # Fallback: try migrate deploy  
 npx prisma migrate deploy --schema=./prisma/schema.prisma 2>/dev/null || true
 
+# Seed admin account if not exists
+echo "🌱 Seeding admin account..."
+node prisma/seed-admin.js 2>&1 || echo "⚠️  Seed skipped"
+
 echo "✅ Database ready"
 echo "✅ Starting Next.js server on port $PORT..."
 exec node server.js
