@@ -90,8 +90,25 @@ export async function POST(req: NextRequest) {
     )
   } catch (error: any) {
     console.error("Register error:", error)
+    
+    // Prisma unique constraint error
+    if (error?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác." },
+        { status: 409 }
+      )
+    }
+    
+    // Prisma table not found (migration not run)
+    if (error?.code === "P2021" || error?.message?.includes("table") || error?.message?.includes("does not exist")) {
+      return NextResponse.json(
+        { error: "Cơ sở dữ liệu chưa được khởi tạo. Vui lòng liên hệ quản trị viên." },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json(
-      { error: "Lỗi hệ thống. Vui lòng thử lại sau." },
+      { error: error?.message || "Lỗi hệ thống. Vui lòng thử lại sau." },
       { status: 500 }
     )
   }
