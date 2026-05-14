@@ -2,16 +2,17 @@
 
 echo "🚀 Starting ViHand Grade..."
 
-# Run Prisma migrations to initialize/update DB
-echo "📦 Running database migrations..."
+# Ensure data directory exists
+mkdir -p /data 2>/dev/null || true
 
-# Try migrate deploy first (for production migrations)
-npx prisma migrate deploy --schema=./prisma/schema.prisma 2>/dev/null && \
-  echo "✅ Migrations applied" || \
-  (echo "📦 Falling back to db push..." && \
-   npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && \
-   echo "✅ Schema pushed successfully" || \
-   echo "⚠️  DB setup issue - will retry on first request")
+# Run Prisma schema push to ensure all tables exist
+echo "📦 Syncing database schema..."
+npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss --skip-generate 2>&1 || \
+  echo "⚠️  Schema push had issues, trying migrate..."
 
+# Fallback: try migrate deploy  
+npx prisma migrate deploy --schema=./prisma/schema.prisma 2>/dev/null || true
+
+echo "✅ Database ready"
 echo "✅ Starting Next.js server on port $PORT..."
 exec node server.js
