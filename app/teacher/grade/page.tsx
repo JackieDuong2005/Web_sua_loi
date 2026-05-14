@@ -75,6 +75,7 @@ export default function GradingPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [teacherClasses, setTeacherClasses] = useState<string[]>([])
+  const [allClasses, setAllClasses] = useState<string[]>([])
   const [classStudents, setClassStudents] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -84,7 +85,7 @@ export default function GradingPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
 
-  // Load teacher classes on mount
+  // Load teacher classes on mount + fetch all classes from API
   useEffect(() => {
     const userStr = localStorage.getItem("vihand_user")
     if (userStr) {
@@ -95,6 +96,14 @@ export default function GradingPage() {
         setClassName(classes[0])
       }
     }
+    // Always fetch all classes from API as fallback
+    fetch("/api/classes")
+      .then(r => r.json())
+      .then(data => {
+        const names = (data.classes || []).map((c: any) => c.name)
+        setAllClasses(names)
+      })
+      .catch(() => {})
   }, [])
 
   // Load students when className changes
@@ -331,20 +340,23 @@ export default function GradingPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="className">Lớp</Label>
-                    {teacherClasses.length > 0 ? (
-                      <Select value={className} onValueChange={setClassName}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn lớp" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teacherClasses.map((cls) => (
-                            <SelectItem key={cls} value={cls}>{cls}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input id="className" placeholder="3A" value={className} onChange={e => setClassName(e.target.value)} />
-                    )}
+                    {(() => {
+                      const classOptions = teacherClasses.length > 0 ? teacherClasses : allClasses
+                      return classOptions.length > 0 ? (
+                        <Select value={className} onValueChange={setClassName}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn lớp" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {classOptions.map((cls) => (
+                              <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input id="className" placeholder="3A" value={className} onChange={e => setClassName(e.target.value)} />
+                      )
+                    })()}
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="assignmentTitle">Tên bài</Label>

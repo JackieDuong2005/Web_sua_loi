@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { PenLine } from "lucide-react"
+import { PenLine, UserPlus } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -83,7 +84,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">Đăng nhập</CardTitle>
             <CardDescription className="text-center">
-              Sử dụng tài khoản đã được tạo bởi quản trị viên
+              Đăng nhập để sử dụng hệ thống
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -135,10 +136,19 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Tài khoản được tạo bởi quản trị viên tại trang Quản lý người dùng
-        </p>
+        {/* Footer - Register link */}
+        <div className="text-center mt-6 space-y-2">
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Chưa có tài khoản? Đăng ký ngay
+          </Link>
+          <p className="text-xs text-muted-foreground">
+            Hoặc liên hệ quản trị viên để được cấp tài khoản
+          </p>
+        </div>
       </div>
     </main>
   )

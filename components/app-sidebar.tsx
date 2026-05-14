@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -42,6 +43,17 @@ const adminMenuItems = [
 export function AppSidebar({ userRole }: AppSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const [userName, setUserName] = useState("Người dùng")
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("vihand_user")
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        setUserName(user.name || "Người dùng")
+      } catch {}
+    }
+  }, [])
 
   const menuItems = userRole === "teacher"
     ? teacherMenuItems
@@ -114,7 +126,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
                       {roleAvatars[userRole]}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="flex-1 text-left">Người dùng</span>
+                  <span className="flex-1 text-left truncate">{userName}</span>
                   <ChevronUp className="w-4 h-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
