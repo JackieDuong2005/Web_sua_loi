@@ -66,9 +66,9 @@ RUN adduser --system --uid 1001 nextjs
 # Create data directory with proper permissions for SQLite
 RUN mkdir -p /data && chown -R nextjs:nodejs /data
 
-# Copy built assets
-COPY --from=builder /app/public ./public
+# Copy built assets (standalone first, then public on top to avoid overwrite)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy prisma schema & migrations for runtime migrate
