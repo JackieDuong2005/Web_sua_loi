@@ -38,3 +38,7 @@ npm-debug.log*
 # IDE
 .vscode/
 .idea/
+
+# Large PNG icons (served via API route)
+public/icon-192x192.png
+public/icon-512x512.png
