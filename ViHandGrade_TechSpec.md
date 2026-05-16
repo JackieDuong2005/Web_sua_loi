@@ -1,27 +1,7 @@
 # 📝 ViHand Grade — Đặc Tả Kỹ Thuật
 
-> **Hệ thống Chấm điểm Chính tả Tiếng Việt Thông minh**  
-> Phiên bản: `v1.0.0` | Cập nhật: 2025 | Môi trường triển khai: Raspberry Pi 4
-
----
-
-## Mục lục
-
-1. [Tổng quan dự án](#1-tổng-quan-dự-án)
-2. [Kiến trúc hệ thống](#2-kiến-trúc-hệ-thống)
-3. [Cấu trúc thư mục](#3-cấu-trúc-thư-mục)
-4. [Tech Stack & Dependencies](#4-tech-stack--dependencies)
-5. [Database Schema](#5-database-schema)
-6. [API Endpoints](#6-api-endpoints)
-7. [Logic nghiệp vụ chấm điểm](#7-logic-nghiệp-vụ-chấm-điểm)
-8. [Xử lý hình ảnh (Image Pipeline)](#8-xử-lý-hình-ảnh-image-pipeline)
-9. [Tích hợp Gemini API](#9-tích-hợp-gemini-api)
-10. [Frontend Architecture](#10-frontend-architecture)
-11. [Tối ưu Raspberry Pi 4](#11-tối-ưu-raspberry-pi-4)
-12. [Bảo mật & Xác thực](#12-bảo-mật--xác-thực)
-13. [Cấu hình triển khai](#13-cấu-hình-triển-khai)
-14. [Kế hoạch kiểm thử](#14-kế-hoạch-kiểm-thử)
-15. [Rủi ro & Phương án dự phòng](#15-rủi-ro--phương-án-dự-phòng)
+> **Hệ thống Chấm điểm Chính tả Tiếng Việt Thông minh**
+> Phiên bản: `v1.0.0` | Cập nhật: 2026-05-16
 
 ---
 
@@ -29,32 +9,24 @@
 
 ### 1.1 Mô tả
 
-**ViHand Grade** là ứng dụng web hỗ trợ giáo viên tiểu học chấm điểm bài chính tả viết tay của học sinh một cách tự động, chính xác và minh bạch. Hệ thống sử dụng AI đa phương thức (multimodal) để nhận dạng chữ viết tay tiếng Việt từ ảnh chụp và đánh giá theo quy định của Thông tư 27/2020/TT-BGDĐT.
+**ViHand Grade** là ứng dụng web hỗ trợ giáo viên tiểu học chấm điểm bài chính tả viết tay của học sinh một cách tự động bằng AI. Hệ thống sử dụng Gemini API (multimodal) để nhận dạng chữ viết tay tiếng Việt từ ảnh chụp điện thoại và chấm điểm theo barem chi tiết.
 
 ### 1.2 Mục tiêu
 
-| Mục tiêu | Chỉ số đo lường |
+| Mục tiêu | Chỉ số |
 |---|---|
-| Giảm thời gian chấm điểm | < 30 giây/bài |
-| Độ chính xác nhận dạng OCR | ≥ 90% ký tự tiếng Việt có dấu |
-| Hỗ trợ đồng thời | ≤ 10 giáo viên/thời điểm trên Pi 4 |
-| Uptime mục tiêu | ≥ 99% trong giờ học |
-| Kích thước ảnh đầu vào | JPG/PNG, tối đa 10MB |
+| Thời gian chấm điểm | < 30 giây/bài |
+| Độ chính xác OCR | ≥ 90% ký tự tiếng Việt có dấu |
+| Kích thước ảnh đầu vào | JPG/PNG/WebP, tối đa 10MB |
+| Hỗ trợ tiền xử lý ảnh | Giấy ô ly, bút chì nhạt, ánh sáng lệch |
 
 ### 1.3 Người dùng mục tiêu
 
-- **Giáo viên tiểu học**: Tải ảnh, xem kết quả AI, chỉnh sửa và lưu điểm.
-- **Học sinh**: Tra cứu lịch sử điểm số và nhận xét.
-- **Quản trị viên**: Quản lý tài khoản, xuất báo cáo lớp học.
-
-### 1.4 Phạm vi phiên bản v1.0
-
-- ✅ Nhận dạng và chấm điểm chính tả
-- ✅ Dashboard giáo viên
-- ✅ Báo cáo điểm học sinh
-- ✅ Lưu trữ cục bộ trên Pi
-- ❌ Nhận dạng bài toán (v2.0)
-- ❌ Ứng dụng mobile native (v2.0)
+| Role | Chức năng chính |
+|---|---|
+| **Giáo viên** | Upload/chụp ảnh bài viết, xem kết quả AI, lưu điểm, xem báo cáo lớp |
+| **Học sinh** | Tra cứu lịch sử điểm và nhận xét |
+| **Quản trị viên** | Quản lý tài khoản, lớp học, thống kê hệ thống |
 
 ---
 
@@ -63,68 +35,63 @@
 ### 2.1 Sơ đồ tổng thể
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     RASPBERRY PI 4                       │
-│                                                         │
-│  ┌──────────┐    ┌──────────────┐    ┌───────────────┐ │
-│  │  Nginx   │───▶│   Gunicorn   │───▶│   FastAPI     │ │
-│  │ :80/:443 │    │  4 workers   │    │   main.py     │ │
-│  └──────────┘    └──────────────┘    └───────┬───────┘ │
-│        │                                     │         │
-│  Static│Files                     ┌──────────▼──────┐  │
-│  /static│                         │  Business Logic │  │
-│        │               ┌──────────┤  - Grading      │  │
-│  ┌─────▼──────┐        │          │  - Image Proc   │  │
-│  │  Frontend  │        │          └──────────┬──────┘  │
-│  │ HTMX+Tail  │        │                     │         │
-│  │ wind+Daisy │   ┌────▼───────┐    ┌────────▼──────┐ │
-│  └────────────┘   │  SQLite DB │    │  OpenCV Proc  │ │
-│                   │ vihand.db  │    │ image_utils.py│ │
-│                   └────────────┘    └───────────────┘ │
-└─────────────────────────────┬───────────────────────────┘
-                              │ HTTPS (Gemini API)
-                    ┌─────────▼─────────┐
-                    │  Google Gemini    │
-                    │  1.5 Flash API    │
-                    └───────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                   Next.js 16 App                          │
+│                                                          │
+│  ┌────────────┐    ┌──────────────────────────────────┐  │
+│  │  Frontend   │    │         API Routes               │  │
+│  │  React 19   │───▶│  /api/auth/login                 │  │
+│  │  shadcn/ui  │    │  /api/grade      → Gemini API    │  │
+│  │  Tailwind 4 │    │  /api/grades     → Prisma CRUD   │  │
+│  │             │    │  /api/preprocess → Image Pipeline │  │
+│  └────────────┘    │  /api/users      → User CRUD     │  │
+│                    │  /api/classes     → Class CRUD    │  │
+│                    └──────────┬───────────────────────┘  │
+│                               │                          │
+│                    ┌──────────▼──────────┐               │
+│                    │   Prisma ORM        │               │
+│                    │   SQLite (vihand.db) │               │
+│                    └─────────────────────┘               │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐    │
+│  │  lib/image-processor.ts (Jimp)                    │    │
+│  │  Pipeline: WhiteBalance → Shadow → Grid → CLAHE   │    │
+│  │           → Sharpen → Threshold → Quality Report  │    │
+│  └──────────────────────────────────────────────────┘    │
+└────────────────────────┬─────────────────────────────────┘
+                         │ HTTPS
+               ┌─────────▼─────────┐
+               │  Google Gemini    │
+               │  3 Flash Preview  │
+               └───────────────────┘
 ```
 
-### 2.2 Luồng xử lý chính (Grading Flow)
+### 2.2 Luồng xử lý chính
 
 ```
-[Giáo viên upload ảnh]
+[Giáo viên upload/chụp ảnh]
         │
         ▼
-[Nginx nhận request]
-        │
-        ▼
-[FastAPI: validate file (type, size)]
-        │
-        ▼
-[image_utils.py]
-  ├── Auto-rotate (EXIF)
-  ├── Grayscale conversion
-  ├── Binarization (Otsu threshold)
-  ├── Deskew (straighten text lines)
-  └── Resize → max width 1600px
-        │
-        ▼
-[Gemini 1.5 Flash API]
-  ├── Prompt: OCR + extract text
-  ├── Prompt: compare with template
-  └── Response: JSON {errors[], score, comment}
-        │
-        ▼
-[Grading Engine]
-  ├── Apply Thông tư 27 rules
-  ├── Deduplicate identical errors
-  └── Calculate final score (0–10, integer)
-        │
-        ▼
-[Lưu vào SQLite: grades table]
-        │
-        ▼
-[HTMX: cập nhật UI không reload trang]
+[Tab "Ảnh gốc"] ──────────────────────────┐
+        │                                  │
+        ▼                                  ▼
+[Tab "Đã xử lý"]                    [Nhấn "Chấm điểm"]
+  POST /api/preprocess                POST /api/grade
+  ├── EXIF auto-rotate (Jimp)         ├── Gửi ảnh gốc (base64)
+  ├── Resize max 1600px               ├── Prompt + ảnh → Gemini API
+  ├── White Balance                   ├── Parse JSON response
+  ├── Grayscale                       └── Trả kết quả chấm điểm
+  ├── Shadow Removal                        │
+  ├── Grid Line Removal                     ▼
+  ├── CLAHE                          [Hiển thị kết quả]
+  ├── Sharpen                          ├── Điểm số + xếp hạng
+  ├── Adaptive Threshold               ├── Danh sách lỗi chính tả
+  └── Quality Assessment               ├── Văn bản gốc vs đã sửa
+        │                              └── Nhận xét AI
+        ▼                                   │
+[Hiển thị ảnh đã xử lý]                    ▼
+[Hiển thị Quality Report]           [Lưu vào SQLite]
+                                     POST /api/grades
 ```
 
 ---
@@ -132,248 +99,172 @@
 ## 3. Cấu trúc thư mục
 
 ```
-vihand-grade/
+Web_sua_loi/
 │
-├── app/                          # Mã nguồn chính
-│   ├── __init__.py
-│   ├── main.py                   # FastAPI app, routes
-│   ├── database.py               # SQLite schema & session
-│   ├── models.py                 # Pydantic models (request/response)
-│   ├── grading.py                # Logic chấm điểm Thông tư 27
-│   ├── image_utils.py            # OpenCV preprocessing pipeline
-│   └── gemini_client.py          # Wrapper Gemini API
+├── app/                              # Next.js App Router
+│   ├── layout.tsx                    # Root layout (Roboto font, PWA)
+│   ├── page.tsx                      # Trang đăng nhập
+│   ├── register/                     # Trang đăng ký
+│   ├── manifest.ts                   # PWA manifest
+│   ├── sw.js/                        # Service Worker
+│   ├── globals.css                   # Tailwind CSS v4
+│   │
+│   ├── api/                          # API Routes
+│   │   ├── auth/login/route.ts       # Xác thực đăng nhập
+│   │   ├── grade/route.ts            # Gọi Gemini API chấm điểm
+│   │   ├── grades/route.ts           # CRUD bài chấm (GET, POST)
+│   │   ├── grades/[id]/route.ts      # Chi tiết bài chấm (GET, PUT, DELETE)
+│   │   ├── preprocess/route.ts       # Tiền xử lý ảnh
+│   │   ├── users/route.ts            # CRUD người dùng
+│   │   └── classes/route.ts          # CRUD lớp học
+│   │
+│   ├── teacher/                      # Giao diện giáo viên
+│   │   ├── layout.tsx                # Sidebar layout
+│   │   ├── page.tsx                  # Dashboard (stats, thao tác nhanh)
+│   │   ├── grade/page.tsx            # Chấm điểm AI (upload/chụp/text)
+│   │   ├── assignments/              # Quản lý bài tập
+│   │   └── reports/page.tsx          # Báo cáo lớp
+│   │
+│   ├── student/                      # Giao diện học sinh
+│   │   ├── layout.tsx                # Sidebar layout
+│   │   ├── page.tsx                  # Dashboard học sinh
+│   │   └── history/page.tsx          # Lịch sử điểm
+│   │
+│   └── admin/                        # Giao diện quản trị
+│       ├── layout.tsx                # Sidebar layout
+│       ├── page.tsx                  # Dashboard admin
+│       ├── users/page.tsx            # Quản lý tài khoản
+│       ├── classes/page.tsx          # Quản lý lớp học
+│       ├── settings/                 # Cài đặt hệ thống
+│       ├── statistics/               # Thống kê
+│       └── system/                   # Giám sát hệ thống
 │
-├── templates/                    # Jinja2 templates
-│   ├── base.html                 # Layout chung, HTMX CDN
-│   ├── login.html                # Đăng nhập
-│   ├── teacher/
-│   │   ├── dashboard.html        # Trang chủ giáo viên
-│   │   ├── upload.html           # Form tải ảnh
-│   │   ├── result.html           # Kết quả chấm (HTMX partial)
-│   │   └── class_report.html     # Báo cáo tổng lớp
-│   └── student/
-│       ├── dashboard.html        # Trang học sinh
-│       └── grade_history.html    # Bảng lịch sử điểm
+├── components/
+│   ├── app-sidebar.tsx               # Sidebar navigation (role-based)
+│   ├── theme-provider.tsx            # Dark/light mode
+│   └── ui/                           # shadcn/ui components (57 files)
 │
-├── static/                       # Tài nguyên tĩnh (Nginx serve)
-│   ├── css/
-│   │   └── tailwind.min.css      # Tailwind + DaisyUI (CDN build)
-│   ├── js/
-│   │   ├── htmx.min.js
-│   │   └── app.js                # Custom JS nhỏ
-│   └── uploads/                  # Ảnh gốc đã upload (tạm)
-│       └── processed/            # Ảnh sau xử lý OpenCV
+├── lib/
+│   ├── image-processor.ts            # Pipeline tiền xử lý ảnh (Jimp)
+│   ├── prisma.ts                     # Prisma client singleton
+│   ├── types.ts                      # TypeScript types
+│   ├── utils.ts                      # Utility functions
+│   └── mock-data.ts                  # Dữ liệu mẫu
 │
-├── tests/
-│   ├── test_grading.py
-│   ├── test_image_utils.py
-│   └── test_api.py
+├── prisma/
+│   ├── schema.prisma                 # Database schema
+│   └── vihand.db                     # SQLite database file
 │
-├── scripts/
-│   ├── setup_pi.sh               # Cài đặt môi trường Pi
-│   ├── create_swap.sh            # Tạo swap 1024MB
-│   └── backup_db.sh              # Backup SQLite định kỳ
-│
-├── config/
-│   ├── nginx.conf                # Cấu hình Nginx reverse proxy
-│   ├── gunicorn.conf.py          # Cấu hình Gunicorn
-│   └── systemd/
-│       └── vihand.service        # Systemd service file
-│
-├── .env.example                  # Biến môi trường mẫu
-├── .gitignore
-├── requirements.txt
-├── requirements-pi.txt           # Dependencies tối ưu cho ARM64
-└── README.md
+├── image_utils.py                    # Pipeline Python/OpenCV (tham khảo)
+├── .env                              # DATABASE_URL
+├── .env.local                        # GEMINI_API_KEY
+├── package.json
+├── next.config.mjs
+└── tsconfig.json
 ```
 
 ---
 
 ## 4. Tech Stack & Dependencies
 
-### 4.1 Backend
+### 4.1 Framework & Runtime
 
 | Package | Phiên bản | Mục đích |
 |---|---|---|
-| `fastapi` | ≥ 0.111 | Web framework async |
-| `uvicorn` | ≥ 0.29 | ASGI server |
-| `gunicorn` | ≥ 22.0 | Process manager |
-| `python-multipart` | ≥ 0.0.9 | File upload handling |
-| `jinja2` | ≥ 3.1 | Template engine |
-| `aiosqlite` | ≥ 0.20 | Async SQLite driver |
-| `google-generativeai` | ≥ 0.7 | Gemini API SDK |
-| `opencv-python-headless` | ≥ 4.9 | Image processing (no GUI) |
-| `Pillow` | ≥ 10.3 | Image format handling |
-| `python-jose` | ≥ 3.3 | JWT authentication |
-| `passlib[bcrypt]` | ≥ 1.7 | Password hashing |
-| `pydantic` | ≥ 2.7 | Data validation |
-| `python-dotenv` | ≥ 1.0 | Environment config |
-| `httpx` | ≥ 0.27 | Async HTTP client |
+| `next` | 16.2.4 | Full-stack React framework (App Router) |
+| `react` / `react-dom` | 19.x | UI library |
+| `typescript` | 5.7.3 | Type safety |
 
-### 4.2 Frontend (No-Build, CDN)
+### 4.2 Database & ORM
 
-| Resource | Cách dùng |
+| Package | Phiên bản | Mục đích |
+|---|---|---|
+| `prisma` | 5.22.0 | ORM & schema migration |
+| `@prisma/client` | 5.22.0 | Database client |
+| `better-sqlite3` | 12.9.0 | SQLite native driver |
+| SQLite | 3.x | Database engine (file-based) |
+
+### 4.3 AI & Image Processing
+
+| Package | Phiên bản | Mục đích |
+|---|---|---|
+| `@google/generative-ai` | 0.24.1 | Gemini API SDK |
+| `jimp` | 1.6.1 | Image processing (pure JS, no native deps) |
+| Gemini Model | `gemini-3-flash-preview` | Multimodal OCR + chấm điểm |
+
+### 4.4 UI Components
+
+| Package | Mục đích |
 |---|---|
-| HTMX `2.x` | `<script src="/static/js/htmx.min.js">` |
-| Tailwind CSS `3.x` | CDN build hoặc pre-built file |
-| DaisyUI `4.x` | Component library trên Tailwind |
-| Alpine.js `3.x` | Micro-interactions (optional) |
+| `tailwindcss` v4 + `@tailwindcss/postcss` | Styling framework |
+| shadcn/ui (Radix UI primitives) | 57 UI components |
+| `lucide-react` | Icon library |
+| `recharts` | Charts cho báo cáo |
+| `next-themes` | Dark/light mode |
+| `sonner` | Toast notifications |
+| Google Fonts: `Roboto` (latin + vietnamese) | Typography |
 
-### 4.3 Infrastructure (Raspberry Pi)
+### 4.5 Utilities
 
-| Thành phần | Chi tiết |
+| Package | Mục đích |
 |---|---|
-| OS | Raspberry Pi OS Lite 64-bit (Bookworm) |
-| Python | 3.11+ |
-| Nginx | 1.24+ |
-| SQLite | 3.40+ (built-in) |
-| RAM | 4GB (Pi 4) |
-| Swap | 1024MB (file-based) |
-| Storage | MicroSD ≥ 32GB Class 10 + USB SSD backup |
+| `date-fns` | Date formatting |
+| `zod` | Schema validation |
+| `react-hook-form` | Form handling |
+| `class-variance-authority` + `clsx` + `tailwind-merge` | CSS class utilities |
+| `@vercel/analytics` | Analytics (production) |
 
 ---
 
-## 5. Database Schema
+## 5. Database Schema (Prisma + SQLite)
 
-### 5.1 Thiết kế tổng quan
+### 5.1 Model `User`
 
-Database: `vihand.db` (SQLite), lưu tại `/opt/vihand-grade/data/vihand.db`
-
-### 5.2 Bảng `users`
-
-```sql
-CREATE TABLE IF NOT EXISTS users (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    username    TEXT    NOT NULL UNIQUE,
-    full_name   TEXT    NOT NULL,
-    role        TEXT    NOT NULL CHECK(role IN ('teacher', 'student', 'admin')),
-    password    TEXT    NOT NULL,            -- bcrypt hash
-    class_id    INTEGER REFERENCES classes(id),
-    is_active   BOOLEAN NOT NULL DEFAULT 1,
-    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_role ON users(role);
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  name      String                          // Họ tên
+  username  String   @unique                // Tên đăng nhập
+  password  String   @default("123456")     // Mật khẩu (plain text, v1)
+  role      String   @default("student")    // "teacher" | "student" | "admin"
+  className String   @default("")           // Lớp (cho học sinh)
+  active    Boolean  @default(true)         // Trạng thái tài khoản
+  createdAt DateTime @default(now())
+}
 ```
 
-### 5.3 Bảng `classes`
+### 5.2 Model `Class`
 
-```sql
-CREATE TABLE IF NOT EXISTS classes (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT    NOT NULL UNIQUE,     -- VD: "4A", "5B"
-    grade_level INTEGER NOT NULL CHECK(grade_level BETWEEN 1 AND 5),
-    teacher_id  INTEGER REFERENCES users(id),
-    school_year TEXT    NOT NULL,            -- VD: "2024-2025"
-    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+```prisma
+model Class {
+  id        String   @id @default(cuid())
+  name      String   @unique                // VD: "Lop 3A", "Lop 3B"
+  grade     Int      @default(3)            // Khối lớp (1-5)
+  teacherId String   @default("")           // ID giáo viên phụ trách
+  createdAt DateTime @default(now())
+}
 ```
 
-### 5.4 Bảng `assignments`
+### 5.3 Model `Grade`
 
-```sql
-CREATE TABLE IF NOT EXISTS assignments (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    title           TEXT    NOT NULL,
-    template_text   TEXT    NOT NULL,        -- Văn bản mẫu để so sánh
-    class_id        INTEGER NOT NULL REFERENCES classes(id),
-    teacher_id      INTEGER NOT NULL REFERENCES users(id),
-    subject         TEXT    NOT NULL DEFAULT 'chinh_ta',
-    max_score       INTEGER NOT NULL DEFAULT 10,
-    deadline        DATETIME,
-    instructions    TEXT,                    -- Hướng dẫn thêm cho GV
-    is_active       BOOLEAN NOT NULL DEFAULT 1,
-    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_assignments_class ON assignments(class_id);
-CREATE INDEX idx_assignments_teacher ON assignments(teacher_id);
-```
-
-### 5.5 Bảng `submissions`
-
-```sql
-CREATE TABLE IF NOT EXISTS submissions (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    assignment_id       INTEGER NOT NULL REFERENCES assignments(id),
-    student_id          INTEGER NOT NULL REFERENCES users(id),
-    image_original_path TEXT    NOT NULL,    -- Đường dẫn ảnh gốc
-    image_processed_path TEXT,              -- Đường dẫn ảnh sau xử lý
-    image_size_kb       INTEGER,            -- Kích thước file gốc (KB)
-    uploaded_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status              TEXT NOT NULL DEFAULT 'pending'
-                        CHECK(status IN ('pending','processing','graded','error'))
-);
-
-CREATE INDEX idx_submissions_assignment ON submissions(assignment_id);
-CREATE INDEX idx_submissions_student ON submissions(student_id);
-CREATE INDEX idx_submissions_status ON submissions(status);
-```
-
-### 5.6 Bảng `grades`
-
-```sql
-CREATE TABLE IF NOT EXISTS grades (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    submission_id       INTEGER NOT NULL UNIQUE REFERENCES submissions(id),
-    student_id          INTEGER NOT NULL REFERENCES users(id),
-    assignment_id       INTEGER NOT NULL REFERENCES assignments(id),
-
-    -- Kết quả AI
-    ai_recognized_text  TEXT,               -- Văn bản OCR từ Gemini
-    ai_errors_json      TEXT,               -- JSON: danh sách lỗi chi tiết
-    ai_score            INTEGER,            -- Điểm AI đề xuất (0-10)
-    ai_comment          TEXT,               -- Nhận xét AI
-
-    -- Kết quả sau khi GV chỉnh sửa
-    final_score         INTEGER NOT NULL,   -- Điểm cuối cùng (0-10)
-    teacher_comment     TEXT,               -- Nhận xét của giáo viên
-    is_ai_modified      BOOLEAN DEFAULT 0, -- GV có sửa điểm AI không?
-
-    -- Metadata xử lý
-    gemini_model        TEXT DEFAULT 'gemini-1.5-flash',
-    processing_time_ms  INTEGER,            -- Thời gian xử lý (ms)
-    token_count         INTEGER,            -- Số token đã dùng
-
-    graded_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_grades_student ON grades(student_id);
-CREATE INDEX idx_grades_assignment ON grades(assignment_id);
-CREATE INDEX idx_grades_score ON grades(final_score);
-```
-
-### 5.7 Bảng `error_types` (Lookup)
-
-```sql
-CREATE TABLE IF NOT EXISTS error_types (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    code            TEXT NOT NULL UNIQUE,   -- VD: "am_dau", "van", "thanh"
-    name_vi         TEXT NOT NULL,          -- VD: "Lỗi âm đầu"
-    deduction       REAL NOT NULL,          -- Điểm trừ: 1.0 hoặc 0.5
-    applies_to_grade TEXT DEFAULT 'all'    -- "all", "4-5" (lớp 4 và 5)
-);
-
--- Dữ liệu mặc định
-INSERT INTO error_types (code, name_vi, deduction, applies_to_grade) VALUES
-    ('am_dau',      'Lỗi âm đầu',              1.0, 'all'),
-    ('van',         'Lỗi vần',                 1.0, 'all'),
-    ('thanh',       'Lỗi thanh điệu',          1.0, 'all'),
-    ('viet_hoa',    'Lỗi viết hoa',            0.5, '4-5'),
-    ('dau_cau',     'Lỗi dấu câu',             0.5, '4-5');
-```
-
-### 5.8 Entity Relationship Diagram
-
-```
-classes ──────< assignments ──────< submissions ──────── grades
-   │                                     │                 │
-   └── users(teacher)                users(student)   error_types
-            │
-         users(student) >──── classes
+```prisma
+model Grade {
+  id                String   @id @default(cuid())
+  studentName       String                  // Tên học sinh
+  assignmentTitle   String                  // Tên bài viết
+  className         String   @default("")   // Lớp
+  originalText      String                  // Văn bản AI nhận dạng (gốc)
+  fixedText         String                  // Văn bản đã sửa lỗi
+  corrections       String                  // JSON: danh sách lỗi [{error, suggestion, reason}]
+  score             String                  // Điểm dạng "X.X/10"
+  scoreNum          Float                   // Điểm số (để sort/filter)
+  feedback          String                  // Nhận xét AI
+  overallRating     String                  // "Tốt" | "Khá" | "Trung bình" | "Cần cố gắng"
+  processingTimeMs  Int      @default(0)    // Thời gian xử lý (ms)
+  tokenCount        Int      @default(0)    // Token đã dùng
+  imageBase64       String   @default("")   // Ảnh gốc bài viết (base64)
+  createdAt         DateTime @default(now())
+}
 ```
 
 ---
@@ -384,94 +275,54 @@ classes ──────< assignments ──────< submissions ──�
 
 | Method | Path | Mô tả | Auth |
 |---|---|---|---|
-| `POST` | `/auth/login` | Đăng nhập, trả về JWT | ❌ |
-| `POST` | `/auth/logout` | Xóa session | ✅ |
-| `GET` | `/auth/me` | Thông tin user hiện tại | ✅ |
+| `POST` | `/api/auth/login` | Đăng nhập (username + password) | ❌ |
 
-### 6.2 Teacher Endpoints
+> **Cơ chế xác thực v1**: So sánh password plain text, trả user object, lưu vào `localStorage` phía client. Không dùng JWT/session.
 
-| Method | Path | Mô tả | Auth |
-|---|---|---|---|
-| `GET` | `/teacher/dashboard` | Trang chủ giáo viên | ✅ Teacher |
-| `GET` | `/teacher/assignments` | Danh sách bài tập | ✅ Teacher |
-| `POST` | `/teacher/assignments` | Tạo bài tập mới | ✅ Teacher |
-| `GET` | `/teacher/assignments/{id}` | Chi tiết bài tập | ✅ Teacher |
-| `POST` | `/teacher/grade` | Upload ảnh + chấm điểm | ✅ Teacher |
-| `PUT` | `/teacher/grades/{id}` | Sửa điểm/nhận xét | ✅ Teacher |
-| `GET` | `/teacher/class-report` | Báo cáo tổng lớp | ✅ Teacher |
-| `GET` | `/teacher/export/csv` | Xuất điểm CSV | ✅ Teacher |
+### 6.2 Grading
 
-### 6.3 Student Endpoints
+| Method | Path | Mô tả |
+|---|---|---|
+| `POST` | `/api/grade` | Gọi Gemini API chấm điểm (ảnh base64 hoặc text) |
+| `GET` | `/api/grades` | Danh sách bài chấm (filter: search, class, assignment) |
+| `POST` | `/api/grades` | Lưu kết quả chấm điểm vào database |
+| `GET` | `/api/grades/[id]` | Chi tiết một bài chấm |
+| `PUT` | `/api/grades/[id]` | Cập nhật bài chấm |
+| `DELETE` | `/api/grades/[id]` | Xóa bài chấm |
 
-| Method | Path | Mô tả | Auth |
-|---|---|---|---|
-| `GET` | `/student/dashboard` | Trang học sinh | ✅ Student |
-| `GET` | `/student/grades` | Lịch sử điểm (HTMX partial) | ✅ Student |
-| `GET` | `/student/grades/{id}` | Chi tiết bài đã chấm | ✅ Student |
+### 6.3 Image Processing
 
-### 6.4 Admin Endpoints
+| Method | Path | Mô tả |
+|---|---|---|
+| `POST` | `/api/preprocess` | Tiền xử lý ảnh (10-step pipeline), trả ảnh đã xử lý + quality report |
 
-| Method | Path | Mô tả | Auth |
-|---|---|---|---|
-| `GET` | `/admin/users` | Quản lý người dùng | ✅ Admin |
-| `POST` | `/admin/users` | Tạo tài khoản | ✅ Admin |
-| `POST` | `/admin/users/bulk` | Import danh sách CSV | ✅ Admin |
-| `DELETE` | `/admin/users/{id}` | Vô hiệu hóa tài khoản | ✅ Admin |
-| `GET` | `/admin/system-stats` | Thống kê hệ thống Pi | ✅ Admin |
+### 6.4 User & Class Management
 
-### 6.5 Response Format chuẩn
+| Method | Path | Mô tả |
+|---|---|---|
+| `GET` | `/api/users` | Danh sách users (filter: role) |
+| `POST` | `/api/users` | Tạo tài khoản mới |
+| `GET` | `/api/classes` | Danh sách lớp học |
+| `POST` | `/api/classes` | Tạo lớp mới |
 
-```json
-// Thành công
-{
-  "status": "success",
-  "data": { ... },
-  "message": null
-}
-
-// Lỗi
-{
-  "status": "error",
-  "data": null,
-  "message": "Mô tả lỗi",
-  "error_code": "INVALID_IMAGE_FORMAT"
-}
-```
-
-### 6.6 Grading Response Schema
+### 6.5 Grading Response Schema
 
 ```json
 {
-  "status": "success",
-  "data": {
-    "grade_id": 42,
-    "recognized_text": "Con chim hót trên cành cây xanh...",
-    "errors": [
-      {
-        "position": 12,
-        "original": "hót",
-        "expected": "hót",
-        "error_type": "thanh",
-        "error_name": "Lỗi thanh điệu",
-        "deduction": 1.0,
-        "is_duplicate": false
-      }
-    ],
-    "error_count": {
-      "total": 3,
-      "unique": 2,
-      "am_dau": 1,
-      "van": 0,
-      "thanh": 1,
-      "viet_hoa": 1,
-      "dau_cau": 0
-    },
-    "ai_score": 7,
-    "final_score": 7,
-    "ai_comment": "Bài viết tương đối tốt, cần chú ý thanh điệu.",
-    "processing_time_ms": 2340,
-    "token_count": 512
-  }
+  "fixed_text": "văn bản đã sửa lỗi",
+  "original_text": "văn bản gốc AI nhận dạng",
+  "corrections": [
+    {
+      "error": "từ viết sai",
+      "suggestion": "từ đúng",
+      "reason": "lý do (nhầm tr/ch, thiếu dấu thanh...)"
+    }
+  ],
+  "score": "7.5/10",
+  "feedback": "nhận xét chi tiết",
+  "overall_rating": "Khá",
+  "processingTimeMs": 2340,
+  "tokenCount": 512
 }
 ```
 
@@ -479,123 +330,82 @@ classes ──────< assignments ──────< submissions ──�
 
 ## 7. Logic nghiệp vụ chấm điểm
 
-### 7.1 Căn cứ pháp lý
+### 7.1 Barem điểm (Gemini Prompt)
 
-Áp dụng theo **Thông tư 27/2020/TT-BGDĐT** của Bộ Giáo dục và Đào tạo về đánh giá học sinh tiểu học.
+| Tiêu chí | Điểm tối đa | Chi tiết |
+|---|---|---|
+| Chính tả & Ngữ pháp | 4.0 điểm | Trừ 0.5đ/lỗi (lỗi trùng chỉ trừ 1 lần) |
+| Hình thức | 3.0 điểm | Đánh giá chữ viết, trình bày |
+| Nội dung & Ý tưởng | 2.0 điểm | Đủ ý, đúng chủ đề, mạch lạc |
+| Sáng tạo | 1.0 điểm | Từ láy, so sánh, nhân hóa |
 
-### 7.2 Quy tắc trừ điểm
+### 7.2 Phân loại xếp hạng
 
-```python
-GRADING_RULES = {
-    "base_score": 10,
-    "errors": {
-        "am_dau":  {"deduction": 1.0, "applies_to": [1, 2, 3, 4, 5]},
-        "van":     {"deduction": 1.0, "applies_to": [1, 2, 3, 4, 5]},
-        "thanh":   {"deduction": 1.0, "applies_to": [1, 2, 3, 4, 5]},
-        "viet_hoa":{"deduction": 0.5, "applies_to": [4, 5]},  # Chỉ lớp 4-5
-        "dau_cau": {"deduction": 0.5, "applies_to": [4, 5]},  # Chỉ lớp 4-5
-    },
-    "dedup_rule": True,    # Lỗi giống nhau hoàn toàn chỉ trừ 1 lần
-    "min_score": 0,        # Điểm tối thiểu
-    "round_to_int": True,  # Không có điểm thập phân
-}
-```
-
-### 7.3 Pseudocode tính điểm
-
-```python
-def calculate_score(errors: list[Error], grade_level: int) -> int:
-    """
-    errors: Danh sách lỗi từ Gemini
-    grade_level: Lớp học (1-5)
-    Returns: Điểm nguyên từ 0-10
-    """
-    base = 10
-    seen_errors = set()  # Để dedup
-
-    for error in errors:
-        rule = GRADING_RULES["errors"][error.type]
-
-        # Kiểm tra có áp dụng cho lớp này không
-        if grade_level not in rule["applies_to"]:
-            continue
-
-        # Tạo key dedup: (loại lỗi + từ bị lỗi)
-        dedup_key = f"{error.type}:{error.original.lower()}"
-
-        if dedup_key in seen_errors:
-            error.is_duplicate = True
-            continue  # Bỏ qua lỗi trùng lặp
-
-        seen_errors.add(dedup_key)
-        base -= rule["deduction"]
-
-    # Clamp về khoảng [0, 10] và làm tròn xuống
-    return max(0, int(base))
-```
-
-### 7.4 Phân loại xếp hạng
-
-| Điểm | Xếp loại | Màu hiển thị | Emoji |
+| Điểm | Xếp loại | Màu | Emoji |
 |---|---|---|---|
-| 9 – 10 | Hoàn thành tốt | Xanh lá (`#22c55e`) | 🌟 |
-| 7 – 8 | Hoàn thành | Xanh dương (`#3b82f6`) | 👍 |
-| 5 – 6 | Hoàn thành (cần cố gắng) | Vàng (`#f59e0b`) | 📝 |
-| 0 – 4 | Chưa hoàn thành | Đỏ (`#ef4444`) | 💪 |
+| ≥ 8.0 | Tốt | Xanh lá | 🌟 |
+| ≥ 6.5 | Khá | Xanh dương | 👍 |
+| ≥ 5.0 | Trung bình | Vàng | 📝 |
+| < 5.0 | Cần cố gắng | Đỏ | 💪 |
 
 ---
 
 ## 8. Xử lý hình ảnh (Image Pipeline)
 
-### 8.1 Pipeline OpenCV (`image_utils.py`)
+### 8.1 Pipeline (`lib/image-processor.ts`)
+
+Viết hoàn toàn bằng TypeScript + Jimp (không cần OpenCV/Python trên server).
 
 ```
-Input: raw image file (JPG/PNG, ≤10MB)
+Input: ảnh base64 (JPG/PNG/WebP)
     │
-    ├─ [1] Validate: kiểm tra định dạng, kích thước
-    │
-    ├─ [2] Auto-rotate: đọc EXIF orientation, xoay về đúng chiều
-    │
-    ├─ [3] Grayscale: cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    │
-    ├─ [4] Noise reduction: cv2.GaussianBlur (kernel 3x3, nhẹ)
-    │
-    ├─ [5] Binarization: cv2.threshold với Otsu's method
-    │       → thresh_type: cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    │
-    ├─ [6] Deskew: tính góc nghiêng qua HoughLines, xoay chỉnh
-    │       → Giới hạn góc chỉnh: ±15 độ (tránh xoay quá mức)
-    │
-    ├─ [7] Resize: max width = 1600px, giữ aspect ratio
-    │       → cv2.resize với INTER_LANCZOS4
-    │
-    ├─ [8] Save processed: lưu vào /static/uploads/processed/
-    │       → Format: JPEG quality=85, tiết kiệm băng thông
-    │
-    └─ [9] Encode Base64: để gửi qua Gemini API
-           → Giải phóng bộ nhớ numpy array ngay sau bước này
+    ├─ [1] EXIF Auto-rotate (Jimp tự xử lý)
+    ├─ [2] Resize: max width 1600px, INTER_AREA
+    ├─ [3] White Balance: Gray World Assumption (trên ảnh màu)
+    ├─ [4] Grayscale
+    ├─ [5] Shadow Removal: boxBlur background normalization
+    ├─ [6] Grid Line Removal: phát hiện dòng kẻ ngang/dọc mỏng dài
+    ├─ [7] CLAHE: Contrast Limited Adaptive Histogram Equalization
+    ├─ [8] Sharpen: Unsharp Mask
+    ├─ [9] Adaptive Threshold: Gaussian/Mean/Otsu (integral image)
+    └─ [10] Quality Assessment: blur, brightness, resolution, text ratio
+           │
+           ▼
+    Output: { processedBase64, qualityReport }
 ```
 
-### 8.2 Giới hạn xử lý
+### 8.2 Cấu hình (`PreprocessConfig`)
 
-| Tham số | Giá trị | Lý do |
+| Tham số | Mặc định | Mô tả |
 |---|---|---|
-| Max input size | 10 MB | Tránh RAM overflow trên Pi |
-| Output width | 1600 px | Đủ để Gemini nhận dạng rõ |
-| JPEG quality | 85% | Cân bằng chất lượng/băng thông |
-| Max deskew angle | ±15° | Tránh xử lý ảnh sai |
-| Timeout | 10 giây | Tránh treo process |
+| `resizeMaxWidth` | 1600 | Chiều rộng tối đa (px) |
+| `enableWhiteBalance` | true | Cân bằng trắng |
+| `enableShadowRemoval` | true | Khử bóng |
+| `shadowKernelSize` | 51 | Kernel size cho blur (phải lẻ) |
+| `enableGridRemoval` | true | Xoá dòng kẻ ô ly |
+| `gridLineMinLength` | 80 | Độ dài tối thiểu dòng kẻ (px) |
+| `enableClahe` | true | Tăng tương phản cục bộ |
+| `claheClipLimit` | 2.0 | CLAHE clip limit |
+| `claheTileGridSize` | 8 | Số tile mỗi chiều |
+| `enableSharpen` | true | Làm nét chữ |
+| `sharpenAmount` | 0.5 | Mức sharpen (0-1) |
+| `thresholdMode` | `adaptive_gaussian` | Chế độ nhị phân hoá |
+| `adaptiveC` | 10 | Hằng số lọc nhiễu |
+| `blurThreshold` | 80 | Ngưỡng cảnh báo mờ |
+| `brightnessLow/High` | 50/220 | Ngưỡng sáng |
 
-### 8.3 Quản lý bộ nhớ
+### 8.3 Quality Report
 
-```python
-# Quan trọng: Giải phóng ngay sau khi dùng xong
-img_array = cv2.imread(path)
-processed = process_pipeline(img_array)
-del img_array          # Giải phóng ảnh gốc
-b64_data = encode_base64(processed)
-del processed          # Giải phóng ảnh đã xử lý
-gc.collect()           # Gợi ý Python GC
+```json
+{
+  "is_good": false,
+  "warnings": ["Ảnh bị mờ", "Nét chữ quá nhạt"],
+  "blur_score": 45.2,
+  "brightness": 120.5,
+  "resolution": 800,
+  "dark_pixel_ratio": 0.015,
+  "text_area_ratio": 0.003
+}
 ```
 
 ---
@@ -604,502 +414,163 @@ gc.collect()           # Gợi ý Python GC
 
 ### 9.1 Cấu hình
 
-```python
-MODEL = "gemini-1.5-flash"
-GENERATION_CONFIG = {
-    "temperature": 0.1,       # Ưu tiên độ chính xác hơn sáng tạo
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 2048,
-    "response_mime_type": "application/json",  # Bắt buộc JSON output
+```typescript
+const GEMINI_MODEL = "gemini-3-flash-preview"
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+
+const generationConfig = {
+  temperature: 0.1,       // Ưu tiên chính xác
+  topP: 0.95,
+  topK: 40,
+  maxOutputTokens: 8192,
 }
 ```
 
-### 9.2 System Prompt
+### 9.2 Luồng gọi API
 
-```
-Bạn là hệ thống chấm điểm chính tả tiếng Việt cho học sinh tiểu học.
-Nhiệm vụ: Nhận dạng chữ viết tay trong ảnh và so sánh với văn bản mẫu.
+1. Frontend gửi `imageBase64` + `mimeType` (hoặc `studentText`) đến `/api/grade`
+2. Server xây dựng parts: `[GRADING_PROMPT, inline_data]`
+3. Gọi Gemini API qua REST (`fetch`)
+4. Parse JSON từ response (strip markdown fences nếu có)
+5. Trả kết quả + `processingTimeMs` + `tokenCount`
 
-Quy tắc:
-1. Nhận dạng chính xác từng từ, kể cả dấu thanh tiếng Việt
-2. Phân biệt rõ 5 loại lỗi: am_dau, van, thanh, viet_hoa, dau_cau
-3. Chỉ đánh lỗi khi khác biệt rõ ràng, không phạt nét chữ xấu
-4. Trả về đúng định dạng JSON, không thêm text bên ngoài JSON
-```
+### 9.3 Lưu ý hiện tại
 
-### 9.3 User Prompt Template
-
-```
-Văn bản mẫu:
----
-{template_text}
----
-
-Hãy nhận dạng toàn bộ chữ viết trong ảnh và so sánh với văn bản mẫu trên.
-
-Trả về JSON với cấu trúc sau:
-{
-  "recognized_text": "toàn bộ văn bản nhận dạng được",
-  "errors": [
-    {
-      "position": <vị trí từ, đếm từ 1>,
-      "original": "<từ học sinh viết>",
-      "expected": "<từ đúng trong mẫu>",
-      "error_type": "<am_dau|van|thanh|viet_hoa|dau_cau>",
-      "context": "<câu chứa lỗi>"
-    }
-  ],
-  "overall_comment": "<nhận xét ngắn gọn bằng tiếng Việt, thân thiện với học sinh>"
-}
-```
-
-### 9.4 Error Handling & Retry
-
-```python
-MAX_RETRIES = 3
-RETRY_DELAY = [1, 2, 4]   # Exponential backoff (giây)
-
-# Các trường hợp cần xử lý:
-RECOVERABLE_ERRORS = [
-    "RATE_LIMIT_EXCEEDED",    # Retry sau delay
-    "SERVICE_UNAVAILABLE",    # Retry
-    "TIMEOUT",                # Retry
-]
-NON_RECOVERABLE = [
-    "INVALID_API_KEY",        # Alert admin
-    "IMAGE_TOO_LARGE",        # Báo lỗi cho GV
-    "CONTENT_FILTERED",       # Ảnh không phù hợp
-]
-```
-
-### 9.5 Chi phí token ước tính
-
-| Thành phần | Token ước tính |
-|---|---|
-| System prompt | ~150 tokens |
-| User prompt + template | ~200 tokens |
-| Ảnh 1600px (vision) | ~500–800 tokens |
-| Response JSON | ~300–500 tokens |
-| **Tổng/bài** | **~1150–1650 tokens** |
+- **Ảnh gửi cho Gemini là ảnh GỐC** (chưa qua tiền xử lý), dù user đang ở tab "Đã xử lý"
+- Tab "Đã xử lý" chỉ hiển thị preview + quality report cho giáo viên tham khảo
 
 ---
 
 ## 10. Frontend Architecture
 
-### 10.1 Layout hệ thống
+### 10.1 Routing (App Router)
+
+| Path | Component | Role |
+|---|---|---|
+| `/` | `page.tsx` | Trang đăng nhập |
+| `/register` | `register/page.tsx` | Trang đăng ký |
+| `/teacher` | `teacher/page.tsx` | Dashboard giáo viên |
+| `/teacher/grade` | `teacher/grade/page.tsx` | Chấm điểm AI |
+| `/teacher/reports` | `teacher/reports/page.tsx` | Báo cáo lớp |
+| `/teacher/assignments` | `teacher/assignments/` | Quản lý bài tập |
+| `/student` | `student/page.tsx` | Dashboard học sinh |
+| `/student/history` | `student/history/page.tsx` | Lịch sử điểm |
+| `/admin` | `admin/page.tsx` | Dashboard admin |
+| `/admin/users` | `admin/users/page.tsx` | Quản lý tài khoản |
+| `/admin/classes` | `admin/classes/page.tsx` | Quản lý lớp |
+
+### 10.2 Trang chấm điểm AI (`/teacher/grade`)
+
+Giao diện 2 cột:
+
+**Cột trái — Input:**
+- Thông tin học sinh (tên, lớp, tên bài) với autocomplete tên HS theo lớp
+- 3 tab nhập liệu:
+  - **Ảnh gốc**: Chụp camera / upload / drag-drop
+  - **Đã xử lý**: Ảnh qua pipeline + quality report
+  - **Nhập text**: Nhập/dán văn bản
+
+**Cột phải — Kết quả:**
+- Điểm số + xếp hạng
+- Nút lưu vào database
+- Nhận xét AI
+- Danh sách lỗi chính tả (error → suggestion)
+- Văn bản đã sửa / văn bản gốc
+
+### 10.3 Authentication (Client-side)
 
 ```
-base.html (layout chung)
-├── Navbar: logo, user info, logout
-├── Sidebar: menu điều hướng
-└── main: nội dung theo role
-
-Teacher view:
-├── Dashboard: stats cards (tổng bài, trung bình điểm)
-├── Upload Form: drag-drop zone (HTMX)
-│   └── hx-post="/teacher/grade"
-│       hx-target="#result-container"
-│       hx-swap="innerHTML"
-├── Result Partial: hiện kết quả AI
-│   ├── Bảng lỗi
-│   ├── Input sửa điểm/nhận xét
-│   └── Nút "Lưu điểm"
-└── Class Report: bảng điểm cả lớp
-
-Student view:
-├── Dashboard: điểm gần nhất, thống kê
-└── Grade History: bảng lịch sử (HTMX infinite scroll)
+Login → localStorage.setItem("vihand_user", JSON.stringify(user))
+Redirect → switch(role) { teacher → /teacher, student → /student, admin → /admin }
+Sidebar → đọc localStorage, hiện menu theo role
 ```
 
-### 10.2 HTMX Key Interactions
+### 10.4 PWA Support
 
-```html
-<!-- Upload và chấm điểm không reload -->
-<form hx-post="/teacher/grade"
-      hx-target="#result-section"
-      hx-swap="innerHTML"
-      hx-indicator="#loading-spinner"
-      enctype="multipart/form-data">
-
-<!-- Cập nhật điểm inline -->
-<button hx-put="/teacher/grades/{{grade.id}}"
-        hx-include="[name='final_score'],[name='comment']"
-        hx-target="#grade-row-{{grade.id}}"
-        hx-swap="outerHTML">
-  Lưu điểm
-</button>
-
-<!-- Load thêm lịch sử (Infinite scroll) -->
-<tr hx-get="/student/grades?page={{next_page}}"
-    hx-trigger="revealed"
-    hx-swap="afterend">
-```
-
-### 10.3 Color System (CSS Variables)
-
-```css
-:root {
-  --color-primary:    #4ade80;   /* Xanh lá pastel */
-  --color-secondary:  #60a5fa;   /* Xanh dương pastel */
-  --color-accent:     #fbbf24;   /* Vàng ấm */
-  --color-success:    #22c55e;
-  --color-warning:    #f59e0b;
-  --color-error:      #ef4444;
-  --color-base-100:   #fefce8;   /* Nền vàng kem nhẹ */
-  --color-base-200:   #f0fdf4;   /* Nền xanh cực nhạt */
-  --font-display:     'Nunito', sans-serif;   /* Thân thiện, tròn */
-  --font-body:        'Be Vietnam Pro', sans-serif;
-}
-```
+- `manifest.ts`: App manifest cho install trên điện thoại
+- `sw.js`: Service Worker cho offline caching
+- Viewport: `themeColor: '#22c55e'`
 
 ---
 
-## 11. Tối ưu Raspberry Pi 4
+## 11. Bảo mật & Xác thực
 
-### 11.1 Gunicorn Configuration (`gunicorn.conf.py`)
+### 11.1 Trạng thái hiện tại (v1.0)
 
-```python
-# gunicorn.conf.py
-import multiprocessing
+| Khía cạnh | Hiện trạng |
+|---|---|
+| Password storage | Plain text (so sánh trực tiếp) |
+| Session management | `localStorage` (client-side) |
+| API protection | Không có middleware auth |
+| RBAC | Client-side routing theo `role` field |
 
-# Số CPU cores của Pi 4 = 4
-workers = multiprocessing.cpu_count()          # = 4
-worker_class = "uvicorn.workers.UvicornWorker"
-worker_connections = 50          # Tối đa kết nối mỗi worker
-max_requests = 500               # Restart worker sau 500 request (chống memory leak)
-max_requests_jitter = 50
-timeout = 60                     # Timeout cho Gemini API call
-graceful_timeout = 30
-keepalive = 5
-
-# Memory
-worker_tmp_dir = "/dev/shm"      # Dùng RAM disk cho tmp files
-
-# Logging
-accesslog = "/var/log/vihand/access.log"
-errorlog = "/var/log/vihand/error.log"
-loglevel = "warning"             # Giảm log I/O
-```
-
-### 11.2 Nginx Configuration (`nginx.conf`)
-
-```nginx
-server {
-    listen 80;
-    server_name vihand.local;
-
-    # Serve static files trực tiếp (không qua Python)
-    location /static/ {
-        alias /opt/vihand-grade/static/;
-        expires 7d;
-        add_header Cache-Control "public, immutable";
-        gzip on;
-        gzip_types text/css application/javascript;
-    }
-
-    # Proxy sang Gunicorn
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-
-        # Quan trọng cho Pi: giới hạn upload size
-        client_max_body_size 10M;
-
-        # Buffer để tránh nghẽn kết nối chậm (WiFi trường học)
-        proxy_buffering on;
-        proxy_buffer_size 8k;
-        proxy_buffers 16 8k;
-        proxy_busy_buffers_size 64k;
-    }
-}
-```
-
-### 11.3 Swap File Setup (`create_swap.sh`)
-
-```bash
-#!/bin/bash
-# Tạo swap 1024MB cho Pi 4
-SWAP_FILE="/swapfile"
-SWAP_SIZE=1024  # MB
-
-sudo fallocate -l ${SWAP_SIZE}M $SWAP_FILE
-sudo chmod 600 $SWAP_FILE
-sudo mkswap $SWAP_FILE
-sudo swapon $SWAP_FILE
-
-# Thêm vào /etc/fstab để tự động mount khi khởi động
-echo "$SWAP_FILE none swap sw 0 0" | sudo tee -a /etc/fstab
-
-# Tối ưu swappiness cho server (ưu tiên RAM hơn swap)
-echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
-sudo sysctl -p
-```
-
-### 11.4 Systemd Service (`vihand.service`)
-
-```ini
-[Unit]
-Description=ViHand Grade - Vietnamese Handwriting Grader
-After=network.target
-
-[Service]
-Type=notify
-User=vihand
-Group=vihand
-WorkingDirectory=/opt/vihand-grade
-Environment="PATH=/opt/vihand-grade/venv/bin"
-EnvironmentFile=/opt/vihand-grade/.env
-ExecStart=/opt/vihand-grade/venv/bin/gunicorn \
-    -c /opt/vihand-grade/config/gunicorn.conf.py \
-    app.main:app
-ExecReload=/bin/kill -s HUP $MAINPID
-Restart=on-failure
-RestartSec=5s
-
-# Giới hạn tài nguyên để tránh sập toàn bộ Pi
-MemoryMax=1.5G
-CPUQuota=90%
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### 11.5 Biến môi trường (`.env`)
-
-```bash
-# Gemini API
-GEMINI_API_KEY=your_api_key_here
-GEMINI_MODEL=gemini-1.5-flash
-
-# App
-SECRET_KEY=your_random_secret_key_64chars
-APP_ENV=production
-DEBUG=false
-BASE_URL=http://vihand.local
-
-# Database
-DATABASE_URL=sqlite:////opt/vihand-grade/data/vihand.db
-
-# Upload limits
-MAX_UPLOAD_SIZE_MB=10
-UPLOAD_DIR=/opt/vihand-grade/static/uploads
-
-# Session
-ACCESS_TOKEN_EXPIRE_MINUTES=480   # 8 tiếng (1 ngày học)
-```
-
----
-
-## 12. Bảo mật & Xác thực
-
-### 12.1 Authentication Flow
-
-```
-1. User POST /auth/login {username, password}
-2. Server: verify bcrypt hash
-3. Server: issue JWT (exp: 8 giờ)
-4. Client: lưu JWT trong HttpOnly Cookie (không dùng localStorage)
-5. Mỗi request: server verify JWT từ cookie
-6. HTMX requests: cookie tự động đính kèm
-```
-
-### 12.2 Authorization (RBAC)
+### 11.2 Authorization (RBAC)
 
 | Tài nguyên | Admin | Teacher | Student |
 |---|---|---|---|
-| Quản lý users | ✅ | ❌ | ❌ |
-| Tạo/xem assignments | ✅ | ✅ (của mình) | ❌ |
-| Upload & chấm điểm | ✅ | ✅ | ❌ |
-| Sửa điểm | ✅ | ✅ (của mình) | ❌ |
-| Xem điểm của mình | ✅ | ✅ | ✅ |
-| Xuất báo cáo | ✅ | ✅ (lớp mình) | ❌ |
+| Quản lý users/classes | ✅ | ❌ | ❌ |
+| Chấm điểm AI | ✅ | ✅ | ❌ |
+| Lưu kết quả | ✅ | ✅ | ❌ |
+| Xem báo cáo lớp | ✅ | ✅ | ❌ |
+| Xem điểm bản thân | ✅ | ✅ | ✅ |
 
-### 12.3 Input Validation
+---
 
-```python
-# Pydantic model cho upload
-class GradeRequest(BaseModel):
-    assignment_id: int
-    student_id: int
-    template_text: str = Field(..., min_length=10, max_length=2000)
+## 12. Cấu hình & Biến môi trường
 
-# File validation trong FastAPI
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+### 12.1 `.env.local`
 
-async def validate_image(file: UploadFile):
-    if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(400, "Chỉ chấp nhận JPG, PNG, WebP")
-    content = await file.read(MAX_FILE_SIZE + 1)
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(413, "File quá lớn (tối đa 10MB)")
-    return content
+```bash
+# Gemini API
+GEMINI_API_KEY=your_gemini_api_key
+
+# Database (SQLite via Prisma)
+DATABASE_URL="file:./prisma/vihand.db"
+```
+
+### 12.2 Yêu cầu chạy
+
+| Thành phần | Yêu cầu |
+|---|---|
+| Node.js | 18+ |
+| Package manager | npm / pnpm |
+| Database | SQLite (tự động, không cần cài) |
+| API Key | Google Gemini API Key |
+
+### 12.3 Khởi chạy
+
+```bash
+npm install
+npx prisma generate
+npx prisma db push
+npm run dev          # http://localhost:3000
 ```
 
 ---
 
-## 13. Cấu hình triển khai
+## 13. Module Python tham khảo (`image_utils.py`)
 
-### 13.1 Yêu cầu phần cứng
+File `image_utils.py` là module Python/OpenCV **tham khảo** với pipeline tương đương `lib/image-processor.ts`. Có thể dùng độc lập để xử lý ảnh ngoài web:
 
-| Thành phần | Tối thiểu | Khuyến nghị |
+```bash
+pip install opencv-python-headless numpy
+python image_utils.py anh_bai_viet.jpg --debug
+```
+
+Hỗ trợ: `PreprocessConfig`, debug mode lưu ảnh từng bước, CLI test.
+
+---
+
+## 14. Rủi ro & Phương án dự phòng
+
+| Rủi ro | Xác suất | Phương án |
 |---|---|---|
-| Raspberry Pi | Pi 4 - 4GB | Pi 4 - 8GB |
-| MicroSD | 32GB Class 10 | 64GB A2 |
-| Storage phụ | Không | USB SSD 128GB (backup) |
-| Kết nối mạng | LAN/WiFi | LAN (ổn định hơn) |
-| Nguồn điện | 5V/3A USB-C | Pi Official Power Supply |
-
-### 13.2 Quy trình cài đặt (`setup_pi.sh`)
-
-```bash
-#!/bin/bash
-# 1. Cập nhật hệ thống
-sudo apt update && sudo apt upgrade -y
-
-# 2. Cài Python dependencies
-sudo apt install -y python3.11 python3.11-venv \
-    libopencv-dev python3-opencv \
-    nginx sqlite3 git
-
-# 3. Tạo user riêng cho app
-sudo useradd -r -s /bin/false vihand
-sudo mkdir -p /opt/vihand-grade
-sudo chown vihand:vihand /opt/vihand-grade
-
-# 4. Setup virtual environment
-python3.11 -m venv /opt/vihand-grade/venv
-source /opt/vihand-grade/venv/bin/activate
-pip install -r requirements-pi.txt
-
-# 5. Khởi tạo database
-python -c "from app.database import init_db; init_db()"
-
-# 6. Cài Nginx & systemd
-sudo cp config/nginx.conf /etc/nginx/sites-available/vihand
-sudo ln -s /etc/nginx/sites-available/vihand /etc/nginx/sites-enabled/
-sudo cp config/systemd/vihand.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable vihand nginx
-sudo systemctl start vihand nginx
-```
-
-### 13.3 Backup Strategy
-
-```bash
-# Chạy hàng ngày qua cron: 23:00
-# backup_db.sh
-BACKUP_DIR="/backup/vihand"
-DATE=$(date +%Y%m%d_%H%M%S)
-
-mkdir -p $BACKUP_DIR
-sqlite3 /opt/vihand-grade/data/vihand.db ".backup '$BACKUP_DIR/vihand_$DATE.db'"
-
-# Giữ tối đa 30 bản backup
-ls -t $BACKUP_DIR/*.db | tail -n +31 | xargs rm -f
-
-# Sync sang USB nếu có
-if [ -d "/media/vihand/backup" ]; then
-    rsync -a $BACKUP_DIR/ /media/vihand/backup/
-fi
-```
+| Gemini API rate limit | Trung bình | Retry, thông báo GV chờ |
+| Gemini trả JSON lỗi | Thấp | Strip markdown fences, báo lỗi rõ ràng |
+| Ảnh chụp kém chất lượng | Cao | Quality Assessment cảnh báo GV trước khi chấm |
+| OCR sai dấu tiếng Việt | Trung bình | GV review kết quả trước khi lưu |
+| Mất kết nối Internet | Cao | Thông báo lỗi, GV thử lại |
 
 ---
 
-## 14. Kế hoạch kiểm thử
-
-### 14.1 Unit Tests
-
-| Module | Test Cases |
-|---|---|
-| `grading.py` | Tính điểm đúng, dedup lỗi, clamp 0-10, quy tắc theo lớp |
-| `image_utils.py` | Resize đúng kích thước, xử lý ảnh hỏng, giải phóng bộ nhớ |
-| `gemini_client.py` | Mock API response, retry logic, parse JSON lỗi |
-| `database.py` | CRUD operations, foreign key constraints |
-
-### 14.2 Integration Tests
-
-```python
-# test_api.py - test flow hoàn chỉnh
-async def test_full_grading_flow():
-    # 1. Login
-    token = await login("teacher01", "password")
-    
-    # 2. Upload ảnh test
-    with open("tests/fixtures/sample_chinh_ta.jpg", "rb") as f:
-        response = await client.post("/teacher/grade",
-            files={"image": f},
-            data={"assignment_id": 1},
-            headers={"Authorization": f"Bearer {token}"}
-        )
-    
-    assert response.status_code == 200
-    data = response.json()["data"]
-    assert "final_score" in data
-    assert 0 <= data["final_score"] <= 10
-```
-
-### 14.3 Performance Tests (Raspberry Pi)
-
-| Kịch bản | Chỉ số mục tiêu |
-|---|---|
-| 1 request chấm điểm | < 30 giây (bao gồm Gemini API) |
-| 4 request đồng thời | < 45 giây cho tất cả |
-| 10 request liên tiếp | RAM < 1.5GB, không swap quá 200MB |
-| Cold start app | < 10 giây |
-
----
-
-## 15. Rủi ro & Phương án dự phòng
-
-| Rủi ro | Xác suất | Tác động | Phương án |
-|---|---|---|---|
-| Mất kết nối Internet (không gọi được Gemini API) | Cao | Cao | Cache kết quả, hàng đợi xử lý khi có mạng trở lại |
-| Gemini API rate limit | Trung bình | Trung bình | Retry exponential backoff, thông báo GV chờ |
-| Pi quá nhiệt (>80°C) | Thấp | Cao | Giám sát nhiệt độ, tự giảm workers, cảnh báo admin |
-| MicroSD hỏng | Thấp | Rất Cao | Backup tự động hàng ngày ra USB SSD |
-| Gemini nhận dạng sai | Trung bình | Trung bình | GV chỉnh sửa được kết quả trước khi lưu |
-| RAM đầy | Thấp | Cao | Swap 1GB + giới hạn MemoryMax trong systemd |
-
----
-
-## Phụ lục
-
-### A. Mẫu file `requirements.txt`
-
-```
-fastapi>=0.111.0
-uvicorn[standard]>=0.29.0
-gunicorn>=22.0.0
-python-multipart>=0.0.9
-jinja2>=3.1.4
-aiosqlite>=0.20.0
-google-generativeai>=0.7.0
-opencv-python-headless>=4.9.0.80
-Pillow>=10.3.0
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-pydantic>=2.7.0
-python-dotenv>=1.0.1
-httpx>=0.27.0
-```
-
-### B. Checklist trước khi go-live
-
-- [ ] Đã tạo swap 1024MB
-- [ ] Đã cấu hình `.env` với API key thật
-- [ ] Đã chạy `init_db()` và có dữ liệu mẫu
-- [ ] Đã test upload ảnh thực tế từ điện thoại
-- [ ] Nginx phục vụ được static files
-- [ ] Systemd service tự khởi động sau reboot
-- [ ] Cron job backup đã hoạt động
-- [ ] Tài khoản admin mặc định đã đổi mật khẩu
-- [ ] Đã test trên ít nhất 20 bài chính tả thực tế
-- [ ] GV đã được hướng dẫn sử dụng
-
----
-
-*Tài liệu này được tạo cho dự án ViHand Grade — Phiên bản 1.0.0*  
-*Liên hệ kỹ thuật: [developer@vihandgrade.edu.vn](mailto:developer@vihandgrade.edu.vn)*
+*Tài liệu cập nhật: 2026-05-16 — ViHand Grade v1.0.0*

@@ -24,7 +24,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface Correction {
   error: string
   suggestion: string
+  error_type: string
+  is_dialect: boolean
   reason: string
+}
+
+interface ScoreBreakdown {
+  chinh_ta:  { raw: number; max: number; error_count: number; deduction: number }
+  hinh_thuc: { raw: number; max: number; note: string }
+  noi_dung:  { raw: number; max: number; note: string }
+  sang_tao:  { raw: number; max: number; note: string }
 }
 
 interface GradingResult {
@@ -32,13 +41,24 @@ interface GradingResult {
   original_text: string
   corrections: Correction[]
   score: string
+  score_breakdown?: ScoreBreakdown
   feedback: string
   overall_rating: string
   processingTimeMs: number
   tokenCount: number
 }
 
+const ERROR_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  phu_am_dau: { label: "Phụ âm đầu", color: "bg-red-100 text-red-700 border-red-200" },
+  van:        { label: "Vần", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  dau_thanh:  { label: "Dấu thanh", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  viet_hoa:   { label: "Viết hoa", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  bo_sot_them:{ label: "Bỏ sót/Thêm", color: "bg-pink-100 text-pink-700 border-pink-200" },
+  dau_cau:    { label: "Dấu câu", color: "bg-teal-100 text-teal-700 border-teal-200" },
+}
+
 function getRatingStyle(rating: string) {
+  if (rating.includes("Xuất sắc")) return { badge: "bg-emerald-100 text-emerald-700 border-emerald-200", emoji: "🏆" }
   if (rating.includes("Tốt")) return { badge: "bg-green-100 text-green-700 border-green-200", emoji: "🌟" }
   if (rating.includes("Khá")) return { badge: "bg-blue-100 text-blue-700 border-blue-200", emoji: "👍" }
   if (rating.includes("Trung bình")) return { badge: "bg-yellow-100 text-yellow-700 border-yellow-200", emoji: "📝" }
@@ -47,11 +67,28 @@ function getRatingStyle(rating: string) {
 
 function ScoreDisplay({ score }: { score: string }) {
   const num = parseFloat(score)
-  const color = num >= 8 ? "text-green-600" : num >= 6.5 ? "text-blue-600" : num >= 5 ? "text-yellow-600" : "text-red-600"
+  const color = num >= 9 ? "text-emerald-600" : num >= 7 ? "text-green-600" : num >= 5 ? "text-blue-600" : num >= 3 ? "text-yellow-600" : "text-red-600"
   return (
     <div className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-border bg-card">
       <span className="text-xs text-muted-foreground mb-1">Điểm số</span>
       <span className={`text-5xl font-bold ${color}`}>{score}</span>
+    </div>
+  )
+}
+
+function ScoreBar({ label, raw, max, note }: { label: string; raw: number; max: number; note?: string }) {
+  const pct = max > 0 ? (raw / max) * 100 : 0
+  const barColor = pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-blue-500" : pct >= 30 ? "bg-yellow-500" : "bg-red-500"
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="font-medium">{label}</span>
+        <span className="text-muted-foreground">{raw}/{max}</span>
+      </div>
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full rounded-full ${barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+      {note && <p className="text-[11px] text-muted-foreground">{note}</p>}
     </div>
   )
 }
@@ -200,6 +237,7 @@ export default function GradingPage() {
           fixedText: gradingResult.fixed_text,
           corrections: gradingResult.corrections,
           score: gradingResult.score,
+          scoreBreakdown: gradingResult.score_breakdown,
           feedback: gradingResult.feedback,
           overallRating: gradingResult.overall_rating,
           processingTimeMs: gradingResult.processingTimeMs,
@@ -520,6 +558,45 @@ export default function GradingPage() {
                   </CardContent>
                 </Card>
 
+                {/* Score Breakdown */}
+                {gradingResult.score_breakdown && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-primary" /> Bảng điểm chi tiết
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <ScoreBar
+                          label="📝 Chính tả & Ngữ pháp"
+                          raw={gradingResult.score_breakdown.chinh_ta.raw}
+                          max={gradingResult.score_breakdown.chinh_ta.max}
+                          note={`${gradingResult.score_breakdown.chinh_ta.error_count} lỗi, trừ ${gradingResult.score_breakdown.chinh_ta.deduction}đ`}
+                        />
+                        <ScoreBar
+                          label="✍️ Hình thức trình bày"
+                          raw={gradingResult.score_breakdown.hinh_thuc.raw}
+                          max={gradingResult.score_breakdown.hinh_thuc.max}
+                          note={gradingResult.score_breakdown.hinh_thuc.note}
+                        />
+                        <ScoreBar
+                          label="💡 Nội dung & Ý tưởng"
+                          raw={gradingResult.score_breakdown.noi_dung.raw}
+                          max={gradingResult.score_breakdown.noi_dung.max}
+                          note={gradingResult.score_breakdown.noi_dung.note}
+                        />
+                        <ScoreBar
+                          label="🎨 Sáng tạo"
+                          raw={gradingResult.score_breakdown.sang_tao.raw}
+                          max={gradingResult.score_breakdown.sang_tao.max}
+                          note={gradingResult.score_breakdown.sang_tao.note}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Save Form */}
                 <Card className={`border-2 ${isSaved ? "border-green-300 bg-green-50/30" : "border-primary/20"}`}>
                   <CardHeader className="pb-3">
@@ -570,16 +647,21 @@ export default function GradingPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {gradingResult.corrections.map((c, i) => (
-                          <div key={i} className="flex flex-col gap-1 p-3 rounded-lg border border-border/60 bg-muted/30 text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="text-destructive font-medium line-through">{c.error}</span>
-                              <span className="text-muted-foreground">→</span>
-                              <span className="text-green-600 font-semibold">{c.suggestion}</span>
+                        {gradingResult.corrections.map((c, i) => {
+                          const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
+                          return (
+                            <div key={i} className="flex flex-col gap-1.5 p-3 rounded-lg border border-border/60 bg-muted/30 text-sm">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-destructive font-medium line-through">{c.error}</span>
+                                <span className="text-muted-foreground">→</span>
+                                <span className="text-green-600 font-semibold">{c.suggestion}</span>
+                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 border ${typeInfo.color}`}>{typeInfo.label}</Badge>
+                                {c.is_dialect && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border bg-amber-50 text-amber-700 border-amber-200">🗣 Phương ngữ</Badge>}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{c.reason}</p>
                             </div>
-                            <p className="text-xs text-muted-foreground">{c.reason}</p>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </CardContent>
                   </Card>

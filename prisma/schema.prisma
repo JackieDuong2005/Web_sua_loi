@@ -36,6 +36,7 @@ model Grade {
   corrections       String
   score             String
   scoreNum          Float
+  scoreBreakdown    String   @default("")
   feedback          String
   overallRating     String
   processingTimeMs  Int      @default(0)

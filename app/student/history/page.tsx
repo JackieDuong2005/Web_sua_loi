@@ -28,13 +28,16 @@ interface Grade {
 interface Correction {
   error: string
   suggestion: string
+  error_type?: string
+  is_dialect?: boolean
   reason: string
 }
 
 function getScoreLevel(score: number) {
-  if (score >= 9) return { label: "Xuất sắc", color: "text-success", bg: "bg-success/10", emoji: "🏆" }
-  if (score >= 7) return { label: "Khá", color: "text-info", bg: "bg-info/10", emoji: "⭐" }
-  if (score >= 5) return { label: "Đạt", color: "text-warning-foreground", bg: "bg-warning/10", emoji: "📈" }
+  if (score >= 9) return { label: "Xuất sắc", color: "text-emerald-600", bg: "bg-emerald-50", emoji: "🏆" }
+  if (score >= 7) return { label: "Tốt", color: "text-success", bg: "bg-success/10", emoji: "🌟" }
+  if (score >= 5) return { label: "Khá", color: "text-info", bg: "bg-info/10", emoji: "⭐" }
+  if (score >= 3) return { label: "Trung bình", color: "text-warning-foreground", bg: "bg-warning/10", emoji: "📈" }
   return { label: "Cần cố gắng", color: "text-destructive", bg: "bg-destructive/10", emoji: "📝" }
 }
 
