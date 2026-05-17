@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Eye, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { HelpGuideButton } from "@/components/help-guide"
 
 interface Grade {
   id: string
@@ -22,6 +23,7 @@ interface Grade {
   fixedText: string
   corrections: string
   overallRating: string
+  imageBase64: string
   createdAt: string
 }
 
@@ -90,10 +92,11 @@ export default function StudentHistoryPage() {
       <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-4 md:px-6">
         <SidebarTrigger className="-ml-2" />
         <Separator orientation="vertical" className="h-6" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-semibold text-card-foreground">Lịch sử điểm</h1>
           <p className="text-sm text-muted-foreground">Tất cả các bài viết đã được chấm</p>
         </div>
+        <HelpGuideButton role="student" />
       </header>
 
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-x-hidden min-w-0">
@@ -201,6 +204,18 @@ export default function StudentHistoryPage() {
           </DialogHeader>
           {selectedGrade && (
             <div className="space-y-4 text-sm">
+              {/* Ảnh bài viết gốc */}
+              {selectedGrade.imageBase64 && (
+                <div className="space-y-1">
+                  <p className="font-medium text-muted-foreground">Ảnh bài viết:</p>
+                  <img
+                    src={selectedGrade.imageBase64}
+                    alt="Ảnh bài viết"
+                    className="w-full rounded-lg border border-border object-contain max-h-64"
+                  />
+                </div>
+              )}
+
               <div className="flex gap-3 flex-wrap">
                 <Badge variant="outline">{selectedGrade.className || "Không rõ lớp"}</Badge>
                 <Badge variant="outline">{selectedGrade.assignmentTitle}</Badge>

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { HelpGuideButton } from "@/components/help-guide"
 
 interface Correction {
   error: string
@@ -321,10 +322,11 @@ export default function GradingPage() {
       <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-4 md:px-6">
         <SidebarTrigger className="-ml-2" />
         <Separator orientation="vertical" className="h-6" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="text-lg font-semibold text-card-foreground">Chấm điểm AI</h1>
           <p className="text-sm text-muted-foreground">Phân tích chính tả và chấm điểm tự động bằng Gemini</p>
         </div>
+        <HelpGuideButton role="teacher" />
       </header>
 
       <main className="flex-1 p-4 md:p-6 overflow-x-hidden">

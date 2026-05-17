@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   PenLine, LayoutDashboard, Camera, FileText, History, Users, Settings,
-  LogOut, ChevronUp, BarChart3, School, ClipboardList, Server,
+  LogOut, ChevronUp, BarChart3, School, Server,
 } from "lucide-react"
 
 type UserRole = "teacher" | "student" | "admin"
@@ -21,7 +21,6 @@ interface AppSidebarProps {
 
 const teacherMenuItems = [
   { title: "Tổng quan", icon: LayoutDashboard, href: "/teacher" },
-  { title: "Bài tập", icon: ClipboardList, href: "/teacher/assignments" },
   { title: "Chấm điểm", icon: Camera, href: "/teacher/grade" },
   { title: "Báo cáo lớp", icon: FileText, href: "/teacher/reports" },
 ]

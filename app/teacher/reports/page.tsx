@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { Download, Search, ArrowUpDown, Trash2, RefreshCw, Eye, X } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { HelpGuideButton } from "@/components/help-guide"
 
 interface Grade {
   id: string
@@ -155,7 +156,8 @@ export default function ReportsPage() {
           <h1 className="text-lg font-semibold text-card-foreground">Báo cáo lớp</h1>
           <p className="text-sm text-muted-foreground">Dữ liệu thực từ cơ sở dữ liệu • {grades.length} bài đã chấm</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <HelpGuideButton role="teacher" />
           <Button variant="outline" size="sm" onClick={fetchGrades} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>

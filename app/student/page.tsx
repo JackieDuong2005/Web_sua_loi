@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Trophy, TrendingUp, FileText, Star, ArrowRight, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { HelpGuideButton } from "@/components/help-guide"
 
 interface Grade {
   id: string
@@ -89,10 +90,11 @@ export default function StudentDashboard() {
       <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-4 md:px-6">
         <SidebarTrigger className="-ml-2" />
         <Separator orientation="vertical" className="h-6" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-semibold text-card-foreground">Xin chào, {studentName}!</h1>
           <p className="text-sm text-muted-foreground">Xem kết quả học tập của con</p>
         </div>
+        <HelpGuideButton role="student" />
       </header>
 
       {/* Main Content */}

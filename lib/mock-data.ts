@@ -1,32 +1,4 @@
-import { Assignment, Grade, SpellingError, SystemStats } from "./types"
-
-export const mockAssignments: Assignment[] = [
-  {
-    id: 1, title: "Bài chính tả số 1 - Mùa xuân", class_id: 1, teacher_id: 1,
-    template_text: "Mùa xuân đến, cây cối đâm chồi nảy lộc. Hoa mai nở vàng rực rỡ khắp nơi. Trẻ em vui đùa trong nắng ấm. Tiếng chim hót líu lo trên cành cây xanh. Ai cũng yêu mùa xuân tươi đẹp.",
-    subject: "chinh_ta", max_score: 10, deadline: "2024-02-15", is_active: true,
-    created_at: "2024-01-10", class_name: "Lớp 3A", submission_count: 28, graded_count: 25,
-    instructions: "Học sinh viết đúng chính tả, chú ý dấu thanh và viết hoa đầu câu."
-  },
-  {
-    id: 2, title: "Bài chính tả số 2 - Quê hương", class_id: 1, teacher_id: 1,
-    template_text: "Quê hương em có dòng sông xanh biếc. Những chiếc thuyền nhỏ lướt nhẹ trên mặt nước. Bên bờ sông, lũy tre xanh rì rào trong gió. Chiều chiều, đàn trâu thung thăng gặm cỏ. Em yêu quê hương mình biết mấy.",
-    subject: "chinh_ta", max_score: 10, deadline: "2024-02-28", is_active: true,
-    created_at: "2024-01-20", class_name: "Lớp 3A", submission_count: 30, graded_count: 30,
-  },
-  {
-    id: 3, title: "Bài chính tả số 3 - Trường em", class_id: 1, teacher_id: 1,
-    template_text: "Trường em nằm giữa cánh đồng xanh. Sân trường rộng rãi có nhiều cây bóng mát. Mỗi sáng, tiếng trống trường vang lên rộn rã. Thầy cô giáo tận tình dạy dỗ chúng em. Em rất yêu ngôi trường thân yêu của mình.",
-    subject: "chinh_ta", max_score: 10, is_active: true,
-    created_at: "2024-02-01", class_name: "Lớp 3A", submission_count: 15, graded_count: 8,
-  },
-  {
-    id: 4, title: "Bài chính tả số 1 - Gia đình", class_id: 2, teacher_id: 1,
-    template_text: "Gia đình em có bốn người. Bố em là kỹ sư, mẹ em là giáo viên. Chị gái em học lớp năm. Em rất yêu gia đình mình.",
-    subject: "chinh_ta", max_score: 10, is_active: true,
-    created_at: "2024-01-15", class_name: "Lớp 3B", submission_count: 25, graded_count: 25,
-  },
-]
+import { Grade, SpellingError, SystemStats } from "./types"
 
 export const mockAIErrors: SpellingError[] = [
   { position: 3, original: "đam", expected: "đâm", error_type: "van", error_name: "Lỗi vần", deduction: 1.0, is_duplicate: false, context: "cây cối đam chồi nảy lộc" },

@@ -6,6 +6,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { FileText, Users, CheckCircle, Clock, Camera, ArrowRight, Loader2 } from "lucide-react"
+import { HelpGuideButton } from "@/components/help-guide"
 import Link from "next/link"
 
 interface Grade {
@@ -131,12 +132,13 @@ export default function TeacherDashboard() {
       <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-4 md:px-6">
         <SidebarTrigger className="-ml-2" />
         <Separator orientation="vertical" className="h-6" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-semibold text-card-foreground">Tổng quan</h1>
           <p className="text-sm text-muted-foreground">
             Xin chào, {teacherName}!{teacherClasses.length > 0 && ` — Quản lý: ${teacherClasses.join(", ")}`}
           </p>
         </div>
+        <HelpGuideButton role="teacher" />
       </header>
 
       {/* Main Content */}
