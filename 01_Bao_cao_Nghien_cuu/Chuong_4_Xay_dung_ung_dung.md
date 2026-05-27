@@ -19,7 +19,7 @@ Hệ thống được thiết kế để hỗ trợ trực tiếp cho giáo viê
 ### 4.1.2. Quy trình phát triển hệ thống
 Quy trình phát triển và hoàn thiện hệ thống **ViHand Grade** được thực hiện qua chu trình 9 giai đoạn chặt chẽ, từ khâu thu thập dữ liệu thực tế cho đến khâu triển khai phần cứng nhúng và giám sát thực nghiệm. **Hình 4.5** biểu diễn toàn bộ vòng đời phát triển dự án:
 
-![Hình 4.5. Sơ đồ quy trình phát triển hệ thống ViHand Grade](Flowchart_Chuong4/chuong4_5_quy_trinh_phat_trien.png)
+![Hình 4.5. Sơ đồ quy trình phát triển hệ thống ViHand Grade](flowcharts/chuong4_5_quy_trinh_phat_trien.png)
 
 * **Thu thập dữ liệu:** Thu thập ảnh chụp bài viết chính tả tiếng Việt trên giấy ô ly từ học sinh tiểu học thực tế (các khối lớp, các kiểu chữ viết tay bằng bút chì, bút mực, có lỗi chính tả thật). Các dữ liệu ảnh này được thu thập trực tiếp từ các trường tiểu học liên kết hoặc do chính giáo viên chụp lại trong quá trình giảng dạy nhằm đảm bảo tính đa dạng về chất lượng ánh sáng, độ nghiêng nét viết, và các kiểu chữ viết tay thực tế.
 * **Khám phá dữ liệu:** Xem xét các thuộc tính và đặc trưng của dữ liệu chữ viết tay tiểu học, bao gồm số lượng mẫu ảnh, loại bút viết (bút chì, bút mực), phân phối các nhóm lỗi chính tả phổ biến (`phu_am_dau`, `van`, `dau_thanh`, `viet_hoa`, `bo_sot_them`), và phân tích đặc tính cấu trúc của dòng kẻ ô ly (màu sắc dòng kẻ xanh/đỏ, độ mỏng dòng kẻ) để làm cơ sở thiết kế thuật toán lọc và cấu trúc barem điểm chuẩn xác.
@@ -107,7 +107,7 @@ Web_sua_loi/
 
 **Hình 4.1** mô tả sơ đồ quan hệ thực thể (ER Diagram) giữa ba Model dữ liệu cốt lõi của hệ thống.
 
-![Hình 4.1. Sơ đồ CSDL (Entity-Relationship Diagram) — 3 Model: User, Class, Grade](Flowchart_Chuong4/chuong4_1_so_do_csdl.png)
+![Hình 4.1. Sơ đồ CSDL (Entity-Relationship Diagram) — 3 Model: User, Class, Grade](flowcharts/chuong4_1_so_do_csdl.png)
 
 ### 4.2.1. Database của hệ thống
 Hệ thống **ViHand Grade** lựa chọn hệ quản trị cơ sở dữ liệu **SQLite** kết hợp cùng thư viện **better-sqlite3** làm công cụ lưu trữ dữ liệu chính thức. Lựa chọn này xuất phát từ các yêu cầu đặc thù của kiến trúc phần cứng nhúng Raspberry Pi 4 cũng như bài toán vận hành độc lập tại các trường tiểu học:
@@ -216,7 +216,7 @@ Bảng 4.4 chi tiết hóa cấu trúc trường dữ liệu của Model `Grade`
 
 (Nguồn: (Tailwind CSS Docs, 2026))
 
-![Hình 4.3. Bản đồ điều hướng giao diện cho 3 vai trò người dùng (Teacher, Student, Admin)](Flowchart_Chuong4/chuong4_3_ui_navigation.png)
+![Hình 4.3. Bản đồ điều hướng giao diện cho 3 vai trò người dùng (Teacher, Student, Admin)](flowcharts/chuong4_3_ui_navigation.png)
 
 Cụ thể, việc lựa chọn Tailwind CSS kết hợp cùng bộ thư viện component **shadcn/ui** và **Radix UI** mang lại những lợi ích vượt trội:
 * **Tăng tốc độ phát triển giao diện:** Khác với các framework truyền thống phải viết các lớp CSS tùy chỉnh dài dòng, Tailwind cho phép áp dụng phong cách trực tiếp trên mã nguồn HTML/JSX. Sự kết hợp với **shadcn/ui** mang lại các khối thành phần được thiết kế sẵn cực đẹp và tối ưu khả năng tiếp cận (Accessibility), giúp tiết kiệm phần lớn thời gian xây dựng giao diện.
@@ -243,7 +243,7 @@ Toàn bộ logic xử lý phía server được tổ chức trong thư mục `ap
 
 Đây là API trung tâm của toàn hệ thống, thực hiện luồng xử lý 4 bước. **Hình 4.2** mô tả đầy đủ luồng điều khiển của API này:
 
-![Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade](Flowchart_Chuong4/chuong4_2_api_grade_flow.png)
+![Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade](flowcharts/chuong4_2_api_grade_flow.png)
 
 **Bước 1 — Tiền xử lý ảnh:** Nhận ảnh dạng Base64 từ client, gọi hàm `preprocessImage()` trong `lib/image-processor.ts` để thực thi toàn bộ pipeline 10 bước. Nếu `QualityReport` phát hiện ảnh kém chất lượng, API trả về cảnh báo ngay mà không gọi Gemini.
 
@@ -288,7 +288,7 @@ Hỗ trợ các thao tác CRUD cho Admin: tạo/sửa/vô hiệu hóa tài kho�
 
 **Hình 4.3** thể hiện toàn bộ sơ đồ điều hướng trang (Page Navigation Map) của cả 3 vai trò người dùng trong hệ thống.
 
-![Hình 4.3. Sơ đồ điều hướng giao diện người dùng theo 3 vai trò (Admin, Teacher, Student)](Flowchart_Chuong4/chuong4_3_ui_navigation.png)
+![Hình 4.3. Sơ đồ điều hướng giao diện người dùng theo 3 vai trò (Admin, Teacher, Student)](flowcharts/chuong4_3_ui_navigation.png)
 
 ### 4.4.1. Phân hệ Giáo viên (Teacher Interface)
 
@@ -328,7 +328,7 @@ Hiển thị thống kê tổng quan của lớp học qua các biểu đồ Rec
 
 **Hình 4.4** minh hoạ kiến trúc triển khai thực tế của hệ thống, bao gồm mạng LAN nội bộ trường học và kênh truy cập internet qua Cloudflare Tunnel.
 
-![Hình 4.4. Kiến trúc triển khai thực tế — Raspberry Pi 4 + Cloudflare Tunnel](Flowchart_Chuong4/chuong4_4_trien_khai.png)
+![Hình 4.4. Kiến trúc triển khai thực tế — Raspberry Pi 4 + Cloudflare Tunnel](flowcharts/chuong4_4_trien_khai.png)
 
 ### 4.5.1. Triển khai trên Raspberry Pi 4 (4GB RAM)
 

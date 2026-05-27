@@ -40,18 +40,9 @@ npm-debug.log*
 .idea/
 
 # Large PNG icons (served via API route)
-# Large PNG icons (served via API route)
 public/icon-192x192.png
 public/icon-512x512.png
 
-# Research/experiment image folders (binary files, not part of the app)
-benchmark_images/
-benchmark_images_errors/
-tien_xu_ly_anh/
-anhchuaxuly/
-anhdaxuly/
-system_pipeline.png
-Flowchart/
-Flowchart_Chuong4/
-BM18.-Bao-cao-tong-ket_dasua.docx
-
+# Research/experiment/deployment folders (binary files, not part of the Next.js app)
+02_Kich_ban_Thuc_nghiem/
+01_Bao_cao_Nghien_cuu/BM18.-Bao-cao-tong-ket_dasua.docx

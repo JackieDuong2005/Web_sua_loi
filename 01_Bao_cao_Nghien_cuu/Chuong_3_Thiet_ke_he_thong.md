@@ -8,7 +8,7 @@ Hệ thống **ViHand Grade** được thiết kế dựa trên kiến trúc Web
 
 Sơ đồ luồng hoạt động tổng thể của hệ thống được thể hiện chi tiết tại **Hình 3.1**.
 
-![Hình 3.1. Lưu đồ hoạt động tổng thể hệ thống ViHand Grade](Flowchart/flowchart_1_tong_quan.png)
+![Hình 3.1. Lưu đồ hoạt động tổng thể hệ thống ViHand Grade](flowcharts/flowchart_1_tong_quan.png)
 
 Quy trình xử lý dữ liệu tổng thể diễn ra qua các giai đoạn tuần tự sau:
 1. **Thu nhận dữ liệu (Input):** Người dùng (giáo viên hoặc học sinh) sử dụng điện thoại thông minh chụp ảnh trực tiếp bài viết tay chính tả trên giấy ô ly của học sinh tiểu học và tải lên giao diện Web.
@@ -25,7 +25,7 @@ Một trong những đóng góp khoa học cốt lõi của đề tài là việ
 
 Lưu đồ cấu trúc chi tiết của pipeline tiền xử lý ảnh được thể hiện tại **Hình 3.2**.
 
-![Hình 3.2. Lưu đồ Pipeline tiền xử lý ảnh 10 bước của hệ thống ViHand Grade](Flowchart/flowchart_2_tien_xu_ly.png)
+![Hình 3.2. Lưu đồ Pipeline tiền xử lý ảnh 10 bước của hệ thống ViHand Grade](flowcharts/flowchart_2_tien_xu_ly.png)
 
 ### 3.2.1. Chi tiết thuật toán từng bước trong pipeline
 
@@ -91,7 +91,7 @@ Quy trình chấm điểm AI của ViHand Grade tích hợp chặt chẽ công n
 
 Sơ đồ quy trình thực thi chấm điểm chi tiết được biểu diễn tại **Hình 3.3**.
 
-![Hình 3.3. Lưu đồ quy trình chấm điểm bằng AI đa phương thức (Gemini API)](Flowchart/flowchart_3_cham_diem_ai.png)
+![Hình 3.3. Lưu đồ quy trình chấm điểm bằng AI đa phương thức (Gemini API)](flowcharts/flowchart_3_cham_diem_ai.png)
 
 ### 3.3.1. Các thành phần chính của quy trình chấm điểm
 
@@ -194,7 +194,7 @@ Nhằm đảm bảo an toàn thông tin và tính cách ly dữ liệu trong mô
 
 Lưu đồ phân quyền và kiểm soát truy cập của hệ thống được thể hiện tại **Hình 3.4**.
 
-![Hình 3.4. Lưu đồ Phân quyền và Kiểm soát truy cập (RBAC)](Flowchart/flowchart_4_phan_quyen.png)
+![Hình 3.4. Lưu đồ Phân quyền và Kiểm soát truy cập (RBAC)](flowcharts/flowchart_4_phan_quyen.png)
 
 ### 3.4.1. Cơ chế quản lý và phân quyền dữ liệu
 
