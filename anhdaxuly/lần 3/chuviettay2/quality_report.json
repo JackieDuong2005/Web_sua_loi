@@ -1,0 +1,31 @@
+{
+  "fileName": "chuviettay2",
+  "config": {
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "enableShadowRemoval": true,
+    "shadowKernelSize": 51,
+    "enableGridRemoval": true,
+    "gridLineMinLength": 80,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.5,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 31,
+    "adaptiveC": 15
+  },
+  "quality": {
+    "is_good": false,
+    "warnings": [
+      "Ảnh cháy sáng"
+    ],
+    "blur_score": 6824.32,
+    "brightness": 227.79,
+    "resolution": 392,
+    "dark_pixel_ratio": 0.0713,
+    "text_area_ratio": 0.124
+  },
+  "elapsed_ms": 2810
+}

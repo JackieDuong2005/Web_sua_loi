@@ -1,0 +1,31 @@
+{
+  "fileName": "CamScanner 06-12-2025 10.00_51 (1)",
+  "config": {
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "enableShadowRemoval": true,
+    "shadowKernelSize": 51,
+    "enableGridRemoval": true,
+    "gridLineMinLength": 80,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.5,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 31,
+    "adaptiveC": 20
+  },
+  "quality": {
+    "is_good": false,
+    "warnings": [
+      "Ảnh cháy sáng"
+    ],
+    "blur_score": 5702.62,
+    "brightness": 231.99,
+    "resolution": 1532,
+    "dark_pixel_ratio": 0.082,
+    "text_area_ratio": 0.0929
+  },
+  "elapsed_ms": 17101
+}
