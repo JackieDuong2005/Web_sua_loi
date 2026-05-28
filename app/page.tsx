@@ -150,6 +150,26 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+      {/* Hidden Admin Register Trigger - góc dưới phải */}
+      <Link
+        href="/admin-register"
+        className="fixed bottom-4 right-4 select-none no-underline z-50"
+        style={{
+          color: 'inherit',
+          opacity: 0.05,
+          transition: 'opacity 0.3s ease',
+          fontSize: '11px',
+          lineHeight: 1,
+          padding: '6px',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.3'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.05'; }}
+        title=""
+        tabIndex={-1}
+        aria-hidden="true"
+      >
+        A
+      </Link>
     </main>
   )
 }
