@@ -156,14 +156,19 @@ log "Đang cài npm dependencies (3-5 phút)..."
 sudo -u "$APP_USER" npm install --production=false
 log "Dependencies đã cài"
 
-# ── Database ───────────────────────────────────────────────────────────
-sudo -u "$APP_USER" npx prisma generate
-sudo -u "$APP_USER" npx prisma db push
+# ── Database (phải truyền DATABASE_URL tường minh vào sudo) ──────────
+DB_URL="file:${APP_DIR}/prisma/vihand.db"
+log "Đang khởi tạo database SQLite..."
+sudo -u "$APP_USER" env DATABASE_URL="$DB_URL" GEMINI_API_KEY="$GEMINI_API_KEY" \
+  npx prisma generate
+sudo -u "$APP_USER" env DATABASE_URL="$DB_URL" GEMINI_API_KEY="$GEMINI_API_KEY" \
+  npx prisma db push --accept-data-loss
 log "Database SQLite đã sẵn sàng"
 
 # ── Build ──────────────────────────────────────────────────────────────
 log "Đang build Next.js production (5-10 phút)..."
-sudo -u "$APP_USER" npm run build
+sudo -u "$APP_USER" env DATABASE_URL="$DB_URL" GEMINI_API_KEY="$GEMINI_API_KEY" \
+  NODE_ENV=production npm run build
 log "Build hoàn tất!"
 
 # ═══════════════════════════════════════════════════════════════════════
