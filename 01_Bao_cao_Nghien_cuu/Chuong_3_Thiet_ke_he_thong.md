@@ -8,26 +8,7 @@ Hệ thống **ViHand Grade** được thiết kế dựa trên kiến trúc Web
 
 Sơ đồ luồng hoạt động tổng thể của hệ thống được thể hiện chi tiết tại **Hình 3.1**.
 
-```mermaid
-graph TD
-    Start([Bắt đầu]) --> Input[Học sinh/Giáo viên chụp ảnh bài viết tập ô ly]
-    Input --> Preprocess[Tiền xử lý ảnh cục bộ bằng Jimp - 10 bước]
-    Preprocess --> CheckQuality{Đạt chất lượng?}
-    CheckQuality -- Không --> Alert[Cảnh báo ảnh mờ/tối/nét nhạt]
-    Alert --> Input
-    CheckQuality -- Có --> Encode[Mã hóa ảnh Base64 JPEG]
-    Encode --> API[API Route Next.js: Xoay vòng 4 API Keys Gemini]
-    API --> Gemini[Google Gemini 3.0 Flash Preview]
-    Gemini --> Parser[Nhận phản hồi JSON - Phân tích điểm số & lỗi sai]
-    Parser --> Review{Giáo viên phê duyệt?}
-    Review -- Thay đổi --> Edit[Giáo viên chỉnh sửa điểm/nhận xét]
-    Edit --> Save[Lưu vào CSDL SQLite qua Prisma ORM]
-    Review -- Đồng ý --> Save
-    Save --> Display[Hiển thị Giao diện Giáo viên & Học sinh PWA]
-    Display --> End([Kết thúc])
-```
-
-*Hình 3.1. Lưu đồ hoạt động tổng thể hệ thống ViHand Grade*
+![Hình 3.1. Lưu đồ hoạt động tổng thể hệ thống ViHand Grade](flowchartv2/flowchart_1_tong_quan.png)
 
 Quy trình xử lý dữ liệu tổng thể diễn ra qua các giai đoạn tuần tự sau:
 1. **Thu nhận dữ liệu (Input):** Người dùng (giáo viên hoặc học sinh) sử dụng điện thoại thông minh chụp ảnh trực tiếp bài viết tay chính tả trên giấy ô ly của học sinh tiểu học và tải lên giao diện Web.
@@ -44,22 +25,7 @@ Một trong những đóng góp khoa học cốt lõi của đề tài là việ
 
 Lưu đồ cấu trúc chi tiết của pipeline tiền xử lý ảnh được thể hiện tại **Hình 3.2**.
 
-```mermaid
-graph TD
-    Start([Ảnh thô đầu vào]) --> Step1[1. EXIF Auto-rotate: Xoay đúng hướng ảnh]
-    Step1 --> Step2[2. Resize: Thu nhỏ chiều rộng tối đa 1600px]
-    Step2 --> Step3[3. White Balance: Cân bằng trắng Gray World]
-    Step3 --> Step4[4. Grayscale: Chuyển ảnh xám 1-kênh]
-    Step4 --> Step5[5. Shadow Removal: Khử bóng che bằng Box Blur 51x51]
-    Step5 --> Step6[6. Grid Line Removal: Xóa dòng kẻ ô ly bằng Run-Length]
-    Step6 --> Step7[7. CLAHE: Tăng tương phản cục bộ giới hạn clipLimit 2.0]
-    Step7 --> Step8[8. Sharpen: Làm sắc nét bằng mặt nạ mờ Unsharp Mask]
-    Step8 --> Step9[9. Quality Assessment: Đánh giá mờ/độ sáng/nét nhạt]
-    Step9 --> Step10[10. Adaptive Threshold: Nhị phân hóa thích nghi C=5]
-    Step10 --> End([Ảnh nhị phân đầu ra sạch lưới])
-```
-
-*Hình 3.2. Lưu đồ Pipeline tiền xử lý ảnh 10 bước của hệ thống ViHand Grade*
+![Hình 3.2. Lưu đồ Pipeline tiền xử lý ảnh 10 bước của hệ thống ViHand Grade](flowchartv2/flowchart_2_tien_xu_ly.png)
 
 ### 3.2.1. Chi tiết thuật toán từng bước trong pipeline
 
@@ -125,28 +91,7 @@ Quy trình chấm điểm AI của ViHand Grade tích hợp chặt chẽ công n
 
 Sơ đồ quy trình thực thi chấm điểm chi tiết được biểu diễn tại **Hình 3.3**.
 
-```mermaid
-graph TD
-    Start([Yêu cầu chấm điểm]) --> Step1[Bước 1: Tiền xử lý ảnh 10 bước bằng Jimp]
-    Step1 --> Step2[Bước 2: Mã hóa Base64 và gán MIME type image/jpeg]
-    Step2 --> Step3[Bước 3: Xây dựng Prompt: Barem điểm + JSON Schema]
-    Step3 --> Step4[Bước 4: Trộn ngẫu nhiên mảng GEMINI_API_KEYS]
-    Step4 --> Step5[Bước 5: Chọn API Key từ bể xoay vòng]
-    Step5 --> Step6[Bước 6: Gửi HTTP POST tới Gemini API]
-    Step6 --> CheckRes{Trạng thái HTTP?}
-    CheckRes -- "503 / 429 (Lỗi nghẽn)" --> Delay[Đợi 1500ms & Thử lại lần 2]
-    Delay --> CheckRes2{Attempt 2 Thành công?}
-    CheckRes2 -- Không --> CheckNext{Còn Key trong bể?}
-    CheckNext -- Còn --> Step5
-    CheckNext -- Hết --> ErrorAll[Lỗi: Tất cả API key đều bận]
-    CheckRes2 -- Có --> Step7[Bước 7: Nhận phản hồi & Làm sạch Markdown JSON]
-    CheckRes -- "200 OK" --> Step7
-    CheckRes -- "Khác (400...)" --> CheckNext
-    Step7 --> Step8[Bước 8: Khớp cấu hình, chỉnh sửa & Lưu SQLite]
-    Step8 --> End([Chấm điểm thành công])
-```
-
-*Hình 3.3. Lưu đồ quy trình chấm điểm bằng AI đa phương thức (Gemini API)*
+![Hình 3.3. Lưu đồ quy trình chấm điểm bằng AI đa phương thức (Gemini API)](flowchartv2/flowchart_3_cham_diem_ai.png)
 
 ### 3.3.1. Các thành phần chính của quy trình chấm điểm
 
@@ -258,23 +203,7 @@ Nhằm đảm bảo an toàn thông tin và tính cách ly dữ liệu trong mô
 
 Lưu đồ phân quyền và kiểm soát truy cập của hệ thống được thể hiện tại **Hình 3.4**.
 
-```mermaid
-graph TD
-    User([Đăng nhập người dùng]) --> Auth{Next.js Middleware Auth}
-    Auth -- "Role: Admin" --> AdminUI[Truy cập Giao diện Quản trị viên]
-    Auth -- "Role: Teacher" --> TeacherUI[Truy cập Giao diện Giáo viên]
-    Auth -- "Role: Student" --> StudentUI[Truy cập Giao diện Học sinh]
-    
-    AdminUI --> AdminActions[Quản lý tài khoản, Tạo lớp học, Phân công giáo viên, Giám sát hệ thống]
-    TeacherUI --> TeacherActions[Chấm bài bằng AI, Chỉnh sửa điểm/nhận xét, Xem báo cáo thống kê lớp chủ nhiệm]
-    StudentUI --> StudentActions[Xem lịch sử điểm cá nhân, Phân tích lỗi chính tả của riêng mình]
-    
-    AdminActions --> DB[(SQLite Database)]
-    TeacherActions --> DB
-    StudentActions -- "Chỉ đọc (Read-only)" --> DB
-```
-
-*Hình 3.4. Lưu đồ Phân quyền và Kiểm soát truy cập (RBAC)*
+![Hình 3.4. Lưu đồ Phân quyền và Kiểm soát truy cập (RBAC)](flowchartv2/flowchart_4_phan_quyen.png)
 
 ### 3.4.1. Cơ chế quản lý và phân quyền dữ liệu
 

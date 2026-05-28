@@ -19,19 +19,7 @@ Hệ thống được thiết kế để hỗ trợ trực tiếp cho giáo viê
 ### 4.1.2. Quy trình phát triển hệ thống
 Quy trình phát triển và hoàn thiện hệ thống **ViHand Grade** được thực hiện qua chu trình 9 giai đoạn chặt chẽ, từ khâu thu thập dữ liệu thực tế cho đến khâu triển khai phần cứng nhúng và giám sát thực nghiệm. **Hình 4.5** biểu diễn toàn bộ vòng đời phát triển dự án:
 
-```mermaid
-graph TD
-    Step1[1. Thu thập dữ liệu: Ảnh học sinh thực tế] --> Step2[2. Khám phá dữ liệu: Loại nét viết, lỗi phổ biến]
-    Step2 --> Step3[3. Tiền xử lý ảnh: Xây dựng bộ lọc Jimp 10 bước]
-    Step3 --> Step4[4. Xây dựng Prompt & Schema định nghĩa barem]
-    Step4 --> Step5[5. Huấn luyện & Thử nghiệm trên 27 mẫu]
-    Step5 --> Step6[6. Tinh chỉnh siêu tham số nhị phân & câu chữ Prompt]
-    Step6 --> Step7[7. Kiểm thử liên kết End-to-End hệ thống]
-    Step7 --> Step8[8. Triển khai Raspberry Pi 4 + Cloudflare Tunnel]
-    Step8 --> Step9[9. Theo dõi, duy trì & xoay vòng API Keys]
-```
-
-*Hình 4.5. Sơ đồ quy trình phát triển hệ thống ViHand Grade*
+![Hình 4.5. Sơ đồ quy trình phát triển hệ thống ViHand Grade](flowchartv2/chuong4_5_quy_trinh_phat_trien.png)
 
 * **Thu thập dữ liệu:** Thu thập ảnh chụp bài viết chính tả tiếng Việt trên giấy ô ly từ học sinh tiểu học thực tế (các khối lớp, các kiểu chữ viết tay bằng bút chì, bút mực, có lỗi chính tả thật). Các dữ liệu ảnh này được thu thập trực tiếp từ các trường tiểu học liên kết hoặc do chính giáo viên chụp lại trong quá trình giảng dạy nhằm đảm bảo tính đa dạng về chất lượng ánh sáng, độ nghiêng nét viết, và các kiểu chữ viết tay thực tế.
 * **Khám phá dữ liệu:** Xem xét các thuộc tính và đặc trưng của dữ liệu chữ viết tay tiểu học, bao gồm số lượng mẫu ảnh, loại bút viết (bút chì, bút mực), phân phối các nhóm lỗi chính tả phổ biến (`phu_am_dau`, `van`, `dau_thanh`, `viet_hoa`, `bo_sot_them`), và phân tích đặc tính cấu trúc của dòng kẻ ô ly (màu sắc dòng kẻ xanh/đỏ, độ mỏng dòng kẻ) để làm cơ sở thiết kế thuật toán lọc và cấu trúc barem điểm chuẩn xác.
@@ -119,50 +107,7 @@ Web_sua_loi/
 
 **Hình 4.1** mô tả sơ đồ quan hệ thực thể (ER Diagram) giữa ba Model dữ liệu cốt lõi của hệ thống.
 
-```mermaid
-erDiagram
-    User {
-        String id PK
-        String name
-        String username UK
-        String password
-        String role
-        String className
-        Boolean active
-        DateTime createdAt
-    }
-    Class {
-        String id PK
-        String name UK
-        Int grade
-        String teacherId FK
-        DateTime createdAt
-    }
-    Grade {
-        String id PK
-        String studentName
-        String assignmentTitle
-        String className
-        String originalText
-        String fixedText
-        String corrections
-        String score
-        Float scoreNum
-        String scoreBreakdown
-        String feedback
-        String overallRating
-        Int processingTimeMs
-        Int tokenCount
-        String imageBase64
-        DateTime createdAt
-    }
-    
-    User ||--o| Class : "chủ nhiệm (teacherId -> User.id)"
-    Class ||--o{ User : "chứa (User.className -> Class.name)"
-    Class ||--o{ Grade : "thống kê (Grade.className -> Class.name)"
-```
-
-*Hình 4.1. Sơ đồ CSDL (Entity-Relationship Diagram) — 3 Model: User, Class, Grade*
+![Hình 4.1. Sơ đồ CSDL (Entity-Relationship Diagram) — 3 Model: User, Class, Grade](flowchartv2/chuong4_1_so_do_csdl.png)
 
 ### 4.2.1. Database của hệ thống
 Hệ thống **ViHand Grade** lựa chọn hệ quản trị cơ sở dữ liệu **SQLite** kết hợp cùng thư viện **better-sqlite3** làm công cụ lưu trữ dữ liệu chính thức. Lựa chọn này xuất phát từ các yêu cầu đặc thù của kiến trúc phần cứng nhúng Raspberry Pi 4 cũng như bài toán vận hành độc lập tại các trường tiểu học:
@@ -271,25 +216,7 @@ Bảng 4.4 chi tiết hóa cấu trúc trường dữ liệu của Model `Grade`
 
 (Nguồn: (Tailwind CSS Docs, 2026))
 
-```mermaid
-graph TD
-    Login[Trang đăng nhập] --> Auth{Next.js Middleware}
-    
-    Auth -- "Admin" --> AdminHome[/admin - Thống kê trường/]
-    AdminHome --> AdminUsers[/admin/users - QL Tài khoản/]
-    AdminHome --> AdminClasses[/admin/classes - QL Lớp học/]
-    AdminHome --> AdminStats[/admin/statistics - Thống kê/]
-    AdminHome --> AdminSys[/admin/system - Giám sát RPi/]
-    
-    Auth -- "Teacher" --> TeacherHome[/teacher - Dashboard chấm bài/]
-    TeacherHome --> TeacherGrade[/teacher/grade - Chấm bài chi tiết/]
-    TeacherHome --> TeacherReports[/teacher/reports - Thống kê lớp/]
-    
-    Auth -- "Student" --> StudentHome[/student - Tổng quan học tập/]
-    StudentHome --> StudentHistory[/student/history - Lịch sử bài chấm/]
-```
-
-*Hình 4.3. Bản đồ điều hướng giao diện cho 3 vai trò người dùng (Teacher, Student, Admin)*
+![Hình 4.3. Bản đồ điều hướng giao diện cho 3 vai trò người dùng (Teacher, Student, Admin)](flowchartv2/chuong4_3_ui_navigation.png)
 
 Cụ thể, việc lựa chọn Tailwind CSS kết hợp cùng bộ thư viện component **shadcn/ui** và **Radix UI** mang lại những lợi ích vượt trội:
 * **Tăng tốc độ phát triển giao diện:** Khác với các framework truyền thống phải viết các lớp CSS tùy chỉnh dài dòng, Tailwind cho phép áp dụng phong cách trực tiếp trên mã nguồn HTML/JSX. Sự kết hợp với **shadcn/ui** mang lại các khối thành phần được thiết kế sẵn cực đẹp và tối ưu khả năng tiếp cận (Accessibility), giúp tiết kiệm phần lớn thời gian xây dựng giao diện.
@@ -328,30 +255,9 @@ Toàn bộ logic xử lý phía server được tổ chức trong thư mục `ap
 
 ### 4.3.2. API Chấm điểm AI — `/api/grade` (POST)
 
-```mermaid
-graph TD
-    Start([Client gửi request]) --> CheckMode{Chế độ nhập liệu?}
-    CheckMode -- "Tải ảnh / Chụp ảnh" --> Preprocess[Chạy bộ xử lý Jimp cục bộ]
-    Preprocess --> Quality{QualityReport Đạt?}
-    Quality -- Không --> Warning[Trả về cảnh báo chất lượng ảnh]
-    Warning --> End([Trả lỗi về Client])
-    Quality -- Có --> PayloadImg[Xây dựng Payload: Base64 + Prompt]
-    CheckMode -- "Nhập văn bản trực tiếp" --> PayloadTxt[Xây dựng Payload: Text + Prompt]
-    
-    PayloadImg --> CallRot[Gọi callGeminiWithKeyRotation]
-    PayloadTxt --> CallRot
-    
-    CallRot --> GeminiCall[Gửi yêu cầu tới Gemini API]
-    GeminiCall --> Success{Thành công?}
-    Success -- Có --> Clean[Làm sạch Markdown, JSON.parse]
-    Success -- Không (Thử hết các keys) --> ErrMsg[Trả về lỗi: Tất cả keys bận]
-    ErrMsg --> End
-    
-    Clean --> ResOk[Trả kết quả JSON có cấu trúc sư phạm]
-    ResOk --> End
-```
+Đây là API trung tâm của toàn hệ thống, thực hiện luồng xử lý 4 bước. **Hình 4.2** mô tả đầy đủ luồng điều khiển của API này:
 
-*Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade*
+![Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade](flowchartv2/chuong4_2_api_grade_flow.png)
 
 **Bước 1 — Tiền xử lý ảnh:** Nhận ảnh dạng Base64 từ client, gọi hàm `preprocessImage()` trong `lib/image-processor.ts` để thực thi toàn bộ pipeline 10 bước. Nếu `QualityReport` phát hiện ảnh kém chất lượng, API trả về cảnh báo ngay mà không gọi Gemini.
 
@@ -467,48 +373,9 @@ Hiển thị thống kê tổng quan của lớp học qua các biểu đồ Rec
 
 ## 4.5. TRIỂN KHAI HỆ THỐNG
 
-```mermaid
-graph TD
-    subgraph Client ["Thiết bị Người dùng"]
-        TeacherDev[Laptop/Điện thoại Giáo viên]
-        StudentDev[Điện thoại Học sinh/Phụ huynh]
-    end
+**Hình 4.4** minh hoạ kiến trúc triển khai thực tế của hệ thống, bao gồm mạng LAN nội bộ trường học và kênh truy cập internet qua Cloudflare Tunnel.
 
-    subgraph Network ["Tầng Truyền tải"]
-        LAN[Mạng WiFi Nội bộ Trường học]
-        WAN[Internet Công cộng]
-        CF[Cloudflare Edge Servers - Tunnel Edge]
-    end
-
-    subgraph RPi ["Raspberry Pi 4 - Edge Server"]
-        CFTunnel[Cloudflared Client Daemon]
-        NextServer[Next.js App Server - Port 3000]
-        Prisma[Prisma Engine]
-        DB[(SQLite - vihand.db)]
-        Jimp[Bộ Tiền xử lý Ảnh Jimp]
-    end
-
-    subgraph Cloud ["Google AI Studio"]
-        Gemini[Gemini 3.0 Flash Preview API Pool]
-    end
-
-    %% Kết nối
-    TeacherDev -- "HTTP (192.168.195.x:3000)" --> LAN
-    LAN --> NextServer
-    
-    StudentDev -- "HTTPS (vihandgrade.click)" --> WAN
-    WAN --> CF
-    CF --> CFTunnel
-    CFTunnel --> NextServer
-    
-    NextServer --> Jimp
-    NextServer --> Prisma
-    Prisma --> DB
-    
-    NextServer -- "HTTPS API Request with Rotation" --> Gemini
-```
-
-*Hình 4.4. Kiến trúc triển khai thực tế — Raspberry Pi 4 + Cloudflare Tunnel*
+![Hình 4.4. Kiến trúc triển khai thực tế — Raspberry Pi 4 + Cloudflare Tunnel](flowchartv2/chuong4_4_trien_khai.png)
 
 ### 4.5.1. Triển khai trên Raspberry Pi 4 (4GB RAM)
 
