@@ -237,9 +237,23 @@ Mặc dù SQLite không hỗ trợ khóa ngoại cứng (foreign key constraint)
 
 ## 4.3. XÂY DỰNG LỚP BACKEND — REST API ROUTES
 
+### 4.3.1. Lựa chọn giải pháp Backend: Next.js App Router API Routes
+
+Next.js App Router (kết hợp Node.js runtime và Prisma ORM) là một trong những framework phát triển web hiện đại được sử dụng rộng rãi và có nhiều lợi ích vượt trội. Trong ứng dụng này, Next.js API Routes đóng vai trò quan trọng, chủ chốt xuyên suốt quá trình xây dựng và phát triển ứng dụng, bởi đây là một giải pháp phát triển web full-stack toàn diện được sử dụng rộng rãi, mang lại khả năng xử lý nhanh chóng, an toàn và hiệu quả cao.
+
+(Nguồn: (Vercel, 2026))
+
+Dưới đây là một số lý do nhóm nghiên cứu quyết định áp dụng Next.js API Routes vào tầng xử lý backend của ứng dụng:
+
+* **Kiến trúc Full-stack đồng bộ và dễ tiếp cận:** Thay vì phải duy trì hai dự án độc lập (như Frontend chạy React độc lập kết nối đến Backend chạy Python/Flask riêng biệt), Next.js cho phép gộp cả giao diện người dùng và các API xử lý logic server vào trong một mã nguồn duy nhất. Nhờ đó, các nhà phát triển có thể dễ dàng tiếp cận, lập trình nhất quán bằng ngôn ngữ TypeScript từ client đến server mà không cần cấu hình phức tạp về phân giải CORS.
+* **Hiệu năng cao và khả năng tùy chỉnh linh hoạt:** Next.js App Router sử dụng cơ chế xử lý bất đồng bộ mạnh mẽ trên nền tảng Node.js V8 Engine, không áp đặt cấu hình cứng nhắc mà cho phép tùy biến linh hoạt cấu trúc phản hồi. Các hàm xử lý API được thiết kế dạng Route Handlers, giúp nhà phát triển dễ dàng cấu hình phương thức truy cập (GET, POST, PUT, DELETE) trực quan, tự do tối ưu hóa luồng dữ liệu theo đặc thù của dự án.
+* **Tích hợp sâu và mạnh mẽ với các công cụ ORM hiện đại:** Next.js API Routes tích hợp hoàn hảo với Prisma ORM và SQLite Database. Sự kết hợp này mang lại khả năng truy vấn hướng đối tượng an toàn kiểu dữ liệu (Type-safe queries), loại bỏ hoàn toàn các lỗi cú pháp SQL thủ công và hỗ trợ quản trị cơ sở dữ liệu gọn nhẹ, an toàn cao – vô cùng lý tưởng để chạy mượt mà trên phần cứng Raspberry Pi 4 vốn giới hạn về dung lượng RAM.
+* **Khả năng mở rộng vượt trội và tối ưu hóa tài nguyên phần cứng:** Next.js đáp ứng xuất sắc cho cả các ứng dụng quy mô nội bộ nhỏ (chạy cục bộ trong mạng trường học) lẫn các hệ thống lớn chịu tải cao phục vụ hàng ngàn học sinh khi triển khai đám mây. Khả năng tự động tối ưu hóa gói bundle đầu ra giúp giảm thiểu tối đa tài nguyên bộ nhớ tiêu hao khi hoạt động ngầm.
+* **Cung cấp công cụ phát triển nhanh chóng và an toàn runtime:** Với các tính năng như Hot Reloading trong môi trường dev, cơ chế Middleware bảo vệ API chặn truy cập trái phép từ bên ngoài, và khả năng cấu hình biến môi trường an toàn cao thông qua tệp `.env.local`, Next.js giúp nhóm nghiên cứu tiết kiệm đáng kể thời gian phát triển, tăng cường độ bảo mật cho bể khóa API Gemini và đảm bảo ứng dụng vận hành ổn định 24/7.
+
 Toàn bộ logic xử lý phía server được tổ chức trong thư mục `app/api/`. Next.js App Router ánh xạ mỗi thư mục con thành một REST endpoint riêng biệt.
 
-### 4.3.1. API Chấm điểm AI — `/api/grade` (POST)
+### 4.3.2. API Chấm điểm AI — `/api/grade` (POST)
 
 Đây là API trung tâm của toàn hệ thống, thực hiện luồng xử lý 4 bước. **Hình 4.2** mô tả đầy đủ luồng điều khiển của API này:
 
@@ -302,17 +316,17 @@ async function callGeminiWithKeyRotation(
 **Bước 4 — Parse JSON và Trả kết quả:** API trích xuất nội dung từ phản hồi của Gemini, tiến hành loại bỏ các cú pháp bao bọc Markdown JSON (nếu có), phân tích cú pháp chuỗi JSON sang đối tượng có cấu trúc và trả về phía client kèm theo thời gian xử lý và thông tin báo cáo chất lượng ảnh `QualityReport`.
 
 
-### 4.3.2. API Lưu kết quả — `/api/grades` (GET/POST)
+### 4.3.3. API Lưu kết quả — `/api/grades` (GET/POST)
 
 | Method | Chức năng | Tham số |
 |---|---|---|
 | `POST` | Lưu bản ghi chấm điểm mới vào SQLite | Body: đối tượng `Grade` đầy đủ |
 | `GET` | Lấy danh sách điểm | Query: `?className=`, `?studentName=`, `?limit=` |
 
-### 4.3.3. API Xác thực — `/api/auth` (POST)
+### 4.3.4. API Xác thực — `/api/auth` (POST)
 Thực hiện kiểm tra đăng nhập: so sánh `username` + `password` với bảng `User`. Trả về thông tin người dùng (không bao gồm `password`) kèm `role` để client điều hướng đến giao diện phù hợp.
 
-### 4.3.4. Các API quản trị — `/api/users`, `/api/classes`
+### 4.3.5. Các API quản trị — `/api/users`, `/api/classes`
 Hỗ trợ các thao tác CRUD cho Admin: tạo/sửa/vô hiệu hóa tài khoản người dùng và quản lý phân công lớp học.
 
 ---
