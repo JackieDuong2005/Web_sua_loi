@@ -1,8 +1,66 @@
 import { NextRequest, NextResponse } from "next/server"
 
-// Model đang dùng (gemini-3-flash-preview)
-const GEMINI_MODEL = "gemini-3-flash-preview"
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+// Danh sách model ưu tiên — fallback tự động nếu model đầu bị lỗi
+const GEMINI_MODELS = [
+  "gemini-2.5-flash-preview-05-20",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+]
+
+// Gọi Gemini API với retry tự động (3 lần, exponential backoff)
+async function callGeminiWithRetry(
+  apiKey: string,
+  body: object,
+  maxRetries = 3
+): Promise<{ data: any; modelUsed: string }> {
+  let lastError: any = null
+
+  for (const model of GEMINI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+
+        // 503/429: server quá tải → retry sau delay
+        if (res.status === 503 || res.status === 429) {
+          const delay = Math.pow(2, attempt) * 1000 // 2s, 4s, 8s
+          console.warn(`[Gemini] ${model} trả ${res.status}, thử lại sau ${delay}ms (lần ${attempt}/${maxRetries})`)
+          if (attempt < maxRetries) {
+            await new Promise(r => setTimeout(r, delay))
+            continue
+          }
+          lastError = { status: res.status, text: await res.text() }
+          break // thử model tiếp theo
+        }
+
+        // Lỗi khác (400, 404...) → thử model tiếp theo ngay
+        if (!res.ok) {
+          lastError = { status: res.status, text: await res.text() }
+          console.warn(`[Gemini] ${model} lỗi ${res.status}: ${lastError.text}`)
+          break
+        }
+
+        const data = await res.json()
+        return { data, modelUsed: model }
+
+      } catch (err) {
+        lastError = err
+        console.warn(`[Gemini] ${model} network error (lần ${attempt}):`, err)
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000))
+        }
+      }
+    }
+  }
+
+  // Tất cả models đều thất bại
+  throw lastError
+}
 
 const GRADING_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên chấm bài chính tả. Phân tích đoạn văn của học sinh được cung cấp, sửa lỗi chính tả và chấm điểm theo barem chuẩn. Trả về duy nhất định dạng JSON.
 
@@ -127,32 +185,37 @@ export async function POST(req: NextRequest) {
 
     const startTime = Date.now()
 
-    const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          temperature: 0.1,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 8192,
-        },
-      }),
-    })
+    const geminiBody = {
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        temperature: 0.1,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+      },
+    }
 
-    const processingTimeMs = Date.now() - startTime
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text()
-      console.error("Gemini API error:", errText)
+    let geminiData: any
+    let modelUsed: string
+    try {
+      const result = await callGeminiWithRetry(apiKey, geminiBody)
+      geminiData = result.data
+      modelUsed = result.modelUsed
+    } catch (retryErr: any) {
+      const status = retryErr?.status || 503
+      if (status === 503 || status === 429) {
+        return NextResponse.json(
+          { error: "AI đang bận, vui lòng thử lại sau vài giây." },
+          { status: 503 }
+        )
+      }
       return NextResponse.json(
-        { error: `Lỗi Gemini API: ${geminiRes.status} - ${errText}` },
-        { status: geminiRes.status }
+        { error: `Lỗi kết nối AI: ${retryErr?.message || status}` },
+        { status: 500 }
       )
     }
 
-    const geminiData = await geminiRes.json()
+    const processingTimeMs = Date.now() - startTime
 
     const candidate = geminiData.candidates?.[0]
     const tokenCount =
@@ -183,6 +246,7 @@ export async function POST(req: NextRequest) {
       ...parsed,
       processingTimeMs,
       tokenCount,
+      modelUsed,
     })
   } catch (err: any) {
     console.error("Grade API error:", err)
