@@ -247,27 +247,60 @@ Toàn bộ logic xử lý phía server được tổ chức trong thư mục `ap
 
 **Bước 1 — Tiền xử lý ảnh:** Nhận ảnh dạng Base64 từ client, gọi hàm `preprocessImage()` trong `lib/image-processor.ts` để thực thi toàn bộ pipeline 10 bước. Nếu `QualityReport` phát hiện ảnh kém chất lượng, API trả về cảnh báo ngay mà không gọi Gemini.
 
-**Bước 2 — Xây dựng Payload Gemini:** Kết hợp `GRADING_PROMPT` (barem điểm sư phạm 4 tiêu chí) với ảnh đã xử lý dạng Base64 JPEG thành một `generationConfig`:
+**Bước 2 — Xây dựng Payload Gemini:** Kết hợp `GRADING_PROMPT` (barem điểm sư phạm 4 tiêu chí) với ảnh đã xử lý dạng Base64 JPEG hoặc văn bản nhập trực tiếp thành một `generationConfig` gửi đi.
+
+**Bước 3 — Triển khai thuật toán Xoay vòng khóa (API Key Rotation) và Khả năng chịu lỗi:**
+Thay vì chỉ gọi đơn lẻ một API Key (dễ gặp lỗi 503 do cạn kiệt tài nguyên), backend triển khai thuật toán quay vòng thông minh thông qua hai hàm cốt lõi:
+* `getApiKeys()`: Tự động trích xuất chuỗi cấu hình `GEMINI_API_KEYS` từ file `.env.local`, tách chuỗi theo dấu phẩy thành một mảng các khóa hợp lệ.
+* `callGeminiWithKeyRotation(keys, body)`: Nhận mảng khóa, trộn ngẫu nhiên thứ tự các khóa để cân bằng tải trọng (Load Balancing). Với mỗi khóa, tiến hành gửi yêu cầu. Nếu gặp lỗi trạng thái `503` hoặc `429` (server bận/vượt quota), hệ thống tự động tạm ngưng `1500ms` và thực hiện retry lần 2 với cùng khóa đó. Nếu vẫn tiếp tục bận, hệ thống tự động nhảy sang khóa tiếp theo trong mảng cho đến khi thành công.
+
+Cấu trúc hiện thực mã nguồn của cơ chế xoay vòng khóa API trong file `app/api/grade/route.ts`:
 ```typescript
-const payload = {
-  contents: [{
-    parts: [
-      { text: GRADING_PROMPT + contextText },
-      { inline_data: { mime_type: "image/jpeg", data: processedBase64 } }
-    ]
-  }],
-  generationConfig: {
-    temperature: 0.1,
-    topP: 0.95,
-    topK: 40,
-    maxOutputTokens: 8192,
+// Gọi Gemini với cơ chế xoay vòng và tự động chuyển đổi khóa API khi bận (503/429)
+async function callGeminiWithKeyRotation(
+  keys: string[],
+  body: object
+): Promise<{ data: any; keyIndex: number }> {
+  if (keys.length === 0) throw new Error("Không có API key nào được cấu hình")
+  
+  // Trộn ngẫu nhiên danh sách khóa để cân bằng tải
+  const shuffled = [...keys].sort(() => Math.random() - 0.5)
+
+  for (let i = 0; i < shuffled.length; i++) {
+    const key = shuffled[i]
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+
+        if (res.status === 503 || res.status === 429) {
+          if (attempt === 1) {
+            await new Promise(r => setTimeout(r, 1500))
+            continue // Thử lại lần 2 với cùng khóa
+          }
+          break // Chuyển sang khóa tiếp theo
+        }
+
+        if (!res.ok) break // Lỗi cú pháp/tham số → chuyển khóa khác ngay
+
+        const data = await res.json()
+        return { data, keyIndex: i + 1 }
+      } catch (err) {
+        if (attempt === 1) await new Promise(r => setTimeout(r, 1000))
+      }
+    }
   }
+  throw new Error("Tất cả API key đều bận. Vui lòng thử lại sau.")
 }
 ```
 
-**Bước 3 — Gọi Gemini API và Parse JSON:** Gửi HTTP POST đến endpoint `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`. Phản hồi được trích xuất, kiểm tra và parse từ JSON thô sang đối tượng TypeScript có cấu trúc.
+**Bước 4 — Parse JSON và Trả kết quả:** API trích xuất nội dung từ phản hồi của Gemini, tiến hành loại bỏ các cú pháp bao bọc Markdown JSON (nếu có), phân tích cú pháp chuỗi JSON sang đối tượng có cấu trúc và trả về phía client kèm theo thời gian xử lý và thông tin báo cáo chất lượng ảnh `QualityReport`.
 
-**Bước 4 — Trả kết quả:** API trả về JSON đầy đủ gồm điểm số 4 tiêu chí, danh sách lỗi chính tả chi tiết, văn bản gốc/đã sửa, nhận xét sư phạm và `QualityReport`.
 
 ### 4.3.2. API Lưu kết quả — `/api/grades` (GET/POST)
 
@@ -332,11 +365,13 @@ Hiển thị thống kê tổng quan của lớp học qua các biểu đồ Rec
 
 ### 4.5.1. Triển khai trên Raspberry Pi 4 (4GB RAM)
 
-Để đưa hệ thống vào vận hành thực tế tại trường học, nhóm tác giả đã xây dựng hai script tự động hóa toàn bộ quy trình cài đặt:
+Để đưa hệ thống vào vận hành thực tế tại trường học, nhóm tác giả đã xây dựng ba script tự động hóa toàn bộ quy trình cài đặt và cập nhật bảo mật:
 
 **Script `setup_rpi.sh` — Cài đặt môi trường:** Tự động thực hiện cài đặt Node.js 20 LTS, cấu hình Swap 2GB (ổn định quá trình build Next.js), cài đặt dependencies (`npm install`), build production bundle (`npm run build`), khởi tạo database SQLite (`npx prisma migrate deploy`) và tạo service `systemd` để ứng dụng tự khởi động khi RPi4 bật nguồn.
 
 **Script `setup_network.sh` — Cấu hình mạng:** Tự động thiết lập IP tĩnh trên `wlan0` (để giáo viên trong WiFi trường luôn truy cập cùng địa chỉ `http://192.168.1.100:3000`), cấu hình tường lửa `ufw` và cài đặt **Cloudflare Tunnel** — giải pháp giúp học sinh và giáo viên ở ngoài trường truy cập qua địa chỉ HTTPS công khai mà không cần cấu hình Port Forwarding trên router nhà trường.
+
+**Script `update_keys.sh` — Tự động cập nhật API keys:** Để giúp quản trị viên dễ dàng xoay vòng các khóa mà không cần can thiệp thủ công vào file hệ thống, script này tự động nạp danh sách 4 khóa API mới vào file `.env.local`, tự động thực hiện `git pull` đồng bộ mã nguồn mới nhất từ GitHub, build dự án Next.js và khởi động lại tiến trình dịch vụ `vihand.service` một cách an toàn.
 
 **Cấu hình Service Systemd:**
 ```ini
@@ -345,12 +380,12 @@ Description=ViHand Grade Web Server
 After=network.target
 
 [Service]
-WorkingDirectory=/home/pi/Web_sua_loi
-ExecStart=/usr/bin/node_modules/.bin/next start -p 3000
+WorkingDirectory=/home/jackie/vihand-grade
+ExecStart=/usr/bin/npm run start
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production
-EnvironmentFile=/home/pi/Web_sua_loi/.env.local
+EnvironmentFile=/home/jackie/vihand-grade/.env.local
 
 [Install]
 WantedBy=multi-user.target
@@ -360,17 +395,20 @@ WantedBy=multi-user.target
 
 | Đối tượng | Vị trí | Địa chỉ truy cập |
 |---|---|---|
-| Giáo viên / Học sinh **trong trường** | WiFi trường | `http://192.168.1.100:3000` |
-| Giáo viên / Học sinh **ở nhà** | 4G / WiFi bất kỳ | `https://xxx.trycloudflare.com` |
+| Giáo viên / Học sinh **trong trường** | WiFi trường | `http://192.168.195.x:3000` hoặc IP tĩnh mạng LAN |
+| Giáo viên / Học sinh **ở nhà** | 4G / WiFi bất kỳ | `https://vihandgrade.click` (Cloudflare Tunnel) |
 | Quản trị viên | Bất kỳ | Cả hai địa chỉ trên |
 
 ### 4.5.3. Biến môi trường cấu hình (`.env.local`)
 
 ```bash
-DATABASE_URL="file:./prisma/vihand.db"    # Đường dẫn CSDL SQLite
-GEMINI_API_KEY="AIza..."                  # Khóa API Google Gemini
-NEXTAUTH_SECRET="random-secret-key"       # Khóa bảo mật phiên làm việc
+# Đường dẫn tuyệt đối CSDL SQLite cho Prisma
+DATABASE_URL="file:/home/jackie/vihand-grade/prisma/vihand.db"
+
+# Bể khóa API xoay vòng ngẫu nhiên cho Google Gemini 3.0 Flash Preview
+GEMINI_API_KEYS="key1,key2,key3,key4"
 ```
+
 
 ---
 

@@ -186,6 +186,15 @@ Prompt cưỡng chế nghiêm ngặt cấu trúc dữ liệu trả về duy nh�
 }
 ```
 
+### 3.3.3. Cơ chế xoay vòng khóa API (API Key Rotation) và Khả năng chịu lỗi (Fault Tolerance)
+
+Để giải quyết triệt để lỗi nghẽn hoặc quá tải tạm thời từ máy chủ Google Gemini (như lỗi `503 Service Unavailable` hoặc `429 Too Many Requests` do đạt giới hạn quota trên mỗi khóa API tự do), hệ thống thiết kế **Cơ chế xoay vòng khóa API (API Key Rotation) tích hợp Khả năng chịu lỗi chủ động**:
+
+1. **Bể khóa API (API Key Pool):** Hệ thống không sử dụng duy nhất một khóa cứng mà thiết lập một bể khóa động (Pool) chứa nhiều API Keys được phân tách bằng dấu phẩy trong biến môi trường `GEMINI_API_KEYS`.
+2. **Chọn ngẫu nhiên tải trọng (Random Load Balancing):** Với mỗi yêu cầu chấm điểm gửi lên, hệ thống sẽ thực hiện trộn ngẫu nhiên (shuffle) và chọn ngẫu nhiên một khóa API từ Pool để phát lệnh nhằm giảm thiểu khả năng trùng lặp và dàn đều tần suất yêu cầu trên toàn bộ các khóa.
+3. **Cơ chế tự động chuyển đổi khóa (Failover & Fallback):** Khi khóa API đang gọi trả về lỗi `503` hoặc `429`, hệ thống sẽ tự động bắt ngoại lệ này, tạm dừng trong `1500ms` (backoff ngắn) để thực hiện thử lại cùng khóa lần thứ 2. Nếu vẫn tiếp tục lỗi, hệ thống sẽ tự động chuyển sang khóa tiếp theo trong hàng đợi đã trộn ngẫu nhiên. Quy trình này lặp lại liên tục cho đến khi tìm được khóa trống hoặc duyệt hết toàn bộ danh sách khóa trong bể.
+4. **Báo lỗi có cấu trúc:** Chỉ khi toàn bộ các khóa API được cấu hình trong hệ thống đều báo bận, hệ thống mới chính thức trả về thông điệp từ chối phục vụ một cách thân thiện đến người dùng, đảm bảo tỷ lệ sẵn sàng hoạt động (Availability) đạt mức tối đa.
+
 ---
 
 ## 3.4. PHÂN QUYỀN VÀ XÁC THỰC NGƯỜI DÙNG (AUTHENTICATION & RBAC FLOW)

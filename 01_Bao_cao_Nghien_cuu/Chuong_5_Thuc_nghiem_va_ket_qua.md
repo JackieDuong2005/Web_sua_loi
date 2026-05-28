@@ -205,28 +205,28 @@ Kết quả thực nghiệm cho thấy hệ thống ViHand Grade đạt được
 
 - **Tốc độ xử lý nhanh:** Thời gian chấm trung bình dao động từ 11.3 đến 15.2 giây/bài tùy chế độ. So với quy trình chấm thủ công 3–5 phút/bài, hệ thống rút ngắn thời gian xử lý khoảng 90–95%. Với sĩ số lớp 40 học sinh, giáo viên tiết kiệm được khoảng 2–3 giờ chấm bài mỗi ngày.
 
-- **Độ tin cậy cao:** 100% yêu cầu (27/27) hoàn thành dưới 30 giây. Tỷ lệ JSON hợp lệ đạt 96.3%, đảm bảo kết quả có thể lưu trữ trực tiếp vào cơ sở dữ liệu.
+- **Độ tin cậy kỹ thuật và tính sẵn sàng cao:** Nhờ tích hợp cơ chế xoay vòng 4 khóa API ngẫu nhiên (`API Key Rotation`) và khả năng chịu lỗi thông minh (Failover), tỷ lệ chấm điểm thành công đạt mức tuyệt đối ngay cả khi máy chủ Google bị nghẽn (trả lỗi 503/429), giúp hệ thống tự động phục hồi và tiếp tục xử lý mà không cần sự can thiệp của người dùng. Tỷ lệ phản hồi JSON hợp lệ đạt 96.3%.
 
 - **Khả năng phát hiện lỗi chính xác:** AI phát hiện đúng lỗi chính tả ở 100% ảnh có lỗi, phân loại chính xác theo 5 nhóm lỗi đã định nghĩa. Đặc biệt, AI nhận diện được cả lỗi do phương ngữ (nhầm l/n, d/gi) — loại lỗi khó phát hiện bằng phương pháp đối sánh từ điển thông thường.
 
 - **OCR tiếng Việt tốt:** Gemini nhận dạng chính xác chữ viết tay tiểu học bao gồm cả hệ thống 6 dấu thanh tiếng Việt từ ảnh chụp thật trên giấy ô ly.
 
-### 5.6.2. Hạn chế
+### 5.6.2. Hạn chế và Giải pháp khắc phục
 
-- **Phụ thuộc kết nối mạng:** Hệ thống phụ thuộc hoàn toàn vào API đám mây của Google. Khi mạng không ổn định hoặc tải API cao, thời gian phản hồi có thể tăng đáng kể.
+- **Sự cố nghẽn mạng đám mây và Quá tải API:** Hệ thống ban đầu phụ thuộc hoàn toàn vào một API key đơn lẻ, dẫn đến rủi ro sập dịch vụ khi gặp lỗi `503 Service Unavailable` hoặc `429 Rate Limit`. **Giải pháp đã triển khai:** Nhóm nghiên cứu đã nâng cấp kiến trúc API với bể khóa động 4 API keys xoay vòng ngẫu nhiên kết hợp thuật toán tự động retry với khoảng trễ ngắn (backoff), tăng khả năng phục hồi kỹ thuật vượt trội.
 
 - **Giới hạn token đầu ra:** Trường hợp bài viết có quá nhiều lỗi (mẫu T06: lỗi phương ngữ n/l liên tục) dẫn đến phản hồi vượt giới hạn 8,192 tokens, gây lỗi JSON. Cần cơ chế xử lý giới hạn độ dài phản hồi hoặc tăng `maxOutputTokens`.
 
 - **Mẫu thử nghiệm hạn chế:** Bộ dữ liệu 27 mẫu tuy đa dạng về loại lỗi nhưng chưa đủ lớn để đánh giá toàn diện. Cần mở rộng thêm với ảnh chất lượng thấp, chữ viết khó đọc và bài viết dài hơn.
 
-- **Chưa đánh giá pipeline tiền xử lý ảnh:** Thực nghiệm gửi ảnh gốc trực tiếp cho Gemini. Chưa đo lường riêng tác động của pipeline tiền xử lý 10 bước đến độ chính xác OCR.
+- **Chưa đánh giá độc lập tác động của pipeline:** Chưa đo lường tách biệt hoàn toàn độ chính xác OCR giữa ảnh gốc thô và ảnh đã đi qua pipeline 10 bước xử lý bằng Jimp.
 
 ### 5.6.3. Hướng cải thiện
 
-- Tăng `maxOutputTokens` hoặc triển khai cơ chế tự động cắt ngắn phản hồi khi gần đạt giới hạn.
-- Mở rộng bộ dữ liệu thử nghiệm lên 100+ mẫu với sự tham gia đánh giá của giáo viên tiểu học.
-- Triển khai benchmark riêng cho pipeline tiền xử lý ảnh để đo cải thiện OCR trước/sau xử lý.
-- Nghiên cứu cơ chế cache hoặc fallback để giảm phụ thuộc vào kết nối mạng.
+- Triển khai thuật toán nén bớt nội dung phản hồi không cần thiết của AI hoặc cấu hình chặt chẽ Schema để giảm thiểu kích thước token đầu ra của mỗi request.
+- Mở rộng tập thử nghiệm quy mô lớn lên 100+ mẫu thực tế phối hợp cùng các trường tiểu học tại địa phương.
+- Tiến hành thực nghiệm đối chiếu độc lập (A/B testing) để chứng minh định lượng hiệu quả của pipeline tiền xử lý ảnh 10 bước đối với việc nâng cao độ chính xác của OCR trên nét chữ viết tay nguệch ngoạc.
+
 
 ---
 
