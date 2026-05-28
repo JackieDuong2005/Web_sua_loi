@@ -19,7 +19,7 @@ set -e
 
 # WiFi trường học / nhà
 WIFI_SSID="Tuyet Nhi"
-WIFI_PASS="yuki.nhii2301"
+WIFI_PASS=""  # Điền vào đây hoặc để trống để được hỏi khi chạy
 
 # Mạng LAN
 STATIC_IP="192.168.1.100"
@@ -30,8 +30,8 @@ DNS_SERVER="8.8.8.8"
 DOMAIN="vihandgrade.click"
 ADD_WWW="y"
 
-# API Key
-GEMINI_API_KEY="AIzaSyCu2PS9KmstaSMX695jCEp66t1Vc-nqbdQ"
+# API Key — KHÔNG hardcode ở đây, sẽ được hỏi khi chạy
+GEMINI_API_KEY=""
 
 # GitHub repo
 REPO_URL="https://github.com/JackieDuong2005/Web_sua_loi.git"
@@ -80,6 +80,21 @@ echo ""
 echo -e "  ${YELLOW}Quá trình cài đặt sẽ mất khoảng 15-20 phút.${NC}"
 echo ""
 read -p "  Nhấn Enter để bắt đầu (Ctrl+C để hủy)..."
+
+# ─ Thu thập thông tin nhạy cảm ở đây, trước khi cài đặt ────────────
+if [ -z "$GEMINI_API_KEY" ]; then
+  echo ""
+  echo -e "  ${CYAN}Bạn cần Gemini API Key từ: https://aistudio.google.com/app/apikey${NC}"
+  read -p "  Nhập GEMINI_API_KEY: " GEMINI_API_KEY
+  [ -z "$GEMINI_API_KEY" ] && err "API Key không được để trống"
+fi
+
+if [ -z "$WIFI_PASS" ]; then
+  echo ""
+  read -s -p "  Nhập mật khẩu WiFi '${WIFI_SSID}': " WIFI_PASS
+  echo ""
+  [ -z "$WIFI_PASS" ] && err "Mật khẩu WiFi không được để trống"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════
 step "PHẦN 1/6: CẬP NHẬT HỆ THỐNG & CÀI GÓI CẦN THIẾT"
