@@ -1,24 +1,43 @@
 import { NextRequest, NextResponse } from "next/server"
 
-// Danh sách model ưu tiên — fallback tự động nếu model đầu bị lỗi
-const GEMINI_MODELS = [
-  "gemini-2.5-flash-preview-05-20",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-]
+// Model cố định
+const GEMINI_MODEL = "gemini-3-flash-preview"
+const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
-// Gọi Gemini API với retry tự động (3 lần, exponential backoff)
-async function callGeminiWithRetry(
-  apiKey: string,
-  body: object,
-  maxRetries = 3
-): Promise<{ data: any; modelUsed: string }> {
-  let lastError: any = null
+// Đọc danh sách API keys từ env (GEMINI_API_KEYS = key1,key2,key3,...)
+// Fallback về GEMINI_API_KEY nếu chỉ có 1 key
+function getApiKeys(): string[] {
+  const multi = process.env.GEMINI_API_KEYS || ""
+  const single = process.env.GEMINI_API_KEY || ""
+  const keys = multi
+    .split(",")
+    .map(k => k.trim())
+    .filter(k => k.length > 10)
+  if (single && !keys.includes(single)) keys.push(single)
+  return keys
+}
 
-  for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+// Chọn ngẫu nhiên 1 key từ danh sách
+function pickRandomKey(keys: string[]): string {
+  return keys[Math.floor(Math.random() * keys.length)]
+}
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+// Gọi Gemini với key rotation — mỗi lần 503/429 sẽ thử key khác
+async function callGeminiWithKeyRotation(
+  keys: string[],
+  body: object
+): Promise<{ data: any; keyIndex: number }> {
+  if (keys.length === 0) throw new Error("Không có API key nào được cấu hình")
+
+  // Shuffle keys để random thứ tự thử
+  const shuffled = [...keys].sort(() => Math.random() - 0.5)
+
+  for (let i = 0; i < shuffled.length; i++) {
+    const key = shuffled[i]
+    const url = `${GEMINI_BASE_URL}?key=${key}`
+
+    // Mỗi key thử tối đa 2 lần trước khi sang key tiếp theo
+    for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const res = await fetch(url, {
           method: "POST",
@@ -26,41 +45,39 @@ async function callGeminiWithRetry(
           body: JSON.stringify(body),
         })
 
-        // 503/429: server quá tải → retry sau delay
         if (res.status === 503 || res.status === 429) {
-          const delay = Math.pow(2, attempt) * 1000 // 2s, 4s, 8s
-          console.warn(`[Gemini] ${model} trả ${res.status}, thử lại sau ${delay}ms (lần ${attempt}/${maxRetries})`)
-          if (attempt < maxRetries) {
-            await new Promise(r => setTimeout(r, delay))
-            continue
+          console.warn(
+            `[Gemini] Key #${i + 1} trả ${res.status} (lần ${attempt}/2)` +
+            (i < shuffled.length - 1 ? ` → thử key tiếp theo` : "")
+          )
+          if (attempt === 1) {
+            await new Promise(r => setTimeout(r, 1500))
+            continue // thử lại cùng key lần 2
           }
-          lastError = { status: res.status, text: await res.text() }
-          break // thử model tiếp theo
+          break // sang key tiếp theo
         }
 
-        // Lỗi khác (400, 404...) → thử model tiếp theo ngay
         if (!res.ok) {
-          lastError = { status: res.status, text: await res.text() }
-          console.warn(`[Gemini] ${model} lỗi ${res.status}: ${lastError.text}`)
-          break
+          const errText = await res.text()
+          console.warn(`[Gemini] Key #${i + 1} lỗi ${res.status}: ${errText}`)
+          break // sang key tiếp theo ngay
         }
 
         const data = await res.json()
-        return { data, modelUsed: model }
+        return { data, keyIndex: i + 1 }
 
       } catch (err) {
-        lastError = err
-        console.warn(`[Gemini] ${model} network error (lần ${attempt}):`, err)
-        if (attempt < maxRetries) {
-          await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000))
-        }
+        console.warn(`[Gemini] Key #${i + 1} network error (lần ${attempt}):`, err)
+        if (attempt === 1) await new Promise(r => setTimeout(r, 1000))
       }
     }
   }
 
-  // Tất cả models đều thất bại
-  throw lastError
+  throw new Error(
+    `Tất cả ${shuffled.length} API key đều bận. Vui lòng thử lại sau.`
+  )
 }
+
 
 const GRADING_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên chấm bài chính tả. Phân tích đoạn văn của học sinh được cung cấp, sửa lỗi chính tả và chấm điểm theo barem chuẩn. Trả về duy nhất định dạng JSON.
 
@@ -148,9 +165,9 @@ Tối đa 1.0đ dù có nhiều biện pháp.
 }`
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKeys = getApiKeys()
 
-  if (!apiKey || apiKey === "your_gemini_api_key_here") {
+  if (apiKeys.length === 0) {
     return NextResponse.json(
       { error: "Chưa cấu hình GEMINI_API_KEY trong file .env.local" },
       { status: 500 }
@@ -196,22 +213,15 @@ export async function POST(req: NextRequest) {
     }
 
     let geminiData: any
-    let modelUsed: string
+    let keyIndex: number
     try {
-      const result = await callGeminiWithRetry(apiKey, geminiBody)
+      const result = await callGeminiWithKeyRotation(apiKeys, geminiBody)
       geminiData = result.data
-      modelUsed = result.modelUsed
+      keyIndex = result.keyIndex
     } catch (retryErr: any) {
-      const status = retryErr?.status || 503
-      if (status === 503 || status === 429) {
-        return NextResponse.json(
-          { error: "AI đang bận, vui lòng thử lại sau vài giây." },
-          { status: 503 }
-        )
-      }
       return NextResponse.json(
-        { error: `Lỗi kết nối AI: ${retryErr?.message || status}` },
-        { status: 500 }
+        { error: retryErr?.message || "AI đang bận, vui lòng thử lại sau." },
+        { status: 503 }
       )
     }
 
@@ -246,7 +256,6 @@ export async function POST(req: NextRequest) {
       ...parsed,
       processingTimeMs,
       tokenCount,
-      modelUsed,
     })
   } catch (err: any) {
     console.error("Grade API error:", err)
