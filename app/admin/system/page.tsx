@@ -168,7 +168,7 @@ export default function SystemStatsPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Model</span>
-                        <span className="font-medium">gemini-3-flash-preview</span>
+                        <span className="font-medium">gemini-3.1-flash-lite</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">TB tokens/bài</span>

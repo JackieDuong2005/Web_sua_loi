@@ -15,8 +15,6 @@ export interface PreprocessConfig {
   enableWhiteBalance: boolean;
   enableShadowRemoval: boolean;
   shadowKernelSize: number;
-  enableGridRemoval: boolean;
-  gridLineMinLength: number;
   enableClahe: boolean;
   claheClipLimit: number;
   claheTileGridSize: number;
@@ -47,8 +45,6 @@ const DEFAULT_CONFIG: PreprocessConfig = {
   enableWhiteBalance: true,
   enableShadowRemoval: true,
   shadowKernelSize: 51,
-  enableGridRemoval: true,
-  gridLineMinLength: 80,
   enableClahe: true,
   claheClipLimit: 2.0,
   claheTileGridSize: 8,
@@ -56,11 +52,11 @@ const DEFAULT_CONFIG: PreprocessConfig = {
   sharpenAmount: 0.5,
   thresholdMode: "adaptive_gaussian",
   adaptiveBlockSize: 0,
-  adaptiveC: 10,
+  adaptiveC: 20,
   blurThreshold: 80,
   brightnessLow: 50,
   brightnessHigh: 220,
-  minResolution: 640,
+  minResolution: 250,
   minTextAreaRatio: 0.005,
 };
 
@@ -163,63 +159,7 @@ function removeShadow(gray: Uint8Array, w: number, h: number, ks: number): Uint8
   return out;
 }
 
-/** 3. Remove Grid Lines — phát hiện dòng ngang/dọc mỏng dài, xoá khỏi ảnh */
-function removeGridLines(gray: Uint8Array, w: number, h: number, minLen: number): Uint8Array {
-  const result = new Uint8Array(gray);
-  const thresh = otsuThreshold(gray);
-
-  // Phát hiện & xoá đường ngang
-  for (let y = 0; y < h; y++) {
-    let runStart = -1;
-    for (let x = 0; x <= w; x++) {
-      const dark = x < w && gray[y * w + x] < thresh;
-      if (dark && runStart === -1) { runStart = x; }
-      else if (!dark && runStart !== -1) {
-        if (x - runStart >= minLen) {
-          // Kiểm tra dòng mỏng: đếm pixel tối theo chiều dọc tại vài điểm
-          let thin = true;
-          for (let cx = runStart; cx < x && thin; cx += Math.max(1, Math.floor((x - runStart) / 8))) {
-            let vCount = 0;
-            for (let dy = -2; dy <= 2; dy++) {
-              const ny = y + dy;
-              if (ny >= 0 && ny < h && gray[ny * w + cx] < thresh) vCount++;
-            }
-            if (vCount > 3) thin = false; // quá dày → có thể là chữ
-          }
-          if (thin) for (let ex = runStart; ex < x; ex++) result[y * w + ex] = 255;
-        }
-        runStart = -1;
-      }
-    }
-  }
-
-  // Phát hiện & xoá đường dọc
-  for (let x = 0; x < w; x++) {
-    let runStart = -1;
-    for (let y = 0; y <= h; y++) {
-      const dark = y < h && gray[y * w + x] < thresh;
-      if (dark && runStart === -1) { runStart = y; }
-      else if (!dark && runStart !== -1) {
-        if (y - runStart >= minLen) {
-          let thin = true;
-          for (let cy = runStart; cy < y && thin; cy += Math.max(1, Math.floor((y - runStart) / 8))) {
-            let hCount = 0;
-            for (let dx = -2; dx <= 2; dx++) {
-              const nx = x + dx;
-              if (nx >= 0 && nx < w && gray[cy * w + nx] < thresh) hCount++;
-            }
-            if (hCount > 3) thin = false;
-          }
-          if (thin) for (let ey = runStart; ey < y; ey++) result[ey * w + x] = 255;
-        }
-        runStart = -1;
-      }
-    }
-  }
-  return result;
-}
-
-/** 4. CLAHE — Contrast Limited Adaptive Histogram Equalization */
+/** 3. CLAHE — Contrast Limited Adaptive Histogram Equalization */
 function applyCLAHE(gray: Uint8Array, w: number, h: number, clipLimit: number, numTiles: number): Uint8Array {
   const tileW = Math.ceil(w / numTiles);
   const tileH = Math.ceil(h / numTiles);
@@ -278,7 +218,7 @@ function applyCLAHE(gray: Uint8Array, w: number, h: number, clipLimit: number, n
   return result;
 }
 
-/** 5. Sharpen Text — Unsharp Mask */
+/** 4. Sharpen Text — Unsharp Mask */
 function sharpenText(gray: Uint8Array, w: number, h: number, amount: number): Uint8Array {
   const blurred = boxBlur(gray, w, h, 3);
   const out = new Uint8Array(w * h);
@@ -289,7 +229,7 @@ function sharpenText(gray: Uint8Array, w: number, h: number, amount: number): Ui
   return out;
 }
 
-/** 6. Adaptive / Otsu Threshold */
+/** 5. Adaptive / Otsu Threshold */
 function applyThreshold(
   gray: Uint8Array, w: number, h: number,
   mode: string, blockSize: number, c: number
@@ -391,7 +331,7 @@ function assessQuality(gray: Uint8Array, w: number, h: number, cfg: PreprocessCo
  *
  * Pipeline:
  *   EXIF auto-rotate (Jimp tự xử lý) → resize → white balance → grayscale
- *   → shadow removal → grid line removal → CLAHE → sharpen
+ *   → shadow removal → CLAHE → sharpen
  *   → adaptive threshold → quality assessment
  *
  * @param base64Data - Ảnh dạng base64 (không có prefix data:...)
@@ -427,23 +367,21 @@ export async function preprocessImage(
 
   // Trích 1-channel để xử lý nhanh
   let gray = rgbaToGray(data, n);
+  const originalGray = new Uint8Array(gray); // Giữ bản gốc để đánh giá chất lượng
 
   // 4. Shadow removal
   if (cfg.enableShadowRemoval) gray = removeShadow(gray, w, h, cfg.shadowKernelSize);
 
-  // 5. Grid line removal
-  if (cfg.enableGridRemoval) gray = removeGridLines(gray, w, h, cfg.gridLineMinLength);
-
-  // 6. CLAHE
+  // 5. CLAHE
   if (cfg.enableClahe) gray = applyCLAHE(gray, w, h, cfg.claheClipLimit, cfg.claheTileGridSize);
 
-  // 7. Sharpen
+  // 6. Sharpen
   if (cfg.enableSharpen) gray = sharpenText(gray, w, h, cfg.sharpenAmount);
 
-  // 8. Quality assessment (trước threshold để đo trên ảnh liên tục)
-  const quality = assessQuality(gray, w, h, cfg);
+  // 7. Quality assessment (trước threshold để đo trên ảnh liên tục)
+  const quality = assessQuality(originalGray, w, h, cfg);
 
-  // 9. Threshold
+  // 8. Threshold
   gray = applyThreshold(gray, w, h, cfg.thresholdMode, cfg.adaptiveBlockSize, cfg.adaptiveC);
 
   // Ghi kết quả về RGBA buffer

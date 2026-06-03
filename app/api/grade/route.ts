@@ -1,32 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
+import { GoogleGenAI } from "@google/genai"
 
-// Model cố định
-const GEMINI_MODEL = "gemini-3-flash-preview"
-const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+// Model cố định — benchmark 30/05/2026: gemini-3.1-flash-lite tối ưu nhất
+// Latency TB 4.57s | Similarity 98.0% | 0 lỗi API | tiết kiệm 56% token vs 3-flash-preview
+const GEMINI_MODEL = "gemini-3.1-flash-lite"
 
 // Đọc danh sách API keys từ env (GEMINI_API_KEYS = key1,key2,key3,...)
-// Fallback về GEMINI_API_KEY nếu chỉ có 1 key
 function getApiKeys(): string[] {
   const multi = process.env.GEMINI_API_KEYS || ""
-  const single = process.env.GEMINI_API_KEY || ""
   const keys = multi
     .split(",")
     .map(k => k.trim())
     .filter(k => k.length > 10)
-  if (single && !keys.includes(single)) keys.push(single)
   return keys
 }
 
-// Chọn ngẫu nhiên 1 key từ danh sách
-function pickRandomKey(keys: string[]): string {
-  return keys[Math.floor(Math.random() * keys.length)]
-}
-
-// Gọi Gemini với key rotation — mỗi lần 503/429 sẽ thử key khác
+// Gọi Gemini với key rotation — khi bị 429/503 sẽ chuyển key ngay
 async function callGeminiWithKeyRotation(
   keys: string[],
-  body: object
-): Promise<{ data: any; keyIndex: number }> {
+  contents: any[],
+): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
   if (keys.length === 0) throw new Error("Không có API key nào được cấu hình")
 
   // Shuffle keys để random thứ tự thử
@@ -34,47 +27,59 @@ async function callGeminiWithKeyRotation(
 
   for (let i = 0; i < shuffled.length; i++) {
     const key = shuffled[i]
-    const url = `${GEMINI_BASE_URL}?key=${key}`
+    const client = new GoogleGenAI({ apiKey: key })
 
-    // Mỗi key thử tối đa 2 lần trước khi sang key tiếp theo
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        })
+    try {
+      // Gọi Gemini — cấu trúc tương tự gemini_ocr.ipynb
+      const response = await client.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: contents,
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.1,
+          topP: 0.95,
+          topK: 40,
+          maxOutputTokens: 8192,
+        },
+      })
 
-        if (res.status === 503 || res.status === 429) {
-          console.warn(
-            `[Gemini] Key #${i + 1} trả ${res.status} (lần ${attempt}/2)` +
-            (i < shuffled.length - 1 ? ` → thử key tiếp theo` : "")
-          )
-          if (attempt === 1) {
-            await new Promise(r => setTimeout(r, 1500))
-            continue // thử lại cùng key lần 2
-          }
-          break // sang key tiếp theo
-        }
+      const text = response.text ?? ""
+      const tokenCount = response.usageMetadata?.totalTokenCount || 0
 
-        if (!res.ok) {
-          const errText = await res.text()
-          console.warn(`[Gemini] Key #${i + 1} lỗi ${res.status}: ${errText}`)
-          break // sang key tiếp theo ngay
-        }
-
-        const data = await res.json()
-        return { data, keyIndex: i + 1 }
-
-      } catch (err) {
-        console.warn(`[Gemini] Key #${i + 1} network error (lần ${attempt}):`, err)
-        if (attempt === 1) await new Promise(r => setTimeout(r, 1000))
+      // Kiểm tra response có nội dung không
+      if (!text || text.trim().length === 0) {
+        console.warn(`[Gemini] Key #${i + 1} trả về rỗng → thử key tiếp`)
+        continue
       }
+
+      console.log(`[Gemini] ✓ Key #${i + 1} thành công (${tokenCount} tokens, ${text.length} chars)`)
+      return { text, tokenCount, keyIndex: i + 1 }
+
+    } catch (err: any) {
+      const status = err?.status || err?.httpStatusCode || 0
+      const msg = err?.message || ""
+
+      // 429 (quota) → chuyển key ngay, không retry cùng key (quota không reset trong vài giây)
+      if (status === 429 || msg.includes("RESOURCE_EXHAUSTED")) {
+        console.warn(`[Gemini] Key #${i + 1} hết quota → chuyển key tiếp`)
+        continue // sang key tiếp ngay, không delay
+      }
+
+      // 503 (overloaded) → đợi ngắn rồi thử key tiếp
+      if (status === 503 || msg.includes("503")) {
+        console.warn(`[Gemini] Key #${i + 1} server bận (503) → chuyển key tiếp`)
+        await new Promise(r => setTimeout(r, 500))
+        continue
+      }
+
+      // Lỗi khác → log và sang key tiếp
+      console.warn(`[Gemini] Key #${i + 1} lỗi:`, msg)
+      continue
     }
   }
 
   throw new Error(
-    `Tất cả ${shuffled.length} API key đều bận. Vui lòng thử lại sau.`
+    `Tất cả ${shuffled.length} API key đều bận/hết quota. Vui lòng thử lại sau.`
   )
 }
 
@@ -169,7 +174,7 @@ export async function POST(req: NextRequest) {
 
   if (apiKeys.length === 0) {
     return NextResponse.json(
-      { error: "Chưa cấu hình GEMINI_API_KEY trong file .env.local" },
+      { error: "Chưa cấu hình GEMINI_API_KEYS trong file .env.local" },
       { status: 500 }
     )
   }
@@ -177,22 +182,22 @@ export async function POST(req: NextRequest) {
   try {
     const { imageBase64, mimeType, studentText } = await req.json()
 
-    // Build the parts array: either image or text
-    const parts: any[] = [{ text: GRADING_PROMPT }]
+    // Build contents — tham khảo cấu trúc từ gemini_ocr.ipynb
+    const contents: any[] = []
 
     if (imageBase64) {
-      // Image input via base64 - dùng ảnh gốc để chấm điểm
+      // Image input — gửi ảnh dạng base64 (giống Part.from_bytes trong notebook)
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "")
 
-      parts.push({
-        inline_data: {
-          mime_type: mimeType || "image/jpeg",
+      contents.push({
+        inlineData: {
+          mimeType: mimeType || "image/jpeg",
           data: base64Data,
         },
       })
     } else if (studentText) {
       // Plain text input (typed text)
-      parts.push({ text: `\n\nVăn bản của học sinh:\n${studentText}` })
+      contents.push(`\n\nVăn bản của học sinh:\n${studentText}`)
     } else {
       return NextResponse.json(
         { error: "Cần cung cấp ảnh (imageBase64) hoặc văn bản (studentText)" },
@@ -200,24 +205,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Thêm prompt hệ thống vào cuối contents
+    contents.push(GRADING_PROMPT)
+
     const startTime = Date.now()
 
-    const geminiBody = {
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        temperature: 0.1,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 8192,
-      },
-    }
-
-    let geminiData: any
-    let keyIndex: number
+    let result: { text: string; tokenCount: number; keyIndex: number }
     try {
-      const result = await callGeminiWithKeyRotation(apiKeys, geminiBody)
-      geminiData = result.data
-      keyIndex = result.keyIndex
+      result = await callGeminiWithKeyRotation(apiKeys, contents)
     } catch (retryErr: any) {
       return NextResponse.json(
         { error: retryErr?.message || "AI đang bận, vui lòng thử lại sau." },
@@ -226,13 +221,7 @@ export async function POST(req: NextRequest) {
     }
 
     const processingTimeMs = Date.now() - startTime
-
-    const candidate = geminiData.candidates?.[0]
-    const tokenCount =
-      geminiData.usageMetadata?.totalTokenCount ||
-      geminiData.usageMetadata?.candidatesTokenCount ||
-      0
-    const rawText = candidate?.content?.parts?.[0]?.text || ""
+    const rawText = result.text
 
     // Parse JSON from Gemini response
     let parsed: any
@@ -245,7 +234,9 @@ export async function POST(req: NextRequest) {
         .trim()
       parsed = JSON.parse(cleaned)
     } catch (e) {
-      console.error("Failed to parse Gemini JSON:", rawText)
+      console.error("[Gemini] JSON parse thất bại.")
+      console.error("[Gemini] Raw text (đầu 500 ký tự):", rawText.substring(0, 500))
+      console.error("[Gemini] Raw text length:", rawText.length)
       return NextResponse.json(
         { error: "Gemini trả về dữ liệu không hợp lệ. Vui lòng thử lại.", rawResponse: rawText },
         { status: 500 }
@@ -255,7 +246,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ...parsed,
       processingTimeMs,
-      tokenCount,
+      tokenCount: result.tokenCount,
     })
   } catch (err: any) {
     console.error("Grade API error:", err)

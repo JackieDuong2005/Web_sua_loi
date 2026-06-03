@@ -96,6 +96,7 @@ function ScoreBar({ label, raw, max, note }: { label: string; raw: number; max: 
 
 export default function GradingPage() {
   const [inputMode, setInputMode] = useState<"image" | "processed" | "text">("image")
+  const [activeTab, setActiveTab] = useState<"image" | "processed" | "text">("image")
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [processedImage, setProcessedImage] = useState<string | null>(null)
   const [qualityReport, setQualityReport] = useState<any>(null)
@@ -174,14 +175,43 @@ export default function GradingPage() {
 
   const processFile = (file: File) => {
     const reader = new FileReader()
-    reader.onload = (e) => {
-      setUploadedImage(e.target?.result as string)
+    reader.onload = async (e) => {
+      const imgBase64 = e.target?.result as string
+      setUploadedImage(imgBase64)
       setProcessedImage(null)
       setGradingResult(null)
       setError("")
       setIsSaved(false)
+      setInputMode("processed")
+      setActiveTab("processed")
+      // Tự động tiền xử lý ảnh ngay sau khi upload
+      await handlePreprocess(imgBase64)
     }
     reader.readAsDataURL(file)
+  }
+
+  // Nén ảnh trước khi gửi API — giảm kích thước đáng kể để tăng tốc Gemini
+  const compressImageForAPI = (base64: string, maxDim = 1280, quality = 0.75): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        let { width, height } = img
+        // Resize nếu ảnh quá lớn
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height)
+          width = Math.round(width * ratio)
+          height = Math.round(height * ratio)
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, width, height)
+        // Xuất JPEG nén
+        resolve(canvas.toDataURL("image/jpeg", quality))
+      }
+      img.src = base64
+    })
   }
 
   const callGemini = async () => {
@@ -196,9 +226,10 @@ export default function GradingPage() {
     try {
       const body: any = {}
       if ((inputMode === "image" || inputMode === "processed") && uploadedImage) {
-        const mimeMatch = uploadedImage.match(/^data:(image\/\w+);base64,/)
-        body.imageBase64 = uploadedImage
-        body.mimeType = mimeMatch?.[1] || "image/jpeg"
+        // Nén ảnh trước khi gửi → giảm thời gian xử lý từ ~100s xuống ~20-30s
+        const compressed = await compressImageForAPI(uploadedImage)
+        body.imageBase64 = compressed
+        body.mimeType = "image/jpeg"
       } else {
         body.studentText = studentText
       }
@@ -281,17 +312,23 @@ export default function GradingPage() {
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     canvas.getContext("2d")?.drawImage(video, 0, 0)
-    setUploadedImage(canvas.toDataURL("image/jpeg", 0.9))
+    const capturedImg = canvas.toDataURL("image/jpeg", 0.9)
+    setUploadedImage(capturedImg)
     setProcessedImage(null)
     setGradingResult(null)
     setIsSaved(false)
     setError("")
+    setInputMode("processed")
+    setActiveTab("processed")
     stopCamera()
+    // Tự động tiền xử lý ảnh sau khi chụp
+    handlePreprocess(capturedImg)
   }
 
   const clearAll = () => {
     setUploadedImage(null); setProcessedImage(null); setStudentText(""); setGradingResult(null)
     setError(""); setIsSaved(false); setStudentName(""); setAssignmentTitle(""); setClassName("")
+    setInputMode("image"); setActiveTab("image")
   }
 
   const canGrade = (inputMode === "image" || inputMode === "processed") ? !!uploadedImage : !!studentText.trim()
@@ -413,11 +450,12 @@ export default function GradingPage() {
                 <CardDescription>Chọn cách nhập bài của học sinh</CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs value={inputMode} onValueChange={(v) => { 
+                <Tabs value={activeTab} onValueChange={(v) => {
+                  setActiveTab(v as any)
                   if ((inputMode === "image" || inputMode === "processed") && (v === "image" || v === "processed")) {
-                    setInputMode(v as any);
+                    setInputMode(v as any)
                     if (v === "processed" && uploadedImage && !processedImage) {
-                      handlePreprocess(uploadedImage);
+                      handlePreprocess(uploadedImage)
                     }
                   } else {
                     setInputMode(v as any); clearAll();
