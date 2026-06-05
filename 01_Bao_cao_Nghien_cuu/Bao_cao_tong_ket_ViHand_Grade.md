@@ -36,7 +36,7 @@ Vì vậy, đề tài **“Nghiên cứu và xây dựng hệ thống chấm đi
 
 #### 2.2. Những vấn đề tồn tại và phương án giải quyết của đề tài
 * **Vấn đề 1 - Nhiễu ảnh và dòng kẻ ô ly:** Ảnh chụp bài viết từ điện thoại của giáo viên/phụ huynh thường có chất lượng không đồng đều (bị mờ, rung tay, bóng che do góc chụp lệch) và đặc biệt là lưới ô ly của vở học sinh làm AI nhận diện sai ký tự.
-  * *Phương án giải quyết:* Đề tài đã nghiên cứu và phát triển một **Image Preprocessing Pipeline 10 bước** chạy trực tiếp bằng TypeScript/Jimp trên server/client mà không phụ thuộc vào các thư viện C++ nặng nề. Pipeline thực hiện khử bóng (Shadow Removal), xóa dòng kẻ ô ly (Grid Line Removal) và đánh giá chất lượng ảnh (Quality Assessment) để cảnh báo giáo viên trước khi gửi sang AI.
+  * *Phương án giải quyết:* Đề tài đã nghiên cứu và phát triển một **Image Preprocessing Pipeline 9 bước** chạy trực tiếp bằng TypeScript/Jimp trên server/client mà không phụ thuộc vào các thư viện C++ nặng nề. Pipeline thực hiện khử bóng (Shadow Removal), tăng cường tương phản (CLAHE) và đánh giá chất lượng ảnh (Quality Assessment) để cảnh báo giáo viên trước khi gửi sang AI.
 * **Vấn đề 2 - Barem điểm và tính chính xác của AI:** Các mô hình AI ngôn ngữ lớn nếu chỉ gọi thông thường sẽ đưa ra điểm số cảm tính, thiếu chuẩn xác theo barem sư phạm Việt Nam, đồng thời phản hồi dạng text tự do rất khó lưu trữ có cấu trúc vào database.
   * *Phương án giải quyết:* Thiết kế kỹ thuật Prompt tối ưu (Prompt Engineering) tích hợp barem điểm chuẩn của Bộ Giáo dục & Đào tạo Việt Nam (phân bổ chi tiết: Chính tả 4.0đ, Hình thức 3.0đ, Nội dung 2.0đ, Sáng tạo 1.0đ) kết hợp yêu cầu ép định dạng đầu ra (Response Schema) dưới dạng JSON cấu trúc chặt chẽ để lưu trữ trực tiếp vào cơ sở dữ liệu SQLite thông qua Prisma ORM.
 
@@ -47,7 +47,7 @@ Vì vậy, đề tài **“Nghiên cứu và xây dựng hệ thống chấm đi
 * **Mục tiêu kỹ thuật:** 
   * Xây dựng thành công ứng dụng Web PWA (Progressive Web App) chạy mượt mà trên cả máy tính và điện thoại thông minh với thời gian chấm điểm < 30 giây/bài.
   * Đạt độ chính xác nhận dạng chữ viết tay tiếng Việt có dấu (OCR) từ ảnh chụp đạt $\ge 90\%$.
-  * Tích hợp thành công bộ tiền xử lý ảnh 10 bước khử nhiễu ô ly và nâng cao chất lượng nét chữ viết tay.
+  * Tích hợp thành công bộ tiền xử lý ảnh 9 bước khử nhiễu và nâng cao chất lượng nét chữ viết tay.
 * **Mục tiêu sư phạm:**
   * Triển khai hệ thống chấm điểm tự động phân tích chi tiết lỗi chính tả (chỉ rõ từ sai, từ đúng đề xuất, lý do sai như nhầm tr/ch, s/x, d/gi, thiếu dấu thanh...) kèm nhận xét động viên học sinh tiểu học.
   * Thống kê chi tiết kết quả học tập của học sinh theo lớp để hỗ trợ giáo viên theo dõi tiến độ.
@@ -61,7 +61,7 @@ Vì vậy, đề tài **“Nghiên cứu và xây dựng hệ thống chấm đi
 │    Nghiên cứu thực nghiệm    │    Kỹ thuật Prompt & AI      │
 ├──────────────────────────────┼──────────────────────────────┤
 │ • Xây dựng Image Pipeline    │ • Thiết kế Prompt hệ thống   │
-│   10 bước bằng Jimp.         │ • Ép định dạng JSON Schema.  │
+│   9 bước bằng Jimp.          │ • Ép định dạng JSON Schema.  │
 │ • Thử nghiệm bộ lọc CLAHE,   │ • Tham chiếu mô hình        │
 │   Adaptive Thresholding.     │   Gemini 3 Flash Preview.    │
 └──────────────────────────────┴──────────────────────────────┘
@@ -87,14 +87,14 @@ Hệ thống **ViHand Grade** đã được hoàn thiện với đầy đủ cá
      [Xóa ô ly + Khử bóng + CLAHE]
 ```
 
-##### B. Bộ tiền xử lý ảnh 10 bước (Image Pipeline)
+##### B. Bộ tiền xử lý ảnh 9 bước (Image Pipeline)
 Thuật toán được viết hoàn toàn bằng TypeScript + Jimp (không phụ thuộc Python trên server), thực thi tuần tự các bước:
 1. **EXIF Auto-rotate:** Tự động xoay ảnh đúng chiều dựa trên siêu dữ liệu của điện thoại.
 2. **Resize:** Thu nhỏ ảnh về chiều rộng tối đa 1600px để tối ưu dung lượng truyền tải và tốc độ xử lý của AI.
 3. **White Balance (Gray World):** Tự động cân bằng trắng, sửa các lỗi ảnh bị ám vàng/ám xanh do ánh sáng đèn điện phòng học.
 4. **Grayscale:** Chuyển ảnh về hệ màu xám để giảm thiểu nhiễu màu.
 5. **Shadow Removal:** Lọc và chuẩn hóa nền bằng thuật toán làm mờ hộp (boxBlur) để loại bỏ các bóng đen do tay hoặc điện thoại che khi chụp.
-6. **Grid Line Removal:** Phát hiện và loại bỏ các nét vẽ dòng kẻ ngang/dọc mảnh của tập ô ly học sinh, giữ lại trọn vẹn nét chữ viết tay đậm màu.
+6. **CLAHE:** Tăng cường tương phản cục bộ thích nghi, làm nổi bật nét bút chì mờ nhạt trên nền giấy.
 7. **CLAHE:** Tăng tương phản cục bộ thích nghi, giúp nét chữ viết chì mờ nhạt nổi bật rõ ràng trên nền giấy trắng.
 8. **Sharpen (Unsharp Mask):** Làm sắc nét các cạnh của nét chữ bị nhòe.
 9. **Adaptive Thresholding:** Nhị phân hóa thích nghi ảnh để tạo ra ảnh trắng đen tuyệt đối rõ ràng.

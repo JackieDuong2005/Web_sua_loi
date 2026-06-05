@@ -25,7 +25,7 @@
 Đề tài nghiên cứu khoa học **"ViHand Grade"** tập trung vào việc giải quyết bài toán tự động hóa quy trình chấm điểm bài chính tả viết tay của học sinh tiểu học Việt Nam bằng cách kết hợp kỹ thuật xử lý ảnh số tiên tiến và Trí tuệ nhân tạo (AI) đa phương thức. 
 
 Hệ thống được phát triển dưới dạng ứng dụng Web tiến trình (Progressive Web App - PWA) sử dụng framework Next.js 16, TypeScript, cơ sở dữ liệu SQLite thông qua Prisma ORM và mô hình ngôn ngữ lớn đa phương thức **Google Gemini 3 Flash**. Điểm cốt lõi của nghiên cứu là sự kết hợp chặt chẽ giữa:
-1. **Bộ tiền xử lý ảnh 10 bước (Image Pipeline)** chạy trực tiếp trên TypeScript/Jimp để khử nhiễu bóng che, nhị phân hóa thích nghi và loại bỏ dòng kẻ ô ly trên vở viết học sinh mà không làm mất nét chữ.
+1. **Bộ tiền xử lý ảnh 9 bước (Image Pipeline)** chạy trực tiếp trên TypeScript/Jimp để khử nhiễu bóng che, nhị phân hóa thích nghi và tăng cường nét chữ viết tay trên vở viết học sinh mà không làm mất nét chữ.
 2. **Kỹ thuật thiết kế Prompt hệ thống (Prompt Engineering)** tích hợp barem điểm chuẩn sư phạm của Bộ Giáo dục và Đào tạo Việt Nam để chấm điểm chi tiết 4 tiêu chí (Chính tả, Hình thức, Nội dung, Sáng tạo), trích xuất chi tiết các lỗi dưới dạng cấu trúc dữ liệu JSON để lưu trữ và phân tích.
 
 ---
@@ -76,10 +76,10 @@ Mặc dù công nghệ OCR và AI phát triển mạnh mẽ, việc áp dụng v
 ### IV. PHƯƠNG ÁN GIẢI QUYẾT CỦA TÁC GIẢ (NHÓM TÁC GIẢ)
 Nhằm giải quyết triệt để các tồn tại trên, nhóm nghiên cứu đề xuất giải pháp công nghệ tích hợp trong hệ thống **ViHand Grade**:
 
-#### 4.1. Image Preprocessing Pipeline 10 bước chuyên biệt
+#### 4.1. Image Preprocessing Pipeline 9 bước chuyên biệt
 Nhóm nghiên cứu phát triển một bộ tiền xử lý ảnh viết tay chạy trực tiếp bằng Jimp trên nền tảng TypeScript, giúp tối ưu hóa ảnh chụp trước khi hiển thị cho giáo viên và phân tích chất lượng ảnh:
 * **Khử bóng (Shadow Removal):** Sử dụng thuật toán chuẩn hóa nền thông qua làm mờ hộp (box blur) giúp triệt tiêu hoàn toàn bóng che từ tay/điện thoại, mang lại nền giấy trắng đồng đều.
-* **Xoá dòng kẻ ô ly (Grid Line Removal):** Thiết kế bộ lọc hình thái học (morphological filter) với kernel định hướng ngang và dọc nhằm bóc tách riêng các nét kẻ ô ly mảnh, sau đó xóa chúng và tiến hành inpaint nhẹ để nối lại các nét chữ bị đứt gãy tại giao điểm.
+* **Tăng cường tương phản cục bộ (CLAHE):** Áp dụng thuật toán Cân bằng Histogram thích nghi giới hạn tương phản để làm nổi bật nét bút chì mờ nhạt của học sinh, đặc biệt trên nền giấy sáng không đều.
 * **CLAHE cục bộ:** Tăng tương phản thích nghi để làm nổi bật nét bút chì viết tay mờ nhạt lên trên nền giấy trắng đã được làm sạch.
 * **Module Đánh giá chất lượng (Quality Assessment):** Phân tích ảnh theo thời gian thực để đưa ra các chỉ số về độ sáng (brightness), độ mờ (blur_score) và tỉ lệ nét chữ. Hệ thống sẽ phát cảnh báo *"Ảnh bị mờ"* hoặc *"Nét chữ quá nhạt"* để ngăn ngừa việc gửi ảnh kém chất lượng lên AI.
 

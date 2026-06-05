@@ -84,18 +84,7 @@ Sum = I(x2,y2) - I(x1-1,y2) - I(x2,y1-1) + I(x1-1,y1-1)
 
 **Ứng dụng:** Là nền tảng cho Box Blur O(1), Adaptive Threshold và các phép tính cục bộ trong pipeline.
 
-### 2.5. Phát hiện và xóa dòng kẻ ô ly — Grid Line Removal
-
-**Nguyên lý:** Dòng kẻ ô ly có đặc trưng hình thái riêng biệt: **mảnh** (chiều rộng 1–3 pixel) và **dài** (kéo dài gần hết chiều ngang/dọc trang giấy). Thuật toán sử dụng phân tích Run-Length để phát hiện các chuỗi pixel tối liên tục dài hơn ngưỡng, kết hợp kiểm tra "độ mỏng" theo chiều vuông góc để phân biệt dòng kẻ với nét chữ.
-
-**Quy trình:**
-1. Nhị phân hóa ảnh bằng ngưỡng Otsu
-2. Quét theo chiều ngang: phát hiện chuỗi pixel tối liên tục ≥ `minLength` (80px)
-3. Kiểm tra độ mỏng: đếm pixel tối theo chiều dọc tại nhiều điểm mẫu — nếu ≤ 3 pixel → là dòng kẻ
-4. Xóa dòng kẻ bằng cách gán pixel = 255 (trắng)
-5. Lặp lại tương tự cho chiều dọc
-
-### 2.6. Phương pháp Otsu — Ngưỡng nhị phân hóa tối ưu
+### 2.5. Phương pháp Otsu — Ngưỡng nhị phân hóa tối ưu
 
 **Nguyên lý:** Phương pháp Otsu (1979) tự động xác định ngưỡng T tối ưu để phân tách ảnh thành hai lớp (nền và chữ) bằng cách **tối đa hóa phương sai liên lớp** (between-class variance).
 
@@ -107,7 +96,7 @@ T* = argmax σ²_B(T)
 
 Trong đó: `w_0`, `w_1` là trọng số hai lớp; `μ_0`, `μ_1` là giá trị trung bình hai lớp.
 
-### 2.7. CLAHE — Contrast Limited Adaptive Histogram Equalization
+### 2.6. CLAHE — Contrast Limited Adaptive Histogram Equalization
 
 **Nguyên lý:** CLAHE (Zuiderveld, 1994) là phiên bản cải tiến của cân bằng histogram thích nghi (AHE). Thay vì áp dụng một histogram duy nhất cho toàn bộ ảnh, CLAHE chia ảnh thành các ô nhỏ (tiles) và cân bằng histogram riêng cho từng ô, đồng thời **giới hạn biên độ khuếch đại** (clip limit) để tránh khuếch đại nhiễu.
 
@@ -120,7 +109,7 @@ Trong đó: `w_0`, `w_1` là trọng số hai lớp; `μ_0`, `μ_1` là giá tr�
 
 **Ứng dụng:** Làm nổi bật nét bút chì nhạt trên nền giấy trắng — đặc biệt hiệu quả khi ảnh có độ sáng phân bố không đều.
 
-### 2.8. Unsharp Mask — Làm sắc nét ảnh
+### 2.7. Unsharp Mask — Làm sắc nét ảnh
 
 **Nguyên lý:** Tạo mặt nạ chi tiết bằng cách trừ ảnh mờ khỏi ảnh gốc, sau đó cộng mặt nạ này vào ảnh gốc với hệ số khuếch đại.
 
@@ -129,7 +118,7 @@ Trong đó: `w_0`, `w_1` là trọng số hai lớp; `μ_0`, `μ_1` là giá tr�
 sharpened(x,y) = original(x,y) + amount × [original(x,y) - blurred(x,y)]
 ```
 
-### 2.9. Adaptive Threshold — Ngưỡng thích nghi
+### 2.8. Adaptive Threshold — Ngưỡng thích nghi
 
 **Nguyên lý:** Thay vì dùng một ngưỡng cố định cho toàn bộ ảnh, ngưỡng thích nghi tính giá trị ngưỡng riêng cho từng pixel dựa trên giá trị trung bình của vùng lân cận.
 
@@ -143,7 +132,7 @@ Trong đó `C` là hằng số điều chỉnh (mặc định = 10), `mean_local
 
 **Ứng dụng:** Tạo ra ảnh nhị phân trắng–đen rõ ràng ngay cả khi ảnh gốc có độ sáng không đều.
 
-### 2.10. Đánh giá chất lượng ảnh — Quality Assessment
+### 2.9. Đánh giá chất lượng ảnh — Quality Assessment
 
 Hệ thống tính toán các chỉ số chất lượng trước khi gửi ảnh cho AI:
 
@@ -283,7 +272,7 @@ Hệ thống sử dụng kiến trúc **RESTful API** (Representational State Tr
 | Method | Endpoint | Chức năng |
 |---|---|---|
 | `POST` | `/api/grade` | Gọi Gemini API chấm điểm |
-| `POST` | `/api/preprocess` | Tiền xử lý ảnh (pipeline 10 bước) |
+| `POST` | `/api/preprocess` | Tiền xử lý ảnh (pipeline 9 bước) |
 | `GET/POST` | `/api/grades` | Đọc/lưu kết quả chấm điểm |
 | `GET/POST` | `/api/users` | Quản lý tài khoản người dùng |
 | `GET/POST` | `/api/classes` | Quản lý lớp học |

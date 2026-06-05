@@ -82,11 +82,11 @@
   ├── White Balance                   ├── Parse JSON response
   ├── Grayscale                       └── Trả kết quả chấm điểm
   ├── Shadow Removal                        │
-  ├── Grid Line Removal                     ▼
-  ├── CLAHE                          [Hiển thị kết quả]
-  ├── Sharpen                          ├── Điểm số + xếp hạng
-  ├── Adaptive Threshold               ├── Danh sách lỗi chính tả
-  └── Quality Assessment               ├── Văn bản gốc vs đã sửa
+  ├── CLAHE                                 ▼
+  ├── Sharpen                        [Hiển thị kết quả]
+  ├── Adaptive Threshold               ├── Điểm số + xếp hạng
+  └── Quality Assessment               ├── Danh sách lỗi chính tả
+                                       ├── Văn bản gốc vs đã sửa
         │                              └── Nhận xét AI
         ▼                                   │
 [Hiển thị ảnh đã xử lý]                    ▼
@@ -294,7 +294,7 @@ model Grade {
 
 | Method | Path | Mô tả |
 |---|---|---|
-| `POST` | `/api/preprocess` | Tiền xử lý ảnh (10-step pipeline), trả ảnh đã xử lý + quality report |
+| `POST` | `/api/preprocess` | Tiền xử lý ảnh (9-step pipeline), trả ảnh đã xử lý + quality report |
 
 ### 6.4 User & Class Management
 
@@ -364,11 +364,10 @@ Input: ảnh base64 (JPG/PNG/WebP)
     ├─ [3] White Balance: Gray World Assumption (trên ảnh màu)
     ├─ [4] Grayscale
     ├─ [5] Shadow Removal: boxBlur background normalization
-    ├─ [6] Grid Line Removal: phát hiện dòng kẻ ngang/dọc mỏng dài
-    ├─ [7] CLAHE: Contrast Limited Adaptive Histogram Equalization
-    ├─ [8] Sharpen: Unsharp Mask
-    ├─ [9] Adaptive Threshold: Gaussian/Mean/Otsu (integral image)
-    └─ [10] Quality Assessment: blur, brightness, resolution, text ratio
+    ├─ [6] CLAHE: Contrast Limited Adaptive Histogram Equalization
+    ├─ [7] Sharpen: Unsharp Mask
+    ├─ [8] Adaptive Threshold: Gaussian/Mean/Otsu (integral image)
+    └─ [9] Quality Assessment: blur, brightness, resolution, text ratio
            │
            ▼
     Output: { processedBase64, qualityReport }
@@ -382,8 +381,6 @@ Input: ảnh base64 (JPG/PNG/WebP)
 | `enableWhiteBalance` | true | Cân bằng trắng |
 | `enableShadowRemoval` | true | Khử bóng |
 | `shadowKernelSize` | 51 | Kernel size cho blur (phải lẻ) |
-| `enableGridRemoval` | true | Xoá dòng kẻ ô ly |
-| `gridLineMinLength` | 80 | Độ dài tối thiểu dòng kẻ (px) |
 | `enableClahe` | true | Tăng tương phản cục bộ |
 | `claheClipLimit` | 2.0 | CLAHE clip limit |
 | `claheTileGridSize` | 8 | Số tile mỗi chiều |

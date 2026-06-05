@@ -19,11 +19,11 @@ Hệ thống được thiết kế để hỗ trợ trực tiếp cho giáo viê
 ### 4.1.2. Quy trình phát triển hệ thống
 Quy trình phát triển và hoàn thiện hệ thống **ViHand Grade** được thực hiện qua chu trình 9 giai đoạn chặt chẽ, từ khâu thu thập dữ liệu thực tế cho đến khâu triển khai phần cứng nhúng và giám sát thực nghiệm. **Hình 4.5** biểu diễn toàn bộ vòng đời phát triển dự án:
 
-![Hình 4.5. Sơ đồ quy trình phát triển hệ thống ViHand Grade](flowchartv2/chuong4_5_quy_trinh_phat_trien.png)
+![Hình 4.5. Sơ đồ quy trình phát triển hệ thống ViHand Grade](flowcharts/chuong4_5_quy_trinh_phat_trien.png)
 
 * **Thu thập dữ liệu:** Thu thập ảnh chụp bài viết chính tả tiếng Việt trên giấy ô ly từ học sinh tiểu học thực tế (các khối lớp, các kiểu chữ viết tay bằng bút chì, bút mực, có lỗi chính tả thật). Các dữ liệu ảnh này được thu thập trực tiếp từ các trường tiểu học liên kết hoặc do chính giáo viên chụp lại trong quá trình giảng dạy nhằm đảm bảo tính đa dạng về chất lượng ánh sáng, độ nghiêng nét viết, và các kiểu chữ viết tay thực tế.
 * **Khám phá dữ liệu:** Xem xét các thuộc tính và đặc trưng của dữ liệu chữ viết tay tiểu học, bao gồm số lượng mẫu ảnh, loại bút viết (bút chì, bút mực), phân phối các nhóm lỗi chính tả phổ biến (`phu_am_dau`, `van`, `dau_thanh`, `viet_hoa`, `bo_sot_them`), và phân tích đặc tính cấu trúc của dòng kẻ ô ly (màu sắc dòng kẻ xanh/đỏ, độ mỏng dòng kẻ) để làm cơ sở thiết kế thuật toán lọc và cấu trúc barem điểm chuẩn xác.
-* **Tiền xử lý dữ liệu (ảnh số):** Tiền xử lý dữ liệu ảnh là quá trình làm sạch, chuẩn hóa và biến đổi hình ảnh điểm ảnh (pixel-level) để chuẩn bị tốt nhất cho quá trình nhận diện của mô hình. Hệ thống thiết lập pipeline 10 bước xử lý ảnh sử dụng thư viện Jimp để khử các nhiễu vật lý bao gồm xoay ảnh định hướng EXIF, giảm kích thước ảnh tối ưu token, cân bằng trắng Gray World, khử bóng che bằng chuẩn hóa nền, loại bỏ hoàn toàn lưới ô ly Grid Line Removal, tăng tương phản CLAHE, làm nét Unsharp Mask, đánh giá chất lượng Quality Assessment và nhị phân hóa thích nghi Adaptive Gaussian Thresholding.
+* **Tiền xử lý dữ liệu (ảnh số):** Tiền xử lý dữ liệu ảnh là quá trình làm sạch, chuẩn hóa và biến đổi hình ảnh điểm ảnh (pixel-level) để chuẩn bị tốt nhất cho quá trình nhận diện của mô hình. Hệ thống thiết lập pipeline 9 bước xử lý ảnh sử dụng thư viện Jimp để khử các nhiễu vật lý bao gồm xoay ảnh định hướng EXIF, giảm kích thước ảnh tối ưu token, cân bằng trắng Gray World, khử bóng che bằng chuẩn hóa nền, tăng tương phản CLAHE, làm nét Unsharp Mask, đánh giá chất lượng Quality Assessment và nhị phân hóa thích nghi Adaptive Gaussian Thresholding.
 * **Xây dựng mô hình & Prompt:** Lựa chọn và thiết lập mô hình phù hợp cho việc nhận dạng chữ viết tay và chấm bài tự động. Hệ thống tích hợp mô hình ngôn ngữ lớn đa phương thức Google Gemini 3 Flash. Đồng thời thiết kế Prompt hệ thống đóng vai trò một giáo viên chuyên nghiệp, tích hợp barem điểm chuẩn của Bộ Giáo dục & Đào tạo Việt Nam theo tinh thần Thông tư 27/2020/TT-BGDĐT và cấu trúc Response Schema chi tiết để cưỡng chế AI trả về định dạng JSON hợp lệ chứa các trường thông tin cụ thể (`score`, `breakdown`, `corrections`, `overallRating`, `feedback`).
 * **Huấn luyện và thử nghiệm:** Thực nghiệm gửi ảnh và thử nghiệm khả năng nhận diện chữ viết (OCR) và độ chính xác phân loại lỗi, chấm điểm trên tập dữ liệu kiểm thử thực tế. Quá trình này giúp đánh giá khả năng dự đoán của mô hình và xác định mức độ tin cậy của phản hồi so với kết quả chấm thủ công của giáo viên.
 * **Tinh chỉnh và cải thiện mô hình:** Dựa trên kết quả đánh giá, tiến hành tinh chỉnh mô hình bằng cách hiệu chỉnh các siêu tham số của bộ tiền xử lý ảnh (như giảm hằng số hiệu chỉnh `C` trong Adaptive Threshold cục bộ xuống còn 5 và thiết lập `blockSize = 31` để giữ nguyên nét bút chì mảnh nhất) và tinh chỉnh câu chữ trong Prompt (few-shot prompting, điều chỉnh temperature = 0.1) nhằm loại bỏ hiện tượng ảo giác (hallucination) của AI và nâng cao tỷ lệ phản hồi JSON hợp lệ đạt 96.3%.
@@ -34,7 +34,7 @@ Quy trình phát triển và hoàn thiện hệ thống **ViHand Grade** đượ
 ### 4.1.3. Cách hoạt động của hệ thống
 * Hệ thống kết hợp kỹ thuật tiền xử lý ảnh số cục bộ và công nghệ Trí tuệ nhân tạo đa phương thức (Multimodal AI) đám mây để phân tích, nhận dạng chữ viết tay và tự động sửa lỗi chính tả tiếng Việt.
 * Mô hình ngôn ngữ lớn đa phương thức Google Gemini 3 Flash được Google DeepMind huấn luyện trên tập dữ liệu đa phương tiện khổng lồ để nắm bắt xuất sắc các mối tương quan ngữ nghĩa giữa nét chữ viết tay tiếng Việt và ngữ cảnh cụ thể của câu viết.
-* Khi giáo viên hoặc học sinh tải lên ảnh chụp bài viết tay trên giấy ô ly, hệ thống trước hết sẽ tự động kích hoạt bộ tiền xử lý gồm 10 bước cục bộ để lọc sạch các nhiễu vật lý (bóng tối, ám màu, lưới ô ly xanh/đỏ) và làm nổi bật biên độ nét chữ.
+* Khi giáo viên hoặc học sinh tải lên ảnh chụp bài viết tay trên giấy ô ly, hệ thống trước hết sẽ tự động kích hoạt bộ tiền xử lý gồm 9 bước cục bộ để lọc sạch các nhiễu vật lý (bóng tối, ám màu) và làm nổi bật biên độ nét chữ.
 * Tiếp theo, hệ thống gửi dữ liệu ảnh nhị phân đã chuẩn hóa kèm theo Prompt định nghĩa barem điểm chuẩn sang API của mô hình AI để nhận dạng chữ viết tay (OCR) và đọc hiểu toàn bộ ngữ cảnh nội dung bài viết.
 * Hệ thống trả về kết quả đánh giá toàn diện dưới dạng cấu trúc JSON đã phân tích cú pháp. Kết quả này bao gồm: Điểm số chi tiết của 4 tiêu chí chuẩn (Chính tả 4.0đ, Hình thức 3.0đ, Nội dung 2.0đ, Sáng tạo 1.0đ), danh sách các lỗi chính tả được định vị chính xác kèm giải thích nguyên nhân và gợi ý sửa đúng, và lời nhận xét sư phạm mang tính động viên kịp thời.
 
@@ -61,8 +61,8 @@ Hệ thống **ViHand Grade** được xây dựng hoàn toàn trên nền tản
 | **Component** | Radix UI + shadcn/ui | — | Bộ thành phần UI chuẩn accessibility |
 | **ORM** | Prisma | 5.22.0 | Truy vấn CSDL an toàn |
 | **CSDL** | SQLite (better-sqlite3) | 12.x | Lưu trữ dữ liệu gọn nhẹ |
-| **AI API** | Google Gemini 3 Flash | v1beta | Nhận dạng và chấm điểm |
-| **Xử lý ảnh** | Jimp | 1.6.1 | Pipeline tiền xử lý 10 bước |
+| **AI API** | Google Gemini 3 Flash + `@google/genai` SDK | — | Nhận dạng và chấm điểm |
+| **Xử lý ảnh** | Jimp | 1.6.1 | Pipeline tiền xử lý 9 bước |
 | **Biểu đồ** | Recharts | 2.15.0 | Thống kê và báo cáo |
 | **Form** | React Hook Form + Zod | — | Xử lý và kiểm tra dữ liệu form |
 | **PWA** | next/manifest + Service Worker | — | Hỗ trợ cài đặt ứng dụng |
@@ -94,7 +94,7 @@ Web_sua_loi/
 │   ├── layout.tsx              ← Root layout (PWA meta)
 │   └── page.tsx                ← Trang đăng nhập
 ├── lib/
-│   └── image-processor.ts      ← Pipeline tiền xử lý 10 bước
+│   └── image-processor.ts      ← Pipeline tiền xử lý 9 bước
 ├── prisma/
 │   ├── schema.prisma           ← Định nghĩa CSDL
 │   └── vihand.db               ← File CSDL SQLite
@@ -107,7 +107,7 @@ Web_sua_loi/
 
 **Hình 4.1** mô tả sơ đồ quan hệ thực thể (ER Diagram) giữa ba Model dữ liệu cốt lõi của hệ thống.
 
-![Hình 4.1. Sơ đồ CSDL (Entity-Relationship Diagram) — 3 Model: User, Class, Grade](flowchartv2/chuong4_1_so_do_csdl.png)
+![Hình 4.1. Sơ đồ CSDL (Entity-Relationship Diagram) — 3 Model: User, Class, Grade](flowcharts/chuong4_1_so_do_csdl.png)
 
 ### 4.2.1. Database của hệ thống
 Hệ thống **ViHand Grade** lựa chọn hệ quản trị cơ sở dữ liệu **SQLite** kết hợp cùng thư viện **better-sqlite3** làm công cụ lưu trữ dữ liệu chính thức. Lựa chọn này xuất phát từ các yêu cầu đặc thù của kiến trúc phần cứng nhúng Raspberry Pi 4 cũng như bài toán vận hành độc lập tại các trường tiểu học:
@@ -216,7 +216,7 @@ Bảng 4.4 chi tiết hóa cấu trúc trường dữ liệu của Model `Grade`
 
 (Nguồn: (Tailwind CSS Docs, 2026))
 
-![Hình 4.3. Bản đồ điều hướng giao diện cho 3 vai trò người dùng (Teacher, Student, Admin)](flowchartv2/chuong4_3_ui_navigation.png)
+![Hình 4.3. Bản đồ điều hướng giao diện cho 3 vai trò người dùng (Teacher, Student, Admin)](flowcharts/chuong4_3_ui_navigation.png)
 
 Cụ thể, việc lựa chọn Tailwind CSS kết hợp cùng bộ thư viện component **shadcn/ui** và **Radix UI** mang lại những lợi ích vượt trội:
 * **Tăng tốc độ phát triển giao diện:** Khác với các framework truyền thống phải viết các lớp CSS tùy chỉnh dài dòng, Tailwind cho phép áp dụng phong cách trực tiếp trên mã nguồn HTML/JSX. Sự kết hợp với **shadcn/ui** mang lại các khối thành phần được thiết kế sẵn cực đẹp và tối ưu khả năng tiếp cận (Accessibility), giúp tiết kiệm phần lớn thời gian xây dựng giao diện.
@@ -257,63 +257,67 @@ Toàn bộ logic xử lý phía server được tổ chức trong thư mục `ap
 
 Đây là API trung tâm của toàn hệ thống, thực hiện luồng xử lý 4 bước. **Hình 4.2** mô tả đầy đủ luồng điều khiển của API này:
 
-![Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade](flowchartv2/chuong4_2_api_grade_flow.png)
+![Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade](flowcharts/chuong4_2_api_grade_flow.png)
 
-**Bước 1 — Tiền xử lý ảnh:** Nhận ảnh dạng Base64 từ client, gọi hàm `preprocessImage()` trong `lib/image-processor.ts` để thực thi toàn bộ pipeline 10 bước. Nếu `QualityReport` phát hiện ảnh kém chất lượng, API trả về cảnh báo ngay mà không gọi Gemini.
+**Bước 1 — Nén ảnh phía client (Frontend Optimization):** Trước khi gửi ảnh lên server, trình duyệt tự động thực hiện nén ảnh thông qua hàm `compressImageForAPI()`: resize ảnh về tối đa 1280px (chiều dài nhất) và xuất ra định dạng JPEG với chất lượng 75%. Kỹ thuật này giúp giảm kích thước payload từ ~3–5MB (ảnh gốc từ camera) xuống còn ~200–400KB, giúp giảm đáng kể thời gian truyền tải và xử lý token của mô hình AI, trong khi vẫn giữ đủ độ phân giải để nhận dạng chữ viết tay.
 
-**Bước 2 — Xây dựng Payload Gemini:** Kết hợp `GRADING_PROMPT` (barem điểm sư phạm 4 tiêu chí) với ảnh đã xử lý dạng Base64 JPEG hoặc văn bản nhập trực tiếp thành một `generationConfig` gửi đi.
+**Bước 2 — Xây dựng Contents cho Gemini SDK:** Kết hợp dữ liệu ảnh nén dạng `inlineData` (Base64 JPEG) hoặc văn bản nhập trực tiếp cùng với `GRADING_PROMPT` (barem điểm sư phạm 4 tiêu chí) thành mảng `contents` gửi đến mô hình. Hệ thống sử dụng thư viện chính thức **`@google/genai`** (Google GenAI SDK cho JavaScript/TypeScript) với cấu hình `responseMimeType: "application/json"` để cưỡng chế mô hình trả về chuỗi JSON hợp lệ trực tiếp, thay vì phải phân tích cú pháp thủ công từ văn bản tự do.
 
-**Bước 3 — Triển khai thuật toán Xoay vòng khóa (API Key Rotation) và Khả năng chịu lỗi:**
-Thay vì chỉ gọi đơn lẻ một API Key (dễ gặp lỗi 503 do cạn kiệt tài nguyên), backend triển khai thuật toán quay vòng thông minh thông qua hai hàm cốt lõi:
-* `getApiKeys()`: Tự động trích xuất chuỗi cấu hình `GEMINI_API_KEYS` từ file `.env.local`, tách chuỗi theo dấu phẩy thành một mảng các khóa hợp lệ.
-* `callGeminiWithKeyRotation(keys, body)`: Nhận mảng khóa, trộn ngẫu nhiên thứ tự các khóa để cân bằng tải trọng (Load Balancing). Với mỗi khóa, tiến hành gửi yêu cầu. Nếu gặp lỗi trạng thái `503` hoặc `429` (server bận/vượt quota), hệ thống tự động tạm ngưng `1500ms` và thực hiện retry lần 2 với cùng khóa đó. Nếu vẫn tiếp tục bận, hệ thống tự động nhảy sang khóa tiếp theo trong mảng cho đến khi thành công.
+**Bước 3 — Triển khai thuật toán Xoay vòng khóa tức thì (Instant API Key Rotation):**
+Thay vì chỉ gọi đơn lẻ một API Key (dễ gặp lỗi quota do giới hạn 20 request/ngày/key trên gói miễn phí), backend triển khai thuật toán quay vòng tối ưu thông qua hai hàm cốt lõi:
+* `getApiKeys()`: Tự động trích xuất chuỗi cấu hình `GEMINI_API_KEYS` từ file `.env.local`, tách chuỗi theo dấu phẩy thành một mảng các khóa hợp lệ. Với 4 khóa, hệ thống đạt tổng quota ~80 request/ngày.
+* `callGeminiWithKeyRotation(keys, contents)`: Nhận mảng khóa, trộn ngẫu nhiên thứ tự các khóa để cân bằng tải trọng (Load Balancing). Với mỗi khóa, khởi tạo một instance `GoogleGenAI` client và gọi `client.models.generateContent()`. Thuật toán xoay vòng được tối ưu theo nguyên tắc: khi gặp lỗi `429 RESOURCE_EXHAUSTED` (hết quota), hệ thống **chuyển khóa ngay lập tức** mà không retry cùng khóa (vì quota không reset trong vài giây); khi gặp lỗi `503` (server quá tải), hệ thống tạm ngưng 500ms rồi chuyển sang khóa tiếp theo.
 
 Cấu trúc hiện thực mã nguồn của cơ chế xoay vòng khóa API trong file `app/api/grade/route.ts`:
 ```typescript
-// Gọi Gemini với cơ chế xoay vòng và tự động chuyển đổi khóa API khi bận (503/429)
+import { GoogleGenAI } from "@google/genai"
+
+// Gọi Gemini SDK với cơ chế xoay vòng khóa tức thì khi bị 429/503
 async function callGeminiWithKeyRotation(
   keys: string[],
-  body: object
-): Promise<{ data: any; keyIndex: number }> {
+  contents: any[],
+): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
   if (keys.length === 0) throw new Error("Không có API key nào được cấu hình")
-  
+
   // Trộn ngẫu nhiên danh sách khóa để cân bằng tải
   const shuffled = [...keys].sort(() => Math.random() - 0.5)
 
   for (let i = 0; i < shuffled.length; i++) {
     const key = shuffled[i]
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`
+    const client = new GoogleGenAI({ apiKey: key })
 
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        })
+    try {
+      const response = await client.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: contents,
+        config: {
+          responseMimeType: "application/json", // Cưỡng chế JSON output
+          temperature: 0.1,
+          topP: 0.95,
+          topK: 40,
+          maxOutputTokens: 8192,
+        },
+      })
 
-        if (res.status === 503 || res.status === 429) {
-          if (attempt === 1) {
-            await new Promise(r => setTimeout(r, 1500))
-            continue // Thử lại lần 2 với cùng khóa
-          }
-          break // Chuyển sang khóa tiếp theo
-        }
+      const text = response.text ?? ""
+      if (!text || text.trim().length === 0) continue // Response rỗng → thử key tiếp
 
-        if (!res.ok) break // Lỗi cú pháp/tham số → chuyển khóa khác ngay
+      return { text, tokenCount: response.usageMetadata?.totalTokenCount || 0, keyIndex: i + 1 }
 
-        const data = await res.json()
-        return { data, keyIndex: i + 1 }
-      } catch (err) {
-        if (attempt === 1) await new Promise(r => setTimeout(r, 1000))
-      }
+    } catch (err: any) {
+      const status = err?.status || 0
+      // 429 (quota) → chuyển key ngay, không delay (quota không reset trong vài giây)
+      if (status === 429 || err?.message?.includes("RESOURCE_EXHAUSTED")) continue
+      // 503 (overloaded) → đợi ngắn rồi thử key tiếp
+      if (status === 503) { await new Promise(r => setTimeout(r, 500)); continue }
+      continue // Lỗi khác → sang key tiếp
     }
   }
-  throw new Error("Tất cả API key đều bận. Vui lòng thử lại sau.")
+  throw new Error("Tất cả API key đều bận/hết quota. Vui lòng thử lại sau.")
 }
 ```
 
-**Bước 4 — Parse JSON và Trả kết quả:** API trích xuất nội dung từ phản hồi của Gemini, tiến hành loại bỏ các cú pháp bao bọc Markdown JSON (nếu có), phân tích cú pháp chuỗi JSON sang đối tượng có cấu trúc và trả về phía client kèm theo thời gian xử lý và thông tin báo cáo chất lượng ảnh `QualityReport`.
+**Bước 4 — Parse JSON và Trả kết quả:** Nhờ cấu hình `responseMimeType: "application/json"` trên SDK, phản hồi từ Gemini đã là chuỗi JSON hợp lệ trong phần lớn trường hợp. API vẫn thực hiện bước làm sạch phòng ngừa (loại bỏ cú pháp bao bọc Markdown nếu có), phân tích cú pháp JSON sang đối tượng có cấu trúc và trả về phía client kèm theo thời gian xử lý (`processingTimeMs`) và số token tiêu thụ (`tokenCount`).
 
 
 ### 4.3.3. API Lưu kết quả — `/api/grades` (GET/POST)
@@ -375,7 +379,7 @@ Hiển thị thống kê tổng quan của lớp học qua các biểu đồ Rec
 
 **Hình 4.4** minh hoạ kiến trúc triển khai thực tế của hệ thống, bao gồm mạng LAN nội bộ trường học và kênh truy cập internet qua Cloudflare Tunnel.
 
-![Hình 4.4. Kiến trúc triển khai thực tế — Raspberry Pi 4 + Cloudflare Tunnel](flowchartv2/chuong4_4_trien_khai.png)
+![Hình 4.4. Kiến trúc triển khai thực tế — Raspberry Pi 4 + Cloudflare Tunnel](flowcharts/chuong4_4_trien_khai.png)
 
 ### 4.5.1. Triển khai trên Raspberry Pi 4 (4GB RAM)
 

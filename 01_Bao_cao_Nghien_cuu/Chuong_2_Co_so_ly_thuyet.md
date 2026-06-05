@@ -72,19 +72,7 @@ Khi đã có Integral Image, tổng giá trị pixel của một vùng hình ch�
 $$\text{Sum} = II(x_2, y_2) - II(x_1-1, y_2) - II(x_2, y_1-1) + II(x_1-1, y_1-1)$$
 Độ phức tạp tính toán trung bình của phép lọc Box Blur và Adaptive Threshold lúc này giảm từ $O(W \times H \times ks^2)$ xuống còn **$O(W \times H)$**, hoàn toàn độc lập với kích thước kernel $ks$.
 
-### 2.2.4. Phân tích hình thái dòng kẻ ô ly (Grid Line Removal)
-Dòng kẻ ô ly của vở học sinh tiểu học Việt Nam có tính chất hình học đặc thù:
-- Nằm theo phương ngang hoặc đứng tuyệt đối (hoặc sai lệch rất ít do góc chụp).
-- Có độ dày cực mảnh (thường từ $1px$ đến $3px$).
-- Có độ dài liên tục kéo dài gần hết chiều rộng hoặc chiều cao trang giấy.
-
-Thuật toán xóa dòng kẻ hoạt động dựa trên cơ chế phân tích Run-Length ở mức điểm ảnh nhị phân:
-1. Nhị phân hóa ảnh nháp bằng thuật toán Otsu để tìm ma trận pixel tối.
-2. Quét ma trận theo từng dòng ngang: Tìm các chuỗi pixel tối liên tục có độ dài lớn hơn hoặc bằng ngưỡng `gridLineMinLength` (mặc định $80px$).
-3. Kiểm tra tính mảnh cục bộ (độ dày nét dọc): Tại mỗi chuỗi dài phát hiện được, thuật toán lấy mẫu ngẫu nhiên 8 điểm trên chuỗi và đếm số lượng pixel tối theo chiều đứng trong phạm vi $\pm 2px$. Nếu số lượng pixel tối trung bình nhỏ hơn hoặc bằng 3, chuỗi đó được xác định là dòng kẻ tập và được xóa bằng cách gán giá trị bằng 255 (trắng).
-4. Lặp lại quy trình tương tự bằng cách quét theo từng cột dọc để xóa các dòng kẻ đứng.
-
-### 2.2.5. Cân bằng Histogram thích nghi giới hạn tương phản (CLAHE)
+### 2.2.4. Cân bằng Histogram thích nghi giới hạn tương phản (CLAHE)
 Ảnh viết tay bằng bút chì của học sinh thường có độ tương phản cực kỳ thấp. Phép cân bằng biểu đồ tần suất thông thường (Global Histogram Equalization) sẽ làm cháy sáng các vùng quá sáng và làm tối đen các vùng thiếu sáng. Hệ thống ứng dụng thuật toán **CLAHE** để tối ưu:
 1. Chia bức ảnh thành lưới $8 \times 8$ ô nhỏ (Tiles).
 2. Tính histogram cho riêng từng ô.
@@ -92,7 +80,7 @@ Thuật toán xóa dòng kẻ hoạt động dựa trên cơ chế phân tích R
 4. Tính toán hàm phân phối tích lũy (CDF) cục bộ để ánh xạ giá trị pixel.
 5. Khi ánh xạ giá trị pixel của toàn ảnh, hệ thống áp dụng phép **nội suy song tuyến (bilinear interpolation)** giữa CDF của 4 ô lân cận gần nhất để đảm bảo quá trình chuyển đổi sắc độ diễn ra mượt mà, không xuất hiện hiệu ứng phân mảnh khối (blocking artifacts).
 
-### 2.2.6. Thuật toán làm nét (Unsharp Mask) và nhị phân hóa thích nghi (Adaptive Gaussian Thresholding)
+### 2.2.5. Thuật toán làm nét (Unsharp Mask) và nhị phân hóa thích nghi (Adaptive Gaussian Thresholding)
 - **Làm nét (Unsharp Mask):** Tăng cường biên cạnh nét chữ bị nhòe bằng cách cộng thêm sai lệch biên độ tần số cao:
 $$I_{\text{sharp}}(x,y) = I(x,y) + \alpha \times [I(x,y) - \text{BoxBlur}(I(x,y), 3)]$$
 Trong đó $\alpha = 0.5$ điều tiết mức độ sắc bén của nét chữ viết tay.
@@ -204,4 +192,4 @@ Do tính chất phức tạp của cấu trúc âm tiết kết hợp với phư
 ---
 
 ## 2.7. KẾT LUẬN CHƯƠNG
-Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang AI đa phương thức End-to-End; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Grid Line Removal, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) kiến trúc Transformer Self-Attention và đặc điểm của mô hình Google Gemini 3 Flash; (4) các kỹ thuật Prompt Engineering (Role, Few-Shot, JSON Schema Constraint); (5) phân loại lỗi chính tả tiếng Việt và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; và (6) các khái niệm công nghệ web nền tảng. Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).
+Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang AI đa phương thức End-to-End; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) kiến trúc Transformer Self-Attention và đặc điểm của mô hình Google Gemini 3 Flash; (4) các kỹ thuật Prompt Engineering (Role, Few-Shot, JSON Schema Constraint); (5) phân loại lỗi chính tả tiếng Việt và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; và (6) các khái niệm công nghệ web nền tảng. Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).

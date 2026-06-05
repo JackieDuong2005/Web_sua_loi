@@ -43,6 +43,18 @@ npm-debug.log*
 public/icon-192x192.png
 public/icon-512x512.png
 
-# Research/experiment/deployment folders (binary files, not part of the Next.js app)
-02_Kich_ban_Thuc_nghiem/
+# Chỉ bỏ qua file docx lớn và các file tạm thời
 01_Bao_cao_Nghien_cuu/BM18.-Bao-cao-tong-ket_dasua.docx
+01_Bao_cao_Nghien_cuu/BM17-Tr*.docx
+
+# Bỏ qua các file kết quả JSON lớn và ảnh benchmark trong 02_
+02_Kich_ban_Thuc_nghiem/*.json
+02_Kich_ban_Thuc_nghiem/anhdaduocOCR/
+anhdaduocOCR/
+
+# Bỏ qua file tạm
+temp_tom_tat.txt
+extracted_tom_tat.txt
+docx_content.txt
+extract_docx.py
+gemini_ocr.ipynb
