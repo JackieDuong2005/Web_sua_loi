@@ -290,7 +290,8 @@ export default function GradingPage() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+        // Yêu cầu portrait để khớp với dialog 3:4
+        video: { facingMode: "environment", width: { ideal: 1080 }, height: { ideal: 1920 } }
       })
       setCameraStream(stream)
       setIsCameraOpen(true)
@@ -308,10 +309,27 @@ export default function GradingPage() {
   const capturePhoto = () => {
     if (!videoRef.current) return
     const video = videoRef.current
+    const vw = video.videoWidth
+    const vh = video.videoHeight
+
+    // Crop về đúng tỉ lệ 3:4 (portrait) — khớp với vùng hiển thị trong dialog
+    const TARGET_RATIO = 3 / 4
+    let cropW = vw
+    let cropH = vh
+    if (vw / vh > TARGET_RATIO) {
+      // Video rộng hơn 3:4 → cắt hai bên trái/phải
+      cropW = Math.round(vh * TARGET_RATIO)
+    } else {
+      // Video cao hơn 3:4 → cắt trên/dưới
+      cropH = Math.round(vw / TARGET_RATIO)
+    }
+    const offsetX = Math.round((vw - cropW) / 2)
+    const offsetY = Math.round((vh - cropH) / 2)
+
     const canvas = document.createElement("canvas")
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    canvas.getContext("2d")?.drawImage(video, 0, 0)
+    canvas.width = cropW
+    canvas.height = cropH
+    canvas.getContext("2d")?.drawImage(video, offsetX, offsetY, cropW, cropH, 0, 0, cropW, cropH)
     const capturedImg = canvas.toDataURL("image/jpeg", 0.9)
     setUploadedImage(capturedImg)
     setProcessedImage(null)
@@ -750,36 +768,41 @@ export default function GradingPage() {
 
       {/* Camera Dialog */}
       <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
-        <DialogContent className="sm:max-w-md md:max-w-lg p-0 overflow-hidden bg-black border-none">
-          <DialogHeader className="p-4 bg-background/10 backdrop-blur-md absolute top-0 inset-x-0 z-10">
-            <DialogTitle className="text-white flex items-center gap-2">
-              <Camera className="w-5 h-5 text-primary" /> Camera quét bài viết
+        <DialogContent className="w-full max-w-sm sm:max-w-md p-0 overflow-hidden bg-black border-none rounded-2xl">
+          <DialogHeader className="p-3 bg-black/60 backdrop-blur-md absolute top-0 inset-x-0 z-10">
+            <DialogTitle className="text-white flex items-center gap-2 text-sm">
+              <Camera className="w-4 h-4 text-primary" /> Camera quét bài viết
             </DialogTitle>
           </DialogHeader>
-          <div className="relative aspect-[3/4] md:aspect-video bg-muted flex items-center justify-center">
+
+          {/* Video — toàn màn hình, không overlay */}
+          <div className="relative w-full bg-black" style={{ aspectRatio: "3/4" }}>
             <video
               ref={(el) => {
                 if (el && cameraStream) { el.srcObject = cameraStream; el.play().catch(console.error) }
                 // @ts-ignore
                 videoRef.current = el
               }}
-              autoPlay playsInline className="w-full h-full object-cover"
+              autoPlay playsInline
+              className="absolute inset-0 w-full h-full object-cover"
             />
-            <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none flex items-center justify-center">
-              <div className="w-full h-full border-2 border-white/30 border-dashed rounded-lg flex items-center justify-center">
-                <p className="text-white/50 text-xs text-center px-4">Đặt bài viết vào khung hình</p>
-              </div>
-            </div>
           </div>
-          <DialogFooter className="p-6 bg-background flex-row justify-center gap-4 sm:justify-center">
-            <Button variant="outline" size="icon" onClick={stopCamera} className="rounded-full w-12 h-12"><X className="w-6 h-6" /></Button>
-            <Button onClick={capturePhoto} size="lg" className="rounded-full w-16 h-16 bg-primary hover:bg-primary/90 shadow-lg p-0">
-              <div className="w-12 h-12 rounded-full border-4 border-white flex items-center justify-center">
-                <div className="w-8 h-8 rounded-full bg-white" />
-              </div>
+
+          {/* Controls */}
+          <div className="flex flex-row items-center justify-center gap-6 p-5 bg-black">
+            <Button variant="outline" size="icon" onClick={stopCamera}
+              className="rounded-full w-11 h-11 bg-white/10 border-white/20 text-white hover:bg-white/20">
+              <X className="w-5 h-5" />
             </Button>
-            <Button variant="outline" size="icon" className="rounded-full w-12 h-12"><RefreshCw className="w-6 h-6" /></Button>
-          </DialogFooter>
+            <button onClick={capturePhoto}
+              className="w-16 h-16 rounded-full bg-white border-4 border-primary shadow-lg flex items-center justify-center active:scale-95 transition-transform">
+              <div className="w-10 h-10 rounded-full bg-primary" />
+            </button>
+            <Button variant="outline" size="icon"
+              className="rounded-full w-11 h-11 bg-white/10 border-white/20 text-white hover:bg-white/20">
+              <RefreshCw className="w-5 h-5" />
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
