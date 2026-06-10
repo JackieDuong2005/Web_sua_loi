@@ -28,6 +28,8 @@ export interface PreprocessConfig {
   brightnessHigh: number;
   minResolution: number;
   minTextAreaRatio: number;
+  enableDeskew: boolean;      // Tự động phát hiện và chỉnh góc nghiêng
+  deskewMaxAngle: number;     // Góc tối đa tìm kiếm (độ), mặc định 15
 }
 
 export interface QualityReport {
@@ -58,6 +60,8 @@ const DEFAULT_CONFIG: PreprocessConfig = {
   brightnessHigh: 220,
   minResolution: 250,
   minTextAreaRatio: 0.005,
+  enableDeskew: true,
+  deskewMaxAngle: 15,
 };
 
 // ═══════════════════════════ HELPERS ═══════════════════════════════
@@ -324,15 +328,199 @@ function assessQuality(gray: Uint8Array, w: number, h: number, cfg: PreprocessCo
   };
 }
 
+// ═══════════════════════ EXIF ROTATION ═══════════════════════
+
+/**
+ * Đọc EXIF Orientation tag từ raw JPEG buffer (thuần JS, không cần package).
+ * Cấu trúc: FF E1 [len] 'Exif\0\0' [TIFF header] [IFD0 entries] ...
+ * Tag Orientation = 0x0112, value offset phụ thuộc endian.
+ */
+function readExifOrientation(buf: Buffer): number {
+  try {
+    // Tìm APP1 marker (0xFF 0xE1)
+    let offset = 2; // bỏ SOI (0xFF 0xD8)
+    while (offset + 4 < buf.length) {
+      if (buf[offset] !== 0xFF) break;
+      const marker = buf[offset + 1];
+      const segLen = buf.readUInt16BE(offset + 2);
+
+      if (marker === 0xE1) { // APP1
+        // Kiểm tra chữ ký 'Exif\0\0'
+        if (buf.slice(offset + 4, offset + 10).toString("ascii") !== "Exif\0\0") break;
+
+        const tiffBase = offset + 10;
+        // TIFF header: byte order (II = little-endian, MM = big-endian)
+        const littleEndian = buf.readUInt16BE(tiffBase) === 0x4949; // 'II'
+        const read16 = (o: number) => littleEndian ? buf.readUInt16LE(o) : buf.readUInt16BE(o);
+        const read32 = (o: number) => littleEndian ? buf.readUInt32LE(o) : buf.readUInt32BE(o);
+
+        // Offset tới IFD0 (tính từ tiffBase)
+        const ifdOffset = tiffBase + read32(tiffBase + 4);
+        const entryCount = read16(ifdOffset);
+
+        for (let i = 0; i < entryCount; i++) {
+          const entryBase = ifdOffset + 2 + i * 12;
+          if (entryBase + 12 > buf.length) break;
+          const tag = read16(entryBase);
+          if (tag === 0x0112) { // Orientation
+            return read16(entryBase + 8); // value (SHORT = 2 bytes tại value offset)
+          }
+        }
+        break;
+      }
+
+      offset += 2 + segLen;
+    }
+  } catch { /* bỏ qua nếu không parse được */ }
+  return 1; // mặc định = không xoay
+}
+
+/**
+ * Áp dụng EXIF Orientation — xoay/lật ảnh Jimp về đúng chiều.
+ * Jimp v1 KHÔNG tự xử lý EXIF — phải gọi hàm này thủ công.
+ *
+ * Orientation values (EXIF spec):
+ *   1 = bình thường, 3 = 180°, 6 = 90° CW (điện thoại chụp ngang phải),
+ *   8 = 90° CCW (điện thoại chụp ngang trái)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyExifRotation(image: any, rawBuffer: Buffer): void {
+  const orientation = readExifOrientation(rawBuffer);
+  switch (orientation) {
+    case 2: image.flip({ horizontal: true }); break;
+    case 3: image.rotate(180); break;
+    case 4: image.flip({ vertical: true }); break;
+    case 5: image.rotate(90); image.flip({ horizontal: true }); break;
+    case 6: image.rotate(270); break;  // 90° CW → xoay ngược 270°
+    case 7: image.rotate(270); image.flip({ horizontal: true }); break;
+    case 8: image.rotate(90); break;   // 90° CCW
+    default: break;                    // 1 = không cần xoay
+  }
+}
+
+// ═══════════════════════ DESKEW (CHỈNH GÓC NGHIÊNG) ═══════════════════════
+
+/**
+ * Xoay ảnh grayscale tạm thời theo góc cho trước để tính histogram.
+ * Dùng phép chiếu gần đúng: với mỗi hàng y, tính tổng pixel tối (< 128)
+ * sau khi dịch chuyển cột x += y * tan(angle).
+ * Bỏ 5% trên và 5% dưới để tránh nhiễu từ dấu thanh tiếng Việt.
+ */
+function projectionVariance(gray: Uint8Array, w: number, h: number, angleDeg: number): number {
+  const rad = (angleDeg * Math.PI) / 180;
+  const tanA = Math.tan(rad);
+
+  // Bỏ 5% hàng trên/dưới để giảm nhiễu dấu thanh tiếng Việt
+  const yStart = Math.floor(h * 0.05);
+  const yEnd   = Math.floor(h * 0.95);
+
+  const counts = new Float64Array(h);
+  for (let y = yStart; y < yEnd; y++) {
+    let dark = 0;
+    for (let x = 0; x < w; x++) {
+      // Dịch cột theo góc (shear ngang)
+      const xShifted = Math.round(x + (y - h / 2) * tanA);
+      if (xShifted < 0 || xShifted >= w) continue;
+      if (gray[y * w + xShifted] < 128) dark++;
+    }
+    counts[y] = dark;
+  }
+
+  // Tính variance của mảng counts
+  let sum = 0;
+  const len = yEnd - yStart;
+  for (let y = yStart; y < yEnd; y++) sum += counts[y];
+  const mean = sum / len;
+  let variance = 0;
+  for (let y = yStart; y < yEnd; y++) {
+    const d = counts[y] - mean;
+    variance += d * d;
+  }
+  return variance / len;
+}
+
+/**
+ * Phát hiện góc nghiêng của văn bản bằng Projection Profile Method.
+ * Thử các góc từ -maxAngle đến +maxAngle (bước 0.5°).
+ * Trả về góc (độ) cần xoay để chỉnh thẳng, hoặc 0 nếu ảnh đã thẳng.
+ * Chỉ xoay nếu góc phát hiện > 0.5° để tránh xoay không cần thiết.
+ */
+function detectSkewAngle(gray: Uint8Array, w: number, h: number, maxAngle: number): number {
+  // Resize xuống để tính nhanh hơn (tối đa 400px chiều rộng)
+  let gw = w, gh = h, gg = gray;
+  if (w > 400) {
+    const scale = 400 / w;
+    gw = 400;
+    gh = Math.round(h * scale);
+    gg = new Uint8Array(gw * gh);
+    for (let y = 0; y < gh; y++)
+      for (let x = 0; x < gw; x++) {
+        const sx = Math.round(x / scale);
+        const sy = Math.round(y / scale);
+        gg[y * gw + x] = gray[Math.min(sy, h - 1) * w + Math.min(sx, w - 1)];
+      }
+  }
+
+  let bestAngle = 0;
+  let bestVariance = -1;
+  const step = 0.5; // độ chính xác 0.5°
+
+  for (let a = -maxAngle; a <= maxAngle; a += step) {
+    const v = projectionVariance(gg, gw, gh, a);
+    if (v > bestVariance) {
+      bestVariance = v;
+      bestAngle = a;
+    }
+  }
+
+  // Chỉ trả về góc nếu đủ có ý nghĩa (> 0.5°)
+  return Math.abs(bestAngle) > 0.5 ? bestAngle : 0;
+}
+
+/**
+ * Áp dụng deskew lên ảnh Jimp:
+ * 1. Chuyển sang grayscale tạm để tính góc
+ * 2. Phát hiện góc nghiêng
+ * 3. Xoay ngược lại để chỉnh thẳng
+ * Nền trắng (255) để tránh viền đen sau khi xoay.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function deskewImage(image: any, cfg: PreprocessConfig): void {
+  const w = image.bitmap.width;
+  const h = image.bitmap.height;
+  const data: Buffer = image.bitmap.data;
+
+  // Tạo grayscale tạm để detect skew (không làm ảnh gốc thành grayscale)
+  const grayTemp = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const idx = i * 4;
+    grayTemp[i] = Math.round(data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114);
+  }
+
+  const angle = detectSkewAngle(grayTemp, w, h, cfg.deskewMaxAngle);
+  if (angle !== 0) {
+    // Jimp.rotate(deg) xoay ngược chiều kim đồng hồ
+    // → để chỉnh ảnh nghiêng +angle° cần xoay -angle°
+    image.rotate(-angle, { mode: "expand" }); // expand = giữ nguyên toàn bộ nội dung
+  }
+}
+
 // ═══════════════════════ MAIN PIPELINE ═══════════════════════
 
 /**
  * Pipeline tiền xử lý đầy đủ cho OCR chữ viết tay học sinh tiểu học.
  *
  * Pipeline:
- *   EXIF auto-rotate (Jimp tự xử lý) → resize → white balance → grayscale
- *   → shadow removal → CLAHE → sharpen
- *   → adaptive threshold → quality assessment
+ *   0. EXIF auto-rotate     — xoay đúng chiều theo metadata điện thoại
+ *   0.5. Deskew             — tự động phát hiện & chỉnh góc nghiêng văn bản
+ *   1. Resize               — giới hạn chiều rộng tối đa
+ *   2. White balance        — cân bằng màu sắc
+ *   3. Grayscale            — chuyển xám
+ *   4. Shadow removal       — loại bóng đổ
+ *   5. CLAHE                — tăng tương phản cục bộ
+ *   6. Sharpen              — làm nét chữ
+ *   7. Quality assessment   — đánh giá chất lượng
+ *   8. Threshold            — nhị phân hóa
  *
  * @param base64Data - Ảnh dạng base64 (không có prefix data:...)
  * @param userConfig - Cấu hình tuỳ chỉnh (partial, merge với default)
@@ -345,10 +533,17 @@ export async function preprocessImage(
   const cfg = { ...DEFAULT_CONFIG, ...userConfig };
 
   const buffer = Buffer.from(base64Data, "base64");
-  // Jimp.read() tự xử lý EXIF orientation
   const image = await Jimp.read(buffer);
 
-  // 1. Resize
+  // 0. EXIF Orientation — xoay ảnh về đúng chiều trước khi xử lý
+  //    (Jimp v1 không tự đọc EXIF, phải xử lý thủ công)
+  applyExifRotation(image, buffer);
+
+  // 0.5. Deskew — tự động phát hiện & chỉnh góc nghiêng văn bản
+  //      Dùng Projection Profile: tìm góc làm histogram hàng có variance lớn nhất
+  if (cfg.enableDeskew) deskewImage(image, cfg);
+
+  // 1. Resize (sau khi đã xoay & deskew — width/height đã đúng)
   if (image.bitmap.width > cfg.resizeMaxWidth) {
     const ratio = cfg.resizeMaxWidth / image.bitmap.width;
     image.resize({ w: cfg.resizeMaxWidth, h: Math.round(image.bitmap.height * ratio) });
