@@ -401,107 +401,114 @@ function applyExifRotation(image: any, rawBuffer: Buffer): void {
 // ═══════════════════════ DESKEW (CHỈNH GÓC NGHIÊNG) ═══════════════════════
 
 /**
- * Xoay ảnh grayscale tạm thời theo góc cho trước để tính histogram.
- * Dùng phép chiếu gần đúng: với mỗi hàng y, tính tổng pixel tối (< 128)
- * sau khi dịch chuyển cột x += y * tan(angle).
- * Bỏ 5% trên và 5% dưới để tránh nhiễu từ dấu thanh tiếng Việt.
+ * Tính variance histogram hàng sau khi chiếu ảnh nhị phân theo góc thực.
+ * Dùng tọa độ xoay cos/sin — KHÔNG dùng shear gần đúng.
+ * Mỗi pixel tối được ánh xạ lên hàng trong không gian đã xoay,
+ * rồi đếm số pixel/hàng. Variance lớn = chữ thẳng hàng = góc đúng.
  */
-function projectionVariance(gray: Uint8Array, w: number, h: number, angleDeg: number): number {
-  const rad = (angleDeg * Math.PI) / 180;
-  const tanA = Math.tan(rad);
+function rotatedProjectionVariance(
+  binary: Uint8Array, w: number, h: number, angleDeg: number
+): number {
+  const rad    = (angleDeg * Math.PI) / 180;
+  const cosA   = Math.cos(rad);
+  const sinA   = Math.sin(rad);
+  const cx     = w / 2;
+  const cy     = h / 2;
+  const newH   = Math.ceil(Math.abs(h * cosA) + Math.abs(w * Math.abs(sinA))) + 2;
+  const offset = Math.floor(newH / 2);
+  const counts = new Int32Array(newH);
 
-  // Bỏ 5% hàng trên/dưới để giảm nhiễu dấu thanh tiếng Việt
-  const yStart = Math.floor(h * 0.05);
-  const yEnd   = Math.floor(h * 0.95);
-
-  const counts = new Float64Array(h);
-  for (let y = yStart; y < yEnd; y++) {
-    let dark = 0;
+  for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      // Dịch cột theo góc (shear ngang)
-      const xShifted = Math.round(x + (y - h / 2) * tanA);
-      if (xShifted < 0 || xShifted >= w) continue;
-      if (gray[y * w + xShifted] < 128) dark++;
+      if (binary[y * w + x] === 0) {
+        const ry = Math.round((x - cx) * sinA + (y - cy) * cosA) + offset;
+        if (ry >= 0 && ry < newH) counts[ry]++;
+      }
     }
-    counts[y] = dark;
   }
 
-  // Tính variance của mảng counts
   let sum = 0;
-  const len = yEnd - yStart;
-  for (let y = yStart; y < yEnd; y++) sum += counts[y];
-  const mean = sum / len;
+  for (let i = 0; i < newH; i++) sum += counts[i];
+  const mean = sum / newH;
   let variance = 0;
-  for (let y = yStart; y < yEnd; y++) {
-    const d = counts[y] - mean;
-    variance += d * d;
-  }
-  return variance / len;
+  for (let i = 0; i < newH; i++) { const d = counts[i] - mean; variance += d * d; }
+  return variance / newH;
 }
 
 /**
- * Phát hiện góc nghiêng của văn bản bằng Projection Profile Method.
- * Thử các góc từ -maxAngle đến +maxAngle (bước 0.5°).
- * Trả về góc (độ) cần xoay để chỉnh thẳng, hoặc 0 nếu ảnh đã thẳng.
- * Chỉ xoay nếu góc phát hiện > 0.5° để tránh xoay không cần thiết.
+ * Phát hiện góc nghiêng văn bản — thuật toán cải tiến:
+ *   1. Downsample về ≤ 400px để tính nhanh trên RPi4
+ *   2. Otsu threshold → ảnh nhị phân sạch (mực/nền)
+ *   3. Lọc bỏ hàng đường kẻ ô ly (> 35% pixel đen = grid line)
+ *   4. Tìm góc tốt nhất bước 1°, tinh chỉnh 0.1° trong ±1° quanh đó
+ * Trả về góc (độ) cần xoay để chỉnh thẳng, 0 nếu ảnh đã thẳng (< 0.3°).
  */
 function detectSkewAngle(gray: Uint8Array, w: number, h: number, maxAngle: number): number {
-  // Resize xuống để tính nhanh hơn (tối đa 400px chiều rộng)
+  // 1. Downsample
   let gw = w, gh = h, gg = gray;
   if (w > 400) {
     const scale = 400 / w;
-    gw = 400;
+    gw = Math.round(w * scale);
     gh = Math.round(h * scale);
     gg = new Uint8Array(gw * gh);
     for (let y = 0; y < gh; y++)
       for (let x = 0; x < gw; x++) {
-        const sx = Math.round(x / scale);
-        const sy = Math.round(y / scale);
-        gg[y * gw + x] = gray[Math.min(sy, h - 1) * w + Math.min(sx, w - 1)];
+        const sx = Math.min(Math.round(x / scale), w - 1);
+        const sy = Math.min(Math.round(y / scale), h - 1);
+        gg[y * gw + x] = gray[sy * w + sx];
       }
   }
 
-  let bestAngle = 0;
-  let bestVariance = -1;
-  const step = 0.5; // độ chính xác 0.5°
+  // 2. Otsu threshold → binary
+  const thresh = otsuThreshold(gg);
+  const binary = new Uint8Array(gw * gh);
+  for (let i = 0; i < gg.length; i++) binary[i] = gg[i] < thresh ? 0 : 255;
 
-  for (let a = -maxAngle; a <= maxAngle; a += step) {
-    const v = projectionVariance(gg, gw, gh, a);
-    if (v > bestVariance) {
-      bestVariance = v;
-      bestAngle = a;
-    }
+  // 3. Lọc hàng grid-line (> 35% pixel đen = đường kẻ ô ly, không phải chữ)
+  for (let y = 0; y < gh; y++) {
+    let dark = 0;
+    for (let x = 0; x < gw; x++) if (binary[y * gw + x] === 0) dark++;
+    if (dark / gw > 0.35)
+      for (let x = 0; x < gw; x++) binary[y * gw + x] = 255;
   }
 
-  // Chỉ trả về góc nếu đủ có ý nghĩa (> 0.5°)
-  return Math.abs(bestAngle) > 0.5 ? bestAngle : 0;
+  // 4. Tìm góc tốt nhất bước 1°
+  let bestAngle = 0, bestVariance = -1;
+  for (let a = -maxAngle; a <= maxAngle; a += 1.0) {
+    const v = rotatedProjectionVariance(binary, gw, gh, a);
+    if (v > bestVariance) { bestVariance = v; bestAngle = a; }
+  }
+
+  // 5. Tinh chỉnh bước 0.1° trong ±1° quanh góc tốt nhất
+  for (let a = bestAngle - 1.0; a <= bestAngle + 1.0; a += 0.1) {
+    const aa = Math.round(a * 10) / 10;
+    const v = rotatedProjectionVariance(binary, gw, gh, aa);
+    if (v > bestVariance) { bestVariance = v; bestAngle = aa; }
+  }
+
+  return Math.abs(bestAngle) > 0.3 ? Math.round(bestAngle * 10) / 10 : 0;
 }
 
 /**
- * Áp dụng deskew lên ảnh Jimp:
- * 1. Chuyển sang grayscale tạm để tính góc
- * 2. Phát hiện góc nghiêng
- * 3. Xoay ngược lại để chỉnh thẳng
- * Nền trắng (255) để tránh viền đen sau khi xoay.
+ * Áp dụng deskew lên ảnh Jimp.
+ * Tạo grayscale tạm để phân tích góc mà không thay đổi ảnh gốc màu.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deskewImage(image: any, cfg: PreprocessConfig): void {
-  const w = image.bitmap.width;
-  const h = image.bitmap.height;
-  const data: Buffer = image.bitmap.data;
+  const w    = image.bitmap.width;
+  const h    = image.bitmap.height;
+  const data = image.bitmap.data as Buffer;
 
-  // Tạo grayscale tạm để detect skew (không làm ảnh gốc thành grayscale)
   const grayTemp = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) {
-    const idx = i * 4;
+    const idx   = i * 4;
     grayTemp[i] = Math.round(data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114);
   }
 
   const angle = detectSkewAngle(grayTemp, w, h, cfg.deskewMaxAngle);
   if (angle !== 0) {
-    // Jimp.rotate(deg) xoay ngược chiều kim đồng hồ
-    // → để chỉnh ảnh nghiêng +angle° cần xoay -angle°
-    image.rotate(-angle, { mode: "expand" }); // expand = giữ nguyên toàn bộ nội dung
+    // Văn bản nghiêng +angle° → xoay -angle° để chỉnh thẳng
+    image.rotate(-angle);
   }
 }
 
