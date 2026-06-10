@@ -146,9 +146,10 @@ echo -e "${GREEN}  ✅ File ${ENV_FILE} hợp lệ.${NC}"
 # ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}[3/5] Cài đặt / kiểm tra dependencies...${NC}"
 
-# Chỉ npm install nếu package.json thay đổi
+# Cài đầy đủ deps kể cả devDependencies (cần cho build: tailwindcss, postcss...)
+# Sau khi build xong, Next.js chỉ chạy production nên RAM không bị ảnh hưởng lúc runtime
 if $UPDATED || [ ! -d node_modules ]; then
-  npm install --omit=dev 2>&1 | tail -5
+  npm install 2>&1 | tail -5
   echo -e "${GREEN}  ✅ npm install hoàn tất.${NC}"
 else
   echo -e "${YELLOW}  ℹ️  Bỏ qua npm install (không có thay đổi package.json).${NC}"
