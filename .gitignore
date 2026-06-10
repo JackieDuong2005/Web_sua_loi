@@ -50,6 +50,8 @@ public/icon-512x512.png
 # Bỏ qua các file kết quả JSON lớn và ảnh benchmark trong 02_
 02_Kich_ban_Thuc_nghiem/*.json
 02_Kich_ban_Thuc_nghiem/anhdaduocOCR/
+02_Kich_ban_Thuc_nghiem/*.rar
+02_Kich_ban_Thuc_nghiem/*.zip
 anhdaduocOCR/
 
 # Bỏ qua file tạm

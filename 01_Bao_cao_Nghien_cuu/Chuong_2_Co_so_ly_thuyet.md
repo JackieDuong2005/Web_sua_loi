@@ -90,32 +90,41 @@ Với $C = 5$ được chọn làm hằng số tối ưu qua thực nghiệm, gi
 
 ---
 
-## 2.3. KIẾN TRÚC MÔ HÌNH NGÔN NGỮ LỚN ĐA PHƯƠNG THỨC GOOGLE GEMINI
+## 2.3. MÔ HÌNH GOOGLE GEMINI VÀ TÍCH HỢP API
 
-Bộ não phân tích và chấm điểm chính tả của ViHand Grade dựa trên nền tảng mô hình AI đa phương thức **Google Gemini 3 Flash**.
+### 2.3.1. Mô hình Google Gemini
+**Google Gemini** là họ mô hình đa phương thức thế hệ mới của Google DeepMind, được phát triển với kiến trúc gốc đa phương thức (Native Multimodal), cho phép xử lý đồng thời hình ảnh, văn bản, âm thanh và video trong một mô hình thống nhất. Khác với các mô hình kết hợp tầng ngoài truyền thống (vốn ghép riêng biệt một bộ mã hóa thị giác với một mô hình ngôn ngữ), Gemini được huấn luyện từ đầu với dữ liệu đa phương thức, tạo ra khả năng lý luận liên phương thức sâu hơn và nhất quán hơn.
 
-### 2.3.1. Kiến trúc Transformer và cơ chế tự chú ý (Self-Attention)
-Các mô hình ngôn ngữ lớn (LLM) hiện đại đều được xây dựng trên kiến trúc mạng **Transformer** (Vaswani et al., 2017). Thành phần cốt lõi của Transformer là cơ chế **Self-Attention (Tự chú ý)**, cho phép mô hình tính toán mối tương quan ngữ nghĩa giữa tất cả các token trong chuỗi đầu vào bất kể khoảng cách địa lý của chúng.
-
-Công thức toán học của cơ chế Self-Attention được biểu diễn như sau:
+Nền tảng kỹ thuật của Gemini kế thừa kiến trúc **Transformer** (Vaswani et al., 2017) với cơ chế **Self-Attention (Tự chú ý)** — cho phép mô hình tính toán mối tương quan ngữ nghĩa giữa tất cả các token trong chuỗi đầu vào, bao gồm cả token hình ảnh và token văn bản, bất kể khoảng cách vị trí của chúng:
 $$\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q K^T}{\sqrt{d_k}} \right) V$$
-Trong đó:
-- $Q$ (Query), $K$ (Key), $V$ (Value) là các ma trận đặc trưng được chiếu tuyến tính từ vector nhúng (embedding) của dữ liệu đầu vào.
-- $d_k$ là số chiều của ma trận Key, vai trò của $\sqrt{d_k}$ là nhân tố chuẩn hóa quy mô (scaling factor) giúp tránh hiện tượng gradient bị triệt tiêu khi tính toán softmax.
+Trong đó $Q$ (Query), $K$ (Key), $V$ (Value) là các ma trận đặc trưng được chiếu tuyến tính từ vector nhúng (embedding) của dữ liệu đầu vào; $\sqrt{d_k}$ là nhân tố chuẩn hóa quy mô (scaling factor) giúp tránh hiện tượng gradient bị triệt tiêu khi tính toán softmax.
 
-### 2.3.2. Mô hình đa phương thức Google Gemini 3 Flash
-Khác với kiến trúc Transformer nguyên bản vốn chỉ xử lý văn bản dạng text, **Google Gemini** được thiết kế nguyên khối đa phương thức ngay từ giai đoạn tiền huấn luyện (Native Multimodal). Mô hình có khả năng nhúng đồng thời cả dữ liệu văn bản và điểm ảnh (pixels) của hình ảnh vào chung một không gian ẩn (latent space). 
+Mô hình có khả năng nhúng đồng thời dữ liệu văn bản và điểm ảnh (pixels) vào chung một không gian ẩn (latent space), từ đó thực hiện lý luận kết hợp giữa thị giác và ngôn ngữ trong một bước duy nhất.
 
-Hệ thống ViHand Grade lựa chọn phiên bản **Gemini 3 Flash** vì các ưu điểm vượt trội:
+**Gemini Flash** là phiên bản tối ưu về tốc độ và chi phí trong họ Gemini, duy trì hiệu suất cao với thời gian phản hồi thấp, phù hợp với ứng dụng thực tế cần xử lý theo thời gian gần thực. Hệ thống ViHand Grade lựa chọn phiên bản **Gemini 3 Flash** vì các ưu điểm vượt trội:
 - **Tốc độ phản hồi cực nhanh:** Được tối ưu hóa sâu ở tầng phần cứng Tensor Processing Unit (TPU) của Google, cho thời gian chấm bài thực tế chỉ từ $2 - 4$ giây.
+- **Cửa sổ ngữ cảnh lớn:** Hỗ trợ chuỗi đầu vào dài, đủ chứa toàn bộ prompt hệ thống, các mẫu few-shot, hình ảnh bài làm và hướng dẫn chấm điểm trong một lần gọi.
 - **Khả năng hiểu thị giác cao độ:** Nhận diện chính xác hình thái chữ viết tay tiếng Việt có dấu từ ảnh chụp nhị phân đã lọc ô ly.
-- **Hỗ trợ Response Schema:** Bảo đảm cấu trúc đầu ra tuân thủ nghiêm ngặt định dạng JSON cấu trúc phục vụ lưu trữ cơ sở dữ liệu.
+- **Hỗ trợ Response Schema:** Bảo đảm cấu trúc đầu ra tuân thủ nghiêm ngặt định dạng JSON theo schema định trước, rất thuận tiện cho các tác vụ chấm điểm tự động cần lưu trữ vào cơ sở dữ liệu.
 
-### 2.3.3. Các tham số điều khiển tối ưu hóa và chống hiện tượng ảo giác (Hallucination)
-Để đảm bảo kết quả chấm điểm sư phạm mang tính khách quan và chính xác tuyệt đối, hệ thống thực hiện hiệu chỉnh các tham số giải mã của mô hình:
-- **Temperature (Nhiệt độ = 0.1):** Tham số kiểm soát mức độ ngẫu nhiên của phân phối xác suất token đầu ra. Hệ thống thiết lập mức cực thấp $0.1$ để triệt tiêu hoàn toàn sự "sáng tạo" tự do của AI, ép mô hình chỉ đưa ra các phản hồi chắc chắn nhất dựa trên ảnh chụp bài viết thực tế, ngăn ngừa hiện tượng ảo giác (bịa đặt thông tin).
-- **Top-P (Nucleus Sampling = 0.95):** Mô hình chỉ lựa chọn các từ tiếp theo nằm trong tập hợp các token có tổng xác suất tích lũy đạt $95\%$, giúp giữ lại tính tự nhiên của lời nhận xét sư phạm.
-- **Top-K (40):** Giới hạn số lượng từ ứng viên tiềm năng tại mỗi bước giải mã là 40 từ có xác suất cao nhất.
+### 2.3.2. Google Gemini API
+**Google Gemini API** là giao diện lập trình ứng dụng thương mại do Google DeepMind cung cấp, cho phép tích hợp các mô hình Gemini vào ứng dụng bên thứ ba qua giao thức HTTPS RESTful. Đây là thành phần API cốt lõi nhất trong kiến trúc ViHand Grade.
+
+Gemini API được tích hợp với các tham số phù hợp nhằm **ưu tiên tính nhất quán và chính xác** thay vì tính sáng tạo, đồng thời đảm bảo đủ không gian ngữ cảnh cho nhận xét chi tiết và danh sách lỗi toàn diện:
+- **Temperature (= 0.1):** Thiết lập mức cực thấp để triệt tiêu hoàn toàn sự "sáng tạo" tự do của AI, ép mô hình chỉ đưa ra phản hồi chắc chắn nhất dựa trên bài viết thực tế, ngăn ngừa hiện tượng **ảo giác (Hallucination)** — bịa đặt thông tin không có trong ảnh chụp.
+- **Top-P (Nucleus Sampling = 0.95):** Mô hình chỉ lựa chọn từ tiếp theo trong tập token có tổng xác suất tích lũy đạt $95\%$, giữ lại tính tự nhiên của lời nhận xét sư phạm.
+- **Top-K (= 40):** Giới hạn số từ ứng viên tiềm năng tại mỗi bước giải mã là 40 từ có xác suất cao nhất.
+
+Mô hình nhận **ảnh bài làm học sinh dưới dạng Base64 inline** (đính kèm trực tiếp trong payload JSON thay vì qua URL ngoài) và thực hiện đồng thời các tác vụ phức hợp trong một lần gọi API duy nhất:
+1. **Nhận dạng chữ viết tay** tiếng Việt có dấu trên nền ảnh nhị phân đã xử lý loại bỏ ô ly.
+2. **Phát hiện lỗi chính tả** theo từng loại (phụ âm đầu, vần, dấu thanh, viết hoa, bỏ sót/thêm từ).
+3. **Chấm điểm theo barem** sư phạm được lập trình trong prompt hệ thống.
+4. **Sinh lời nhận xét** khuyến khích, phù hợp với tâm lý học sinh tiểu học.
+
+Phương thức tích hợp trong hệ thống:
+- **Xác thực:** Sử dụng **API Key** được cấp qua Google AI Studio, đính kèm vào request header `x-goog-api-key`. Toàn bộ lời gọi API chỉ diễn ra ở tầng server (Next.js Route Handler), đảm bảo API Key tuyệt đối không bị lộ ra phía client.
+- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-2.0:generateContent`
+- **SDK:** Thư viện `@google/generative-ai` (npm) cung cấp wrapper TypeScript bao bọc các HTTP call phức tạp, hỗ trợ streaming và xử lý lỗi mạng tự động.
 
 ---
 
@@ -191,5 +200,118 @@ Do tính chất phức tạp của cấu trúc âm tiết kết hợp với phư
 
 ---
 
-## 2.7. KẾT LUẬN CHƯƠNG
-Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang AI đa phương thức End-to-End; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) kiến trúc Transformer Self-Attention và đặc điểm của mô hình Google Gemini 3 Flash; (4) các kỹ thuật Prompt Engineering (Role, Few-Shot, JSON Schema Constraint); (5) phân loại lỗi chính tả tiếng Việt và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; và (6) các khái niệm công nghệ web nền tảng. Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).
+## 2.7. GIAO DIỆN LẬP TRÌNH ỨNG DỤNG (APPLICATION PROGRAMMING INTERFACE — API)
+
+### 2.7.1. Khái niệm và vai trò của API
+**API (Application Programming Interface — Giao diện lập trình ứng dụng)** là một tập hợp các quy tắc, giao thức và công cụ cho phép hai hệ thống phần mềm khác nhau giao tiếp và trao đổi dữ liệu với nhau theo một cách thức được định nghĩa trước, mà không cần bên gọi biết chi tiết về cách cài đặt nội tại của bên cung cấp.
+
+Có thể hình dung API như một **"nhân viên phục vụ"** trong nhà hàng: khách hàng (ứng dụng gọi API) không cần vào bếp (hệ thống cung cấp) để tự nấu ăn; thay vào đó, nhân viên phục vụ (API) nhận yêu cầu từ khách, chuyển đến bếp xử lý, và mang kết quả trả lại theo đúng hình thức quy định.
+
+Vai trò của API trong hệ sinh thái phần mềm hiện đại:
+- **Tích hợp hệ thống:** Kết nối các dịch vụ độc lập (thanh toán, bản đồ, AI, xác thực) vào một ứng dụng thống nhất mà không cần xây dựng lại từ đầu.
+- **Trừu tượng hóa độ phức tạp:** Che giấu chi tiết kỹ thuật phức tạp phía sau, chỉ để lộ giao diện tối giản và nhất quán.
+- **Tái sử dụng và mở rộng:** Một API được thiết kế tốt có thể phục vụ đồng thời nhiều loại client khác nhau (web, mobile, IoT) mà không thay đổi logic nghiệp vụ lõi.
+- **Bảo mật thông qua phân lớp:** Backend và cơ sở dữ liệu không bao giờ bị lộ trực tiếp ra ngoài; mọi truy cập đều phải đi qua lớp API kiểm soát xác thực và phân quyền.
+
+### 2.7.2. Kiến trúc RESTful API và giao thức HTTP
+**REST (Representational State Transfer)** là một phong cách kiến trúc API do Roy Fielding định nghĩa năm 2000 trong luận văn tiến sĩ tại UC Irvine. REST không phải là một giao thức hay tiêu chuẩn kỹ thuật cố định mà là tập hợp 6 ràng buộc kiến trúc:
+
+| Ràng buộc | Mô tả |
+|---|---|
+| **Client–Server** | Tách biệt hoàn toàn giao diện người dùng (client) khỏi logic lưu trữ dữ liệu (server), cho phép hai thành phần tiến hóa độc lập. |
+| **Stateless (Phi trạng thái)** | Mỗi yêu cầu HTTP từ client đến server phải chứa đủ mọi thông tin cần thiết để server xử lý (token xác thực, tham số). Server không lưu bất kỳ trạng thái phiên nào giữa các request. |
+| **Cacheable (Có thể lưu đệm)** | Phản hồi phải khai báo rõ có thể cache hay không, giúp client hoặc proxy lưu đệm và giảm tải server. |
+| **Uniform Interface** | Giao diện thống nhất thông qua: định danh tài nguyên bằng URI; thao tác tài nguyên qua biểu diễn (representation); thông điệp tự mô tả (self-descriptive messages). |
+| **Layered System** | Client không cần biết mình đang kết nối trực tiếp đến server gốc hay qua các tầng trung gian (load balancer, CDN, API Gateway). |
+| **Code on Demand** *(tùy chọn)* | Server có thể gửi mã thực thi (JavaScript) về phía client để mở rộng chức năng. |
+
+API tuân thủ đầy đủ các ràng buộc REST được gọi là **RESTful API**. Giao thức truyền tải nền tảng là **HTTP/HTTPS**, trong đó mỗi request bao gồm:
+- **Method (Phương thức HTTP):** Xác định loại thao tác.
+- **URI (Uniform Resource Identifier):** Định danh tài nguyên cần thao tác.
+- **Headers:** Siêu dữ liệu của request (kiểu nội dung, token xác thực...).
+- **Body:** Dữ liệu gửi kèm (thường dùng định dạng JSON hoặc multipart/form-data cho tệp ảnh).
+
+### 2.7.3. Các phương thức HTTP và mã trạng thái
+RESTful API ánh xạ các thao tác CRUD (Create, Read, Update, Delete) sang các phương thức HTTP chuẩn:
+
+| Phương thức HTTP | Thao tác CRUD | Mô tả | Ví dụ trong ViHand Grade |
+|---|---|---|---|
+| `GET` | Read | Truy vấn, lấy dữ liệu tài nguyên. Idempotent (gọi nhiều lần cùng kết quả). | `GET /api/submissions` — Lấy danh sách bài chấm |
+| `POST` | Create | Tạo tài nguyên mới hoặc kích hoạt một hành động không idempotent. | `POST /api/grade` — Nộp ảnh để chấm điểm |
+| `PUT` | Update (toàn bộ) | Thay thế toàn bộ biểu diễn của tài nguyên. Idempotent. | `PUT /api/students/:id` — Cập nhật thông tin học sinh |
+| `PATCH` | Update (một phần) | Cập nhật một phần tài nguyên. | `PATCH /api/submissions/:id` — Chỉnh sửa điểm thủ công |
+| `DELETE` | Delete | Xóa tài nguyên được chỉ định. | `DELETE /api/submissions/:id` — Xóa bài chấm |
+
+**Mã trạng thái HTTP (HTTP Status Codes)** là cơ chế tiêu chuẩn để API truyền đạt kết quả xử lý về phía client:
+
+| Nhóm | Phạm vi | Ý nghĩa | Ví dụ |
+|---|---|---|---|
+| **2xx** | 200–299 | Thành công | `200 OK`, `201 Created`, `204 No Content` |
+| **3xx** | 300–399 | Chuyển hướng | `301 Moved Permanently`, `304 Not Modified` |
+| **4xx** | 400–499 | Lỗi phía client | `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found` |
+| **5xx** | 500–599 | Lỗi phía server | `500 Internal Server Error`, `503 Service Unavailable` |
+
+### 2.7.4. Định dạng trao đổi dữ liệu JSON
+**JSON (JavaScript Object Notation)** là định dạng văn bản nhẹ, dễ đọc và phân tích cú pháp, trở thành tiêu chuẩn thực tế (de facto) cho trao đổi dữ liệu trong các RESTful API hiện đại. JSON hỗ trợ 6 kiểu dữ liệu nguyên thủy: chuỗi (string), số (number), boolean (`true`/`false`), null, mảng (array) và đối tượng (object).
+
+Một phản hồi JSON điển hình từ API chấm điểm của ViHand Grade có cấu trúc:
+```json
+{
+  "success": true,
+  "data": {
+    "original_text": "Con mèo leo cây",
+    "fixed_text": "Con mèo leo cây",
+    "score": 9.5,
+    "overall_rating": "Hoàn thành tốt",
+    "corrections": [
+      {
+        "error": "leo",
+        "suggestion": "leo",
+        "reason": "Chính tả đúng"
+      }
+    ],
+    "feedback": "Em viết rất sạch và đúng chính tả!"
+  },
+  "processingTimeMs": 2341
+}
+```
+
+Ưu điểm vượt trội của JSON so với các định dạng thay thế (XML, YAML) trong bối cảnh ứng dụng web:
+- **Trọng lượng nhẹ:** Không có thẻ đóng/mở dư thừa như XML, giảm băng thông truyền tải.
+- **Tích hợp nguyên bản:** JavaScript `JSON.parse()` và `JSON.stringify()` hỗ trợ tức thì không cần thư viện ngoài.
+- **Hỗ trợ Response Schema:** Google Gemini API hỗ trợ buộc đầu ra tuân thủ một lược đồ JSON định nghĩa sẵn (JSON Schema), đảm bảo kết quả luôn có cấu trúc máy tính có thể xử lý được.
+
+### 2.7.5. Xác thực và bảo mật API — JSON Web Token (JWT)
+Mô hình bảo mật API phổ biến nhất trong ứng dụng web hiện đại là **JWT (JSON Web Token)** theo chuẩn RFC 7519. JWT là một chuỗi mã hóa Base64Url gồm ba phần ngăn cách bởi dấu chấm (`.`):
+$$\underbrace{\texttt{eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9}}_{\text{Header}} . \underbrace{\texttt{eyJ1c2VySWQiOiIxMjMiLCJyb2xlIjoiVGVhY2hlciJ9}}_{\text{Payload}} . \underbrace{\texttt{SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV\_adQssw5c}}_{\text{Signature}}$$
+
+- **Header:** Siêu dữ liệu khai báo loại token và thuật toán ký (thường là `HS256` — HMAC-SHA256 hoặc `RS256` — RSA-SHA256).
+- **Payload:** Chứa các **Claims** (khẳng định) như `userId`, `role`, `exp` (thời gian hết hạn). Dữ liệu này được mã hóa Base64Url nhưng không được mã hóa bí mật, nên không được chứa thông tin nhạy cảm.
+- **Signature (Chữ ký số):** Được tạo ra bằng cách ký Header + Payload với **Secret Key** bí mật chỉ server biết, đảm bảo token không thể bị giả mạo hay sửa đổi.
+
+Quy trình xác thực JWT trong ViHand Grade:
+1. Giáo viên/Admin đăng nhập → Server xác minh mật khẩu hash, ký một JWT mới với `role` và `exp` → Gửi JWT về client.
+2. Client lưu JWT vào `localStorage` hoặc cookie `HttpOnly`.
+3. Mỗi request API tiếp theo, client đính kèm JWT vào header `Authorization: Bearer <token>`.
+4. Server giải mã, xác minh chữ ký và kiểm tra `exp` → Trích xuất `role` để thực thi phân quyền RBAC.
+
+### 2.7.6. API bên thứ ba — Google Gemini API
+**Google Gemini API** là dịch vụ API thương mại của Google DeepMind cung cấp khả năng truy cập vào các mô hình ngôn ngữ lớn đa phương thức Gemini qua giao thức HTTPS RESTful. Đây là thành phần API cốt lõi nhất trong kiến trúc ViHand Grade.
+
+Phương thức tích hợp trong hệ thống:
+- **Xác thực:** Sử dụng **API Key** được cấp qua Google AI Studio, đính kèm vào request header `x-goog-api-key`.
+- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-2.0:generateContent`
+- **Payload:** Gửi dữ liệu đa phương thức gồm phần `text` (prompt hệ thống + prompt người dùng) và phần `inlineData` chứa ảnh bài viết đã xử lý được mã hóa Base64.
+- **Response Schema:** Khai báo lược đồ JSON cứng trong trường `generationConfig.responseSchema` để ép buộc đầu ra tuân thủ cấu trúc dữ liệu chấm điểm định nghĩa sẵn.
+- **SDK:** Thư viện `@google/generative-ai` (npm) cung cấp wrapper TypeScript bao bọc các HTTP call phức tạp, hỗ trợ streaming và xử lý lỗi mạng tự động.
+
+Sơ đồ luồng gọi API tổng quan trong ViHand Grade:
+$$\text{Client (Browser)} \xrightarrow{\texttt{POST /api/grade}} \text{Next.js Route Handler} \xrightarrow{\text{Gemini API Call}} \text{Google AI Backend}$$
+$$\text{Google AI Backend} \xrightarrow{\text{JSON Schema Response}} \text{Next.js Route Handler} \xrightarrow{\texttt{200 OK + JSON}} \text{Client (Browser)}$$
+
+Thiết kế này đảm bảo **API Key tuyệt đối không bao giờ bị lộ ra phía client** vì toàn bộ lời gọi Gemini API chỉ diễn ra ở tầng server (Next.js Route Handler chạy trên Node.js), không có bất kỳ đoạn mã nào gọi Gemini trực tiếp từ trình duyệt.
+
+---
+
+## 2.8. KẾT LUẬN CHƯƠNG
+Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang AI đa phương thức End-to-End; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) kiến trúc Transformer Self-Attention và đặc điểm của mô hình Google Gemini 3 Flash; (4) các kỹ thuật Prompt Engineering (Role, Few-Shot, JSON Schema Constraint); (5) phân loại lỗi chính tả tiếng Việt và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; (6) các khái niệm công nghệ web nền tảng (Next.js, ORM, PWA, RBAC); và (7) lý thuyết nền tảng về API bao gồm kiến trúc RESTful, giao thức HTTP, định dạng JSON, cơ chế xác thực JWT và phương thức tích hợp Google Gemini API. Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).
