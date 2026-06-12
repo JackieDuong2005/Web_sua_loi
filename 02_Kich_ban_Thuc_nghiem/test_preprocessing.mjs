@@ -1,6 +1,11 @@
-﻿/**
- * test_preprocessing.mjs — Test Pipeline 9 bước tiền xử lý ảnh
- * Xuất ảnh trung gian từng bước để quan sát hiệu quả.
+/**
+ * test_preprocessing.mjs — Test Pipeline 11 bước tiền xử lý ảnh
+ * Đồng bộ với lib/image-processor.ts (phiên bản mới nhất).
+ *
+ * Bước 0  : EXIF Auto-rotate (thủ công, không dùng Jimp tự xử lý)
+ * Bước 0.5: Deskew (Rotated Projection Profile + Otsu + lọc grid-line)
+ * Bước 1-8: Resize → White Balance → Grayscale → Shadow Removal
+ *           → CLAHE → Sharpen → Quality Assessment → Threshold
  *
  * Chạy: node test_preprocessing.mjs
  * Output: thư mục anhdaxuly/<tên_ảnh>/step_XX_*.jpg
@@ -18,18 +23,28 @@ const OUTPUT_DIR = join(__dir, "anhdaxuly");
 
 // ══════════════════ CẤU HÌNH (THAY ĐỔI Ở ĐÂY) ══════════════════
 const CONFIG = {
-  resizeMaxWidth: 1600,       // Bước 2: max width (px). Giảm → xử lý nhanh hơn. Tăng → chi tiết hơn.
-  enableWhiteBalance: true,   // Bước 3: true/false. Tắt nếu ảnh đã chuẩn màu.
-  enableShadowRemoval: true,  // Bước 5: true/false. Tắt nếu ảnh không có bóng.
-  shadowKernelSize: 51,       // Bước 5: kích thước kernel blur (phải lẻ). Tăng → xóa bóng lớn hơn.
-  enableClahe: true,          // Bước 6: true/false. Tắt nếu ảnh đã đủ tương phản.
-  claheClipLimit: 2.0,        // Bước 6: giới hạn clip (1.0–5.0). Tăng → tương phản mạnh hơn.
-  claheTileGridSize: 8,       // Bước 6: số tile (4–16). Tăng → xử lý cục bộ chi tiết hơn.
-  enableSharpen: true,        // Bước 7: true/false. Tắt nếu ảnh đã sắc nét.
-  sharpenAmount: 0.5,         // Bước 7: mức sharpen (0.0–1.0). Tăng → nét hơn nhưng nhiều noise.
-  thresholdMode: "adaptive_gaussian", // Bước 9: "otsu" | "adaptive_gaussian" | "adaptive_mean"
-  adaptiveBlockSize: 0,       // Bước 9: kích thước khối (0 = tự tính). Phải lẻ, ≥21. Nhỏ hơn → ngưỡng cục bộ chính xác hơn.
-  adaptiveC: 50,              // Bước 9: hằng số trừ (3–20). GIẢM → giữ nhiều nét chữ hơn. TĂNG → nhiều trắng hơn.
+  // Bước 0.5 — Deskew
+  enableDeskew: true,         // true/false. Tắt nếu không muốn tự chỉnh góc.
+  deskewMaxAngle: 15,         // Góc tối đa tìm kiếm (±độ). Giảm → nhanh hơn.
+  // Bước 1 — Resize
+  resizeMaxWidth: 1600,       // Max width (px).
+  // Bước 2 — White Balance
+  enableWhiteBalance: true,
+  // Bước 4 — Shadow Removal
+  enableShadowRemoval: true,
+  shadowKernelSize: 51,       // Kernel blur (phải lẻ).
+  // Bước 5 — CLAHE
+  enableClahe: true,
+  claheClipLimit: 2.0,
+  claheTileGridSize: 8,
+  // Bước 6 — Sharpen
+  enableSharpen: true,
+  sharpenAmount: 0.5,
+  // Bước 8 — Threshold
+  thresholdMode: "adaptive_gaussian", // "otsu" | "adaptive_gaussian" | "adaptive_mean"
+  adaptiveBlockSize: 0,
+  adaptiveC: 20,              // ← đồng bộ với image-processor.ts (default=20)
+  // Quality Assessment
   blurThreshold: 80,
   brightnessLow: 50,
   brightnessHigh: 220,
@@ -97,6 +112,125 @@ function grayToRgba(gray, data, n) {
     data[idx] = data[idx + 1] = data[idx + 2] = gray[i];
     data[idx + 3] = 255;
   }
+}
+
+// ─── BƯỚC 0: EXIF Auto-rotate (đọc thủ công, Jimp v1 không tự xử lý) ───
+function readExifOrientation(buf) {
+  try {
+    let offset = 2;
+    while (offset + 4 < buf.length) {
+      if (buf[offset] !== 0xFF) break;
+      const marker = buf[offset + 1];
+      const segLen = buf.readUInt16BE(offset + 2);
+      if (marker === 0xE1) {
+        if (buf.slice(offset + 4, offset + 10).toString("ascii") !== "Exif\0\0") break;
+        const tiffBase = offset + 10;
+        const le = buf.readUInt16BE(tiffBase) === 0x4949;
+        const r16 = o => le ? buf.readUInt16LE(o) : buf.readUInt16BE(o);
+        const r32 = o => le ? buf.readUInt32LE(o) : buf.readUInt32BE(o);
+        const ifdOffset = tiffBase + r32(tiffBase + 4);
+        const count = r16(ifdOffset);
+        for (let i = 0; i < count; i++) {
+          const base = ifdOffset + 2 + i * 12;
+          if (base + 12 > buf.length) break;
+          if (r16(base) === 0x0112) return r16(base + 8);
+        }
+        break;
+      }
+      offset += 2 + segLen;
+    }
+  } catch { /* bỏ qua */ }
+  return 1;
+}
+
+function applyExifRotation(image, buf) {
+  const o = readExifOrientation(buf);
+  switch (o) {
+    case 2: image.flip({ horizontal: true }); break;
+    case 3: image.rotate(180); break;
+    case 4: image.flip({ vertical: true }); break;
+    case 5: image.rotate(90); image.flip({ horizontal: true }); break;
+    case 6: image.rotate(270); break;
+    case 7: image.rotate(270); image.flip({ horizontal: true }); break;
+    case 8: image.rotate(90); break;
+    default: break;
+  }
+  return o;
+}
+
+// ─── BƯỚC 0.5: Deskew (Rotated Projection Profile + Otsu + lọc grid-line) ───
+function rotatedProjectionVariance(binary, w, h, angleDeg) {
+  const rad = (angleDeg * Math.PI) / 180;
+  const cosA = Math.cos(rad), sinA = Math.sin(rad);
+  const cx = w / 2, cy = h / 2;
+  const newH = Math.ceil(Math.abs(h * cosA) + Math.abs(w * Math.abs(sinA))) + 2;
+  const offset = Math.floor(newH / 2);
+  const counts = new Int32Array(newH);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (binary[y * w + x] === 0) {
+        const ry = Math.round((x - cx) * sinA + (y - cy) * cosA) + offset;
+        if (ry >= 0 && ry < newH) counts[ry]++;
+      }
+  let sum = 0;
+  for (let i = 0; i < newH; i++) sum += counts[i];
+  const mean = sum / newH;
+  let variance = 0;
+  for (let i = 0; i < newH; i++) { const d = counts[i] - mean; variance += d * d; }
+  return variance / newH;
+}
+
+function detectSkewAngle(gray, w, h, maxAngle) {
+  // Downsample
+  let gw = w, gh = h, gg = gray;
+  if (w > 400) {
+    const scale = 400 / w;
+    gw = Math.round(w * scale); gh = Math.round(h * scale);
+    gg = new Uint8Array(gw * gh);
+    for (let y = 0; y < gh; y++)
+      for (let x = 0; x < gw; x++) {
+        const sx = Math.min(Math.round(x / scale), w - 1);
+        const sy = Math.min(Math.round(y / scale), h - 1);
+        gg[y * gw + x] = gray[sy * w + sx];
+      }
+  }
+  // Otsu threshold
+  const thresh = otsuThreshold(gg);
+  const binary = new Uint8Array(gw * gh);
+  for (let i = 0; i < gg.length; i++) binary[i] = gg[i] < thresh ? 0 : 255;
+  // Lọc grid-line
+  for (let y = 0; y < gh; y++) {
+    let dark = 0;
+    for (let x = 0; x < gw; x++) if (binary[y * gw + x] === 0) dark++;
+    if (dark / gw > 0.35)
+      for (let x = 0; x < gw; x++) binary[y * gw + x] = 255;
+  }
+  // Tìm góc tốt nhất bước 1°
+  let bestAngle = 0, bestVariance = -1;
+  for (let a = -maxAngle; a <= maxAngle; a += 1.0) {
+    const v = rotatedProjectionVariance(binary, gw, gh, a);
+    if (v > bestVariance) { bestVariance = v; bestAngle = a; }
+  }
+  // Tinh chỉnh bước 0.1°
+  for (let a = bestAngle - 1.0; a <= bestAngle + 1.0; a += 0.1) {
+    const aa = Math.round(a * 10) / 10;
+    const v = rotatedProjectionVariance(binary, gw, gh, aa);
+    if (v > bestVariance) { bestVariance = v; bestAngle = aa; }
+  }
+  return Math.abs(bestAngle) > 0.3 ? Math.round(bestAngle * 10) / 10 : 0;
+}
+
+function deskewImageStep(image) {
+  const w = image.bitmap.width, h = image.bitmap.height;
+  const data = image.bitmap.data;
+  const grayTemp = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const idx = i * 4;
+    grayTemp[i] = Math.round(data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114);
+  }
+  const angle = detectSkewAngle(grayTemp, w, h, CONFIG.deskewMaxAngle);
+  if (angle !== 0) image.rotate(-angle);
+  return angle;
 }
 
 // ─── BƯỚC 3: White Balance ───
@@ -242,68 +376,78 @@ async function processImage(inputPath, outputSubDir) {
   const buffer = readFileSync(inputPath);
   const start = Date.now();
 
-  // ── Bước 1: EXIF Auto-rotate (Jimp tự xử lý)
+  // ── Bước 0: EXIF Auto-rotate (thủ công — Jimp v1 không tự xử lý EXIF)
   const image = await Jimp.read(buffer);
-  await saveJimpImage(image, join(outDir, "step_01_exif_rotate.jpg"));
-  console.log(`  [1] EXIF Auto-rotate    : ${image.bitmap.width}x${image.bitmap.height}`);
+  const exifOrientation = applyExifRotation(image, buffer);
+  await saveJimpImage(image, join(outDir, "step_00_exif_rotate.jpg"));
+  console.log(`  [0] EXIF Auto-rotate    : orientation=${exifOrientation} → ${image.bitmap.width}x${image.bitmap.height}`);
 
-  // ── Bước 2: Resize
+  // ── Bước 0.5: Deskew (Rotated Projection Profile)
+  if (CONFIG.enableDeskew) {
+    const angle = deskewImageStep(image);
+    await saveJimpImage(image, join(outDir, "step_00b_deskew.jpg"));
+    console.log(`  [0.5] Deskew            : ${angle !== 0 ? `✅ xoay ${-angle}°` : "⏭️ ảnh đã thẳng (< 0.3°)"}`);
+  } else {
+    console.log(`  [0.5] Deskew            : ⏭️ SKIP`);
+  }
+
+  // ── Bước 1: Resize
   const origW = image.bitmap.width, origH = image.bitmap.height;
   if (origW > CONFIG.resizeMaxWidth) {
     const ratio = CONFIG.resizeMaxWidth / origW;
     image.resize({ w: CONFIG.resizeMaxWidth, h: Math.round(origH * ratio) });
   }
-  await saveJimpImage(image, join(outDir, "step_02_resize.jpg"));
-  console.log(`  [2] Resize (max ${CONFIG.resizeMaxWidth}px) : ${image.bitmap.width}x${image.bitmap.height}`);
+  await saveJimpImage(image, join(outDir, "step_01_resize.jpg"));
+  console.log(`  [1] Resize (max ${CONFIG.resizeMaxWidth}px) : ${image.bitmap.width}x${image.bitmap.height}`);
 
   const w = image.bitmap.width, h = image.bitmap.height, n = w * h;
   const data = image.bitmap.data;
 
-  // ── Bước 3: White Balance
+  // ── Bước 2: White Balance
   if (CONFIG.enableWhiteBalance) {
     applyWhiteBalance(data, n);
-    await saveJimpImage(image, join(outDir, "step_03_white_balance.jpg"));
-    console.log(`  [3] White Balance       : ✅ (Gray World Assumption)`);
-  } else console.log(`  [3] White Balance       : ⏭️ SKIP`);
+    await saveJimpImage(image, join(outDir, "step_02_white_balance.jpg"));
+    console.log(`  [2] White Balance       : ✅ (Gray World Assumption)`);
+  } else console.log(`  [2] White Balance       : ⏭️ SKIP`);
 
-  // ── Bước 4: Grayscale
+  // ── Bước 3: Grayscale
   image.greyscale();
-  await saveJimpImage(image, join(outDir, "step_04_grayscale.jpg"));
-  console.log(`  [4] Grayscale           : ✅`);
+  await saveJimpImage(image, join(outDir, "step_03_grayscale.jpg"));
+  console.log(`  [3] Grayscale           : ✅`);
 
   let gray = rgbaToGray(data, n);
   const originalGray = new Uint8Array(gray); // Giữ bản gốc để đánh giá chất lượng
 
-  // ── Bước 5: Shadow Removal
+  // ── Bước 4: Shadow Removal
   if (CONFIG.enableShadowRemoval) {
     gray = removeShadow(gray, w, h, CONFIG.shadowKernelSize);
-    await saveGrayImage(gray, w, h, join(outDir, "step_05_shadow_removal.jpg"));
-    console.log(`  [5] Shadow Removal      : ✅ (kernel=${CONFIG.shadowKernelSize})`);
-  } else console.log(`  [5] Shadow Removal      : ⏭️ SKIP`);
+    await saveGrayImage(gray, w, h, join(outDir, "step_04_shadow_removal.jpg"));
+    console.log(`  [4] Shadow Removal      : ✅ (kernel=${CONFIG.shadowKernelSize})`);
+  } else console.log(`  [4] Shadow Removal      : ⏭️ SKIP`);
 
-  // ── Bước 6: CLAHE
+  // ── Bước 5: CLAHE
   if (CONFIG.enableClahe) {
     gray = applyCLAHE(gray, w, h, CONFIG.claheClipLimit, CONFIG.claheTileGridSize);
-    await saveGrayImage(gray, w, h, join(outDir, "step_06_clahe.jpg"));
-    console.log(`  [6] CLAHE               : ✅ (clip=${CONFIG.claheClipLimit}, tiles=${CONFIG.claheTileGridSize})`);
-  } else console.log(`  [6] CLAHE               : ⏭️ SKIP`);
+    await saveGrayImage(gray, w, h, join(outDir, "step_05_clahe.jpg"));
+    console.log(`  [5] CLAHE               : ✅ (clip=${CONFIG.claheClipLimit}, tiles=${CONFIG.claheTileGridSize})`);
+  } else console.log(`  [5] CLAHE               : ⏭️ SKIP`);
 
-  // ── Bước 7: Sharpen
+  // ── Bước 6: Sharpen
   if (CONFIG.enableSharpen) {
     gray = sharpenText(gray, w, h, CONFIG.sharpenAmount);
-    await saveGrayImage(gray, w, h, join(outDir, "step_07_sharpen.jpg"));
-    console.log(`  [7] Sharpen             : ✅ (amount=${CONFIG.sharpenAmount})`);
-  } else console.log(`  [7] Sharpen             : ⏭️ SKIP`);
+    await saveGrayImage(gray, w, h, join(outDir, "step_06_sharpen.jpg"));
+    console.log(`  [6] Sharpen             : ✅ (amount=${CONFIG.sharpenAmount})`);
+  } else console.log(`  [6] Sharpen             : ⏭️ SKIP`);
 
-  // ── Bước 8: Quality Assessment
+  // ── Bước 7: Quality Assessment
   const quality = assessQuality(originalGray, w, h, CONFIG);
-  console.log(`  [8] Quality Assessment  : ${quality.is_good ? "✅ TỐT" : "⚠️ " + quality.warnings.join(", ")}`);
+  console.log(`  [7] Quality Assessment  : ${quality.is_good ? "✅ TỐT" : "⚠️ " + quality.warnings.join(", ")}`);
   console.log(`       Blur: ${quality.blur_score} | Brightness: ${quality.brightness} | DarkRatio: ${quality.dark_pixel_ratio} | TextArea: ${quality.text_area_ratio}`);
 
-  // ── Bước 9: Threshold
+  // ── Bước 8: Threshold
   gray = applyThresholdFn(gray, w, h, CONFIG.thresholdMode, CONFIG.adaptiveBlockSize, CONFIG.adaptiveC);
-  await saveGrayImage(gray, w, h, join(outDir, "step_09_threshold.jpg"));
-  console.log(`  [9] Threshold           : ✅ (mode=${CONFIG.thresholdMode}, C=${CONFIG.adaptiveC})`);
+  await saveGrayImage(gray, w, h, join(outDir, "step_08_threshold.jpg"));
+  console.log(`  [8] Threshold           : ✅ (mode=${CONFIG.thresholdMode}, C=${CONFIG.adaptiveC})`);
 
   const elapsed = Date.now() - start;
   console.log(`  ⏱️  Tổng thời gian: ${elapsed}ms`);
@@ -323,7 +467,7 @@ async function main() {
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
   console.log("═══════════════════════════════════════════════════════════");
-  console.log("  VIHAND GRADE — TEST PIPELINE TIỀN XỬ LÝ ẢNH (9 BƯỚC)");
+  console.log("  VIHAND GRADE — TEST PIPELINE TIỀN XỬ LÝ ẢNH (11 BƯỚC)");
   console.log(`  Input: ${INPUT_DIR}`);
   console.log(`  Output: ${OUTPUT_DIR}`);
   console.log(`  Ảnh: ${files.length}`);
