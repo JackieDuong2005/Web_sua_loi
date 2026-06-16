@@ -23,22 +23,22 @@ Chính tả là một trong những phân môn nền tảng ở bậc giáo dụ
 
 Tuy nhiên, trong bối cảnh giáo dục hiện nay, giáo viên tiểu học đang đối mặt với áp lực công việc rất lớn khi phải chấm thủ công hàng chục bài viết tay mỗi ngày. Việc chấm điểm thủ công không chỉ tiêu tốn nhiều thời gian (trung bình 3–5 phút cho một bài viết tay ngắn) mà còn dễ dẫn đến sai sót do mỏi mắt, hoặc thiếu tính đồng bộ trong các nhận xét định tính. Đặc biệt, nét chữ viết tay của học sinh tiểu học thường chưa định hình, nét bút chì mờ nhạt, viết lệch dòng và ảnh chụp bài viết gửi qua điện thoại thường bị bóng che, thiếu sáng hoặc mờ nét.
 
-Sự phát triển đột phá của Trí tuệ nhân tạo (AI), đặc biệt là các mô hình ngôn ngữ lớn đa phương thức (Multimodal Large Language Models - MLLMs) như Google Gemini, đã mở ra cơ hội giải quyết triệt để bài toán này. Khả năng tích hợp cả thị giác máy tính (Computer Vision) để nhận dạng chữ viết tay (OCR) và xử lý ngôn ngữ tự nhiên (NLP) để phân tích ngữ cảnh của AI cho phép tự động hóa quy trình chấm điểm một cách toàn diện.
+Sự phát triển đột phá của Trí tuệ nhân tạo (AI) đã mở ra cơ hội giải quyết triệt để bài toán này. Bằng cách áp dụng **Kiến trúc Lai (Hybrid Architecture)**, hệ thống kết hợp mô hình đám mây Google Gemini 3.1 Flash Lite chuyên biệt cho việc nhận dạng quang học (OCR) cực kỳ chính xác từ ảnh chụp viết tay, kết hợp với mô hình ngôn ngữ tiếng Việt cục bộ (ViT5) để phân tích lỗi chính tả và chấm điểm toán học, cho phép tự động hóa quy trình chấm điểm một cách toàn diện, nhất quán và tiết kiệm chi phí.
 
-Vì vậy, đề tài **“Nghiên cứu và xây dựng hệ thống chấm điểm chính tả tiếng Việt viết tay cho học sinh tiểu học sử dụng trí tuệ nhân tạo đa phương thức (ViHand Grade)”** được thực hiện nhằm cung cấp một giải pháp công nghệ đột phá, hỗ trợ đắc lực cho giáo viên tiểu học trong việc tự động hóa quy trình chấm điểm, tối ưu hóa thời gian giảng dạy và nâng cao chất lượng nhận xét sư phạm.
+Vì vậy, đề tài **“Nghiên cứu và xây dựng hệ thống chấm điểm chính tả tiếng Việt viết tay cho học sinh tiểu học sử dụng trí tuệ nhân tạo (ViHand Grade)”** được thực hiện nhằm cung cấp một giải pháp công nghệ đột phá, hỗ trợ đắc lực cho giáo viên tiểu học.
 
 ---
 
 ### 2. Tổng quan tài liệu
 #### 2.1. Các nghiên cứu liên quan trong và ngoài nước
 * **Trong nước:** Các nghiên cứu về nhận dạng ký tự tiếng Việt (Vietnamese OCR) truyền thống thường tập trung vào chữ in hoặc chữ viết tay dạng khối sử dụng mạng nơ-ron tích chập (CNN) kết hợp mạng LSTM (như mô hình CRNN). Tuy nhiên, các giải pháp này thường gặp khó khăn lớn khi áp dụng vào chữ viết tay của học sinh cấp một viết trên giấy có lưới ô ly (grid lines). Dòng kẻ ô ly làm nhiễu nghiêm trọng các thuật toán phân tách dòng và ký tự. Hơn nữa, việc chấm điểm tự động hầu như chỉ dừng lại ở các bài trắc nghiệm, chưa có hệ thống nào tích hợp AI để đánh giá định tính bài viết chính tả đa tiêu chí (chính tả, hình thức, nội dung, sáng tạo).
-* **Ngoài nước:** Các công nghệ OCR thương mại (như Google Cloud Vision, Amazon Textract) hoặc mã nguồn mở (Tesseract, EasyOCR) đạt độ chính xác cao đối với tiếng Anh và chữ in. Gần đây, việc ứng dụng các mô hình AI đa phương thức như GPT-4V hay Gemini đã chuyển dịch cách tiếp cận từ "OCR + NLP riêng lẻ" sang "xử lý end-to-end". AI có thể đọc trực tiếp ảnh chụp chứa văn bản viết tay, hiểu ngữ cảnh ngữ nghĩa và đưa ra phân tích sửa lỗi cực kỳ thông minh mà không cần qua bước trích xuất văn bản thô truyền thống.
+* **Ngoài nước:** Các công nghệ OCR thương mại (như Google Cloud Vision) đạt độ chính xác cao đối với tiếng Anh. Việc ứng dụng các mô hình AI lớn như Gemini đã mang lại độ chính xác OCR tiếng Việt rất cao. Tuy nhiên, nếu dùng LLM đám mây để chấm điểm trực tiếp sẽ gặp giới hạn về Token trả về và tính không đồng nhất (Non-deterministic). Vì vậy, đề tài đề xuất kiến trúc 2 giai đoạn: Đám mây làm OCR, Local (ViT5) làm NLP sửa lỗi.
 
 #### 2.2. Những vấn đề tồn tại và phương án giải quyết của đề tài
-* **Vấn đề 1 - Nhiễu ảnh và dòng kẻ ô ly:** Ảnh chụp bài viết từ điện thoại của giáo viên/phụ huynh thường có chất lượng không đồng đều (bị mờ, rung tay, bóng che do góc chụp lệch) và đặc biệt là lưới ô ly của vở học sinh làm AI nhận diện sai ký tự.
-  * *Phương án giải quyết:* Đề tài đã nghiên cứu và phát triển một **Image Preprocessing Pipeline 9 bước** chạy trực tiếp bằng TypeScript/Jimp trên server/client mà không phụ thuộc vào các thư viện C++ nặng nề. Pipeline thực hiện khử bóng (Shadow Removal), tăng cường tương phản (CLAHE) và đánh giá chất lượng ảnh (Quality Assessment) để cảnh báo giáo viên trước khi gửi sang AI.
-* **Vấn đề 2 - Barem điểm và tính chính xác của AI:** Các mô hình AI ngôn ngữ lớn nếu chỉ gọi thông thường sẽ đưa ra điểm số cảm tính, thiếu chuẩn xác theo barem sư phạm Việt Nam, đồng thời phản hồi dạng text tự do rất khó lưu trữ có cấu trúc vào database.
-  * *Phương án giải quyết:* Thiết kế kỹ thuật Prompt tối ưu (Prompt Engineering) tích hợp barem điểm chuẩn của Bộ Giáo dục & Đào tạo Việt Nam (phân bổ chi tiết: Chính tả 4.0đ, Hình thức 3.0đ, Nội dung 2.0đ, Sáng tạo 1.0đ) kết hợp yêu cầu ép định dạng đầu ra (Response Schema) dưới dạng JSON cấu trúc chặt chẽ để lưu trữ trực tiếp vào cơ sở dữ liệu SQLite thông qua Prisma ORM.
+* **Vấn đề 1 - Nhiễu ảnh và dòng kẻ ô ly:** Ảnh chụp bài viết từ điện thoại của giáo viên/phụ huynh thường có chất lượng không đồng đều và lưới ô ly làm AI nhận diện sai ký tự.
+  * *Phương án giải quyết:* Phát triển **Image Preprocessing Pipeline 9 bước** chạy trực tiếp bằng TypeScript/Jimp trên server/client để khử bóng, tăng tương phản.
+* **Vấn đề 2 - Barem điểm và tính chính xác của AI:** Các mô hình AI ngôn ngữ lớn nếu chỉ gọi thông thường sẽ đưa ra điểm số cảm tính, thiếu chuẩn xác theo barem sư phạm Việt Nam.
+  * *Phương án giải quyết:* Tách biệt luồng xử lý: dùng Gemini trích xuất chữ (OCR), sau đó dùng mô hình ViT5 chạy ở máy chủ cục bộ (Raspberry Pi) để sửa lỗi chính tả. Thuật toán Levenshtein được áp dụng để đếm số lượng lỗi sai, phân loại lỗi và tự động trừ điểm theo đúng Thông tư 27/2020/TT-BGDĐT. Dữ liệu cuối cùng được trả về Frontend dưới dạng JSON.
 
 ---
 
@@ -58,16 +58,16 @@ Vì vậy, đề tài **“Nghiên cứu và xây dựng hệ thống chấm đi
 ┌─────────────────────────────────────────────────────────────┐
 │                    PHƯƠNG PHÁP NGHIÊN CỨU                   │
 ├──────────────────────────────┬──────────────────────────────┤
-│    Nghiên cứu thực nghiệm    │    Kỹ thuật Prompt & AI      │
+│    Nghiên cứu thực nghiệm    │    Kỹ thuật Kiến trúc Lai    │
 ├──────────────────────────────┼──────────────────────────────┤
-│ • Xây dựng Image Pipeline    │ • Thiết kế Prompt hệ thống   │
-│   9 bước bằng Jimp.          │ • Ép định dạng JSON Schema.  │
-│ • Thử nghiệm bộ lọc CLAHE,   │ • Tham chiếu mô hình        │
-│   Adaptive Thresholding.     │   Gemini 3 Flash Preview.    │
+│ • Xây dựng Image Pipeline    │ • Kỹ thuật Prompt OCR Gemini │
+│   9 bước bằng Jimp.          │ • Mô hình cục bộ ViT5 INT8   │
+│ • Thử nghiệm bộ lọc CLAHE,   │ • Thuật toán Levenshtein     │
+│   Adaptive Thresholding.     │   chấm điểm chính tả         │
 └──────────────────────────────┴──────────────────────────────┘
 ```
 1. **Phương pháp thực nghiệm xử lý ảnh:** Thiết lập môi trường thử nghiệm tiền xử lý hình ảnh. Viết thuật toán phát hiện và xóa dòng kẻ ô ly bằng cách phân tích tần suất pixel màu nhạt trên các trục tọa độ ngang và dọc. Áp dụng kỹ thuật cân bằng xám (Gray World Assumption) để xử lý cân bằng trắng tự động và bộ lọc CLAHE để cân bằng độ sáng cục bộ.
-2. **Kỹ nghệ Prompt học máy:** Thiết kế Prompt hệ thống đóng vai trò một Chuyên gia Giáo dục Tiểu học tại Việt Nam. Sử dụng kỹ thuật Few-shot Prompting để cung cấp các mẫu chấm điểm chuẩn nhằm định hình tư duy của AI. Cấu hình tham số mô hình tối ưu ($Temperature = 0.1$ để tăng tính chính xác, tránh hiện tượng "ảo giác" của AI).
+2. **Kỹ thuật Hybrid AI:** Kết hợp mô hình đám mây (Gemini 3.1 Flash Lite) để trích xuất OCR văn bản thô cực kỳ nhanh và chính xác. Sau đó chuyển luồng dữ liệu sang Edge AI (ViT5 lượng tử hóa INT8) trên dịch vụ Python cục bộ để thực thi NLP sửa lỗi ngữ pháp. Thuật toán khoảng cách Levenshtein được lập trình để đếm số lượng lỗi, phân loại lỗi và tính điểm toán học chuẩn xác 100% dựa trên quy định của Bộ Giáo dục.
 3. **Phương pháp phát triển phần mềm hiện đại:** Sử dụng Next.js App Router (React 19) làm nền tảng phát triển ứng dụng full-stack, kết hợp Prisma ORM kết nối cơ sở dữ liệu SQLite gọn nhẹ, đảm bảo tốc độ đọc ghi nhanh và dễ dàng triển khai.
 
 ---
@@ -78,13 +78,13 @@ Hệ thống **ViHand Grade** đã được hoàn thiện với đầy đủ cá
 
 ##### A. Sơ đồ kiến trúc tổng thể
 ```
-[Giao diện Giáo viên/Học sinh] <--- Next.js App Router ---> [Cơ sở dữ liệu SQLite]
+[Giao diện Giáo viên] <--- Next.js App Router ---> [Cơ sở dữ liệu SQLite]
               │                                                     ▲
-              ▼ (POST /api/grade)                                   │ (Prisma ORM)
-     [Kiểm tra chất lượng ảnh] ─── (Nếu Đạt) ───> [Google Gemini API] ──┘
-              │
-              ▼ (Preprocess Pipeline)
-     [Xóa ô ly + Khử bóng + CLAHE]
+              ▼ (Preprocess Pipeline 9 bước)                        │
+     [Xóa ô ly + Khử bóng + CLAHE]                                  │
+              │                                                     │
+              ▼                                                     │
+     [Google Gemini API] ──(Văn bản thô OCR)──> [ViT5 Python Microservice]
 ```
 
 ##### B. Bộ tiền xử lý ảnh 9 bước (Image Pipeline)
@@ -120,26 +120,32 @@ Hệ thống đã tiến hành chấm thử nghiệm hơn 100 mẫu ảnh chụp
 | **Khử nhiễu ô ly tập học sinh**| Hiệu quả | **Loại bỏ > 90%** nét lưới ô ly | Giúp nét chữ rõ nét vượt trội |
 
 ##### B. Kết quả phân tích lỗi chính tả của AI
-AI nhận dạng cực kỳ tốt ngữ nghĩa tiếng Việt để tìm ra lỗi chính tả. Dưới đây là mẫu kết quả JSON mà hệ thống nhận được từ Gemini API:
+Hệ thống nhận dạng cực kỳ tốt ngữ nghĩa tiếng Việt. Dưới đây là mẫu kết quả JSON được xử lý và trả về từ Backend Python (ViT5 + Levenshtein):
 ```json
 {
-  "fixed_text": "Cây bàng tỏa bóng mát rượi cả một góc sân trường.",
-  "original_text": "Cây bàng tỏa bóng mát rợi cả một góc sân chường.",
+  "score": "8.0/10",
+  "score_breakdown": {
+    "chinh_ta": { "raw": 3.0, "max": 4.0, "error_count": 2, "deduction": 1.0 },
+    "hinh_thuc": { "raw": 2.5, "max": 3.0 }
+  },
   "corrections": [
     {
       "error": "mát rợi",
       "suggestion": "mát rượi",
+      "error_type": "van",
+      "is_dialect": false,
       "reason": "Sai vần 'ươi' thành 'ơi' do cách phát âm địa phương."
     },
     {
       "error": "sân chường",
       "suggestion": "sân trường",
+      "error_type": "phu_am_dau",
+      "is_dialect": false,
       "reason": "Nhầm lẫn phụ âm đầu 'ch' và 'tr'."
     }
   ],
-  "score": "8.0/10",
   "overall_rating": "Tốt",
-  "feedback": "Em viết chữ tương đối rõ ràng, thẳng hàng. Cần chú ý phân biệt phụ âm đầu tr/ch và các vần có âm đệm để viết đúng chính tả hơn nhé!"
+  "feedback": "Nhận xét tự động..."
 }
 ```
 

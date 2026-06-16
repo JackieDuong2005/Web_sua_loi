@@ -40,14 +40,15 @@ Raspberry Pi 4 đóng vai trò là **máy chủ ứng dụng (Application Server
   [Giáo viên / Học sinh]          [Google Cloud]
    📱 Điện thoại                  ┌─────────────────┐
    💻 Máy tính         ──HTTPS──→ │  Gemini API      │
-         │                        │  (OCR + Chấm     │
-         │ HTTP/LAN               │   điểm AI)       │
-         ▼                        └────────▲─────────┘
-  ┌──────────────────┐                     │ HTTPS
+         │                        │  (Trích xuất OCR)│
+         │ HTTP/LAN               └────────▲─────────┘
+         ▼                                 │ HTTPS
+  ┌──────────────────┐                     │
   │  Raspberry Pi 4  │─────────────────────┘
-  │  (Máy chủ)       │
+  │  (Máy chủ Edge)  │
   │  ┌────────────┐  │
   │  │ Next.js 16 │  │  ← Serve giao diện Web
+  │  │ Python ViT5│  │  ← Sửa lỗi NLP cục bộ
   │  │ SQLite DB  │  │  ← Lưu trữ dữ liệu
   │  │ Jimp       │  │  ← Tiền xử lý ảnh
   │  │ Cloudflare │  │  ← Đường hầm Internet
@@ -88,14 +89,14 @@ RPi4 lưu toàn bộ dữ liệu vào file SQLite (`prisma/vihand.db`) — khôn
 - **File-based** → sao lưu đơn giản bằng `cp`
 - **Phù hợp tải nhỏ** → 5–10 giáo viên đồng thời, không cần concurrent writes cao
 
-#### **Nhiệm vụ 4: Định tuyến API và gọi Gemini**
-RPi4 đóng vai trò **proxy an toàn** cho Gemini API:
-1. Nhận ảnh base64 từ trình duyệt giáo viên
-2. Xây dựng prompt và gọi `generativelanguage.googleapis.com`
-3. Parse JSON response từ Gemini
-4. Trả kết quả chấm điểm về client
+#### **Nhiệm vụ 4: Điều phối Hybrid AI (Gemini + ViT5)**
+RPi4 điều phối toàn bộ luồng xử lý AI:
+1. Nhận ảnh từ giáo viên, gọi Gemini API để lấy văn bản thô (OCR).
+2. Chuyển văn bản thô cho dịch vụ Python nội bộ chạy mô hình ViT5 (Edge AI) để sửa lỗi chính tả.
+3. Chạy thuật toán Levenshtein so khớp để đếm lỗi và tính điểm dựa trên kết quả sửa đổi.
+4. Trả JSON kết quả cuối cùng về giao diện giáo viên.
 
-GEMINI_API_KEY được lưu tại `.env.local` trên RPi4 — **giáo viên không bao giờ thấy API key** vì toàn bộ giao tiếp với Google diễn ra phía server.
+GEMINI_API_KEY được lưu tại `.env.local` trên RPi4 — **giáo viên không bao giờ thấy API key** vì toàn bộ giao tiếp với Google diễn ra phía server. Đồng thời, mô hình ViT5 được tải trực tiếp vào RAM của Pi 4, không cần gửi văn bản của học sinh ra ngoài để chấm.
 
 ---
 
@@ -113,8 +114,9 @@ GEMINI_API_KEY được lưu tại `.env.local` trên RPi4 — **giáo viên kh�
 
 | Công nghệ | Phiên bản | Vai trò |
 |---|---|---|
-| **Node.js** | v20 LTS | JavaScript runtime — chạy toàn bộ server |
-| **Next.js** | 16.2.4 | Full-stack framework (App Router + API Routes) |
+| **Node.js** | v20 LTS | JavaScript runtime — chạy server chính |
+| **Python** | 3.10 | Chạy Microservice ViT5 và thuật toán Levenshtein |
+| **Next.js** | 16.2.4 | Full-stack framework (App Router) |
 | **npm** | Đi kèm Node.js | Quản lý gói và chạy scripts |
 
 > **Tại sao Node.js thay vì Python/Java?** Node.js có hiệu năng I/O async xuất sắc, phù hợp cho tác vụ chủ yếu là I/O-bound (chờ Gemini API). Hơn nữa, toàn bộ codebase (frontend + backend + image pipeline) đều dùng TypeScript/JavaScript — giảm độ phức tạp triển khai.
@@ -214,7 +216,7 @@ WantedBy=multi-user.target
 | Nhiệt độ peak | — | ~58°C | An toàn |
 | **Chi phí phần cứng** | ~15 triệu VNĐ | **~1.5 triệu VNĐ** | **Tiết kiệm 90%** |
 
-> **Kết luận thực nghiệm:** Raspberry Pi 4 hoàn toàn đáp ứng yêu cầu vận hành thực tế. Bottleneck chính (~4.89s) là Gemini API qua Internet — phần cứng RPi4 chỉ đóng góp thêm < 0.25 giây. RAM peak 580MB còn dư hơn 3GB dự phòng. Hệ thống có thể hoạt động 24/7 ổn định khi được trang bị tản nhiệt quạt đúng cách.
+> **Kết luận thực nghiệm:** Raspberry Pi 4 hoàn toàn đáp ứng yêu cầu vận hành thực tế. Dù phải gánh thêm mô hình ViT5 nội bộ cho việc chấm điểm (Edge AI), lượng RAM tiêu thụ vẫn nằm trong chuẩn an toàn nhờ lượng tử hóa INT8. Hệ thống có thể hoạt động 24/7 ổn định khi được trang bị tản nhiệt quạt đúng cách.
 
 ---
 
@@ -232,8 +234,9 @@ WantedBy=multi-user.target
   📱 HS trong trường ──┘    │   Raspberry Pi 4 (4GB)  │
    http://192.168.1.100:3000 │                         │
                              │  ✦ Next.js 16 (Web)    │
-                             │  ✦ SQLite (Database)   │──→ Google
-                             │  ✦ Jimp (Ảnh)          │   Gemini API
+                             │  ✦ Python ViT5         │──→ Google
+                             │  ✦ SQLite (Database)   │   Gemini API
+                             │  ✦ Jimp (Ảnh)          │
                              │  ✦ Cloudflare Tunnel   │
                              └─────────────────────────┘
 ```

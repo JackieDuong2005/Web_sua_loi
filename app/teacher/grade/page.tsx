@@ -103,7 +103,10 @@ export default function GradingPage() {
   const [studentText, setStudentText] = useState("")
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStep, setProcessingStep] = useState<"ocr" | "grade" | null>(null)
   const [isPreprocessing, setIsPreprocessing] = useState(false)
+  const [ocrText, setOcrText] = useState("")
+  const [isOcring, setIsOcring] = useState(false)
   const [gradingResult, setGradingResult] = useState<GradingResult | null>(null)
   const [error, setError] = useState("")
 
@@ -118,13 +121,20 @@ export default function GradingPage() {
   const [classStudents, setClassStudents] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
+  // Cấu hình điểm — chỉ giữ penalty (trước khi chấm)
+  const [scoreConfig, setScoreConfig] = useState({ penalty: 0.5 })
+  // Override sau khi có kết quả — giáo viên chỉnh bên bảng chi tiết
+  const [hinhThucOverride, setHinhThucOverride] = useState<number | null>(null)
+  const [noiDungOverride,  setNoiDungOverride]  = useState<number | null>(null)
+  const [sangTaoOverride,  setSangTaoOverride]  = useState<number | null>(null)
+
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
 
-  // Load teacher classes on mount + fetch all classes from API
+  // Load teacher classes on mount + fetch all classes from API + warm-up ViT5
   useEffect(() => {
     const userStr = localStorage.getItem("vihand_user")
     if (userStr) {
@@ -143,6 +153,12 @@ export default function GradingPage() {
         setAllClasses(names)
       })
       .catch(() => {})
+
+    // 🔥 Warm-up ViT5: kích hoạt model load sớm, tránh timeout lần chấm đầu tiên
+    fetch("/api/vit5-warmup")
+      .then(r => r.json())
+      .then(data => console.log("[WarmUp] ViT5 status:", data.status))
+      .catch(() => console.warn("[WarmUp] Không thể kết nối ViT5 service"))
   }, [])
 
   // Load students when className changes
@@ -180,6 +196,7 @@ export default function GradingPage() {
       setUploadedImage(imgBase64)
       setProcessedImage(null)
       setGradingResult(null)
+      setOcrText("")
       setError("")
       setIsSaved(false)
       setInputMode("processed")
@@ -215,38 +232,54 @@ export default function GradingPage() {
   }
 
   const callGemini = async () => {
-    if ((inputMode === "image" || inputMode === "processed") && !uploadedImage) return
-    if (inputMode === "text" && !studentText.trim()) return
-
     setIsProcessing(true)
+    setProcessingStep(null)
     setError("")
     setGradingResult(null)
     setIsSaved(false)
-
     try {
-      const body: any = {}
+      let textToGrade = studentText
+
+      // Bước 1 (nếu nhập ảnh): Gọi OCR — Gemini trích xuất văn bản
       if ((inputMode === "image" || inputMode === "processed") && uploadedImage) {
-        // Nén ảnh trước khi gửi → giảm thời gian xử lý từ ~100s xuống ~20-30s
+        setProcessingStep("ocr")
         const compressed = await compressImageForAPI(uploadedImage)
-        body.imageBase64 = compressed
-        body.mimeType = "image/jpeg"
-      } else {
-        body.studentText = studentText
+        const ocrRes = await fetch("/api/ocr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: compressed, mimeType: "image/jpeg" }),
+        })
+        const ocrData = await ocrRes.json()
+        if (!ocrRes.ok) { setError(ocrData.error || "Lỗi OCR"); return }
+        textToGrade = ocrData.text || ""
+        setOcrText(textToGrade)
       }
 
+      if (!textToGrade.trim()) { setError("Không trích xuất được văn bản từ ảnh."); return }
+
+      // Bước 2: Gọi ViT5 chấm điểm
+      setProcessingStep("grade")
       const res = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          studentText: textToGrade,
+          penalty_per_error: scoreConfig.penalty,
+        }),
       })
-
       const data = await res.json()
-      if (!res.ok) { setError(data.error || "Lỗi khi gọi API"); return }
+      if (!res.ok) { setError(data.error || "Lỗi chấm điểm"); return }
       setGradingResult(data as GradingResult)
+      // Khởi tạo override từ kết quả AI (giáo viên sẽ chỉnh sau)
+      const sb = data?.score_breakdown
+      setHinhThucOverride(sb?.hinh_thuc?.raw ?? 2.5)
+      setNoiDungOverride(sb?.noi_dung?.raw ?? 1.5)
+      setSangTaoOverride(sb?.sang_tao?.raw ?? 0)
     } catch {
       setError("Không thể kết nối server.")
     } finally {
       setIsProcessing(false)
+      setProcessingStep(null)
     }
   }
 
@@ -334,6 +367,7 @@ export default function GradingPage() {
     setUploadedImage(capturedImg)
     setProcessedImage(null)
     setGradingResult(null)
+    setOcrText("")
     setIsSaved(false)
     setError("")
     setInputMode("processed")
@@ -345,6 +379,7 @@ export default function GradingPage() {
 
   const clearAll = () => {
     setUploadedImage(null); setProcessedImage(null); setStudentText(""); setGradingResult(null)
+    setOcrText(""); setIsOcring(false)
     setError(""); setIsSaved(false); setStudentName(""); setAssignmentTitle(""); setClassName("")
     setInputMode("image"); setActiveTab("image")
   }
@@ -372,6 +407,28 @@ export default function GradingPage() {
     }
   }
 
+  const handleOCR = async () => {
+    if (!uploadedImage) return
+    setIsOcring(true)
+    setOcrText("")
+    setError("")
+    try {
+      const compressed = await compressImageForAPI(uploadedImage)
+      const res = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: compressed, mimeType: "image/jpeg" }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || "Lỗi OCR"); return }
+      setOcrText(data.text || "")
+    } catch {
+      setError("Không thể kết nối server OCR.")
+    } finally {
+      setIsOcring(false)
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-4 md:px-6">
@@ -379,12 +436,36 @@ export default function GradingPage() {
         <Separator orientation="vertical" className="h-6" />
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-semibold text-card-foreground">Chấm điểm AI</h1>
-          <p className="text-sm text-muted-foreground">Phân tích chính tả và chấm điểm tự động bằng Gemini</p>
+          <p className="text-sm text-muted-foreground">OCR (Gemini) → Sửa lỗi (ViT5) → Chấm điểm (Levenshtein)</p>
         </div>
         <HelpGuideButton role="teacher" />
       </header>
 
       <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+        {/* Pipeline Banner */}
+        <div className="mb-5 flex items-center gap-1.5 overflow-x-auto pb-1">
+          {[
+            { step: 1, icon: "📷", label: "Chụp/Upload", active: !processedImage },
+            { step: 2, icon: "🔧", label: "Tiền xử lý (9 bước)", active: !!processedImage && !ocrText },
+            { step: 3, icon: "🔍", label: "OCR (Gemini)", active: !!ocrText && !gradingResult },
+            { step: 4, icon: "🤖", label: "ViT5 sửa lỗi", active: isProcessing },
+            { step: 5, icon: "📊", label: "Levenshtein", active: !!gradingResult },
+          ].map(({ step, icon, label, active }, i, arr) => (
+            <>
+              <div key={step} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : (step < (gradingResult ? 5 : ocrText ? 3 : processedImage ? 2 : 1))
+                    ? "bg-green-100 text-green-700"
+                    : "bg-muted text-muted-foreground"
+              }`}>
+                <span>{icon}</span><span>{label}</span>
+              </div>
+              {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
+            </>
+          ))}
+        </div>
+
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
 
           {/* LEFT: Input */}
@@ -470,18 +551,18 @@ export default function GradingPage() {
               <CardContent>
                 <Tabs value={activeTab} onValueChange={(v) => {
                   setActiveTab(v as any)
-                  if ((inputMode === "image" || inputMode === "processed") && (v === "image" || v === "processed")) {
-                    setInputMode(v as any)
-                    if (v === "processed" && uploadedImage && !processedImage) {
-                      handlePreprocess(uploadedImage)
-                    }
-                  } else {
-                    setInputMode(v as any); clearAll();
+                  setInputMode(v as any)
+                  // Chỉ clearAll khi chuyển sang tab ảnh (để reset ảnh cũ nếu đang ở text mode)
+                  if (v === "text") {
+                    // Chuyển sang nhập text — GIỮ NGUYÊN ảnh đã upload (không xóa)
+                    // Chỉ reset studentText nếu cần (không làm gì thêm)
+                  } else if (v === "processed" && uploadedImage && !processedImage) {
+                    handlePreprocess(uploadedImage)
                   }
                 }}>
                   <TabsList className="w-full mb-4">
                     <TabsTrigger value="image" className="flex-1 gap-2"><Camera className="w-4 h-4" /> Ảnh gốc</TabsTrigger>
-                    <TabsTrigger value="processed" className="flex-1 gap-2"><Zap className="w-4 h-4" /> Đã xử lý</TabsTrigger>
+                    <TabsTrigger value="processed" className="flex-1 gap-2"><Zap className="w-4 h-4" /> Tiền xử lý + OCR</TabsTrigger>
                     <TabsTrigger value="text" className="flex-1 gap-2"><Pencil className="w-4 h-4" /> Nhập text</TabsTrigger>
                   </TabsList>
 
@@ -557,6 +638,7 @@ export default function GradingPage() {
                             </div>
                           </div>
                         )}
+
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-lg text-muted-foreground">
@@ -567,17 +649,61 @@ export default function GradingPage() {
                   </TabsContent>
 
                   <TabsContent value="text">
-                    <div className="space-y-2">
-                      <Label>Văn bản của học sinh</Label>
-                      <Textarea
-                        placeholder="Dán hoặc nhập đoạn văn của học sinh vào đây..."
-                        value={studentText} onChange={e => setStudentText(e.target.value)}
-                        rows={8} className="resize-none font-mono text-sm"
-                      />
-                      <p className="text-xs text-muted-foreground text-right">{studentText.length} ký tự</p>
+                    <div className="space-y-3">
+                      {/* Badge thông báo bỏ qua OCR */}
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
+                        <Pencil className="w-4 h-4 shrink-0" />
+                        <span><strong>Nhập text trực tiếp</strong> — bỏ qua OCR, đưa thẳng vào ViT5 sửa lỗi và Levenshtein chấm điểm.</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label>Văn bản của học sinh</Label>
+                        <Textarea
+                          placeholder={`Dán hoặc nhập đoạn văn của học sinh vào đây...\n\nVí dụ:\nBài làm\nGia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết...`}
+                          value={studentText} onChange={e => setStudentText(e.target.value)}
+                          rows={10} className="resize-none font-mono text-sm"
+                        />
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">{studentText.length} ký tự · {studentText.trim().split(/\s+/).filter(Boolean).length} từ</p>
+                          {studentText && (
+                            <button
+                              onClick={() => setStudentText("")}
+                              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              ✕ Xóa
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
+
+                {/* === Cấu hình chấm điểm === */}
+                <div className="mt-5 rounded-xl border border-border bg-muted/40 p-4 space-y-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    ⚙️ Cấu hình điểm <span className="font-normal normal-case">(tiếp nhận trước khi chấm)</span>
+                  </p>
+
+                  {/* Chỉ giữ: Trừ điểm mỗi lỗi chính tả */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">✖️ Trừ điểm mỗi lỗi chính tả</Label>
+                      <span className="text-sm font-bold text-destructive tabular-nums">
+                        −{scoreConfig.penalty.toFixed(1)} đ
+                      </span>
+                    </div>
+                    <input
+                      type="range" min={0.1} max={1.0} step={0.1}
+                      value={scoreConfig.penalty}
+                      onChange={e => setScoreConfig(c => ({ ...c, penalty: parseFloat(e.target.value) }))}
+                      className="w-full accent-destructive h-2 rounded-full cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span>0.1 — Nhẹ</span><span>0.5 — Chuẩn</span><span>1.0 — Ngặt</span>
+                    </div>
+                  </div>
+                </div>
 
                 {error && (
                   <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
@@ -587,7 +713,13 @@ export default function GradingPage() {
                 )}
 
                 <Button className="w-full mt-4 h-12 text-base gap-2" onClick={callGemini} disabled={!canGrade || isProcessing}>
-                  {isProcessing ? <><Spinner className="mr-2" />Đang phân tích...</> : <><Zap className="w-5 h-5" />Chấm điểm với Gemini AI</>}
+                  {isProcessing
+                    ? processingStep === "ocr"
+                      ? <><Spinner className="mr-2" />🔍 Đang OCR (Gemini)...</>
+                      : <><Spinner className="mr-2" />🤖 Đang chấm điểm (ViT5)...</>
+                    : inputMode === "text"
+                      ? <><Zap className="w-5 h-5" />Chấm trực tiếp (ViT5 + Levenshtein)</>
+                      : <><Zap className="w-5 h-5" />Chấm điểm</>}
                 </Button>
               </CardContent>
             </Card>
@@ -600,19 +732,27 @@ export default function GradingPage() {
                 {/* Score + Rating */}
                 <Card className="border-border/50">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <ScoreDisplay score={gradingResult.score} />
-                      <div className="flex-1 space-y-2">
-                        {(() => {
-                          const s = getRatingStyle(gradingResult.overall_rating)
-                          return <Badge className={`text-sm px-3 py-1 border ${s.badge}`}>{s.emoji} {gradingResult.overall_rating}</Badge>
-                        })()}
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(gradingResult.processingTimeMs / 1000).toFixed(1)}s</span>
-                          <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{gradingResult.tokenCount} tokens</span>
+                    {(() => {
+                      const sb = gradingResult.score_breakdown
+                      const ht = hinhThucOverride ?? sb.hinh_thuc.raw
+                      const nd = noiDungOverride  ?? sb.noi_dung.raw
+                      const st = sangTaoOverride  ?? sb.sang_tao.raw
+                      const total = Math.min(10, Math.round((sb.chinh_ta.raw + ht + nd + st) * 10) / 10)
+                      const displayScore = `${total.toFixed(1)}/10`
+                      const ratingStyle = getRatingStyle(gradingResult.overall_rating)
+                      return (
+                        <div className="flex items-center gap-4">
+                          <ScoreDisplay score={displayScore} />
+                          <div className="flex-1 space-y-2">
+                            <Badge className={`text-sm px-3 py-1 border ${ratingStyle.badge}`}>{ratingStyle.emoji} {gradingResult.overall_rating}</Badge>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(gradingResult.processingTimeMs / 1000).toFixed(1)}s</span>
+                              <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{gradingResult.tokenCount} tokens</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      )
+                    })()}
                   </CardContent>
                 </Card>
 
@@ -632,24 +772,78 @@ export default function GradingPage() {
                           max={gradingResult.score_breakdown.chinh_ta.max}
                           note={`${gradingResult.score_breakdown.chinh_ta.error_count} lỗi, trừ ${gradingResult.score_breakdown.chinh_ta.deduction}đ`}
                         />
-                        <ScoreBar
-                          label="✍️ Hình thức trình bày"
-                          raw={gradingResult.score_breakdown.hinh_thuc.raw}
-                          max={gradingResult.score_breakdown.hinh_thuc.max}
-                          note={gradingResult.score_breakdown.hinh_thuc.note}
-                        />
-                        <ScoreBar
-                          label="💡 Nội dung & Ý tưởng"
-                          raw={gradingResult.score_breakdown.noi_dung.raw}
-                          max={gradingResult.score_breakdown.noi_dung.max}
-                          note={gradingResult.score_breakdown.noi_dung.note}
-                        />
-                        <ScoreBar
-                          label="🎨 Sáng tạo"
-                          raw={gradingResult.score_breakdown.sang_tao.raw}
-                          max={gradingResult.score_breakdown.sang_tao.max}
-                          note={gradingResult.score_breakdown.sang_tao.note}
-                        />
+
+                        {/* Hình thức — editable */}
+                        {hinhThucOverride !== null ? (
+                          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-blue-700">✍️ Hình thức trình bày</span>
+                              <span className="text-sm font-bold text-blue-700 tabular-nums">
+                                {hinhThucOverride.toFixed(1)} <span className="font-normal text-muted-foreground">/ 3</span>
+                              </span>
+                            </div>
+                            <input type="range" min={0} max={3} step={0.5}
+                              value={hinhThucOverride}
+                              onChange={e => setHinhThucOverride(parseFloat(e.target.value))}
+                              className="w-full accent-blue-500 h-2 rounded-full cursor-pointer"
+                            />
+                            <div className="flex justify-between text-[10px] text-blue-500">
+                              <span>0 — Chữ xấu</span><span>1.5 — TB</span><span>3 — Rất đẹp</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <ScoreBar label="✍️ Hình thức trình bày"
+                            raw={gradingResult.score_breakdown.hinh_thuc.raw}
+                            max={gradingResult.score_breakdown.hinh_thuc.max}
+                            note={gradingResult.score_breakdown.hinh_thuc.note}
+                          />
+                        )}
+
+                        {/* Nội dung — editable */}
+                        {noiDungOverride !== null ? (
+                          <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-indigo-700">💡 Nội dung & Ý tưởng</span>
+                              <span className="text-sm font-bold text-indigo-700 tabular-nums">
+                                {noiDungOverride.toFixed(1)} <span className="font-normal text-muted-foreground">/ 2</span>
+                              </span>
+                            </div>
+                            <input type="range" min={0} max={2} step={0.5}
+                              value={noiDungOverride}
+                              onChange={e => setNoiDungOverride(parseFloat(e.target.value))}
+                              className="w-full accent-indigo-500 h-2 rounded-full cursor-pointer"
+                            />
+                            <div className="flex justify-between text-[10px] text-indigo-500">
+                              <span>0 — Lạc đề</span><span>1 — Đủ ý</span><span>2 — Sâu sắc</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <ScoreBar label="💡 Nội dung & Ý tưởng"
+                            raw={gradingResult.score_breakdown.noi_dung.raw}
+                            max={gradingResult.score_breakdown.noi_dung.max}
+                            note={gradingResult.score_breakdown.noi_dung.note}
+                          />
+                        )}
+
+                        {/* Sáng tạo — chỉ slider, không có ScoreBar thần */}
+                        {sangTaoOverride !== null && (
+                          <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-amber-700">✨ Điều chỉnh Sáng tạo</span>
+                              <span className="text-sm font-bold text-amber-700 tabular-nums">
+                                {sangTaoOverride.toFixed(1)} <span className="font-normal text-muted-foreground">/ 1</span>
+                              </span>
+                            </div>
+                            <input type="range" min={0} max={1} step={0.5}
+                              value={sangTaoOverride}
+                              onChange={e => setSangTaoOverride(parseFloat(e.target.value))}
+                              className="w-full accent-amber-500 h-2 rounded-full cursor-pointer"
+                            />
+                            <div className="flex justify-between text-[10px] text-amber-600">
+                              <span>0 — Không có</span><span>0.5 — Có ít</span><span>1 — Nổi bật</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

@@ -21,16 +21,18 @@ Chữ viết tay của học sinh tiểu học (lớp 1 đến lớp 5) mang nh�
 - **Tính đa dạng và tinh tế của dấu thanh tiếng Việt:** Tiếng Việt sở hữu hệ thống 6 thanh điệu (ngang, sắc, huyền, hỏi, ngã, nặng) và các nguyên âm đôi/ba có dấu phụ (ă, â, ê, ô, ơ, ư). Các dấu này có kích thước nhỏ, mảnh, dễ bị đứt nét hoặc dính vào ký tự chính đứng trước hoặc đứng sau.
 - **Nhiễu cấu trúc dòng kẻ ô ly:** Học sinh tiểu học Việt Nam bắt buộc phải viết trên tập giấy có lưới ô ly (grid lines) để căn chỉnh nét chữ. Dòng lưới ô ly này thường có màu xanh lục hoặc đỏ nhạt, chồng lấn trực tiếp lên nét chữ viết tay và các dấu thanh phụ âm, gây nhiễu nghiêm trọng cho các thuật toán phân tách dòng và phân đoạn ký tự.
 
-### 2.1.3. Sự chuyển dịch kiến trúc sang AI đa phương thức (Multimodal AI)
+### 2.1.3. Sự chuyển dịch kiến trúc sang Mô hình Lai (Hybrid AI Architecture)
 Các kiến trúc OCR truyền thống thường sử dụng mô hình hai giai đoạn tuần tự (Two-stage Pipeline):
 $$\text{Ảnh chụp thô} \xrightarrow{\quad \text{OCR Engine (CNN + RNN)} \quad} \text{Văn bản thô} \xrightarrow{\quad \text{NLP Engine} \quad} \text{Sửa lỗi & Trả kết quả}$$
 
-Hạn chế lớn nhất của cách tiếp cận này là **sự cộng dồn sai số (Error Propagation)**. Nếu mô hình OCR nhận diện sai một chữ cái (ví dụ nhầm "tr" thành "ch"), mô hình NLP phía sau sẽ tiếp nhận thông tin sai lệch này và rất khó khôi phục lại từ đúng ngữ cảnh ban đầu.
+Hạn chế lớn nhất của cách tiếp cận truyền thống là sự cộng dồn sai số (Error Propagation) do các engine OCR thế hệ cũ nhận diện kém. Sự xuất hiện của các Mô hình ngôn ngữ lớn đa phương thức (Multimodal Large Language Models - MLLMs) như **Google Gemini** đã mở ra bước đột phá mới. Tuy nhiên, nếu sử dụng phương pháp **End-to-End** thuần túy (dùng Gemini vừa nhận diện vừa chấm điểm toán học), hệ thống sẽ gặp các vấn đề lớn về:
+- Giới hạn token đầu ra (vượt ngưỡng 8,192 tokens khi bài có nhiều lỗi).
+- Tính không đồng nhất (Non-deterministic): Điểm số có thể dao động qua các lần chấm khác nhau.
 
-Sự xuất hiện của các Mô hình ngôn ngữ lớn đa phương thức (Multimodal Large Language Models - MLLMs) như họ mô hình **Google Gemini** đã mở ra bước đột phá mới bằng cách tiếp cận **End-to-End**:
-$$\text{Ảnh chụp bài viết} \xrightarrow{\quad \text{Mô hình Đa phương thức (Gemini)} \quad} \text{Phân tích lỗi & Chấm điểm (JSON Schema)}$$
+Vì vậy, hệ thống ViHand Grade áp dụng **Kiến trúc Lai (Hybrid Architecture)** tối ưu nhất:
+$$\text{Ảnh bài viết} \xrightarrow{\text{Gemini (OCR)}} \text{Văn bản thô} \xrightarrow{\text{ViT5 (Edge AI) + Levenshtein}} \text{Chấm điểm & JSON}$$
 
-Mô hình đa phương thức tích hợp sẵn khả năng hiểu thị giác và ngôn ngữ trong cùng một mạng nơ-ron sâu khổng lồ. AI không trích xuất văn bản thô một cách máy móc, mà tiến hành "đọc hiểu" ngữ nghĩa trực tiếp từ ảnh chụp bài viết, kết hợp ngữ cảnh toàn câu để nhận dạng và phát hiện lỗi chính tả một cách chính xác trong một bước duy nhất, loại bỏ hoàn toàn hiện tượng cộng dồn sai số.
+Trong đó, Gemini đóng vai trò OCR đa phương thức cực kỳ chính xác để trích xuất văn bản thô, và một mô hình ngôn ngữ nhỏ cục bộ (ViT5) chạy trên Raspberry Pi sẽ thực hiện việc sửa lỗi ngữ pháp. Cuối cùng, thuật toán Levenshtein sẽ so sánh chuỗi để đưa ra điểm số nhất quán tuyệt đối.
 
 ---
 
@@ -90,7 +92,7 @@ Với $C = 5$ được chọn làm hằng số tối ưu qua thực nghiệm, gi
 
 ---
 
-## 2.3. MÔ HÌNH GOOGLE GEMINI VÀ TÍCH HỢP API
+## 2.3. CÁC MÔ HÌNH TRÍ TUỆ NHÂN TẠO VÀ THUẬT TOÁN SO KHỚP CHUỖI
 
 ### 2.3.1. Mô hình Google Gemini
 **Google Gemini** là họ mô hình đa phương thức thế hệ mới của Google DeepMind, được phát triển với kiến trúc gốc đa phương thức (Native Multimodal), cho phép xử lý đồng thời hình ảnh, văn bản, âm thanh và video trong một mô hình thống nhất. Khác với các mô hình kết hợp tầng ngoài truyền thống (vốn ghép riêng biệt một bộ mã hóa thị giác với một mô hình ngôn ngữ), Gemini được huấn luyện từ đầu với dữ liệu đa phương thức, tạo ra khả năng lý luận liên phương thức sâu hơn và nhất quán hơn.
@@ -112,19 +114,43 @@ Mô hình có khả năng nhúng đồng thời dữ liệu văn bản và đi�
 
 Gemini API được tích hợp với các tham số phù hợp nhằm **ưu tiên tính nhất quán và chính xác** thay vì tính sáng tạo, đồng thời đảm bảo đủ không gian ngữ cảnh cho nhận xét chi tiết và danh sách lỗi toàn diện:
 - **Temperature (= 0.1):** Thiết lập mức cực thấp để triệt tiêu hoàn toàn sự "sáng tạo" tự do của AI, ép mô hình chỉ đưa ra phản hồi chắc chắn nhất dựa trên bài viết thực tế, ngăn ngừa hiện tượng **ảo giác (Hallucination)** — bịa đặt thông tin không có trong ảnh chụp.
-- **Top-P (Nucleus Sampling = 0.95):** Mô hình chỉ lựa chọn từ tiếp theo trong tập token có tổng xác suất tích lũy đạt $95\%$, giữ lại tính tự nhiên của lời nhận xét sư phạm.
-- **Top-K (= 40):** Giới hạn số từ ứng viên tiềm năng tại mỗi bước giải mã là 40 từ có xác suất cao nhất.
+- **Top-P (Nucleus Sampling = 0.95):** Hỗ trợ mô hình tập trung vào các token mang xác suất cao.
+- **Top-K (= 40):** Giới hạn số từ ứng viên tiềm năng tại mỗi bước giải mã là 40 từ.
 
-Mô hình nhận **ảnh bài làm học sinh dưới dạng Base64 inline** (đính kèm trực tiếp trong payload JSON thay vì qua URL ngoài) và thực hiện đồng thời các tác vụ phức hợp trong một lần gọi API duy nhất:
-1. **Nhận dạng chữ viết tay** tiếng Việt có dấu trên nền ảnh nhị phân đã xử lý loại bỏ ô ly.
-2. **Phát hiện lỗi chính tả** theo từng loại (phụ âm đầu, vần, dấu thanh, viết hoa, bỏ sót/thêm từ).
-3. **Chấm điểm theo barem** sư phạm được lập trình trong prompt hệ thống.
-4. **Sinh lời nhận xét** khuyến khích, phù hợp với tâm lý học sinh tiểu học.
+Mô hình nhận **ảnh bài làm học sinh dưới dạng Base64 inline** (đính kèm trực tiếp trong payload JSON thay vì qua URL ngoài) và thực hiện tác vụ duy nhất là: **Nhận dạng chữ viết tay (OCR)** tiếng Việt có dấu từ ảnh chụp. Nó sẽ trả về chuỗi JSON chứa văn bản thô, bỏ qua các vùng nháp/luyện chữ ở phần đầu.
 
 Phương thức tích hợp trong hệ thống:
 - **Xác thực:** Sử dụng **API Key** được cấp qua Google AI Studio, đính kèm vào request header `x-goog-api-key`. Toàn bộ lời gọi API chỉ diễn ra ở tầng server (Next.js Route Handler), đảm bảo API Key tuyệt đối không bị lộ ra phía client.
-- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-2.0:generateContent`
-- **SDK:** Thư viện `@google/generative-ai` (npm) cung cấp wrapper TypeScript bao bọc các HTTP call phức tạp, hỗ trợ streaming và xử lý lỗi mạng tự động.
+- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent`
+- **SDK:** Thư viện `@google/genai` cung cấp wrapper TypeScript bao bọc các HTTP call phức tạp, hỗ trợ streaming và xử lý lỗi mạng.
+
+### 2.3.3. Mô hình cục bộ ViT5 (Edge AI)
+**ViT5** (Vietnamese Text-to-Text Transformer) là mô hình ngôn ngữ được thiết kế chuyên biệt cho tiếng Việt. Trong ViHand Grade, ViT5 được lượng tử hóa (Quantization) về INT8 để có thể chạy mượt mà trên CPU của Raspberry Pi 4. ViT5 nhận văn bản thô từ Gemini và dịch thành câu tiếng Việt chuẩn xác định dạng chính tả. Việc xử lý ngôn ngữ diễn ra hoàn toàn ở local, giải quyết giới hạn độ dài trả về của API đám mây.
+
+### 2.3.4. Thuật toán đo khoảng cách Levenshtein
+Thuật toán đo khoảng cách Levenshtein (Levenshtein Distance) là một phép đo khoảng cách chuỗi (string metric) trong lý thuyết thông tin, được sử dụng để tính toán số lượng thao tác chỉnh sửa tối thiểu cần thiết để biến đổi một chuỗi ký tự này thành một chuỗi ký tự khác. Trong hệ thống ViHand Grade, thuật toán này đóng vai trò cốt lõi trong việc đếm và phân loại lỗi chính tả dựa trên việc so sánh văn bản thô (do Gemini trích xuất) với văn bản chuẩn (do ViT5 sửa lỗi).
+
+Các thao tác chỉnh sửa cơ bản được phép trong thuật toán Levenshtein bao gồm:
+1. **Chèn (Insertion):** Thêm một ký tự/từ vào chuỗi (VD: "chữ" $\rightarrow$ "chữa").
+2. **Xóa (Deletion):** Loại bỏ một ký tự/từ khỏi chuỗi (VD: "trường" $\rightarrow$ "trườn").
+3. **Thay thế (Substitution):** Thay một ký tự/từ này bằng một ký tự/từ khác (VD: "sương" $\rightarrow$ "xương").
+
+**Công thức toán học:**
+Độ dài khoảng cách Levenshtein giữa hai chuỗi $a$ (có độ dài $|a|$) và $b$ (có độ dài $|b|$) được tính toán thông qua quy hoạch động (Dynamic Programming) với hàm $lev_{a,b}(|a|, |b|)$:
+$$lev_{a,b}(i, j) = \begin{cases}
+  \max(i, j) & \text{nếu } \min(i, j) = 0, \\
+  \min \begin{cases}
+    lev_{a,b}(i-1, j) + 1 \\
+    lev_{a,b}(i, j-1) + 1 \\
+    lev_{a,b}(i-1, j-1) + 1_{(a_i \neq b_j)}
+  \end{cases} & \text{trái lại.}
+\end{cases}$$
+
+Trong đó:
+- $i, j$ là vị trí của ký tự/từ đang xét trong chuỗi $a$ và $b$.
+- $1_{(a_i \neq b_j)}$ là hàm chỉ thị (Indicator function), nhận giá trị 0 nếu ký tự/từ ở vị trí tương ứng giống nhau và nhận giá trị 1 nếu khác nhau.
+
+**Ứng dụng trong hệ thống:** Thay vì tính khoảng cách theo cấp độ ký tự (Character-level), ViHand Grade áp dụng Levenshtein ở cấp độ từ (Word-level). Nhờ tính chất toán học tất định (Deterministic), thuật toán Levenshtein giúp loại bỏ hoàn toàn "ảo giác" của LLM, đảm bảo hệ thống luôn trả về chính xác cùng một điểm số cho cùng một đầu vào văn bản ở mọi lần chấm điểm.
 
 ---
 
@@ -136,26 +162,16 @@ Prompt Engineering là kỹ thuật thiết kế và tối ưu hóa các chỉ d
 Mô hình AI đa phương thức mặc dù rất thông minh nhưng nếu chỉ nhận được yêu cầu chấm điểm chung chung sẽ đưa ra nhận xét cảm tính, điểm số không đồng nhất và định dạng văn bản tự do không thể xử lý bằng máy tính. Prompt Engineering đóng vai trò thiết lập "luật chơi", ràng buộc tư duy lô-gích của AI theo đúng phương pháp sư phạm Việt Nam.
 
 ### 2.4.2. Các kỹ thuật áp dụng trong ViHand Grade
-Hệ thống kết hợp đồng thời ba kỹ thuật Prompt Engineering nâng cao:
-1. **Role Prompting (Thiết lập vai trò):** Khởi đầu prompt hệ thống bằng việc định vị vai trò: *"Bạn là một Chuyên gia Giáo dục Tiểu học và là Giáo viên có hơn 20 năm kinh nghiệm dạy phân môn Chính tả tại Việt Nam..."*. Thiết lập này định hình phong cách hành văn của AI hướng tới sự ân cần, động viên học sinh và áp dụng các tiêu chuẩn chấm điểm khắt khe nhưng mang tính giáo dục cao.
-2. **Few-Shot Prompting (Học qua mẫu):** Cung cấp trực tiếp các cặp mẫu ảnh chụp viết tay - kết quả phân tích JSON chuẩn trong Prompt hệ thống. Kỹ thuật này giúp AI hiểu rõ cách phân tích lỗi chính tả thực tế và định dạng cấu trúc JSON cần trả về.
-3. **Structured JSON Output Constraint (Ràng buộc cấu trúc):** Hệ thống định nghĩa một lược đồ dữ liệu JSON chặt chẽ và yêu cầu mô hình phản hồi khớp hoàn toàn với cấu trúc này:
+Hệ thống kết hợp đồng thời ba kỹ thuật Prompt Engineering nâng cao cho luồng OCR:
+1. **Task-Specific Prompting (Định hướng tác vụ chuyên biệt):** Thiết lập prompt yêu cầu AI tập trung duy nhất vào một nhiệm vụ: OCR. Lệnh gọi nêu rõ việc cần bỏ qua các dòng nháp, luyện viết đầu trang và tập trung trích xuất cấu trúc đoạn văn, tiêu đề của bài viết.
+2. **Few-Shot Prompting (Học qua mẫu):** Cung cấp trực tiếp các cặp mẫu ảnh chụp viết tay - kết quả OCR chuẩn trong Prompt hệ thống. Kỹ thuật này giúp AI nhận diện cách phân biệt tiêu đề và đoạn văn bản.
+3. **Structured JSON Output Constraint (Ràng buộc cấu trúc):** Hệ thống định nghĩa một lược đồ dữ liệu JSON chặt chẽ cho Gemini và yêu cầu mô hình phản hồi khớp hoàn toàn với cấu trúc này:
 ```json
 {
-  "fixed_text": "Chuỗi văn bản đã sửa đúng chính tả",
-  "original_text": "Chuỗi văn bản gốc do AI nhận dạng được",
-  "corrections": [
-    {
-      "error": "Từ viết sai",
-      "suggestion": "Từ gợi ý sửa đúng",
-      "reason": "Giải thích nguyên nhân sai địa phương hoặc quy tắc"
-    }
-  ],
-  "score": "Điểm số chi tiết",
-  "overall_rating": "Xếp loại học tập",
-  "feedback": "Lời nhận xét khuyến khích sư phạm"
+  "original_text": "Chuỗi văn bản thô do AI nhận dạng được, giữ nguyên các lỗi chính tả, ngắt dòng đúng chuẩn."
 }
 ```
+Lược đồ này giúp giảm thiểu tối đa kích thước token trả về, tăng tốc độ phản hồi từ 10-15 giây xuống chỉ còn ~3-5 giây. Kết quả JSON này sau đó được chuyển cho hệ thống Python nội bộ để tiếp tục tính toán.
 
 ---
 
@@ -254,23 +270,25 @@ RESTful API ánh xạ các thao tác CRUD (Create, Read, Update, Delete) sang c�
 ### 2.7.4. Định dạng trao đổi dữ liệu JSON
 **JSON (JavaScript Object Notation)** là định dạng văn bản nhẹ, dễ đọc và phân tích cú pháp, trở thành tiêu chuẩn thực tế (de facto) cho trao đổi dữ liệu trong các RESTful API hiện đại. JSON hỗ trợ 6 kiểu dữ liệu nguyên thủy: chuỗi (string), số (number), boolean (`true`/`false`), null, mảng (array) và đối tượng (object).
 
-Một phản hồi JSON điển hình từ API chấm điểm của ViHand Grade có cấu trúc:
+Một phản hồi JSON điển hình từ hệ thống backend (sau khi được tổng hợp từ Microservice Python và Gemini) có cấu trúc:
 ```json
 {
   "success": true,
   "data": {
     "original_text": "Con mèo leo cây",
     "fixed_text": "Con mèo leo cây",
-    "score": 9.5,
+    "score": "9.5/10",
     "overall_rating": "Hoàn thành tốt",
     "corrections": [
       {
         "error": "leo",
         "suggestion": "leo",
+        "error_type": "phu_am_dau",
+        "is_dialect": false,
         "reason": "Chính tả đúng"
       }
     ],
-    "feedback": "Em viết rất sạch và đúng chính tả!"
+    "feedback": "Nhận xét được tạo tự động..."
   },
   "processingTimeMs": 2341
 }
@@ -278,8 +296,8 @@ Một phản hồi JSON điển hình từ API chấm điểm của ViHand Grade
 
 Ưu điểm vượt trội của JSON so với các định dạng thay thế (XML, YAML) trong bối cảnh ứng dụng web:
 - **Trọng lượng nhẹ:** Không có thẻ đóng/mở dư thừa như XML, giảm băng thông truyền tải.
-- **Tích hợp nguyên bản:** JavaScript `JSON.parse()` và `JSON.stringify()` hỗ trợ tức thì không cần thư viện ngoài.
-- **Hỗ trợ Response Schema:** Google Gemini API hỗ trợ buộc đầu ra tuân thủ một lược đồ JSON định nghĩa sẵn (JSON Schema), đảm bảo kết quả luôn có cấu trúc máy tính có thể xử lý được.
+- **Tích hợp nguyên bản:** JavaScript `JSON.parse()` và Python `json.loads()` hỗ trợ tức thì.
+- **Giao tiếp liên dịch vụ (Inter-service Communication):** Cho phép truyền tải dữ liệu dễ dàng giữa Next.js Backend và Python FastAPI Microservice.
 
 ### 2.7.5. Xác thực và bảo mật API — JSON Web Token (JWT)
 Mô hình bảo mật API phổ biến nhất trong ứng dụng web hiện đại là **JWT (JSON Web Token)** theo chuẩn RFC 7519. JWT là một chuỗi mã hóa Base64Url gồm ba phần ngăn cách bởi dấu chấm (`.`):
@@ -300,18 +318,18 @@ Quy trình xác thực JWT trong ViHand Grade:
 
 Phương thức tích hợp trong hệ thống:
 - **Xác thực:** Sử dụng **API Key** được cấp qua Google AI Studio, đính kèm vào request header `x-goog-api-key`.
-- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-2.0:generateContent`
-- **Payload:** Gửi dữ liệu đa phương thức gồm phần `text` (prompt hệ thống + prompt người dùng) và phần `inlineData` chứa ảnh bài viết đã xử lý được mã hóa Base64.
-- **Response Schema:** Khai báo lược đồ JSON cứng trong trường `generationConfig.responseSchema` để ép buộc đầu ra tuân thủ cấu trúc dữ liệu chấm điểm định nghĩa sẵn.
-- **SDK:** Thư viện `@google/generative-ai` (npm) cung cấp wrapper TypeScript bao bọc các HTTP call phức tạp, hỗ trợ streaming và xử lý lỗi mạng tự động.
+- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent`
+- **Payload:** Gửi dữ liệu đa phương thức gồm phần `text` (OCR prompt) và phần `inlineData` chứa ảnh bài viết đã xử lý được mã hóa Base64.
+- **Response Schema:** Khai báo lược đồ JSON trong trường cấu hình để yêu cầu mô hình tuân thủ cấu trúc dữ liệu (`{ "original_text": "..." }`).
+- **SDK:** Thư viện `@google/genai` (npm) cung cấp wrapper.
 
-Sơ đồ luồng gọi API tổng quan trong ViHand Grade:
-$$\text{Client (Browser)} \xrightarrow{\texttt{POST /api/grade}} \text{Next.js Route Handler} \xrightarrow{\text{Gemini API Call}} \text{Google AI Backend}$$
-$$\text{Google AI Backend} \xrightarrow{\text{JSON Schema Response}} \text{Next.js Route Handler} \xrightarrow{\texttt{200 OK + JSON}} \text{Client (Browser)}$$
+Sơ đồ luồng gọi API tổng quan trong kiến trúc Lai của ViHand Grade:
+$$\text{Client} \xrightarrow{\texttt{POST}} \text{Next.js} \xrightarrow{\text{OCR Request}} \text{Google Gemini API} \xrightarrow{\text{JSON Text}} \text{Next.js}$$
+$$\text{Next.js} \xrightarrow{\text{JSON Text}} \text{Python FastAPI (ViT5)} \xrightarrow{\text{JSON Grading Result}} \text{Next.js} \xrightarrow{\texttt{200 OK}} \text{Client}$$
 
 Thiết kế này đảm bảo **API Key tuyệt đối không bao giờ bị lộ ra phía client** vì toàn bộ lời gọi Gemini API chỉ diễn ra ở tầng server (Next.js Route Handler chạy trên Node.js), không có bất kỳ đoạn mã nào gọi Gemini trực tiếp từ trình duyệt.
 
 ---
 
 ## 2.8. KẾT LUẬN CHƯƠNG
-Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang AI đa phương thức End-to-End; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) kiến trúc Transformer Self-Attention và đặc điểm của mô hình Google Gemini 3 Flash; (4) các kỹ thuật Prompt Engineering (Role, Few-Shot, JSON Schema Constraint); (5) phân loại lỗi chính tả tiếng Việt và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; (6) các khái niệm công nghệ web nền tảng (Next.js, ORM, PWA, RBAC); và (7) lý thuyết nền tảng về API bao gồm kiến trúc RESTful, giao thức HTTP, định dạng JSON, cơ chế xác thực JWT và phương thức tích hợp Google Gemini API. Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).
+Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang kiến trúc AI Lai (Hybrid AI) kết hợp Cloud và Edge; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) đặc điểm của mô hình Google Gemini 3.1 Flash Lite cho nhận diện quang học và mô hình ViT5 cục bộ cho xử lý NLP; (4) các kỹ thuật Prompt Engineering; (5) thuật toán khoảng cách Levenshtein và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; (6) các khái niệm công nghệ web nền tảng (Next.js, ORM, PWA, RBAC); và (7) lý thuyết nền tảng về API kiến trúc giao tiếp liên dịch vụ (Inter-service Communication). Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).

@@ -13,9 +13,11 @@ Sơ đồ luồng hoạt động tổng thể của hệ thống được thể 
 Quy trình xử lý dữ liệu tổng thể diễn ra qua các giai đoạn tuần tự sau:
 1. **Thu nhận dữ liệu (Input):** Người dùng (giáo viên hoặc học sinh) sử dụng điện thoại thông minh chụp ảnh trực tiếp bài viết tay chính tả trên giấy ô ly của học sinh tiểu học và tải lên giao diện Web.
 2. **Tiền xử lý ảnh số (Preprocessing):** Hệ thống tự động kích hoạt bộ tiền xử lý gồm 9 bước viết trên nền thư viện `Jimp` (TypeScript). Ảnh thô được chuẩn hóa kích thước, loại bỏ ám màu, bóng che, tăng cường tương phản và nét chữ viết tay để tạo ra một tệp ảnh tối ưu nhất cho OCR.
-3. **Phân tích bằng AI đa phương thức (Gemini Engine):** Ảnh sau xử lý được mã hóa dưới dạng chuỗi Base64 và truyền đến API của mô hình **Google Gemini 3 Flash** kèm theo prompt hệ thống chứa barem điểm của Bộ Giáo dục & Đào tạo Việt Nam. AI thực hiện đồng thời hai nhiệm vụ: nhận dạng chữ viết tay (OCR nội tại) và phân tích lỗi chính tả (NLP).
-4. **Phân tích cú pháp & Tính toán điểm (JSON Parsing & Evaluation):** Dữ liệu phản hồi dạng JSON từ mô hình AI được phân tích cú pháp để trích xuất điểm số của 4 tiêu chí cụ thể (Chính tả, Hình thức, Nội dung, Sáng tạo), danh sách các lỗi chính tả phát hiện được (chỉ rõ vị trí lỗi, đề xuất từ sửa đúng và nguyên nhân sai) và lời nhận xét sư phạm.
-5. **Lưu trữ & Hiển thị (Database & Output):** Kết quả sau khi được giáo viên duyệt sẽ được lưu trữ vào cơ sở dữ liệu SQLite thông qua Prisma ORM, đồng thời biểu diễn trực quan trên giao diện lịch sử điểm số của học sinh và biểu đồ tiến bộ học tập.
+3. **Nhận dạng chữ viết tay (OCR - Gemini Engine):** Ảnh sau xử lý được truyền đến API của mô hình **Google Gemini 3.1 Flash Lite** kèm theo Prompt hệ thống. Ở bước này, Gemini chỉ làm một nhiệm vụ duy nhất là trích xuất chính xác văn bản thô (kể cả lỗi chính tả) từ ảnh, lọc bỏ các dòng luyện từ nháp và giữ nguyên cấu trúc đoạn văn.
+4. **Sửa lỗi và Chấm điểm tự động (ViT5 Python Microservice):** Văn bản thô được gửi tới dịch vụ cục bộ Python chạy mô hình **ViT5 (Vietnamese Text-to-Text Transformer)** đã được lượng tử hóa INT8. Dịch vụ này thực hiện đồng thời:
+   - Chạy ViT5 để sinh ra bản dịch đúng chính tả.
+   - Sử dụng thuật toán Levenshtein (SequenceMatcher) so sánh văn bản gốc và bản đúng để định vị chính xác vị trí lỗi, phân loại lỗi (phụ âm đầu, vần, dấu thanh, viết hoa...) và tính toán điểm số trừ.
+5. **Lưu trữ & Hiển thị (Database & Output):** Kết quả (bao gồm văn bản gốc, văn bản đã sửa, danh sách lỗi chi tiết và điểm số) được trả về Frontend để hiển thị. Giáo viên có quyền can thiệp chỉnh sửa thủ công trước khi lưu trữ vào cơ sở dữ liệu SQLite thông qua Prisma ORM.
 
 ---
 
@@ -80,11 +82,11 @@ Với $C = 20$ (đã được tối ưu qua 4 vòng thực nghiệm trên 13 ả
 
 ## 3.3. QUY TRÌNH CHẤM ĐIỂM BẰNG AI ĐA PHƯƠNG THỨC (AI GRADING PIPELINE)
 
-Quy trình chấm điểm AI của ViHand Grade tích hợp chặt chẽ công nghệ thị giác máy tính và xử lý ngôn ngữ tự nhiên thành một luồng xử lý đồng nhất (End-to-End).
+Quy trình chấm điểm AI của ViHand Grade tích hợp chặt chẽ công nghệ đám mây (Cloud OCR) và máy học cục bộ (Edge AI) thành một luồng xử lý đồng nhất (Hybrid AI).
 
 Sơ đồ quy trình thực thi chấm điểm chi tiết được biểu diễn tại **Hình 3.3**.
 
-![Hình 3.3. Lưu đồ quy trình chấm điểm bằng AI đa phương thức (Gemini API)](flowcharts/flowchart_3_cham_diem_ai.png)
+![Hình 3.3. Lưu đồ quy trình Hybrid AI: Trích xuất OCR bằng Gemini và Chấm điểm cục bộ bằng ViT5](flowcharts/flowchart_3_cham_diem_ai.png)
 
 ### 3.3.1. Các thành phần chính của quy trình chấm điểm
 
@@ -114,68 +116,47 @@ Kết quả từ bước phân tích cú pháp được kiểm tra tính hợp l
 **Bước 8 — Hiển thị kết quả, chỉnh sửa và lưu vào SQLite:**
 Nếu JSON hợp lệ, toàn bộ dữ liệu chấm điểm (điểm số theo 4 tiêu chí, danh sách lỗi chi tiết, văn bản nhận dạng và đã sửa, nhận xét) được trả về cho Frontend để hiển thị. Giáo viên có thể xem xét và chỉnh sửa điểm số hoặc nhận xét trước khi xác nhận lưu. Dữ liệu cuối cùng được ghi vào bảng `Grade` trong cơ sở dữ liệu SQLite thông qua Prisma ORM. Học sinh ngay sau đó có thể xem kết quả bài chấm thông qua giao diện lịch sử cá nhân của mình.
 
-### 3.3.2. Thiết kế Kỹ nghệ Prompt (Prompt Engineering)
+### 3.3.2. Thuật toán phân tích lỗi và cấu trúc Barem
 
-Kỹ nghệ Prompt học máy (Prompt Engineering) đóng vai trò quyết định khả năng nhận diện chính xác và chấm điểm sư phạm của hệ thống. Hệ thống thiết lập một Prompt hệ thống cực kỳ chi tiết, ép mô hình Gemini 3 Flash đóng vai trò là một **Chuyên gia Giáo dục Tiểu học hàng đầu tại Việt Nam**. Nội dung prompt được cấu trúc chặt chẽ thành các thành phần chính sau:
+Hệ thống thiết lập một barem chấm điểm toán học chặt chẽ. Sau khi nhận được bản sửa từ ViT5, backend sẽ sử dụng thuật toán **Levenshtein Distance** (khoảng cách chỉnh sửa) để đối chiếu trực tiếp từng từ giữa bản sai và bản đúng. 
 
-#### 1. Định hình Persona (Vai trò hệ thống)
-Prompt thiết lập vị thế chuyên gia sư phạm cho AI: *"Bạn là giáo viên tiểu học Việt Nam chuyên chấm bài chính tả. Phân tích đoạn văn của học sinh được cung cấp, sửa lỗi chính tả và chấm điểm theo barem chuẩn."* Việc định hình vai trò giúp mô hình điều chỉnh tông giọng nhận xét (feedback) ấm áp, mang tính động viên và phù hợp với tâm lý lứa tuổi học sinh lớp tiểu học (lớp 1 - lớp 5).
+#### 1. Thiết lập Barem điểm quy chuẩn (Thang điểm 10)
+*   **Tiêu chí A: Chính tả & Ngữ pháp (Tối đa 4.0đ):** Điểm khởi điểm là 4.0đ. Hệ thống tự động trừ đi giá trị do giáo viên thiết lập (ví dụ: `-0.5đ/lỗi`) đối với từng sai lệch đếm được.
+*   **Tiêu chí B: Hình thức trình bày (Tối đa 3.0đ):** Giáo viên trực tiếp đánh giá thủ công trên giao diện sau khi xem ảnh.
+*   **Tiêu chí C: Nội dung & Ý tưởng (Tối đa 2.0đ):** Tương tự như hình thức, giáo viên đánh giá mạch lạc và sự đầy đủ ý.
+*   **Tiêu chí D: Sáng tạo (Tối đa 1.0đ):** Thuật toán tự động tìm kiếm các từ láy phức tạp (ví dụ: *ríu rít, long lanh, xôn xao*) trong chuỗi sửa lỗi để tự động đề xuất điểm cộng (tối đa +1.0đ). Giáo viên có thể chỉnh sửa lại thanh trượt này.
 
-#### 2. Thiết lập Barem điểm quy chuẩn (Thang điểm 10)
-Barem điểm được mô hình hóa chi tiết để AI thực hiện các phép tính toán chính xác, hạn chế tối đa tính chủ quan:
-*   **Tiêu chí A: Chính tả & Ngữ pháp (Tối đa 4.0đ):** Điểm khởi điểm là 4.0đ và trừ dần theo lỗi thực tế (điểm sàn là 0đ). Quy tắc trừ điểm được phân hóa theo khối lớp học sinh:
-    *   *Khối lớp 1–3:* Trừ 0.5đ cho mỗi lỗi khác nhau.
-    *   *Khối lớp 4–5:* Trừ 0.25đ cho mỗi lỗi khác nhau (do yêu cầu về độ dài và độ chính xác của học sinh lớn tuổi khắt khe hơn).
-    *   *Nguyên tắc đếm lỗi:* Lỗi lặp lại hoàn toàn (cùng từ, cùng cách sai) chỉ bị trừ điểm 1 lần để tránh phạt học sinh quá nặng. Các lỗi do đặc trưng phương ngữ vùng miền (như miền Nam, miền Trung) vẫn được ghi nhận và trừ điểm bình thường theo chương trình phổ thông.
-*   **Tiêu chí B: Hình thức trình bày (Tối đa 3.0đ):** Đánh giá tổng quan chữ viết học sinh trên ảnh chụp:
-    *   *3.0đ:* Chữ viết rõ ràng, đúng độ cao nét chữ, khoảng cách đều đặn, trình bày sạch đẹp.
-    *   *2.0đ:* Chữ viết tương đối rõ, mắc một vài lỗi nhỏ về khoảng cách hoặc độ cao chữ.
-    *   *1.0đ:* Chữ viết khó đọc, sai lệch nhiều về độ cao nét chữ hoặc có nhiều ký tự lạ (dấu hiệu chữ viết quá cẩu thả hoặc OCR gặp khó khăn).
-    *   *0.0đ:* Chữ viết hoàn toàn không thể đọc được.
-*   **Tiêu chí C: Nội dung & Ý tưởng (Tối đa 2.0đ):** Đánh giá sự đầy đủ ý và tính mạch lạc:
-    *   *2.0đ:* Đầy đủ ý chính theo yêu cầu, câu văn liên kết chặt chẽ và mạch lạc.
-    *   *1.0đ - 1.5đ:* Đủ ý nhưng liên kết kém, hoặc thiếu ý, lạc đề một phần nhỏ.
-    *   *0.0đ - 0.5đ:* Thiếu ý trầm trọng, lạc đề hoàn toàn hoặc không xác định được nội dung truyền đạt.
-*   **Tiêu chí D: Sáng tạo (Tối đa 1.0đ):** Cộng điểm khuyến khích nhằm thúc đẩy tư duy ngôn ngữ của học sinh:
-    *   *Cộng 0.5đ:* Sử dụng hiệu quả từ láy gợi hình, gợi cảm tốt (ví dụ: *ríu rít, long lanh, xôn xao*).
-    *   *Cộng 0.5đ:* Áp dụng thành công các biện pháp tu từ nghệ thuật như so sánh hoặc nhân hóa.
+#### 2. Phân loại cấu trúc nhóm lỗi tiếng Việt
+Để cung cấp báo cáo lỗi trực quan cho giáo viên và học sinh, thuật toán Python định nghĩa 6 nhóm lỗi chuẩn hóa bao gồm:
+1.  `phu_am_dau`: Nhầm lẫn phụ âm đầu (kiểm tra các cặp phổ biến: *ch/tr, s/x, l/n, c/k/q, d/gi/r*).
+2.  `dau_thanh`: Xóa dấu thanh của 2 từ giống nhau (ví dụ: *sưa* và *sữa*).
+3.  `viet_hoa`: Khác biệt ở chuẩn in hoa / in thường.
+4.  `van`: Viết sai phần vần.
+5.  `bo_sot_them`: Bỏ quên từ/tiếng hoặc tự ý viết thêm từ (dựa trên thuật toán OpCodes).
+6.  `dau_cau`: Lỗi chấm phẩy.
 
-#### 3. Phân loại cấu trúc nhóm lỗi tiếng Việt
-Để cung cấp báo cáo lỗi trực quan cho giáo viên và học sinh, Prompt định nghĩa 6 nhóm lỗi chuẩn hóa bao gồm:
-1.  `phu_am_dau`: Nhầm lẫn phụ âm đầu (ví dụ: *ch/tr, s/x, l/n, c/k/q, d/gi/r*).
-2.  `van`: Viết sai phần vần (ví dụ: *an/ang, ao/au, ân/âng, iê/yê*).
-3.  `dau_thanh`: Thiếu dấu thanh hoặc đặt sai vị trí dấu thanh trên nguyên âm.
-4.  `viet_hoa`: Không viết hoa chữ cái đầu câu, sau dấu chấm hoặc tên riêng danh từ.
-5.  `bo_sot_them`: Bỏ quên từ/tiếng hoặc tự ý viết thêm từ so với bài đọc chính tả mẫu.
-6.  `dau_cau`: Đặt sai vị trí hoặc sử dụng sai quy cách dấu chấm, dấu phẩy (chỉ áp dụng từ lớp 4 trở lên).
-
-#### 4. Quy tắc phân loại học lực và Nhận xét sư phạm
-Sau khi tổng hợp điểm số từ các tiêu chí, mô hình tự động phân loại học lực theo các khoảng điểm: **Xuất sắc** (9.0 - 10đ), **Tốt** (7.0 - 8.5đ), **Khá** (5.0 - 6.5đ), **Trung bình** (3.0 - 4.5đ) và **Cần cố gắng** (< 3.0đ). Nhận xét sư phạm phải có độ dài từ 3-5 câu, đảm bảo nguyên tắc *"khen ngợi trước, góp ý sau"*, động viên tinh thần tự học của trẻ nhỏ.
-
-#### 5. Định cấu trúc đầu ra (JSON Response Schema)
-Prompt cưỡng chế nghiêm ngặt cấu trúc dữ liệu trả về duy nhất định dạng JSON để phục vụ lưu trữ vào SQLite database và kết xuất biểu đồ báo cáo:
+#### 3. Định cấu trúc đầu ra JSON từ Python Service
+Dịch vụ Python trả về cấu trúc JSON để Next.js tiếp nhận:
 ```json
 {
-  "original_text": "Văn bản thô do AI nhận diện từ nét chữ học sinh",
-  "fixed_text": "Văn bản đã sửa lỗi chính tả hoàn chỉnh",
-  "corrections": [
-    {
-      "error": "từ viết sai chính tả",
-      "suggestion": "từ đề xuất sửa lại đúng",
-      "error_type": "phu_am_dau | van | dau_thanh | viet_hoa | bo_sot_them | dau_cau",
-      "is_dialect": true / false,
-      "reason": "giải thích dễ hiểu lý do sai"
-    }
-  ],
+  "score": "8.0/10",
   "score_breakdown": {
     "chinh_ta":  { "raw": 3.5, "max": 4.0, "error_count": 1, "deduction": 0.5 },
-    "hinh_thuc": { "raw": 2.0, "max": 3.0, "note": "nhận xét chữ viết" },
-    "noi_dung":  { "raw": 2.0, "max": 2.0, "note": "nhận xét đầy đủ ý" },
-    "sang_tao":  { "raw": 0.5, "max": 1.0, "note": "các điểm sáng tạo" }
+    "hinh_thuc": { "raw": 2.5, "max": 3.0, "note": "" },
+    "noi_dung":  { "raw": 1.5, "max": 2.0, "note": "" },
+    "sang_tao":  { "raw": 0.5, "max": 1.0, "note": "Có từ láy" }
   },
-  "score": "8.0/10",
-  "overall_rating": "Tốt",
-  "feedback": "Nhận xét sư phạm đầy tính khích lệ dành cho học sinh."
+  "corrections": [
+    {
+      "error": "cộng",
+      "suggestion": "công",
+      "error_type": "dau_thanh",
+      "is_dialect": false,
+      "reason": "Sai dấu thanh: 'cộng' nên sửa thành 'công'"
+    }
+  ],
+  "feedback": "Nhận xét tự động...",
+  "overall_rating": "Tốt"
 }
 ```
 
@@ -217,4 +198,4 @@ Hệ thống quản lý phiên làm việc của người dùng và thực hiệ
 
 ## 3.5. KẾT LUẬN CHƯƠNG
 
-Trong chương này, nhóm tác giả đã trình bày chi tiết về mặt kiến trúc hệ thống và các mô hình thuật toán cốt lõi của hệ thống **ViHand Grade**. Bằng cách kết hợp linh hoạt pipeline xử lý ảnh số 9 bước cục bộ thông qua thư viện `Jimp` gọn nhẹ và Trí tuệ nhân tạo đa phương thức đám mây **Google Gemini 3 Flash** hoạt động với cấu hình tối ưu ($Temperature = 0.1$, JSON Response Schema), hệ thống đã giải quyết triệt để các bài toán khó về nhiễu nền giấy ô ly, nét chữ bút chì mờ nhạt và tính cấu trúc hóa dữ liệu chấm điểm tự động. Mô hình phân quyền RBAC được tích hợp giúp đảm bảo tính an toàn dữ liệu và phù hợp tối đa với quy trình vận hành thực tế tại các trường tiểu học tại Việt Nam.
+Trong chương này, nhóm tác giả đã trình bày chi tiết về mặt kiến trúc hệ thống và các mô hình thuật toán cốt lõi của hệ thống **ViHand Grade**. Bằng cách kết hợp linh hoạt pipeline xử lý ảnh số 9 bước cục bộ, đám mây **Google Gemini 3.1 Flash Lite** phục vụ trích xuất OCR, và **ViT5 Python Microservice** để hiệu đính, chấm điểm (thông qua lượng tử hóa INT8 và Levenshtein SequenceMatcher), hệ thống đã giải quyết triệt để các bài toán khó về nhiễu nền giấy ô ly, tính nhất quán của điểm số, và giới hạn phần cứng trên thiết bị Raspberry Pi 4. Mô hình phân quyền RBAC được tích hợp giúp đảm bảo tính an toàn dữ liệu và phù hợp tối đa với quy trình vận hành thực tế tại các trường tiểu học tại Việt Nam.

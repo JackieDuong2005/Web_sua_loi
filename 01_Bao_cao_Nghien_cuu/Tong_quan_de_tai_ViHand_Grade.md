@@ -26,7 +26,7 @@
 
 Hệ thống được phát triển dưới dạng ứng dụng Web tiến trình (Progressive Web App - PWA) sử dụng framework Next.js 16, TypeScript, cơ sở dữ liệu SQLite thông qua Prisma ORM và mô hình ngôn ngữ lớn đa phương thức **Google Gemini 3 Flash**. Điểm cốt lõi của nghiên cứu là sự kết hợp chặt chẽ giữa:
 1. **Bộ tiền xử lý ảnh 9 bước (Image Pipeline)** chạy trực tiếp trên TypeScript/Jimp để khử nhiễu bóng che, nhị phân hóa thích nghi và tăng cường nét chữ viết tay trên vở viết học sinh mà không làm mất nét chữ.
-2. **Kỹ thuật thiết kế Prompt hệ thống (Prompt Engineering)** tích hợp barem điểm chuẩn sư phạm của Bộ Giáo dục và Đào tạo Việt Nam để chấm điểm chi tiết 4 tiêu chí (Chính tả, Hình thức, Nội dung, Sáng tạo), trích xuất chi tiết các lỗi dưới dạng cấu trúc dữ liệu JSON để lưu trữ và phân tích.
+2. **Kiến trúc Lai (Hybrid AI Architecture):** Sử dụng **Google Gemini 3.1 Flash Lite** làm lõi OCR đa phương thức cực kỳ chính xác. Sau đó, kết quả được chuyển sang dịch vụ nội bộ chạy mô hình ngôn ngữ **ViT5** (đã lượng tử hóa INT8) trên phần cứng nhúng (Raspberry Pi 4) để thực hiện NLP, sửa lỗi chính tả và kết hợp thuật toán **Levenshtein** để chấm điểm theo chuẩn Thông tư 27/2020/TT-BGDĐT một cách toán học, đảm bảo tính nhất quán tuyệt đối.
 
 ---
 
@@ -39,7 +39,7 @@ Tại Việt Nam, các nghiên cứu về nhận dạng ký tự quang học (OC
 #### 2.2. Ngoài nước
 Trên thế giới, lĩnh vực nhận dạng chữ viết tay (Handwriting Recognition) và chấm điểm tự động đã tiến tới giai đoạn trưởng thành rất cao:
 * **Các công cụ OCR thương mại lớn:** Google Cloud Vision, Amazon Textract, Microsoft Azure Computer Vision sở hữu tập dữ liệu huấn luyện khổng lồ, hỗ trợ nhận dạng chữ viết tay của hàng chục ngôn ngữ với độ chính xác cao.
-* **Sự bùng nổ của AI đa phương thức (Multimodal AI):** Kể từ khi các mô hình như GPT-4V, Gemini 1.5/3 Flash ra đời, việc phân tích hình ảnh không còn đơn thuần là trích xuất text thô (OCR). Các mô hình này có khả năng "nhìn" ảnh và "hiểu" ngữ nghĩa trực tiếp, thực hiện đồng thời việc đọc chữ viết tay, phát hiện lỗi ngữ pháp, lỗi ngữ cảnh và chấm điểm bài viết theo barem yêu cầu mà không cần qua hai bước tách biệt (OCR rồi mới NLP).
+* **Sự bùng nổ của AI đa phương thức (Multimodal AI):** Kể từ khi các mô hình như GPT-4V, Gemini 1.5/3 Flash ra đời, việc phân tích hình ảnh không còn đơn thuần là trích xuất text thô (OCR). Mặc dù các mô hình này có khả năng thực hiện End-to-End toàn bộ quy trình, nhưng khi áp dụng vào việc chấm điểm dài, chúng thường vướng phải giới hạn về số lượng token phản hồi và gây ra sự không nhất quán trong điểm số (hallucination). Vì vậy, hướng tiếp cận hiện đại nhất là **Hybrid AI**: Kết hợp Cloud LLM (Gemini) để làm OCR và Edge SLM (ViT5) để xử lý logic chấm điểm cục bộ.
 
 ---
 
@@ -83,16 +83,11 @@ Nhóm nghiên cứu phát triển một bộ tiền xử lý ảnh viết tay ch
 * **CLAHE cục bộ:** Tăng tương phản thích nghi để làm nổi bật nét bút chì viết tay mờ nhạt lên trên nền giấy trắng đã được làm sạch.
 * **Module Đánh giá chất lượng (Quality Assessment):** Phân tích ảnh theo thời gian thực để đưa ra các chỉ số về độ sáng (brightness), độ mờ (blur_score) và tỉ lệ nét chữ. Hệ thống sẽ phát cảnh báo *"Ảnh bị mờ"* hoặc *"Nét chữ quá nhạt"* để ngăn ngừa việc gửi ảnh kém chất lượng lên AI.
 
-#### 4.2. Tích hợp AI đa phương thức Gemini thông qua Prompt sư phạm tối ưu
-Thay vì sử dụng các công cụ OCR thô để trích xuất chữ rồi mới dùng NLP sửa lỗi (dễ bị cộng dồn sai số), hệ thống gửi trực tiếp ảnh gốc chất lượng cao sang **Google Gemini 3 Flash**:
-* Mô hình được cung cấp Prompt hệ thống đóng vai trò một giáo viên tiểu học giàu kinh nghiệm tại Việt Nam.
-* Tích hợp **Barem chấm điểm chuẩn 10 điểm** chi tiết:
-  * **Chính tả & Ngữ pháp (4.0đ):** Trừ điểm khoa học theo khối lớp (0.5đ/lỗi cho lớp 1-3, 0.25đ/lỗi cho lớp 4-5), không trừ điểm lặp lỗi.
-  * **Hình thức (3.0đ):** Đánh giá nét chữ viết đều đẹp, rõ ràng, đúng độ cao khoảng cách.
-  * **Nội dung (2.0đ):** Đánh giá tính mạch lạc, đủ ý, đúng chủ đề.
-  * **Sáng tạo (1.0đ):** Cộng điểm khuyến khích khi học sinh sử dụng từ láy, phép so sánh, nhân hóa.
-* Định cấu hình tham số sáng tạo cực thấp ($Temperature = 0.1$) để đảm bảo AI chỉ tập trung nhận dạng chính xác và đưa ra nhận xét trung thực, loại bỏ hoàn toàn hiện tượng "ảo giác".
-* Sử dụng cấu trúc **JSON Schema** ép buộc AI trả về dữ liệu có cấu trúc định sẵn. Điều này giúp hệ thống tự động bóc tách: văn bản gốc, văn bản đã sửa, danh sách lỗi chính tả cụ thể (từ sai, từ đúng đề xuất, loại lỗi, lý do sai) và lưu trực tiếp vào cơ sở dữ liệu SQLite thông qua Prisma ORM một cách dễ dàng và đồng bộ.
+#### 4.2. Kiến trúc Hybrid AI: Cloud OCR (Gemini) và Edge NLP (ViT5)
+Hệ thống sử dụng mô hình kết hợp (Hybrid Architecture) để giải quyết bài toán giới hạn token và tính không đồng nhất của mô hình ngôn ngữ lớn:
+* **Giai đoạn 1 - Trích xuất văn bản (Gemini OCR):** Ảnh gốc chất lượng cao được gửi sang đám mây Google Gemini 3.1 Flash Lite. AI được cung cấp prompt tập trung 100% vào việc OCR và xuất ra chuỗi JSON ngắn gọn, giải quyết tình trạng bị cộng dồn sai số của các engine OCR truyền thống.
+* **Giai đoạn 2 - Xử lý ngữ pháp và chấm điểm (ViT5 Edge AI):** Văn bản thô được luân chuyển về dịch vụ Python FastAPI nội bộ. Tại đây, mô hình ngôn ngữ tiếng Việt (ViT5) được dùng để sửa câu hoàn chỉnh.
+* **Giai đoạn 3 - Thuật toán điểm số Levenshtein:** Dựa trên kết quả sửa đổi của ViT5, thuật toán khoảng cách Levenshtein được lập trình để đếm số lượng lỗi, phân loại lỗi và trừ điểm chính xác tuyệt đối 100% theo quy định Thông tư 27/2020/TT-BGDĐT của Bộ Giáo dục. Kết quả cuối cùng được xuất ra dưới dạng JSON phục vụ lưu trữ.
 
 ---
 

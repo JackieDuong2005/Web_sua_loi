@@ -109,10 +109,10 @@ tr:hover td{background:rgba(108,99,255,.08)}
 <div class="slide" id="s3">
   <div class="glow b"></div>
   <h2>💡 Giải pháp — ViHand Grade</h2>
-  <p>Ứng dụng Web PWA kết hợp <strong>Tiền xử lý ảnh 9 bước</strong> + <strong>AI đa phương thức Gemini</strong></p>
+  <p>Ứng dụng Web PWA kết hợp <strong>Tiền xử lý ảnh 9 bước</strong> + <strong>Kiến trúc Hybrid AI (Gemini + ViT5)</strong></p>
   <div class="cards" style="margin-top:30px">
     <div class="card"><div class="icon">🖼️</div><h3>Pipeline 9 bước</h3><p>JavaScript thuần (Jimp) — khử bóng, CLAHE, nhị phân hóa thích nghi. Không phụ thuộc OpenCV/Python</p></div>
-    <div class="card"><div class="icon">🤖</div><h3>Gemini + Prompt Engineering</h3><p>OCR + phân tích ngôn ngữ trong 1 bước. Barem chấm điểm chuẩn sư phạm Bộ GD&ĐT, JSON Schema</p></div>
+    <div class="card"><div class="icon">🤖</div><h3>Kiến trúc Hybrid AI</h3><p>Gemini (Cloud) làm OCR cực chuẩn. Sau đó ViT5 + thuật toán Levenshtein (Edge AI) tự động chấm điểm theo barem</p></div>
     <div class="card"><div class="icon">🏗️</div><h3>Kiến trúc Web hiện đại</h3><p>Next.js 16 + TypeScript + Prisma ORM + SQLite. Triển khai trên Raspberry Pi 4 (~1.5 triệu VNĐ)</p></div>
   </div>
 </div>
@@ -156,9 +156,9 @@ tr:hover td{background:rgba(108,99,255,.08)}
     </div>
     <div class="col">
       <h3>Kỹ thuật kiểm soát AI</h3>
-      <div class="list-item"><span class="bullet">▸</span>Temperature = 0.1 — tối thiểu ảo giác</div>
-      <div class="list-item"><span class="bullet">▸</span>JSON Schema — ép cấu trúc output</div>
-      <div class="list-item"><span class="bullet">▸</span>4 API keys xoay vòng + retry tự động</div>
+      <div class="list-item"><span class="bullet">▸</span>Chia luồng AI: OCR riêng, NLP chấm điểm riêng</div>
+      <div class="list-item"><span class="bullet">▸</span>Mô hình cục bộ ViT5 (SLM) đảm bảo ổn định sửa lỗi</div>
+      <div class="list-item"><span class="bullet">▸</span>Thuật toán Levenshtein so khớp và trừ điểm tự động</div>
       <div class="list-item"><span class="bullet">▸</span>Trừ 0.5đ/lỗi (lớp 1–3), 0.25đ/lỗi (lớp 4–5)</div>
       <div class="list-item"><span class="bullet">▸</span>Không trừ điểm lặp lỗi — công bằng sư phạm</div>
     </div>
@@ -216,7 +216,7 @@ tr:hover td{background:rgba(108,99,255,.08)}
     <div class="col">
       <h3>✅ Đóng góp chính</h3>
       <div class="list-item"><span class="bullet">1.</span>Pipeline 9 bước JS thuần — xử lý ảnh viết tay ô ly</div>
-      <div class="list-item"><span class="bullet">2.</span>Prompt Engineering barem sư phạm chuẩn 10 điểm</div>
+      <div class="list-item"><span class="bullet">2.</span>Kiến trúc Hybrid AI giải quyết hoàn toàn ảo giác</div>
       <div class="list-item"><span class="bullet">3.</span>Ứng dụng Web hoàn chỉnh — quản lý điểm, lỗi</div>
       <div class="list-item"><span class="bullet">4.</span>Triển khai thành công trên Raspberry Pi 4</div>
     </div>

@@ -32,11 +32,11 @@ Quy trình phát triển và hoàn thiện hệ thống **ViHand Grade** đượ
 * **Theo dõi và duy trì:** Theo dõi hiệu suất hoạt động thực tế của máy chủ Raspberry Pi 4 (nhiệt độ CPU, dung lượng RAM, dung lượng SQLite db), theo dõi số lượng token tiêu thụ và chi phí API, đồng thời liên tục ghi nhận phản hồi sư phạm từ phía các giáo viên tiểu học để cập nhật, tinh chỉnh hệ thống nhằm đảm bảo ứng dụng hỗ trợ sửa lỗi chính tả luôn hoạt động ổn định, chính xác và mang lại kết quả đáng tin cậy.
 
 ### 4.1.3. Cách hoạt động của hệ thống
-* Hệ thống kết hợp kỹ thuật tiền xử lý ảnh số cục bộ và công nghệ Trí tuệ nhân tạo đa phương thức (Multimodal AI) đám mây để phân tích, nhận dạng chữ viết tay và tự động sửa lỗi chính tả tiếng Việt.
-* Mô hình ngôn ngữ lớn đa phương thức Google Gemini 3 Flash được Google DeepMind huấn luyện trên tập dữ liệu đa phương tiện khổng lồ để nắm bắt xuất sắc các mối tương quan ngữ nghĩa giữa nét chữ viết tay tiếng Việt và ngữ cảnh cụ thể của câu viết.
+* Hệ thống kết hợp kỹ thuật tiền xử lý ảnh số cục bộ, công nghệ Trí tuệ nhân tạo đám mây (Gemini) để nhận dạng văn bản và dịch vụ Python cục bộ (ViT5) để tự động sửa lỗi chính tả tiếng Việt.
 * Khi giáo viên hoặc học sinh tải lên ảnh chụp bài viết tay trên giấy ô ly, hệ thống trước hết sẽ tự động kích hoạt bộ tiền xử lý gồm 9 bước cục bộ để lọc sạch các nhiễu vật lý (bóng tối, ám màu) và làm nổi bật biên độ nét chữ.
-* Tiếp theo, hệ thống gửi dữ liệu ảnh nhị phân đã chuẩn hóa kèm theo Prompt định nghĩa barem điểm chuẩn sang API của mô hình AI để nhận dạng chữ viết tay (OCR) và đọc hiểu toàn bộ ngữ cảnh nội dung bài viết.
-* Hệ thống trả về kết quả đánh giá toàn diện dưới dạng cấu trúc JSON đã phân tích cú pháp. Kết quả này bao gồm: Điểm số chi tiết của 4 tiêu chí chuẩn (Chính tả 4.0đ, Hình thức 3.0đ, Nội dung 2.0đ, Sáng tạo 1.0đ), danh sách các lỗi chính tả được định vị chính xác kèm giải thích nguyên nhân và gợi ý sửa đúng, và lời nhận xét sư phạm mang tính động viên kịp thời.
+* Tiếp theo, hệ thống gửi dữ liệu ảnh nhị phân đã chuẩn hóa sang API của mô hình AI Gemini 3.1 Flash Lite để nhận dạng chữ viết tay (OCR). Mô hình này chỉ đóng vai trò trích xuất văn bản thô.
+* Sau đó, văn bản thô được chuyển tiếp cho dịch vụ Python nội bộ. Tại đây, mô hình ViT5 sẽ dịch văn bản thô thành bản chuẩn chính tả. Thuật toán Levenshtein được áp dụng để so sánh văn bản sai và đúng, từ đó định vị lỗi và tính điểm dựa trên barem định sẵn.
+* Hệ thống trả về kết quả đánh giá toàn diện. Kết quả này bao gồm: Điểm số chi tiết của 4 tiêu chí chuẩn (Chính tả 4.0đ, Hình thức 3.0đ, Nội dung 2.0đ, Sáng tạo 1.0đ), danh sách các lỗi chính tả được định vị chính xác kèm giải thích nguyên nhân và gợi ý sửa đúng.
 
 ### 4.1.4. Những lợi ích của hệ thống
 * **Tăng hiệu suất và độ chính xác trong đánh giá:** Nhờ công nghệ AI đa phương thức mạnh mẽ, hệ thống giúp giáo viên chấm bài chính tả với độ chính xác cao, nhận diện đúng các nét chữ nguệch ngoạc và phân loại lỗi chuẩn xác theo 5 nhóm lỗi chính tả tiếng Việt. Điều này giúp giáo viên nhanh chóng phát hiện các lỗ hổng kiến thức thường gặp của học sinh (như nhầm lẫn do phương ngữ) để điều chỉnh phương pháp dạy học kịp thời.
@@ -61,7 +61,8 @@ Hệ thống **ViHand Grade** được xây dựng hoàn toàn trên nền tản
 | **Component** | Radix UI + shadcn/ui | — | Bộ thành phần UI chuẩn accessibility |
 | **ORM** | Prisma | 5.22.0 | Truy vấn CSDL an toàn |
 | **CSDL** | SQLite (better-sqlite3) | 12.x | Lưu trữ dữ liệu gọn nhẹ |
-| **AI API** | Google Gemini 3 Flash + `@google/genai` SDK | — | Nhận dạng và chấm điểm |
+| **AI API** | Google Gemini 3.1 Flash Lite | — | Nhận dạng văn bản (OCR) |
+| **Python Microservice** | FastAPI + ViT5 + Torch | — | Sửa lỗi chính tả & Chấm điểm Levenshtein |
 | **Xử lý ảnh** | Jimp | 1.6.1 | Pipeline tiền xử lý 9 bước |
 | **Biểu đồ** | Recharts | 2.15.0 | Thống kê và báo cáo |
 | **Form** | React Hook Form + Zod | — | Xử lý và kiểm tra dữ liệu form |
@@ -73,7 +74,7 @@ Web_sua_loi/
 ├── app/                        ← Next.js App Router
 │   ├── api/                    ← Backend REST API Routes
 │   │   ├── auth/               ← Xác thực đăng nhập
-│   │   ├── grade/              ← Gọi Gemini API chấm điểm
+│   │   ├── grade/                Gọi luồng Hybrid AI chấm điểm
 │   │   ├── grades/             ← CRUD bảng điểm
 │   │   ├── preprocess/         ← Pipeline tiền xử lý ảnh
 │   │   ├── classes/            ← Quản lý lớp học
@@ -185,7 +186,7 @@ model Grade {
   processingTimeMs Int      @default(0)  // Thời gian chấm (ms)
   tokenCount       Int      @default(0)  // Số token tiêu thụ
   imageBase64      String   @default("") // Ảnh gốc lưu trữ
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 ```
 
@@ -253,71 +254,20 @@ Dưới đây là một số lý do nhóm nghiên cứu quyết định áp dụ
 
 Toàn bộ logic xử lý phía server được tổ chức trong thư mục `app/api/`. Next.js App Router ánh xạ mỗi thư mục con thành một REST endpoint riêng biệt.
 
-### 4.3.2. API Chấm điểm AI — `/api/grade` (POST)
+### 4.3.2. API Chấm điểm Hybrid AI — `/api/grade` (POST)
 
-Đây là API trung tâm của toàn hệ thống, thực hiện luồng xử lý 4 bước. **Hình 4.2** mô tả đầy đủ luồng điều khiển của API này:
+Đây là API trung tâm của toàn hệ thống, thực hiện luồng xử lý Hybrid AI. **Hình 4.2** mô tả đầy đủ luồng điều khiển của API này:
 
 ![Hình 4.2. Lưu đồ luồng xử lý API chấm điểm /api/grade](flowcharts/chuong4_2_api_grade_flow.png)
 
 **Bước 1 — Nén ảnh phía client (Frontend Optimization):** Trước khi gửi ảnh lên server, trình duyệt tự động thực hiện nén ảnh thông qua hàm `compressImageForAPI()`: resize ảnh về tối đa 1280px (chiều dài nhất) và xuất ra định dạng JPEG với chất lượng 75%. Kỹ thuật này giúp giảm kích thước payload từ ~3–5MB (ảnh gốc từ camera) xuống còn ~200–400KB, giúp giảm đáng kể thời gian truyền tải và xử lý token của mô hình AI, trong khi vẫn giữ đủ độ phân giải để nhận dạng chữ viết tay.
 
-**Bước 2 — Xây dựng Contents cho Gemini SDK:** Kết hợp dữ liệu ảnh nén dạng `inlineData` (Base64 JPEG) hoặc văn bản nhập trực tiếp cùng với `GRADING_PROMPT` (barem điểm sư phạm 4 tiêu chí) thành mảng `contents` gửi đến mô hình. Hệ thống sử dụng thư viện chính thức **`@google/genai`** (Google GenAI SDK cho JavaScript/TypeScript) với cấu hình `responseMimeType: "application/json"` để cưỡng chế mô hình trả về chuỗi JSON hợp lệ trực tiếp, thay vì phải phân tích cú pháp thủ công từ văn bản tự do.
+**Bước 2 — Gọi Gemini 3.1 Flash Lite để OCR:** Kết hợp dữ liệu ảnh nén dạng `inlineData` (Base64 JPEG) cùng với `OCR_PROMPT` thành mảng `contents` gửi đến mô hình. Hệ thống sử dụng thư viện chính thức **`@google/genai`** để trích xuất văn bản thô. Prompt được thiết kế chuyên biệt nhằm loại bỏ các từ luyện tập nháp và chỉ giữ lại cấu trúc đoạn văn, không thực hiện chấm điểm ở bước này.
 
 **Bước 3 — Triển khai thuật toán Xoay vòng khóa tức thì (Instant API Key Rotation):**
-Thay vì chỉ gọi đơn lẻ một API Key (dễ gặp lỗi quota do giới hạn 20 request/ngày/key trên gói miễn phí), backend triển khai thuật toán quay vòng tối ưu thông qua hai hàm cốt lõi:
-* `getApiKeys()`: Tự động trích xuất chuỗi cấu hình `GEMINI_API_KEYS` từ file `.env.local`, tách chuỗi theo dấu phẩy thành một mảng các khóa hợp lệ. Với 4 khóa, hệ thống đạt tổng quota ~80 request/ngày.
-* `callGeminiWithKeyRotation(keys, contents)`: Nhận mảng khóa, trộn ngẫu nhiên thứ tự các khóa để cân bằng tải trọng (Load Balancing). Với mỗi khóa, khởi tạo một instance `GoogleGenAI` client và gọi `client.models.generateContent()`. Thuật toán xoay vòng được tối ưu theo nguyên tắc: khi gặp lỗi `429 RESOURCE_EXHAUSTED` (hết quota), hệ thống **chuyển khóa ngay lập tức** mà không retry cùng khóa (vì quota không reset trong vài giây); khi gặp lỗi `503` (server quá tải), hệ thống tạm ngưng 500ms rồi chuyển sang khóa tiếp theo.
+Thay vì chỉ gọi đơn lẻ một API Key (dễ gặp lỗi quota), backend triển khai thuật toán quay vòng thông qua hàm `callGeminiOCR`. Nếu gặp lỗi 429 hoặc 503, hệ thống tự động đổi khóa khác trong tập `GEMINI_API_KEYS` đã trộn ngẫu nhiên.
 
-Cấu trúc hiện thực mã nguồn của cơ chế xoay vòng khóa API trong file `app/api/grade/route.ts`:
-```typescript
-import { GoogleGenAI } from "@google/genai"
-
-// Gọi Gemini SDK với cơ chế xoay vòng khóa tức thì khi bị 429/503
-async function callGeminiWithKeyRotation(
-  keys: string[],
-  contents: any[],
-): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
-  if (keys.length === 0) throw new Error("Không có API key nào được cấu hình")
-
-  // Trộn ngẫu nhiên danh sách khóa để cân bằng tải
-  const shuffled = [...keys].sort(() => Math.random() - 0.5)
-
-  for (let i = 0; i < shuffled.length; i++) {
-    const key = shuffled[i]
-    const client = new GoogleGenAI({ apiKey: key })
-
-    try {
-      const response = await client.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: contents,
-        config: {
-          responseMimeType: "application/json", // Cưỡng chế JSON output
-          temperature: 0.1,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 8192,
-        },
-      })
-
-      const text = response.text ?? ""
-      if (!text || text.trim().length === 0) continue // Response rỗng → thử key tiếp
-
-      return { text, tokenCount: response.usageMetadata?.totalTokenCount || 0, keyIndex: i + 1 }
-
-    } catch (err: any) {
-      const status = err?.status || 0
-      // 429 (quota) → chuyển key ngay, không delay (quota không reset trong vài giây)
-      if (status === 429 || err?.message?.includes("RESOURCE_EXHAUSTED")) continue
-      // 503 (overloaded) → đợi ngắn rồi thử key tiếp
-      if (status === 503) { await new Promise(r => setTimeout(r, 500)); continue }
-      continue // Lỗi khác → sang key tiếp
-    }
-  }
-  throw new Error("Tất cả API key đều bận/hết quota. Vui lòng thử lại sau.")
-}
-```
-
-**Bước 4 — Parse JSON và Trả kết quả:** Nhờ cấu hình `responseMimeType: "application/json"` trên SDK, phản hồi từ Gemini đã là chuỗi JSON hợp lệ trong phần lớn trường hợp. API vẫn thực hiện bước làm sạch phòng ngừa (loại bỏ cú pháp bao bọc Markdown nếu có), phân tích cú pháp JSON sang đối tượng có cấu trúc và trả về phía client kèm theo thời gian xử lý (`processingTimeMs`) và số token tiêu thụ (`tokenCount`).
+**Bước 4 — Gọi Python Microservice (ViT5) để sửa lỗi và chấm điểm:** Sau khi có văn bản thô từ Gemini, Next.js tiếp tục gửi HTTP POST yêu cầu chứa văn bản thô (`original_text`) tới endpoint `/grade` của Python Microservice (cổng 8000). Tại đây, mô hình ViT5 sẽ làm nhiệm vụ sửa lỗi, còn thuật toán Levenshtein sẽ so sánh từ, phát hiện và phân loại lỗi. Cuối cùng, dịch vụ Python tính điểm và trả về JSON hoàn chỉnh cho Frontend hiển thị. Giáo viên sau đó có thể điều chỉnh thủ công thông số điểm số trước khi bấm lưu.
 
 
 ### 4.3.3. API Lưu kết quả — `/api/grades` (GET/POST)
@@ -348,7 +298,7 @@ Hỗ trợ các thao tác CRUD cho Admin: tạo/sửa/vô hiệu hóa tài kho�
 Đây là giao diện chính và được sử dụng nhiều nhất của hệ thống. Giao diện được chia thành các vùng chức năng:
 1. **Vùng nhập liệu:** Cho phép giáo viên nhập tên học sinh (có autocomplete theo danh sách lớp), tiêu đề bài chính tả và lựa chọn chế độ nhập liệu (chụp ảnh / tải file / nhập văn bản trực tiếp).
 2. **Vùng xem trước ảnh và Quality Report:** Hiển thị ảnh đã upload kèm bảng đánh giá chất lượng tự động (`blur_score`, `brightness`, `dark_pixel_ratio`) với màu sắc cảnh báo trực quan (xanh/vàng/đỏ).
-3. **Nút "Chấm điểm bằng AI":** Kích hoạt toàn bộ pipeline — tiền xử lý ảnh → gọi Gemini API → hiển thị kết quả.
+3. **Nút "Chấm điểm bằng AI":** Kích hoạt toàn bộ pipeline -> tiền xử lý ảnh -> gọi Gemini API (OCR) -> gọi ViT5 (Sửa lỗi và chấm điểm) -> hiển thị kết quả.
 4. **Vùng kết quả chấm:** Hiển thị điểm số theo 4 tiêu chí, bảng danh sách lỗi chính tả có màu sắc phân loại theo `error_type`, văn bản gốc/đã sửa và khung nhận xét sư phạm có thể chỉnh sửa thủ công.
 5. **Nút "Lưu kết quả":** Gọi `POST /api/grades` lưu bản ghi vào SQLite sau khi giáo viên đã duyệt.
 

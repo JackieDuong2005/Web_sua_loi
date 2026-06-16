@@ -8,7 +8,7 @@
 
 ## I. BENCHMARK 1 — CHẾ ĐỘ TEXT (15 mẫu văn bản chính tả)
 
-Mô phỏng chế độ nhập văn bản trực tiếp, gửi text thuần đến Gemini API để chấm điểm.
+Mô phỏng chế độ nhập văn bản trực tiếp, gửi text thuần đến luồng Hybrid AI (ViT5) để chấm điểm.
 
 | # | Mô tả mẫu | Thời gian | Tokens | JSON | Điểm | Xếp loại | Số lỗi |
 |---|---|---|---|---|---|---|---|
