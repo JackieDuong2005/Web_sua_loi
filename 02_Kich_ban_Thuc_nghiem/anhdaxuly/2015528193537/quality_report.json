@@ -1,18 +1,20 @@
 {
   "fileName": "2015528193537",
   "config": {
+    "enableDeskew": true,
+    "deskewMaxAngle": 15,
     "resizeMaxWidth": 1600,
     "enableWhiteBalance": true,
     "enableShadowRemoval": true,
-    "shadowKernelSize": 51,
+    "shadowKernelSize": 101,
     "enableClahe": true,
-    "claheClipLimit": 2,
+    "claheClipLimit": 4,
     "claheTileGridSize": 8,
     "enableSharpen": true,
     "sharpenAmount": 0.5,
     "thresholdMode": "adaptive_gaussian",
     "adaptiveBlockSize": 0,
-    "adaptiveC": 50,
+    "adaptiveC": 30,
     "blurThreshold": 80,
     "brightnessLow": 50,
     "brightnessHigh": 220,
@@ -22,11 +24,11 @@
   "quality": {
     "is_good": true,
     "warnings": [],
-    "blur_score": 825.24,
-    "brightness": 139.36,
-    "resolution": 367,
-    "dark_pixel_ratio": 0.0884,
-    "text_area_ratio": 0.1632
+    "blur_score": 1120.76,
+    "brightness": 134.16,
+    "resolution": 378,
+    "dark_pixel_ratio": 0.1225,
+    "text_area_ratio": 0.1225
   },
-  "elapsed_ms": 3339
+  "elapsed_ms": 2762
 }

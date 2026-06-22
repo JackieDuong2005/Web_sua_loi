@@ -8,96 +8,42 @@ function getApiKeys(): string[] {
   return multi.split(",").map(k => k.trim()).filter(k => k.length > 10)
 }
 
-// Prompt OCR thuần túy — chỉ trích xuất, KHÔNG sửa lỗi
-const OCR_PROMPT = `Bạn là hệ thống OCR chuyên biệt cho bài chính tả viết tay của học sinh tiểu học Việt Nam.
+// Prompt OCR kết hợp: nhận diện chính xác VÀ trả về bản đã sửa dưới dạng JSON
+// Pipeline sẽ chỉ dùng original_text để đưa vào ViT5; fixed_text là tham khảo từ Gemini
+const OCR_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên sửa bài chính tả. Phân tích đoạn văn của học sinh được cung cấp trong ảnh, nhận diện chữ viết và sửa lại cho đúng chính tả. Trả về duy nhất định dạng JSON.
 
-NHIỆM VỤ DUY NHẤT: Đọc và chép lại CHÍNH XÁC phần văn bản chính (Bài chính tả) trong ảnh.
+=== QUY TẮC NHẬN DIỆN (original_text) ===
+1. Ghi lại CHÍNH XÁC từng chữ viết tay — KHÔNG tự sửa lỗi, KHÔNG bịa thêm nội dung.
+2. Nếu có chữ bị gạch bỏ hoặc lem mực không đọc được, BỎ QUA phần đó, chỉ lấy chữ người viết đã sửa.
+3. Giữ nguyên cấu trúc xuống dòng:
+   - Văn xuôi: nối các dòng thành đoạn văn, chỉ xuống dòng khi người viết thụt lề bắt đầu đoạn mới.
+   - Thơ: giữ nguyên từng câu thơ riêng dòng.
+4. Nếu đầu trang có chữ luyện viết rời rạc (VD: "oac, ngoắc..."), BỎ QUA, chỉ bắt đầu từ tiêu đề bài viết.
 
-════════════════════════════════════════
-BƯỚC 1 — PHÂN TÍCH TRANG TRƯỚC KHI TRÍCH XUẤT
-════════════════════════════════════════
-Trước khi viết bất kỳ ký tự nào, hãy xác định thầm:
-(A) Vùng LUYỆN TỪ: các từ rời rạc không thành câu ở đầu trang (vd: "oac, oăc, khoác, ngoắc...") — sẽ BỎ QUA hoàn toàn.
-(B) Vùng BÀI CHÍNH: bắt đầu từ tiêu đề được viết giữa dòng, kết thúc ở cuối trang — sẽ TRÍCH XUẤT.
-(C) Thể loại bài: VĂN XUÔI hay THƠ CA (xem tiêu chí bên dưới).
+=== QUY TẮC SỬA LỖI (fixed_text) ===
+- Sửa đúng chính tả tiếng Việt: dấu thanh, phụ âm đầu (c/k/q, g/gh, d/gi/r, s/x, ch/tr, l/n), vần.
+- Viết hoa đầu câu và tên riêng đúng quy tắc.
+- Giữ nguyên cấu trúc dòng, ý nghĩa và nội dung của học sinh.
 
-════════════════════════════════════════
-BƯỚC 2 — NHẬN DIỆN THỂ LOẠI BÀI
-════════════════════════════════════════
-► VĂN XUÔI nếu:
-  - Các dòng có độ dài khác nhau, dòng thường kéo sát lề phải.
-  - Có thụt đầu dòng ở đầu đoạn.
-  - Không có vần điệu cố định.
+=== ĐỊNH DẠNG OUTPUT (JSON duy nhất, không kèm markdown) ===
+{
+  "original_text": "văn bản gốc nhận diện được từ ảnh (chưa sửa)",
+  "fixed_text": "văn bản đã được sửa hết lỗi chính tả và viết hoa đúng quy tắc"
+}`
 
-► THƠ CA nếu:
-  - Các dòng ngắn và tương đối đều nhau.
-  - Có vần điệu hoặc nhịp rõ ràng.
-  - Mỗi dòng thơ kết thúc sớm hơn lề phải.
-
-════════════════════════════════════════
-BƯỚC 3 — QUY TẮC XỬ LÝ CHỮ BỊ CHỈNH SỬA
-════════════════════════════════════════
-▸ CHỮ BỊ GẠCH BỎ (strikethrough):
-  - Dấu hiệu: đường ngang cắt qua thân chữ, khoanh tròn gạch chéo.
-  - Xử lý: BỎ HOÀN TOÀN — không đưa vào kết quả.
-  - Chỉ lấy từ/cụm từ cuối cùng học sinh viết lại sau khi gạch bỏ.
-  - Ví dụ: "con [~~chim~~] chích bông" → "con chích bông"
-
-▸ CHỮ VIẾT ĐÈ LÊN (overwrite):
-  - Dấu hiệu: nét mực mới đè lên nét cũ, thường thấy ở dấu thanh hoặc phụ âm cuối.
-  - Xử lý: đọc nét MỚI NHẤT (đậm/rõ hơn) là ký tự hợp lệ.
-  - Nếu không phân biệt được nét nào mới hơn: ưu tiên nét tạo ra ký tự hợp lệ trong tiếng Việt.
-  - Ví dụ: dấu hỏi đè lên dấu ngã → đọc là dấu hỏi.
-
-▸ CHỮ ĐƯỢC CHÈN THÊM (insertion):
-  - Dấu hiệu: chữ nhỏ hoặc ký hiệu "^" chèn giữa dòng.
-  - Xử lý: đưa chữ chèn vào đúng vị trí trong văn bản.
-
-════════════════════════════════════════
-BƯỚC 4 — QUY TẮC ĐỊNH DẠNG ĐẦU RA
-════════════════════════════════════════
-► VĂN XUÔI:
-  - Nối các dòng liền kề thành câu/đoạn hoàn chỉnh.
-  - Chỉ xuống dòng khi có thụt đầu dòng mới (đoạn mới).
-  - KHÔNG xuống dòng giữa câu chỉ vì hết dòng kẻ vở.
-
-► THƠ CA:
-  - Giữ nguyên mỗi dòng thơ như học sinh viết.
-  - Xuống dòng sau mỗi dòng thơ.
-  - Giữ khoảng trống giữa các khổ thơ nếu có.
-
-► TIÊU ĐỀ:
-  - Luôn đặt tiêu đề trên một dòng riêng.
-  - Xuống dòng 1 lần sau tiêu đề rồi mới vào nội dung.
-
-════════════════════════════════════════
-BƯỚC 5 — NGUYÊN TẮC TUYỆT ĐỐI
-════════════════════════════════════════
-✗ KHÔNG tự sửa bất kỳ lỗi chính tả, dấu câu, viết hoa/thường nào.
-✗ KHÔNG thêm nhận xét, giải thích, ghi chú hay ký hiệu nào ngoài văn bản.
-✓ Chép nguyên văn mọi lỗi học sinh mắc phải — đây là dữ liệu đầu vào cho model sửa lỗi ở bước sau.
-✓ Chỉ trả về văn bản thuần túy (plain text).
-
-════════════════════════════════════════
-VÍ DỤ ĐẦU RA ĐÚNG
-════════════════════════════════════════
-Ví dụ VĂN XUÔI:
-  [Bỏ qua vùng luyện từ: "oac, oăc, khoác..."]
-  Kết quả:
-  Quạ và Công
-  Một hôm, quạ rủ cộng lấy màu về áo khoắc cho đẹp. Cộng không chiu, quạ lền tự vẽ cho mình.
-
-Ví dụ THƠ CA:
-  Hạt gạo làng ta
-  Có vị phù sa
-  Của sông Kinh Thầy
-  Có hương sen thơm`
+// Kiểu trả về nội bộ
+interface OcrResult {
+  original_text: string
+  gemini_fixed_text: string
+  tokenCount: number
+  keyIndex: number
+}
 
 async function callGeminiOCR(
   keys: string[],
   imageBase64: string,
   mimeType: string
-): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
+): Promise<OcrResult> {
   const shuffled = [...keys].sort(() => Math.random() - 0.5)
 
   for (let i = 0; i < shuffled.length; i++) {
@@ -112,6 +58,7 @@ async function callGeminiOCR(
           OCR_PROMPT,
         ],
         config: {
+          responseMimeType: "application/json",
           temperature: 0.05,
           topP: 0.95,
           topK: 40,
@@ -119,16 +66,42 @@ async function callGeminiOCR(
         },
       })
 
-      const text = response.text ?? ""
+      const rawText = response.text ?? ""
       const tokenCount = response.usageMetadata?.totalTokenCount || 0
 
-      if (!text.trim()) {
+      if (!rawText.trim()) {
         console.warn(`[OCR] Key #${i + 1} trả về rỗng → thử key tiếp`)
         continue
       }
 
-      console.log(`[OCR] ✓ Key #${i + 1} thành công (${tokenCount} tokens, ${text.length} chars)`)
-      return { text: text.trim(), tokenCount, keyIndex: i + 1 }
+      // Parse JSON từ Gemini
+      let parsed: { original_text?: string; fixed_text?: string }
+      try {
+        const cleaned = rawText
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim()
+        parsed = JSON.parse(cleaned)
+      } catch (parseErr) {
+        console.warn(`[OCR] Key #${i + 1} JSON parse lỗi → thử key tiếp`, rawText.substring(0, 200))
+        continue
+      }
+
+      const original_text = (parsed.original_text ?? "").trim()
+      const gemini_fixed_text = (parsed.fixed_text ?? "").trim()
+
+      if (!original_text) {
+        console.warn(`[OCR] Key #${i + 1} original_text rỗng → thử key tiếp`)
+        continue
+      }
+
+      console.log(
+        `[OCR] ✓ Key #${i + 1} thành công (${tokenCount} tokens)` +
+        ` | original: ${original_text.length} chars | fixed: ${gemini_fixed_text.length} chars`
+      )
+      return { original_text, gemini_fixed_text, tokenCount, keyIndex: i + 1 }
+
     } catch (err: any) {
       const status = err?.status || 0
       const msg = err?.message || ""
@@ -168,7 +141,7 @@ export async function POST(req: NextRequest) {
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "")
     const startTime = Date.now()
 
-    let result: { text: string; tokenCount: number; keyIndex: number }
+    let result: OcrResult
     try {
       result = await callGeminiOCR(keys, base64Data, mimeType || "image/jpeg")
     } catch (err: any) {
@@ -179,7 +152,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      text: result.text,
+      // `text` = original_text (chưa sửa) — đây là đầu vào cho ViT5 ở bước tiếp theo
+      text: result.original_text,
+      // `gemini_fixed_text` — tham khảo, không đưa vào ViT5
+      gemini_fixed_text: result.gemini_fixed_text,
       tokenCount: result.tokenCount,
       processingTimeMs: Date.now() - startTime,
     })

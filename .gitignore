@@ -54,6 +54,23 @@ public/icon-512x512.png
 02_Kich_ban_Thuc_nghiem/*.zip
 anhdaduocOCR/
 
+# Bỏ qua ảnh xử lý trung gian (step_*.jpg) — chỉ giữ quality_report.json
+02_Kich_ban_Thuc_nghiem/anhdaxuly/**/step_*.jpg
+02_Kich_ban_Thuc_nghiem/anhdaxulyv2/**/step_*.jpg
+02_Kich_ban_Thuc_nghiem/anhdaxulyv3/**
+02_Kich_ban_Thuc_nghiem/anhdaxulyv3p5/**
+02_Kich_ban_Thuc_nghiem/anhdaxulyv3p6/**
+02_Kich_ban_Thuc_nghiem/anhdaxulyv4/**
+02_Kich_ban_Thuc_nghiem/anhdaxulyv5/**
+02_Kich_ban_Thuc_nghiem/anhdaxulyv6/**
+02_Kich_ban_Thuc_nghiem/anhchuaxuly/
+02_Kich_ban_Thuc_nghiem/benchmark_results/*.json
+
+# Bỏ qua thư mục ảnh gốc lớn
+02_Kich_ban_Thuc_nghiem/anhdaxuly.rar
+02_Kich_ban_Thuc_nghiem/anhdaxuly/**/*.jpg
+02_Kich_ban_Thuc_nghiem/anhdaxuly/**/*.png
+
 # Bỏ qua file tạm
 temp_tom_tat.txt
 extracted_tom_tat.txt

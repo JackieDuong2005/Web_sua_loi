@@ -1,335 +1,141 @@
-# CHƯƠNG 2: CƠ SỞ LÝ THUYẾT VÀ CÔNG NGHỆ NỀN TẢNG
+# Chương 2: Cơ sở lý thuyết
 
----
+Chương này trình bày các cơ sở lý thuyết tạo nên nền tảng kỹ thuật cho hệ thống ViHand Grade. Hệ thống được xây dựng dựa trên sự kết hợp của các công nghệ tiên tiến bao gồm xử lý ảnh số, trí tuệ nhân tạo (Multimodal LLM, Transformer), thuật toán so khớp chuỗi và kiến trúc phát triển ứng dụng web hiện đại.
 
-## 2.1. NHẬN DẠNG KÝ TỰ QUANG HỌC (OCR) VÀ XU HƯỚNG AI ĐA PHƯƠNG THỨC
+## 2.1. Tổng quan về nhận dạng chữ viết tay (Handwriting Text Recognition)
 
-### 2.1.1. Khái niệm và phân loại OCR
-Nhận dạng ký tự quang học (Optical Character Recognition - OCR) là lĩnh vực nghiên cứu thuộc thị giác máy tính nhằm chuyển đổi hình ảnh chứa văn bản (như tài liệu scan, ảnh chụp bảng hiệu, chữ viết tay) thành dữ liệu văn bản có thể xử lý và tìm kiếm bằng máy tính. 
+### 2.1.1. Phân biệt OCR truyền thống với HTR
+Nhận dạng ký tự quang học (OCR - Optical Character Recognition) là công nghệ chuyển đổi hình ảnh chứa văn bản (thường là tài liệu in ấn hoặc đánh máy) thành văn bản dạng máy tính có thể xử lý được. Các hệ thống OCR truyền thống thường dựa trên việc phân mảnh (segmentation) từng ký tự và sử dụng các bộ phân loại mẫu (pattern classifiers) để nhận diện. Tuy nhiên, OCR truyền thống gặp rất nhiều khó khăn với chữ viết tay do các ký tự thường dính liền nhau và không có một khuôn mẫu chuẩn mực.
 
-Trong thực tiễn nghiên cứu khoa học, công nghệ OCR được chia làm ba nhóm chính:
-1. **OCR chữ in (Printed OCR):** Nhận dạng tài liệu in ấn với các font chữ tiêu chuẩn. Do tính chất nét chữ đều, khoảng cách ký tự rõ ràng, độ chính xác của các mô hình hiện nay thường đạt trên $99\%$.
-2. **OCR viết tay trực tuyến (Online Handwritten OCR):** Nhận dạng chữ viết tay khi người dùng thao tác trực tiếp trên màn hình cảm ứng hoặc bảng vẽ kỹ thuật số. Hệ thống ghi nhận được tọa độ đầu bút theo thời gian thực, thứ tự nét viết và tốc độ viết, giúp việc phân tích ký tự dễ dàng và đạt độ chính xác từ $90\% - 95\%$.
-3. **OCR viết tay ngoại tuyến (Offline Handwritten OCR):** Nhận dạng từ hình ảnh tĩnh được chụp lại sau khi bài viết đã hoàn thành. Đây là bài toán có độ phức tạp cao nhất do mô hình không có thông tin về quỹ đạo nét bút và phải đối mặt trực tiếp với các vấn đề nhiễu ảnh vật lý.
+Nhận dạng chữ viết tay (HTR - Handwriting Text Recognition) là một nhánh nâng cao của OCR, tập trung vào việc giải quyết bài toán với chữ viết tay. HTR hiện đại thường bỏ qua bước phân mảnh ký tự thủ công, thay vào đó sử dụng các mô hình học sâu chuỗi-qua-chuỗi (Sequence-to-Sequence) kết hợp với cơ chế Attention để nhận dạng toàn bộ một dòng hoặc một đoạn văn bản dựa trên các đặc trưng hình ảnh trực tiếp.
 
-Hệ thống **ViHand Grade** tập trung giải quyết bài toán thuộc nhóm **OCR viết tay ngoại tuyến**, ứng dụng cụ thể vào chữ viết của học sinh tiểu học Việt Nam.
+### 2.1.2. Thách thức đối với chữ viết tay tiếng Việt
+Bài toán HTR đối với chữ viết tay tiếng Việt, đặc biệt là của học sinh tiểu học, đặt ra nhiều thách thức đặc thù:
+- **Độ đồng nhất thấp:** Mỗi học sinh có một nét chữ, kích cỡ và cách kết nối ký tự khác nhau.
+- **Hệ thống dấu thanh phức tạp:** Tiếng Việt sử dụng các dấu phụ (như ă, â, ê, ô, ơ, ư, đ) và hệ thống 5 dấu thanh (huyền, sắc, hỏi, ngã, nặng). Các dấu này thường có kích thước rất nhỏ so với ký tự chính, dễ bị nhòe, mất nét trong quá trình chụp ảnh, hoặc bị học sinh viết lệch vị trí. Điều này dẫn đến sự nhầm lẫn lớn (ví dụ: "cá" và "cả", "ô" và "ơ").
+- **Điều kiện nhiễu:** Ảnh chụp bài làm của học sinh thường được chụp bằng điện thoại di động trong điều kiện thiếu sáng, có bóng đổ, chụp nghiêng, góc khuất, hoặc bị nhiễu bởi các đường kẻ ô ly, vết tẩy xóa.
 
-### 2.1.2. Thách thức đặc thù trong OCR chữ viết tay tiểu học tiếng Việt
-Chữ viết tay của học sinh tiểu học (lớp 1 đến lớp 5) mang những đặc điểm hình thái và ngữ cảnh cực kỳ phức tạp, tạo nên những thách thức lớn đối với các thuật toán nhận dạng truyền thống:
-- **Nét chữ chưa định hình:** Học sinh cấp tiểu học đang trong giai đoạn rèn luyện kỹ năng cơ vận động tinh, dẫn đến kích thước ký tự không đồng đều, độ nghiêng nét viết biến thiên lớn và khoảng cách giữa các chữ cái thường không tuân theo quy luật chuẩn.
-- **Nét viết bút chì mờ nhạt:** Học sinh lớp nhỏ thường sử dụng bút chì gỗ hoặc bút chì kim. Nét viết có độ đậm nhạt không đồng nhất và độ tương phản giữa nét chữ với nền giấy thường rất thấp.
-- **Tính đa dạng và tinh tế của dấu thanh tiếng Việt:** Tiếng Việt sở hữu hệ thống 6 thanh điệu (ngang, sắc, huyền, hỏi, ngã, nặng) và các nguyên âm đôi/ba có dấu phụ (ă, â, ê, ô, ơ, ư). Các dấu này có kích thước nhỏ, mảnh, dễ bị đứt nét hoặc dính vào ký tự chính đứng trước hoặc đứng sau.
-- **Nhiễu cấu trúc dòng kẻ ô ly:** Học sinh tiểu học Việt Nam bắt buộc phải viết trên tập giấy có lưới ô ly (grid lines) để căn chỉnh nét chữ. Dòng lưới ô ly này thường có màu xanh lục hoặc đỏ nhạt, chồng lấn trực tiếp lên nét chữ viết tay và các dấu thanh phụ âm, gây nhiễu nghiêm trọng cho các thuật toán phân tách dòng và phân đoạn ký tự.
+## 2.2. Mô hình ngôn ngữ lớn đa phương thức (Multimodal LLM) ứng dụng trong OCR
 
-### 2.1.3. Sự chuyển dịch kiến trúc sang Mô hình Lai (Hybrid AI Architecture)
-Các kiến trúc OCR truyền thống thường sử dụng mô hình hai giai đoạn tuần tự (Two-stage Pipeline):
-$$\text{Ảnh chụp thô} \xrightarrow{\quad \text{OCR Engine (CNN + RNN)} \quad} \text{Văn bản thô} \xrightarrow{\quad \text{NLP Engine} \quad} \text{Sửa lỗi & Trả kết quả}$$
+### 2.2.1. Kiến trúc Vision-Language Model
+Để giải quyết bài toán nhận dạng chữ viết tay phức tạp, các kiến trúc Vision-Language Model (VLM) đang trở thành xu hướng hàng đầu. VLM kết hợp khả năng thị giác máy tính và xử lý ngôn ngữ tự nhiên bằng cách sử dụng một bộ mã hóa hình ảnh (Vision Encoder) để trích xuất đặc trưng không gian, và một bộ giải mã ngôn ngữ (Language Decoder) để sinh ra văn bản tương ứng.
 
-Hạn chế lớn nhất của cách tiếp cận truyền thống là sự cộng dồn sai số (Error Propagation) do các engine OCR thế hệ cũ nhận diện kém. Sự xuất hiện của các Mô hình ngôn ngữ lớn đa phương thức (Multimodal Large Language Models - MLLMs) như **Google Gemini** đã mở ra bước đột phá mới. Tuy nhiên, nếu sử dụng phương pháp **End-to-End** thuần túy (dùng Gemini vừa nhận diện vừa chấm điểm toán học), hệ thống sẽ gặp các vấn đề lớn về:
-- Giới hạn token đầu ra (vượt ngưỡng 8,192 tokens khi bài có nhiều lỗi).
-- Tính không đồng nhất (Non-deterministic): Điểm số có thể dao động qua các lần chấm khác nhau.
+Cơ chế kết nối giữa hai luồng dữ liệu này thường là cơ chế Cross-Attention, cho phép bộ giải mã ngôn ngữ tập trung vào các vùng hình ảnh liên quan trong khi dự đoán từ tiếp theo. Điều này giúp mô hình có khả năng hiểu sâu sắc cấu trúc không gian của văn bản (đoạn, dòng, thụt lề) mà không cần các công cụ nhận diện hộp giới hạn (bounding box) truyền thống.
 
-Vì vậy, hệ thống ViHand Grade áp dụng **Kiến trúc Lai (Hybrid Architecture)** tối ưu nhất:
-$$\text{Ảnh bài viết} \xrightarrow{\text{Gemini (OCR)}} \text{Văn bản thô} \xrightarrow{\text{ViT5 (Edge AI) + Levenshtein}} \text{Chấm điểm & JSON}$$
+### 2.2.2. Vị trí của Gemini API trong bài toán trích xuất văn bản
+Google Gemini là một trong những hệ thống Multimodal LLM tiên tiến nhất hiện nay, được thiết kế ngay từ đầu để xử lý đa phương thức (văn bản, hình ảnh, âm thanh) một cách tự nhiên.
 
-Trong đó, Gemini đóng vai trò OCR đa phương thức cực kỳ chính xác để trích xuất văn bản thô, và một mô hình ngôn ngữ nhỏ cục bộ (ViT5) chạy trên Raspberry Pi sẽ thực hiện việc sửa lỗi ngữ pháp. Cuối cùng, thuật toán Levenshtein sẽ so sánh chuỗi để đưa ra điểm số nhất quán tuyệt đối.
+Trong kiến trúc của ViHand Grade, API Gemini (cụ thể là mô hình `gemini-3.1-flash-lite`) được sử dụng cho tác vụ OCR thuần túy. Lý do lựa chọn Gemini bao gồm:
+- **Độ chính xác cao:** Khả năng nhận diện rất tốt các cấu trúc chữ viết tay tiếng Việt có dấu, kể cả khi chữ viết dính liền hoặc mờ.
+- **Tuân thủ ngữ cảnh:** Bằng cách thiết kế Prompt cẩn thận, Gemini có khả năng chỉ trích xuất chính xác những gì có trong ảnh, bỏ qua các thành phần nhiễu (chữ viết nháp, nét gạch bỏ) mà không tự động suy diễn hay sửa lỗi sai của học sinh — một yếu tố cực kỳ quan trọng để hệ thống phía sau có thể chấm điểm được.
 
----
+## 2.3. Bài toán hiệu chỉnh lỗi chính tả tiếng Việt (Vietnamese Spelling Correction)
 
-## 2.2. LÝ THUYẾT VÀ THUẬT TOÁN XỬ LÝ ẢNH SỐ CHUYÊN BIỆT
+### 2.3.1. Đặc điểm chính tả tiếng Việt và ảnh hưởng phương ngữ
+Tiếng Việt sử dụng chữ Quốc ngữ, hệ thống chữ viết Latin có bổ sung dấu phụ. Mỗi âm tiết tương ứng với một tiếng, cấu thành từ: Phụ âm đầu + Phần vần + Thanh điệu. Hệ thống 6 thanh điệu (bằng, huyền, hỏi, ngã, sắc, nặng) được biểu diễn bằng dấu đặt trên hoặc dưới nguyên âm chính, tạo ra thách thức đặc biệt cho cả mô hình OCR lẫn học sinh trong quá trình học viết chính tả.
 
-Để hỗ trợ tối đa cho mô hình AI đa phương thức nhận diện chính xác, việc loại bỏ nhiễu vật lý thông qua xử lý ảnh số là bước bắt buộc. Hệ thống sử dụng các thuật toán pixel-level chuyên biệt để làm sạch nền và tăng cường nét chữ.
+Do đặc thù phương ngữ và thói quen phát âm, học sinh thường mắc các lỗi chính tả phổ biến:
+- Lỗi phụ âm đầu: học sinh tại khu vực Nam Bộ thường nhầm lẫn giữa s/x, d/gi/r, v/b. Các khu vực khác thường nhầm c/k, g/gh, ng/ngh, tr/ch, l/n.
+- Lỗi vần: nhầm lẫn i/y, iu/ưu, an/ang, at/ac.
+- Lỗi thanh điệu: sự nhầm lẫn phổ biến giữa dấu hỏi (?) và dấu ngã (~).
+- Lỗi viết hoa: không viết hoa chữ cái đầu câu hoặc tên riêng.
 
-### 2.2.1. Lý thuyết cân bằng trắng và Giả định Thế giới Xám (Gray World Assumption)
-Ảnh chụp bài viết bằng điện thoại của giáo viên thường bị ám màu do nguồn sáng xung quanh không chuẩn (ánh sáng đèn huỳnh quang ám xanh, đèn sợi đốt ám vàng). Hệ thống áp dụng thuật toán **Gray World Assumption** để tự động cân bằng trắng. 
+Mặc dù hệ thống ghi nhận các yếu tố phương ngữ là nguyên nhân phổ biến gây ra lỗi, cơ chế chấm điểm vẫn áp dụng trừ điểm bình đẳng (chuẩn toàn quốc) nhằm khuyến khích học sinh rèn luyện và viết đúng chính tả chuẩn mực.
 
-Thuật toán giả định rằng trong một bức ảnh có sự phân bố màu sắc đa dạng tự nhiên, giá trị trung bình của ba kênh màu Đỏ ($R$), Xanh lá ($G$) và Xanh dương ($B$) sẽ xấp xỉ bằng nhau và hội tụ về một cường độ xám trung tính:
-$$\overline{R} = \frac{1}{N} \sum_{i=1}^{N} R_i; \quad \overline{G} = \frac{1}{N} \sum_{i=1}^{N} G_i; \quad \overline{B} = \frac{1}{N} \sum_{i=1}^{N} B_i$$
-Tính giá trị trung bình tổng thể của ba kênh màu:
-$$Gray_{avg} = \frac{\overline{R} + \overline{G} + \overline{B}}{3}$$
-Từ đó, xác định hệ số cân bằng $k$ cho từng kênh màu:
-$$k_R = \frac{Gray_{avg}}{\overline{R}}; \quad k_G = \frac{Gray_{avg}}{\overline{G}}; \quad k_B = \frac{Gray_{avg}}{\overline{B}}$$
-Giá trị pixel mới tại tọa độ $(x, y)$ được hiệu chỉnh như sau:
-$$R_{\text{new}}(x,y) = \min(255, \text{round}(R(x,y) \times k_R))$$
-$$G_{\text{new}}(x,y) = \min(255, \text{round}(G(x,y) \times k_G))$$
-$$B_{\text{new}}(x,y) = \min(255, \text{round}(B(x,y) \times k_B))$$
-Phương pháp này đưa nền giấy ô ly bị ám màu về trạng thái màu trắng tự nhiên một cách hiệu quả.
+### 2.3.2. Các hướng tiếp cận trong sửa lỗi chính tả
+- **Rule-based (Dựa trên luật):** Sử dụng các từ điển và quy tắc ngữ pháp tĩnh. Phương pháp này tốc độ cao nhưng kém linh hoạt và không giải quyết được các lỗi liên quan đến ngữ cảnh (ví dụ: "trong chẻo" vs "trong trẻo").
+- **Statistical (Dựa trên thống kê):** Sử dụng mô hình N-gram kết hợp với mô hình kênh nhiễu (Noisy Channel Model) để xác định xác suất xảy ra của chuỗi từ.
+- **Neural-based (Dựa trên mạng nơ-ron):** Tiếp cận bài toán dưới dạng dịch máy (Machine Translation), dịch từ một "câu sai" sang một "câu đúng". Các mô hình như Sequence-to-Sequence tỏ ra vượt trội nhờ khả năng nắm bắt ngữ cảnh rộng và mối quan hệ phức tạp giữa các từ trong câu.
 
-### 2.2.2. Khử bóng che (Shadow Removal) bằng phép chuẩn hóa nền
-Khi người dùng chụp ảnh bài viết, bóng của bàn tay hoặc thiết bị chụp thường che khuất một phần trang giấy, tạo ra vùng tối không đồng đều. Hệ thống khử bóng bằng thuật toán chuẩn hóa nền (Background Normalization). 
+## 2.4. Kiến trúc Transformer và mô hình ViT5
 
-Ảnh nền không chứa chữ được ước lượng bằng phép lọc làm mờ hộp (Box Blur) với kích thước kernel cực lớn ($ks = 51$):
-$$I_{\text{bg}}(x,y) = \text{BoxBlur}(I(x,y), ks)$$
-Sau đó, ảnh gốc được chia trực tiếp cho ảnh nền ước lượng để triệt tiêu vùng bóng tối cục bộ:
-$$I_{\text{out}}(x,y) = \min \left( 255, \text{round}\left( \frac{I(x,y)}{I_{\text{bg}}(x,y)} \times 255 \right) \right)$$
+### 2.4.1. Nền tảng kiến trúc Transformer
+Kiến trúc Transformer, được giới thiệu bởi Vaswani và cộng sự (2017), là một bước ngoặt trong lĩnh vực Xử lý Ngôn ngữ Tự nhiên (NLP). Khác với RNN hay LSTM xử lý dữ liệu tuần tự, Transformer sử dụng cơ chế Self-Attention để đánh giá mức độ tương quan giữa tất cả các từ trong một câu cùng lúc. Kiến trúc Sequence-to-Sequence (Seq2Seq) của Transformer bao gồm hai phần: Encoder (mã hóa câu đầu vào) và Decoder (giải mã và sinh ra câu đầu ra).
 
-### 2.2.3. Cấu trúc ảnh tích lũy (Integral Image) và tối ưu hóa tính toán $O(1)$
-Phép lọc mờ Box Blur cục bộ với kernel lớn ($51 \times 51$) nếu thực hiện theo cách tích chập thông thường sẽ có độ phức tạp thuật toán cực lớn $O(W \times H \times ks^2)$, gây nghẽn CPU RPi4 hoặc Server. Hệ thống tối ưu hóa bằng cấu trúc **Integral Image (Summed-Area Table)**.
+### 2.4.2. Mô hình T5 và ViT5
+T5 (Text-to-Text Transfer Transformer) là một mô hình NLP biến mọi bài toán ngôn ngữ thành một định dạng "Text-to-Text". ViT5 là phiên bản được tiền huấn luyện chuyên biệt trên tập dữ liệu tiếng Việt khổng lồ.
 
-Bản đồ tích lũy $II(x,y)$ được xây dựng bằng cách tính tổng tất cả các pixel nằm phía trên và bên trái điểm tọa độ $(x,y)$:
-$$II(x,y) = I(x,y) + II(x-1, y) + II(x, y-1) - II(x-1, y-1)$$
-Với điều kiện biên $II(x, y) = 0$ khi $x < 0$ hoặc $y < 0$.
+Lý do lựa chọn ViT5 cho bài toán sửa lỗi văn bản (Spelling Correction):
+- **Phù hợp với đặc thù Seq2Seq:** Bài toán sửa câu sai thành câu đúng bản chất là một tác vụ dịch chuỗi. Khác với các mô hình chỉ có Encoder (như BERT) dùng để phân loại, ViT5 (Encoder-Decoder) có khả năng sinh ra một câu hoàn toàn mới, tự nhiên và mượt mà.
+- **Khả năng nắm bắt ngữ cảnh tiếng Việt:** ViT5 giải quyết triệt để các lỗi đồng âm hoặc phương ngữ nhờ việc hiểu ngữ cảnh của toàn bộ câu thay vì chỉ xét từng từ đơn lẻ.
 
-Khi đã có Integral Image, tổng giá trị pixel của một vùng hình chữ nhật bất kỳ giới hạn bởi góc trên bên trái $(x_1, y_1)$ và góc dưới bên phải $(x_2, y_2)$ được tính tức thời bằng công thức:
-$$\text{Sum} = II(x_2, y_2) - II(x_1-1, y_2) - II(x_2, y_1-1) + II(x_1-1, y_1-1)$$
-Độ phức tạp tính toán trung bình của phép lọc Box Blur và Adaptive Threshold lúc này giảm từ $O(W \times H \times ks^2)$ xuống còn **$O(W \times H)$**, hoàn toàn độc lập với kích thước kernel $ks$.
+## 2.5. Thuật toán đo khoảng cách chuỗi Levenshtein Distance
 
-### 2.2.4. Cân bằng Histogram thích nghi giới hạn tương phản (CLAHE)
-Ảnh viết tay bằng bút chì của học sinh thường có độ tương phản cực kỳ thấp. Phép cân bằng biểu đồ tần suất thông thường (Global Histogram Equalization) sẽ làm cháy sáng các vùng quá sáng và làm tối đen các vùng thiếu sáng. Hệ thống ứng dụng thuật toán **CLAHE** để tối ưu:
-1. Chia bức ảnh thành lưới $8 \times 8$ ô nhỏ (Tiles).
-2. Tính histogram cho riêng từng ô.
-3. Giới hạn độ khuếch đại tương phản bằng cách cắt đỉnh biểu đồ histogram tại mức `clipLimit = 2.0`. Phần diện tích histogram vượt ngưỡng được phân bổ đều cho tất cả các bin màu khác.
-4. Tính toán hàm phân phối tích lũy (CDF) cục bộ để ánh xạ giá trị pixel.
-5. Khi ánh xạ giá trị pixel của toàn ảnh, hệ thống áp dụng phép **nội suy song tuyến (bilinear interpolation)** giữa CDF của 4 ô lân cận gần nhất để đảm bảo quá trình chuyển đổi sắc độ diễn ra mượt mà, không xuất hiện hiệu ứng phân mảnh khối (blocking artifacts).
+### 2.5.1. Định nghĩa và nguyên lý
+Khoảng cách Levenshtein (Levenshtein Distance) là một độ đo đo lường sự khác biệt giữa hai chuỗi ký tự. Khoảng cách này được định nghĩa là số lượng tối thiểu các phép biến đổi đơn ký tự (hoặc đơn từ) cần thiết để biến đổi chuỗi này thành chuỗi kia. Ba phép biến đổi cơ bản bao gồm:
+1. Xóa một phần tử (Deletion)
+2. Chèn một phần tử (Insertion)
+3. Thay thế một phần tử (Substitution)
 
-### 2.2.5. Thuật toán làm nét (Unsharp Mask) và nhị phân hóa thích nghi (Adaptive Gaussian Thresholding)
-- **Làm nét (Unsharp Mask):** Tăng cường biên cạnh nét chữ bị nhòe bằng cách cộng thêm sai lệch biên độ tần số cao:
-$$I_{\text{sharp}}(x,y) = I(x,y) + \alpha \times [I(x,y) - \text{BoxBlur}(I(x,y), 3)]$$
-Trong đó $\alpha = 0.5$ điều tiết mức độ sắc bén của nét chữ viết tay.
-- **Nhị phân hóa thích nghi (Adaptive Gaussian Thresholding):** Để đưa ảnh về dạng trắng đen tuyệt đối nhằm triệt tiêu hoàn toàn nhiễu nền, ngưỡng nhị phân $T(x,y)$ được tính động cho từng pixel dựa trên trung bình cục bộ của cửa sổ kích thước $31 \times 31$:
-$$T(x,y) = \text{mean}_{local}(x,y) - C$$
-Với $C = 5$ được chọn làm hằng số tối ưu qua thực nghiệm, giúp giữ lại trọn vẹn nét bút chì mảnh nhất mà không gây đứt nét.
+### 2.5.2. Vai trò trong hệ thống ViHand Grade
+Trong khi ViT5 đảm nhiệm việc sửa câu sai thành câu đúng, hệ thống cần biết chính xác học sinh đã viết sai ở chữ nào để đánh dấu lỗi và trừ điểm. Thuật toán Levenshtein (được triển khai qua `difflib.SequenceMatcher`) được sử dụng để so khớp (align) văn bản gốc thu được từ OCR và văn bản đã sửa từ ViT5 ở cấp độ từ (word-level). Các thao tác chênh lệch (replace, insert, delete) được bóc tách và phân loại thành các lỗi chính tả cụ thể (sai vần, sai phụ âm, thiếu từ) để cung cấp phản hồi trực quan.
 
----
+## 2.6. Cơ sở lý thuyết xử lý ảnh số (Digital Image Processing)
 
-## 2.3. CÁC MÔ HÌNH TRÍ TUỆ NHÂN TẠO VÀ THUẬT TOÁN SO KHỚP CHUỖI
+Nhằm tối ưu hóa độ chính xác của quá trình nhận dạng hình ảnh, ảnh chụp từ camera cần được tiền xử lý để loại bỏ nhiễu và làm rõ nét chữ.
 
-### 2.3.1. Mô hình Google Gemini
-**Google Gemini** là họ mô hình đa phương thức thế hệ mới của Google DeepMind, được phát triển với kiến trúc gốc đa phương thức (Native Multimodal), cho phép xử lý đồng thời hình ảnh, văn bản, âm thanh và video trong một mô hình thống nhất. Khác với các mô hình kết hợp tầng ngoài truyền thống (vốn ghép riêng biệt một bộ mã hóa thị giác với một mô hình ngôn ngữ), Gemini được huấn luyện từ đầu với dữ liệu đa phương thức, tạo ra khả năng lý luận liên phương thức sâu hơn và nhất quán hơn.
-
-Nền tảng kỹ thuật của Gemini kế thừa kiến trúc **Transformer** (Vaswani et al., 2017) với cơ chế **Self-Attention (Tự chú ý)** — cho phép mô hình tính toán mối tương quan ngữ nghĩa giữa tất cả các token trong chuỗi đầu vào, bao gồm cả token hình ảnh và token văn bản, bất kể khoảng cách vị trí của chúng:
-$$\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q K^T}{\sqrt{d_k}} \right) V$$
-Trong đó $Q$ (Query), $K$ (Key), $V$ (Value) là các ma trận đặc trưng được chiếu tuyến tính từ vector nhúng (embedding) của dữ liệu đầu vào; $\sqrt{d_k}$ là nhân tố chuẩn hóa quy mô (scaling factor) giúp tránh hiện tượng gradient bị triệt tiêu khi tính toán softmax.
-
-Mô hình có khả năng nhúng đồng thời dữ liệu văn bản và điểm ảnh (pixels) vào chung một không gian ẩn (latent space), từ đó thực hiện lý luận kết hợp giữa thị giác và ngôn ngữ trong một bước duy nhất.
+- **Cân bằng trắng (Gray World Assumption):** Thuật toán giả định rằng giá trị trung bình của các kênh màu (R, G, B) trên toàn bộ bức ảnh là màu xám trung tính. Bằng cách điều chỉnh tỷ lệ các kênh, thuật toán loại bỏ hiện tượng ám màu do ánh sáng môi trường (ví dụ: ánh đèn vàng, bóng râm).
+- **Khử bóng (Shadow Removal):** Sử dụng phép làm mờ (Box Blur với Kernel lớn) để ước lượng hình ảnh nền (background). Chia hình ảnh gốc cho ảnh nền ước lượng này giúp triệt tiêu các vùng bóng đổ không đồng đều.
+- **CLAHE (Contrast Limited Adaptive Histogram Equalization):** Khác với cân bằng biểu đồ histogram toàn cục, CLAHE chia ảnh thành các lưới nhỏ và cân bằng tương phản trên từng ô. Điều này giúp tăng cường độ tương phản ở những vùng nét chữ bị nhạt mà không làm nhiễu vùng nền.
+- **Unsharp Masking (Làm nét chữ):** Tạo ra một phiên bản mờ của ảnh gốc, sau đó trừ phiên bản mờ này khỏi ảnh gốc để tạo ra các đường viền sắc nét hơn, giúp nét chữ rõ ràng.
+- **Ngưỡng hóa thích nghi (Adaptive/Otsu Threshold):** Thuật toán Otsu tự động tìm ngưỡng tối ưu để tách các điểm ảnh thành hai phần (chữ và nền). Ngưỡng hóa thích nghi sử dụng tích phân hình ảnh (Integral Image) để tính ngưỡng thay đổi linh hoạt theo từng khu vực, giải quyết hiệu quả vấn đề ánh sáng không đều.
+- **Hiệu chỉnh nghiêng (Deskew):** Sử dụng các kỹ thuật như phân tích biến thiên chiếu (Projection Variance) để tính toán góc nghiêng của văn bản trên giấy, từ đó tự động xoay ảnh về góc thẳng, giúp các mô hình nhận diện dễ dàng trích xuất các dòng văn bản.
 
-**Gemini Flash** là phiên bản tối ưu về tốc độ và chi phí trong họ Gemini, duy trì hiệu suất cao với thời gian phản hồi thấp, phù hợp với ứng dụng thực tế cần xử lý theo thời gian gần thực. Hệ thống ViHand Grade lựa chọn phiên bản **Gemini 3 Flash** vì các ưu điểm vượt trội:
-- **Tốc độ phản hồi cực nhanh:** Được tối ưu hóa sâu ở tầng phần cứng Tensor Processing Unit (TPU) của Google, cho thời gian chấm bài thực tế chỉ từ $2 - 4$ giây.
-- **Cửa sổ ngữ cảnh lớn:** Hỗ trợ chuỗi đầu vào dài, đủ chứa toàn bộ prompt hệ thống, các mẫu few-shot, hình ảnh bài làm và hướng dẫn chấm điểm trong một lần gọi.
-- **Khả năng hiểu thị giác cao độ:** Nhận diện chính xác hình thái chữ viết tay tiếng Việt có dấu từ ảnh chụp nhị phân đã lọc ô ly.
-- **Hỗ trợ Response Schema:** Bảo đảm cấu trúc đầu ra tuân thủ nghiêm ngặt định dạng JSON theo schema định trước, rất thuận tiện cho các tác vụ chấm điểm tự động cần lưu trữ vào cơ sở dữ liệu.
+## 2.7. Kiến trúc hệ thống Web hiện đại và mô hình Hybrid AI
 
-### 2.3.2. Google Gemini API
-**Google Gemini API** là giao diện lập trình ứng dụng thương mại do Google DeepMind cung cấp, cho phép tích hợp các mô hình Gemini vào ứng dụng bên thứ ba qua giao thức HTTPS RESTful. Đây là thành phần API cốt lõi nhất trong kiến trúc ViHand Grade.
+### 2.7.1. Kiến trúc Web Full-stack
+Hệ thống sử dụng các nền tảng công nghệ web hiện đại để đảm bảo hiệu năng và dễ bảo trì:
+- **Next.js App Router:** Một framework React mạnh mẽ cho phép kết hợp cả Server-Side Rendering (SSR) và Client-Side Rendering, cải thiện tốc độ tải trang và trải nghiệm người dùng (UX).
+- **RESTful API:** Các API nội bộ giúp giao tiếp chuẩn hóa giữa giao diện người dùng và các logic xử lý nghiệp vụ, xử lý ảnh.
+- **Prisma ORM:** Công cụ ánh xạ quan hệ đối tượng (Object-Relational Mapping) cung cấp giao diện an toàn kiểu dữ liệu (Type-safe) để thao tác với cơ sở dữ liệu SQLite, giúp việc quản lý dữ liệu người dùng, lớp học và lịch sử chấm bài trở nên trực quan, bảo mật.
 
-Gemini API được tích hợp với các tham số phù hợp nhằm **ưu tiên tính nhất quán và chính xác** thay vì tính sáng tạo, đồng thời đảm bảo đủ không gian ngữ cảnh cho nhận xét chi tiết và danh sách lỗi toàn diện:
-- **Temperature (= 0.1):** Thiết lập mức cực thấp để triệt tiêu hoàn toàn sự "sáng tạo" tự do của AI, ép mô hình chỉ đưa ra phản hồi chắc chắn nhất dựa trên bài viết thực tế, ngăn ngừa hiện tượng **ảo giác (Hallucination)** — bịa đặt thông tin không có trong ảnh chụp.
-- **Top-P (Nucleus Sampling = 0.95):** Hỗ trợ mô hình tập trung vào các token mang xác suất cao.
-- **Top-K (= 40):** Giới hạn số từ ứng viên tiềm năng tại mỗi bước giải mã là 40 từ.
+### 2.7.2. Kiến trúc Hybrid AI
+Kiến trúc "Lai" (Hybrid AI) là xu hướng phát triển ứng dụng thông minh hiện đại, kết hợp sức mạnh giữa dịch vụ đám mây (Cloud) và máy chủ cục bộ (Local/Edge). 
+Trong ViHand Grade:
+- **Cloud AI (Gemini API):** Đảm nhiệm quá trình nhận dạng hình ảnh (OCR) cực kỳ nặng nề, đòi hỏi khả năng của một hệ thống Multimodal khổng lồ mà không thể chạy cục bộ trên phần cứng phổ thông.
+- **Local/Edge AI (ViT5 Service):** Đảm nhiệm logic sửa lỗi chính tả và phân tích câu. Việc chạy cục bộ mô hình này mang lại tốc độ phản hồi nhanh, không phụ thuộc vào giới hạn truy vấn (Rate Limit) của bên thứ ba, đồng thời bảo đảm các tiêu chuẩn chấm điểm có thể tinh chỉnh độc lập. Khi dịch vụ cục bộ quá tải, hệ thống có cơ chế Fallback gọi trở lại API đám mây nhằm đảm bảo tính ổn định tối đa.
 
-Mô hình nhận **ảnh bài làm học sinh dưới dạng Base64 inline** (đính kèm trực tiếp trong payload JSON thay vì qua URL ngoài) và thực hiện tác vụ duy nhất là: **Nhận dạng chữ viết tay (OCR)** tiếng Việt có dấu từ ảnh chụp. Nó sẽ trả về chuỗi JSON chứa văn bản thô, bỏ qua các vùng nháp/luyện chữ ở phần đầu.
+## 2.8. Triển khai hệ thống trên thiết bị biên (Raspberry Pi 4)
 
-Phương thức tích hợp trong hệ thống:
-- **Xác thực:** Sử dụng **API Key** được cấp qua Google AI Studio, đính kèm vào request header `x-goog-api-key`. Toàn bộ lời gọi API chỉ diễn ra ở tầng server (Next.js Route Handler), đảm bảo API Key tuyệt đối không bị lộ ra phía client.
-- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent`
-- **SDK:** Thư viện `@google/genai` cung cấp wrapper TypeScript bao bọc các HTTP call phức tạp, hỗ trợ streaming và xử lý lỗi mạng.
+### 2.8.1. Vai trò của Raspberry Pi 4 trong hệ thống EdTech
+Trong các hệ thống công nghệ giáo dục (EdTech) hiện đại được triển khai tại trường học, máy tính bảng mạch đơn giữ vai trò quan trọng như một trung tâm xử lý cục bộ (Edge Computing). Raspberry Pi 4 Model B được sử dụng trong dự án với cấu hình tối ưu bao gồm: SoC Broadcom BCM2711, CPU ARM Cortex-A72 lõi tứ 64-bit xung nhịp 1.8 GHz, RAM 4GB LPDDR4, hỗ trợ kết nối Wi-Fi băng tần kép. 
 
-### 2.3.3. Mô hình cục bộ ViT5 (Edge AI)
-**ViT5** (Vietnamese Text-to-Text Transformer) là mô hình ngôn ngữ được thiết kế chuyên biệt cho tiếng Việt. Trong ViHand Grade, ViT5 được lượng tử hóa (Quantization) về INT8 để có thể chạy mượt mà trên CPU của Raspberry Pi 4. ViT5 nhận văn bản thô từ Gemini và dịch thành câu tiếng Việt chuẩn xác định dạng chính tả. Việc xử lý ngôn ngữ diễn ra hoàn toàn ở local, giải quyết giới hạn độ dài trả về của API đám mây.
+Với cấu hình này, Raspberry Pi 4 không chỉ đơn thuần đóng vai trò là một Web Server giao tiếp với Cloud, mà đảm nhiệm toàn bộ vai trò trung tâm trong kiến trúc Hybrid AI của ViHand Grade:
+1. **Hosting nền tảng Web:** Triển khai toàn bộ ứng dụng web full-stack Next.js và cơ sở dữ liệu nhúng SQLite (thông qua môi trường Node.js 20 LTS ARM64).
+2. **Tiền xử lý dữ liệu nặng:** Thực thi trực tiếp luồng tiền xử lý ảnh 9 bước (bằng thư viện Jimp/TypeScript) để khử bóng, tăng tương phản CLAHE, v.v., giảm tải dung lượng trước khi đẩy lên bộ nhận dạng OCR đám mây.
+3. **Triển khai Mô hình Trí tuệ Nhân tạo cục bộ (Edge AI):** Đây là điểm khác biệt cốt lõi. Thay vì chỉ gửi API và chờ đợi, Raspberry Pi 4 trực tiếp vận hành mô hình học sâu ViT5 (thông qua Python/FastAPI) để xử lý logic chấm điểm và sửa lỗi chính tả mà không phụ thuộc vào Internet. 
 
-### 2.3.4. Thuật toán đo khoảng cách Levenshtein
-Thuật toán đo khoảng cách Levenshtein (Levenshtein Distance) là một phép đo khoảng cách chuỗi (string metric) trong lý thuyết thông tin, được sử dụng để tính toán số lượng thao tác chỉnh sửa tối thiểu cần thiết để biến đổi một chuỗi ký tự này thành một chuỗi ký tự khác. Trong hệ thống ViHand Grade, thuật toán này đóng vai trò cốt lõi trong việc đếm và phân loại lỗi chính tả dựa trên việc so sánh văn bản thô (do Gemini trích xuất) với văn bản chuẩn (do ViT5 sửa lỗi).
+### 2.8.2. Lượng tử hóa mô hình (Model Quantization) trên CPU ARM
+Để một thiết bị nhỏ gọn với năng lực CPU ARM (không có GPU chuyên dụng) như Raspberry Pi 4 có thể gánh vác việc chạy mô hình Transformer (ViT5) mượt mà, kỹ thuật lượng tử hóa (Quantization) đã được áp dụng.
 
-Các thao tác chỉnh sửa cơ bản được phép trong thuật toán Levenshtein bao gồm:
-1. **Chèn (Insertion):** Thêm một ký tự/từ vào chuỗi (VD: "chữ" $\rightarrow$ "chữa").
-2. **Xóa (Deletion):** Loại bỏ một ký tự/từ khỏi chuỗi (VD: "trường" $\rightarrow$ "trườn").
-3. **Thay thế (Substitution):** Thay một ký tự/từ này bằng một ký tự/từ khác (VD: "sương" $\rightarrow$ "xương").
+Cụ thể, hệ thống tích hợp **Dynamic INT8 Quantization** để chuyển đổi động các ma trận trọng số của mô hình từ số thực dấu phẩy động 32-bit (FP32) sang số nguyên 8-bit (INT8) trong quá trình suy luận. Việc này giúp giảm lượng RAM chiếm dụng của mô hình xuống gần 4 lần (phù hợp với mức RAM 4GB của thiết bị) và tăng tốc độ tính toán trực tiếp trên CPU ARM, đảm bảo thời gian phản hồi ở mức chấp nhận được trong môi trường học đường.
 
-**Công thức toán học:**
-Độ dài khoảng cách Levenshtein giữa hai chuỗi $a$ (có độ dài $|a|$) và $b$ (có độ dài $|b|$) được tính toán thông qua quy hoạch động (Dynamic Programming) với hàm $lev_{a,b}(|a|, |b|)$:
-$$lev_{a,b}(i, j) = \begin{cases}
-  \max(i, j) & \text{nếu } \min(i, j) = 0, \\
-  \min \begin{cases}
-    lev_{a,b}(i-1, j) + 1 \\
-    lev_{a,b}(i, j-1) + 1 \\
-    lev_{a,b}(i-1, j-1) + 1_{(a_i \neq b_j)}
-  \end{cases} & \text{trái lại.}
-\end{cases}$$
+### 2.8.3. Mạng lưới kết nối an toàn với Cloudflare Tunnel
+Nhằm thiết lập một kênh liên lạc từ xa an toàn, không gián đoạn mà không cần can thiệp phức tạp vào hệ thống mạng của nhà trường (như mở port/NAT router), Raspberry Pi 4 được cấu hình tích hợp giải pháp **Cloudflare Tunnel**. Công nghệ này tạo ra một đường hầm mạng mã hóa bằng giao thức TLS trực tiếp từ thiết bị ra Internet, cấp phát một tên miền bảo mật. Nhờ đó, giáo viên có thể truy cập hệ thống ViHand Grade từ điện thoại cá nhân thông qua 4G/Wifi một cách dễ dàng và an toàn để chụp ảnh bài viết của học sinh, truyền dữ liệu thẳng về máy chủ Raspberry Pi đặt tại lớp học.
 
-Trong đó:
-- $i, j$ là vị trí của ký tự/từ đang xét trong chuỗi $a$ và $b$.
-- $1_{(a_i \neq b_j)}$ là hàm chỉ thị (Indicator function), nhận giá trị 0 nếu ký tự/từ ở vị trí tương ứng giống nhau và nhận giá trị 1 nếu khác nhau.
+## 2.9. Các kỹ thuật tiền xử lý văn bản và tối ưu luồng suy luận
 
-**Ứng dụng trong hệ thống:** Thay vì tính khoảng cách theo cấp độ ký tự (Character-level), ViHand Grade áp dụng Levenshtein ở cấp độ từ (Word-level). Nhờ tính chất toán học tất định (Deterministic), thuật toán Levenshtein giúp loại bỏ hoàn toàn "ảo giác" của LLM, đảm bảo hệ thống luôn trả về chính xác cùng một điểm số cho cùng một đầu vào văn bản ở mọi lần chấm điểm.
+### 2.9.1. Tiền xử lý bằng bộ lọc Heuristic (Teencode Filtering)
+Mặc dù ViT5 là một mô hình mạnh mẽ, nhưng dữ liệu đầu vào chứa quá nhiều từ lóng, viết tắt tự do (Teencode) đặc trưng của học sinh (ví dụ: "ko", "dc", "rấc") có thể làm giảm chất lượng đầu ra. Hệ thống sử dụng một bộ lọc dựa trên luật (Rule-based/Heuristic) bằng biểu thức chính quy (Regex) để chuẩn hóa nhanh các từ này thành tiếng Việt chuẩn trước khi đưa vào mạng nơ-ron, giúp mô hình tập trung tối đa tài nguyên vào việc xử lý các lỗi ngữ pháp và chính tả cấu trúc phức tạp hơn.
 
----
+### 2.9.2. Thuật toán phân tách khối văn bản (Chunking)
+Các mô hình Seq2Seq thường có một cửa sổ ngữ cảnh giới hạn (Max Input Tokens) và dễ sinh ra hiện tượng ảo giác (hallucination) hoặc vòng lặp từ (repetition loop) nếu câu đầu vào quá dài. Thuật toán Chunking được áp dụng để cắt các đoạn văn xuôi dài thành các khối nhỏ (chunks) dựa trên các dấu câu tự nhiên (dấu phẩy, dấu chấm) với một độ dài an toàn nhất định. Sau khi ViT5 hoàn tất xử lý từng khối rời rạc, hệ thống sẽ ghép nối chúng lại để bảo toàn trọn vẹn văn bản ban đầu.
 
-## 2.4. KỸ NGHỆ PROMPT (PROMPT ENGINEERING) TRONG ĐÁNH GIÁ SƯ PHẠM
-
-Prompt Engineering là kỹ thuật thiết kế và tối ưu hóa các chỉ dẫn đầu vào để định hướng hành vi của mô hình ngôn ngữ lớn nhằm thu được kết quả đầu ra chất lượng cao nhất.
-
-### 2.4.1. Vai trò của Prompt Engineering trong MLLMs
-Mô hình AI đa phương thức mặc dù rất thông minh nhưng nếu chỉ nhận được yêu cầu chấm điểm chung chung sẽ đưa ra nhận xét cảm tính, điểm số không đồng nhất và định dạng văn bản tự do không thể xử lý bằng máy tính. Prompt Engineering đóng vai trò thiết lập "luật chơi", ràng buộc tư duy lô-gích của AI theo đúng phương pháp sư phạm Việt Nam.
+## 2.10. Tự động hóa chấm điểm bài viết (Automated Essay Scoring - AES)
 
-### 2.4.2. Các kỹ thuật áp dụng trong ViHand Grade
-Hệ thống kết hợp đồng thời ba kỹ thuật Prompt Engineering nâng cao cho luồng OCR:
-1. **Task-Specific Prompting (Định hướng tác vụ chuyên biệt):** Thiết lập prompt yêu cầu AI tập trung duy nhất vào một nhiệm vụ: OCR. Lệnh gọi nêu rõ việc cần bỏ qua các dòng nháp, luyện viết đầu trang và tập trung trích xuất cấu trúc đoạn văn, tiêu đề của bài viết.
-2. **Few-Shot Prompting (Học qua mẫu):** Cung cấp trực tiếp các cặp mẫu ảnh chụp viết tay - kết quả OCR chuẩn trong Prompt hệ thống. Kỹ thuật này giúp AI nhận diện cách phân biệt tiêu đề và đoạn văn bản.
-3. **Structured JSON Output Constraint (Ràng buộc cấu trúc):** Hệ thống định nghĩa một lược đồ dữ liệu JSON chặt chẽ cho Gemini và yêu cầu mô hình phản hồi khớp hoàn toàn với cấu trúc này:
-```json
-{
-  "original_text": "Chuỗi văn bản thô do AI nhận dạng được, giữ nguyên các lỗi chính tả, ngắt dòng đúng chuẩn."
-}
-```
-Lược đồ này giúp giảm thiểu tối đa kích thước token trả về, tăng tốc độ phản hồi từ 10-15 giây xuống chỉ còn ~3-5 giây. Kết quả JSON này sau đó được chuyển cho hệ thống Python nội bộ để tiếp tục tính toán.
-
----
-
-## 2.5. NGÔN NGỮ TIẾNG VIỆT VÀ CHUẨN ĐÁNH GIÁ SƯ PHẠM TIỂU HỌC
-
-### 2.5.1. Đặc điểm ngữ âm tiếng Việt và các lỗi chính tả phổ biến
-Tiếng Việt là ngôn ngữ đơn lập, đơn âm tiết và có hệ thống thanh điệu phong phú. Cấu trúc một âm tiết tiếng Việt đầy đủ bao gồm:
-$$\text{Âm đầu} + \text{Âm đệm} + \text{Âm chính} + \text{Âm cuối} + \text{Thanh điệu}$$
-
-Do tính chất phức tạp của cấu trúc âm tiết kết hợp với phương ngữ vùng miền (Bắc, Trung, Nam), học sinh tiểu học thường phạm phải 5 nhóm lỗi chính tả phổ biến sau:
-1. **Lỗi phụ âm đầu (`phu_am_dau`):** Nhầm lẫn giữa các cặp phụ âm có cách phát âm tương đồng nhưng viết khác nhau như tr/ch, s/x, d/gi/r, l/n, c/k/q, g/gh, ng/ngh.
-2. **Lỗi vần (`van`):** Sai lệch các nguyên âm đôi, nguyên âm ba hoặc phụ âm cuối như nhầm lẫn giữa vần ươi/ơi, uynh/inh, uyu/iu, an/ang, at/ac.
-3. **Lỗi dấu thanh (`dau_thanh`):** Đặt sai vị trí dấu thanh hoặc không phân biệt được các dấu thanh (đặc biệt là thanh hỏi và thanh ngã ở phương ngữ miền Nam).
-4. **Lỗi viết hoa (`viet_hoa`):** Không viết hoa chữ cái đầu câu hoặc viết hoa tùy tiện danh từ riêng, tên địa danh.
-5. **Lỗi bỏ sót hoặc thêm từ (`bo_sot_them`):** Do tốc độ đọc - viết chưa đồng bộ dẫn đến việc viết thiếu từ hoặc lặp lại từ trong câu.
-
-### 2.5.2. Barem chấm điểm chính tả quy chuẩn của Bộ Giáo dục & Đào tạo Việt Nam
-Để đảm bảo tính nhất quán khoa học, hệ thống ViHand Grade số hóa quy trình chấm điểm chính tả dựa theo tinh thần **Thông tư 27/2020/TT-BGDĐT** của Bộ Giáo dục và Đào tạo Việt Nam. Thang điểm được cấu trúc chi tiết như sau:
-
-| Tiêu chí | Điểm tối đa | Phương pháp đánh giá |
-|---|---|---|
-| **Chính tả & Ngữ pháp** | **4.0 điểm** | Trừ điểm lũy tiến theo số lượng lỗi chính tả phát hiện được. <br>- Đối với lớp 1-3: Trừ $0.5$ điểm cho mỗi lỗi chính tả khác nhau.<br>- Đối với lớp 4-5: Trừ $0.25$ điểm cho mỗi lỗi chính tả khác nhau.<br>- Lỗi lặp lại cùng một từ viết sai chỉ tính và trừ điểm một lần. |
-| **Hình thức trình bày** | **3.0 điểm** | Đánh giá tính thẩm mỹ tổng quan bài viết:<br>- Viết thẳng hàng, không bị lệch dòng, xiêu vẹo.<br>- Độ nghiêng chữ đồng đều, khoảng cách chữ hợp lý.<br>- Trình bày sạch sẽ, không tẩy xóa lem nhem. |
-| **Nội dung & Ý tưởng** | **2.0 điểm** | Đánh giá độ chính xác nội dung bài viết so với văn bản bài mẫu do giáo viên cung cấp, kiểm tra xem học sinh có viết sót câu hay bỏ lửng bài viết hay không. |
-| **Sáng tạo** | **1.0 điểm** | Điểm thưởng cộng thêm khi học sinh sở hữu chữ viết đẹp vượt trội (đạt chuẩn viết chữ đẹp cấp trường/quận) hoặc trình bày sáng tạo, khoa học. |
-
----
-
-## 2.6. CÔNG NGHỆ PHÁT TRIỂN ỨNG DỤNG WEB — LÝ THUYẾT NỀN TẢNG
-
-### 2.6.1. Kiến trúc Full-Stack và RESTful API
-**Next.js App Router** cho phép xây dựng cả giao diện (Frontend) và API xử lý logic (Backend) trong cùng một dự án thống nhất. Mô hình **React Server Components (RSC)** render HTML trực tiếp trên server để tối ưu tốc độ tải trang đầu tiên, trong khi **Client Components** đảm nhận tính tương tác động phía người dùng. **RESTful API** (Representational State Transfer) là tiêu chuẩn thiết kế giao diện lập trình ứng dụng web sử dụng các phương thức HTTP (`GET`, `POST`, `PUT`, `DELETE`) để thao tác trên các tài nguyên được định danh qua URI.
-
-### 2.6.2. ORM và cơ sở dữ liệu quan hệ nhẹ
-**Object-Relational Mapping (ORM)** là kỹ thuật trừu tượng hóa lớp truy cập cơ sở dữ liệu, cho phép lập trình viên tương tác với CSDL thông qua các đối tượng ngôn ngữ lập trình thay vì viết SQL thủ công. **SQLite** là hệ quản trị CSDL quan hệ nhúng (embedded), lưu toàn bộ cơ sở dữ liệu trong một tệp nhị phân duy nhất, đặc biệt phù hợp cho môi trường triển khai gọn nhẹ như phần cứng nhúng.
-
-### 2.6.3. Progressive Web App (PWA)
-**PWA** là tiêu chuẩn web cho phép ứng dụng website có thể cài đặt lên thiết bị di động như ứng dụng native thông qua **Web App Manifest** (khai báo metadata ứng dụng) và **Service Worker** (script chạy ngầm quản lý cache và network). Chi tiết hiện thực hóa PWA trong ViHand Grade được trình bày tại **Chương 4 — mục 4.6**.
-
-### 2.6.4. Kiểm soát truy cập dựa trên vai trò (RBAC)
-**Role-Based Access Control (RBAC)** là mô hình bảo mật phân quyền dựa trên tập hợp vai trò được định nghĩa sẵn. Mỗi người dùng được gán một vai trò; mỗi vai trò chứa tập hợp quyền truy cập cụ thể với các tài nguyên. Hệ thống ViHand Grade định nghĩa ba vai trò: **Admin** (quản trị toàn hệ thống), **Teacher** (chấm điểm và quản lý lớp) và **Student** (chỉ xem lịch sử cá nhân). Toàn bộ logic phân quyền và cách ly dữ liệu theo vai trò được mô tả chi tiết tại **Chương 3 — mục 3.4** và **Chương 4 — mục 4.3**.
-
----
-
-## 2.7. GIAO DIỆN LẬP TRÌNH ỨNG DỤNG (APPLICATION PROGRAMMING INTERFACE — API)
-
-### 2.7.1. Khái niệm và vai trò của API
-**API (Application Programming Interface — Giao diện lập trình ứng dụng)** là một tập hợp các quy tắc, giao thức và công cụ cho phép hai hệ thống phần mềm khác nhau giao tiếp và trao đổi dữ liệu với nhau theo một cách thức được định nghĩa trước, mà không cần bên gọi biết chi tiết về cách cài đặt nội tại của bên cung cấp.
-
-Có thể hình dung API như một **"nhân viên phục vụ"** trong nhà hàng: khách hàng (ứng dụng gọi API) không cần vào bếp (hệ thống cung cấp) để tự nấu ăn; thay vào đó, nhân viên phục vụ (API) nhận yêu cầu từ khách, chuyển đến bếp xử lý, và mang kết quả trả lại theo đúng hình thức quy định.
-
-Vai trò của API trong hệ sinh thái phần mềm hiện đại:
-- **Tích hợp hệ thống:** Kết nối các dịch vụ độc lập (thanh toán, bản đồ, AI, xác thực) vào một ứng dụng thống nhất mà không cần xây dựng lại từ đầu.
-- **Trừu tượng hóa độ phức tạp:** Che giấu chi tiết kỹ thuật phức tạp phía sau, chỉ để lộ giao diện tối giản và nhất quán.
-- **Tái sử dụng và mở rộng:** Một API được thiết kế tốt có thể phục vụ đồng thời nhiều loại client khác nhau (web, mobile, IoT) mà không thay đổi logic nghiệp vụ lõi.
-- **Bảo mật thông qua phân lớp:** Backend và cơ sở dữ liệu không bao giờ bị lộ trực tiếp ra ngoài; mọi truy cập đều phải đi qua lớp API kiểm soát xác thực và phân quyền.
-
-### 2.7.2. Kiến trúc RESTful API và giao thức HTTP
-**REST (Representational State Transfer)** là một phong cách kiến trúc API do Roy Fielding định nghĩa năm 2000 trong luận văn tiến sĩ tại UC Irvine. REST không phải là một giao thức hay tiêu chuẩn kỹ thuật cố định mà là tập hợp 6 ràng buộc kiến trúc:
-
-| Ràng buộc | Mô tả |
-|---|---|
-| **Client–Server** | Tách biệt hoàn toàn giao diện người dùng (client) khỏi logic lưu trữ dữ liệu (server), cho phép hai thành phần tiến hóa độc lập. |
-| **Stateless (Phi trạng thái)** | Mỗi yêu cầu HTTP từ client đến server phải chứa đủ mọi thông tin cần thiết để server xử lý (token xác thực, tham số). Server không lưu bất kỳ trạng thái phiên nào giữa các request. |
-| **Cacheable (Có thể lưu đệm)** | Phản hồi phải khai báo rõ có thể cache hay không, giúp client hoặc proxy lưu đệm và giảm tải server. |
-| **Uniform Interface** | Giao diện thống nhất thông qua: định danh tài nguyên bằng URI; thao tác tài nguyên qua biểu diễn (representation); thông điệp tự mô tả (self-descriptive messages). |
-| **Layered System** | Client không cần biết mình đang kết nối trực tiếp đến server gốc hay qua các tầng trung gian (load balancer, CDN, API Gateway). |
-| **Code on Demand** *(tùy chọn)* | Server có thể gửi mã thực thi (JavaScript) về phía client để mở rộng chức năng. |
-
-API tuân thủ đầy đủ các ràng buộc REST được gọi là **RESTful API**. Giao thức truyền tải nền tảng là **HTTP/HTTPS**, trong đó mỗi request bao gồm:
-- **Method (Phương thức HTTP):** Xác định loại thao tác.
-- **URI (Uniform Resource Identifier):** Định danh tài nguyên cần thao tác.
-- **Headers:** Siêu dữ liệu của request (kiểu nội dung, token xác thực...).
-- **Body:** Dữ liệu gửi kèm (thường dùng định dạng JSON hoặc multipart/form-data cho tệp ảnh).
-
-### 2.7.3. Các phương thức HTTP và mã trạng thái
-RESTful API ánh xạ các thao tác CRUD (Create, Read, Update, Delete) sang các phương thức HTTP chuẩn:
-
-| Phương thức HTTP | Thao tác CRUD | Mô tả | Ví dụ trong ViHand Grade |
-|---|---|---|---|
-| `GET` | Read | Truy vấn, lấy dữ liệu tài nguyên. Idempotent (gọi nhiều lần cùng kết quả). | `GET /api/submissions` — Lấy danh sách bài chấm |
-| `POST` | Create | Tạo tài nguyên mới hoặc kích hoạt một hành động không idempotent. | `POST /api/grade` — Nộp ảnh để chấm điểm |
-| `PUT` | Update (toàn bộ) | Thay thế toàn bộ biểu diễn của tài nguyên. Idempotent. | `PUT /api/students/:id` — Cập nhật thông tin học sinh |
-| `PATCH` | Update (một phần) | Cập nhật một phần tài nguyên. | `PATCH /api/submissions/:id` — Chỉnh sửa điểm thủ công |
-| `DELETE` | Delete | Xóa tài nguyên được chỉ định. | `DELETE /api/submissions/:id` — Xóa bài chấm |
-
-**Mã trạng thái HTTP (HTTP Status Codes)** là cơ chế tiêu chuẩn để API truyền đạt kết quả xử lý về phía client:
-
-| Nhóm | Phạm vi | Ý nghĩa | Ví dụ |
-|---|---|---|---|
-| **2xx** | 200–299 | Thành công | `200 OK`, `201 Created`, `204 No Content` |
-| **3xx** | 300–399 | Chuyển hướng | `301 Moved Permanently`, `304 Not Modified` |
-| **4xx** | 400–499 | Lỗi phía client | `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found` |
-| **5xx** | 500–599 | Lỗi phía server | `500 Internal Server Error`, `503 Service Unavailable` |
-
-### 2.7.4. Định dạng trao đổi dữ liệu JSON
-**JSON (JavaScript Object Notation)** là định dạng văn bản nhẹ, dễ đọc và phân tích cú pháp, trở thành tiêu chuẩn thực tế (de facto) cho trao đổi dữ liệu trong các RESTful API hiện đại. JSON hỗ trợ 6 kiểu dữ liệu nguyên thủy: chuỗi (string), số (number), boolean (`true`/`false`), null, mảng (array) và đối tượng (object).
-
-Một phản hồi JSON điển hình từ hệ thống backend (sau khi được tổng hợp từ Microservice Python và Gemini) có cấu trúc:
-```json
-{
-  "success": true,
-  "data": {
-    "original_text": "Con mèo leo cây",
-    "fixed_text": "Con mèo leo cây",
-    "score": "9.5/10",
-    "overall_rating": "Hoàn thành tốt",
-    "corrections": [
-      {
-        "error": "leo",
-        "suggestion": "leo",
-        "error_type": "phu_am_dau",
-        "is_dialect": false,
-        "reason": "Chính tả đúng"
-      }
-    ],
-    "feedback": "Nhận xét được tạo tự động..."
-  },
-  "processingTimeMs": 2341
-}
-```
-
-Ưu điểm vượt trội của JSON so với các định dạng thay thế (XML, YAML) trong bối cảnh ứng dụng web:
-- **Trọng lượng nhẹ:** Không có thẻ đóng/mở dư thừa như XML, giảm băng thông truyền tải.
-- **Tích hợp nguyên bản:** JavaScript `JSON.parse()` và Python `json.loads()` hỗ trợ tức thì.
-- **Giao tiếp liên dịch vụ (Inter-service Communication):** Cho phép truyền tải dữ liệu dễ dàng giữa Next.js Backend và Python FastAPI Microservice.
-
-### 2.7.5. Xác thực và bảo mật API — JSON Web Token (JWT)
-Mô hình bảo mật API phổ biến nhất trong ứng dụng web hiện đại là **JWT (JSON Web Token)** theo chuẩn RFC 7519. JWT là một chuỗi mã hóa Base64Url gồm ba phần ngăn cách bởi dấu chấm (`.`):
-$$\underbrace{\texttt{eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9}}_{\text{Header}} . \underbrace{\texttt{eyJ1c2VySWQiOiIxMjMiLCJyb2xlIjoiVGVhY2hlciJ9}}_{\text{Payload}} . \underbrace{\texttt{SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV\_adQssw5c}}_{\text{Signature}}$$
-
-- **Header:** Siêu dữ liệu khai báo loại token và thuật toán ký (thường là `HS256` — HMAC-SHA256 hoặc `RS256` — RSA-SHA256).
-- **Payload:** Chứa các **Claims** (khẳng định) như `userId`, `role`, `exp` (thời gian hết hạn). Dữ liệu này được mã hóa Base64Url nhưng không được mã hóa bí mật, nên không được chứa thông tin nhạy cảm.
-- **Signature (Chữ ký số):** Được tạo ra bằng cách ký Header + Payload với **Secret Key** bí mật chỉ server biết, đảm bảo token không thể bị giả mạo hay sửa đổi.
-
-Quy trình xác thực JWT trong ViHand Grade:
-1. Giáo viên/Admin đăng nhập → Server xác minh mật khẩu hash, ký một JWT mới với `role` và `exp` → Gửi JWT về client.
-2. Client lưu JWT vào `localStorage` hoặc cookie `HttpOnly`.
-3. Mỗi request API tiếp theo, client đính kèm JWT vào header `Authorization: Bearer <token>`.
-4. Server giải mã, xác minh chữ ký và kiểm tra `exp` → Trích xuất `role` để thực thi phân quyền RBAC.
-
-### 2.7.6. API bên thứ ba — Google Gemini API
-**Google Gemini API** là dịch vụ API thương mại của Google DeepMind cung cấp khả năng truy cập vào các mô hình ngôn ngữ lớn đa phương thức Gemini qua giao thức HTTPS RESTful. Đây là thành phần API cốt lõi nhất trong kiến trúc ViHand Grade.
-
-Phương thức tích hợp trong hệ thống:
-- **Xác thực:** Sử dụng **API Key** được cấp qua Google AI Studio, đính kèm vào request header `x-goog-api-key`.
-- **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent`
-- **Payload:** Gửi dữ liệu đa phương thức gồm phần `text` (OCR prompt) và phần `inlineData` chứa ảnh bài viết đã xử lý được mã hóa Base64.
-- **Response Schema:** Khai báo lược đồ JSON trong trường cấu hình để yêu cầu mô hình tuân thủ cấu trúc dữ liệu (`{ "original_text": "..." }`).
-- **SDK:** Thư viện `@google/genai` (npm) cung cấp wrapper.
-
-Sơ đồ luồng gọi API tổng quan trong kiến trúc Lai của ViHand Grade:
-$$\text{Client} \xrightarrow{\texttt{POST}} \text{Next.js} \xrightarrow{\text{OCR Request}} \text{Google Gemini API} \xrightarrow{\text{JSON Text}} \text{Next.js}$$
-$$\text{Next.js} \xrightarrow{\text{JSON Text}} \text{Python FastAPI (ViT5)} \xrightarrow{\text{JSON Grading Result}} \text{Next.js} \xrightarrow{\texttt{200 OK}} \text{Client}$$
-
-Thiết kế này đảm bảo **API Key tuyệt đối không bao giờ bị lộ ra phía client** vì toàn bộ lời gọi Gemini API chỉ diễn ra ở tầng server (Next.js Route Handler chạy trên Node.js), không có bất kỳ đoạn mã nào gọi Gemini trực tiếp từ trình duyệt.
-
----
-
-## 2.8. KẾT LUẬN CHƯƠNG
-Chương này đã hệ thống hóa toàn bộ cơ sở lý thuyết và nguyên lý khoa học làm nền tảng cho hệ thống **ViHand Grade**, bao gồm: (1) lý thuyết OCR và xu hướng chuyển dịch sang kiến trúc AI Lai (Hybrid AI) kết hợp Cloud và Edge; (2) các thuật toán xử lý ảnh số chuyên biệt cho giấy ô ly (Gray World, Shadow Removal, Integral Image, CLAHE, Adaptive Thresholding) với đầy đủ nền tảng toán học; (3) đặc điểm của mô hình Google Gemini 3.1 Flash Lite cho nhận diện quang học và mô hình ViT5 cục bộ cho xử lý NLP; (4) các kỹ thuật Prompt Engineering; (5) thuật toán khoảng cách Levenshtein và barem chấm điểm theo Thông tư 27/2020/TT-BGDĐT; (6) các khái niệm công nghệ web nền tảng (Next.js, ORM, PWA, RBAC); và (7) lý thuyết nền tảng về API kiến trúc giao tiếp liên dịch vụ (Inter-service Communication). Những lý thuyết này được hiện thực hóa cụ thể trong **Chương 3** (thiết kế hệ thống) và **Chương 4** (xây dựng ứng dụng).
+### 2.10.1. Tổng quan Automated Essay Scoring
+Chấm điểm bài viết tự động (AES) là lĩnh vực ứng dụng AI trong giáo dục với lịch sử hơn 50 năm. Hệ thống AES sử dụng các đặc trưng ngôn ngữ và mô hình học máy để đánh giá chất lượng bài viết theo nhiều tiêu chí như ngữ pháp, từ vựng, cấu trúc câu và nội dung ý tưởng. Các hệ thống AES thương mại như e-rater, Turnitin và PEG đã được triển khai rộng rãi tại các kỳ thi chuẩn hóa quốc tế, đạt mức tương quan với giáo viên con người ở mức 0.7–0.9 tùy theo loại bài.
+
+### 2.10.2. Hướng tiếp cận Hybrid AI trong AES
+Thế hệ AES hiện đại bắt đầu ứng dụng các Mô hình Ngôn ngữ Lớn (LLM) cho phép đánh giá toàn diện và linh hoạt hơn. LLM có khả năng hiểu ngữ nghĩa sâu và đưa ra nhận xét mang tính sư phạm ở phương thức zero-shot hoặc few-shot.
+
+Tuy nhiên, đối với đặc thù chữ viết tay học sinh tiểu học, nhóm nghiên cứu áp dụng **kiến trúc Hybrid AI** để đạt sự tối ưu về tốc độ, chi phí và tính nhất quán thay vì giao phó toàn bộ quá trình cho một Prompt LLM duy nhất:
+1. **Trích xuất văn bản (OCR):** Sử dụng LLM Đa phương thức (Gemini API) để đọc ảnh chữ viết tay, nhưng *chỉ giới hạn ở việc trích xuất nguyên bản*, nghiêm cấm AI tự ý sửa lỗi.
+2. **Hiệu chỉnh và Chấm điểm (AES):** Sử dụng mạng nơ-ron cục bộ (ViT5) để sửa lỗi và thuật toán Levenshtein để đối chiếu điểm sai. Barem điểm bị trừ được tính toán bằng các công thức toán học minh bạch dựa trên số lượng lỗi thực tế, đồng thời áp dụng thuật toán phân tích từ vựng (điệp ngữ, hình ảnh so sánh) để tự động đánh giá điểm Sáng tạo. Gemini chỉ đóng vai trò dự phòng (fallback) nếu ViT5 gặp sự cố.
+
+Cách tiếp cận chia để trị (Divide and Conquer) này giúp hệ thống tuân thủ nghiêm ngặt tiêu chuẩn sư phạm, đảm bảo tính nhất quán tuyệt đối giữa các lần chấm (tính deterministic) thay vì phụ thuộc vào tính ngẫu nhiên của LLM sinh tạo.
+
+### 2.10.3. Phản hồi mang tính xây dựng và vai trò con người
+Nghiên cứu về tâm lý học đường cho thấy phản hồi tức thì, cụ thể và mang tính khuyến khích có tác động tích cực đến động lực học tập của học sinh tiểu học. Trong hệ thống, luồng tạo nhận xét (Feedback) được xây dựng tự động dựa trên số lượng lỗi thực tế của học sinh thông qua các quy tắc lập trình (Rule-based): hệ thống sẽ chủ động khen ngợi nếu bài xuất sắc, động viên nếu mắc ít lỗi, và nhắc nhở sửa cụ thể nếu sai nhiều. Ngôn từ được tinh chỉnh để phù hợp với lứa tuổi tiểu học.
+
+Bên cạnh đó, mô hình **Human-in-the-Loop** (Con người trong vòng lặp) được áp dụng triệt để. AI chỉ đóng vai trò "trợ giảng", không thay thế hoàn toàn giáo viên. Luồng xử lý của hệ thống bắt buộc giáo viên phải là người xác nhận cuối cùng, cho phép họ chỉnh sửa điểm Hình thức, Nội dung hoặc bổ sung nhận xét thủ công trước khi lưu kết quả chính thức vào cơ sở dữ liệu. Điều này đảm bảo tính trách nhiệm và chính xác tuyệt đối về mặt sư phạm.

@@ -40,7 +40,7 @@ const CONFIG = {
   // Bước 5.5 — Hough Line Transform (MỚI)
   enableHoughRemoval: true,
   houghAngleRange: 5,       // Phạm vi góc quét ±degree từ nằm ngang (0-15).
-                             //   Nhỏ = chỉ xóa đường ngang thẳng. Lớn = xử lý được đường nghiêng.
+                            //   Nhỏ = chỉ xóa đường ngang thẳng. Lớn = xử lý được đường nghiêng.
   houghThetaStep: 0.5,      // Bước góc (degree). Nhỏ = chính xác hơn nhưng chậm hơn.
   houghEdgeThresh: 80,      // Ngưỡng Sobel để coi pixel là "cạnh" (0-255).
   houghMinVotes: 0,         // Votes tối thiểu để coi là đường kẻ (0 = tự tính w×0.25).

@@ -1,18 +1,20 @@
 {
   "fileName": "CamScanner 06-12-2025 10.00_50 (1)",
   "config": {
+    "enableDeskew": true,
+    "deskewMaxAngle": 15,
     "resizeMaxWidth": 1600,
     "enableWhiteBalance": true,
     "enableShadowRemoval": true,
-    "shadowKernelSize": 51,
+    "shadowKernelSize": 101,
     "enableClahe": true,
-    "claheClipLimit": 2,
+    "claheClipLimit": 4,
     "claheTileGridSize": 8,
     "enableSharpen": true,
     "sharpenAmount": 0.5,
     "thresholdMode": "adaptive_gaussian",
     "adaptiveBlockSize": 0,
-    "adaptiveC": 50,
+    "adaptiveC": 30,
     "blurThreshold": 80,
     "brightnessLow": 50,
     "brightnessHigh": 220,
@@ -30,5 +32,5 @@
     "dark_pixel_ratio": 0.0967,
     "text_area_ratio": 0.1144
   },
-  "elapsed_ms": 20644
+  "elapsed_ms": 18977
 }

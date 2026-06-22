@@ -49,7 +49,7 @@ const CONFIG = {
   adaptiveC: 20,
   // Bước 9 — Morphological Line Removal (MỚI)
   enableMorphoLineRemoval: true,
-  lineKernelLen: 0,     // 0 = tự tính (40% chiều rộng). Tăng → chỉ xóa đường dài hơn.
+  lineKernelLen: 10,     // 0 = tự tính (40% chiều rộng). Tăng → chỉ xóa đường dài hơn.
   removeHLines: true,   // Xóa đường kẻ ngang (ô ly ngang)
   removeVLines: false,  // Xóa đường kẻ dọc (thường không cần với giấy ô ly)
   vLineKernelLen: 0,    // 0 = tự tính (30% chiều cao)

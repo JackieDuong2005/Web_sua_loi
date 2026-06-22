@@ -1,0 +1,14 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.0.0
+
+# PHIÊN BẢN QUAN TRỌNG: transformers 4.44.x tương thích với model ViT5
+# transformers 5.x bị lỗi "vocab dict cannot be converted to Sequence"
+transformers==4.44.2
+tokenizers==0.19.1
+sentencepiece>=0.2.0
+safetensors>=0.4.3
+
+# PyTorch CPU (nhẹ hơn GPU build):
+# pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
