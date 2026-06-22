@@ -2,13 +2,13 @@ fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 pydantic>=2.0.0
 
-# PHIÊN BẢN QUAN TRỌNG: transformers 4.44.x tương thích với model ViT5
-# transformers 5.x bị lỗi "vocab dict cannot be converted to Sequence"
-transformers==4.44.2
-tokenizers==0.19.1
+# tokenizers>=0.21 hỗ trợ Python 3.13 (có pre-built wheel cho ARM)
+# transformers 4.47.x tương thích tokenizers 0.21 VÀ model ViT5
+tokenizers>=0.21.0
+transformers==4.47.1
 sentencepiece>=0.2.0
 safetensors>=0.4.3
 
-# PyTorch CPU (nhẹ hơn GPU build):
-# pip install torch --index-url https://download.pytorch.org/whl/cpu
+# PyTorch CPU — cài riêng TRƯỚC khi cài file này:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
 torch
