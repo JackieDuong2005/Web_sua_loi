@@ -194,7 +194,7 @@ def _remove_repetition(text: str, original: str) -> str:
     # Kiểm tra tỉ lệ output/input quá lớn
     if len(words) > len(original.split()) * 2.5:
         logger.warning(f"⚠️ ViT5 output quá dài ({len(words)} vs {len(original.split())} từ) — fallback")
-        return None  # None = FAILED
+        return None
 
     if text.strip() == original.strip():
         logger.info("⚡ ViT5 không sửa được gì (output = input)")
@@ -204,27 +204,23 @@ def _remove_repetition(text: str, original: str) -> str:
 
 def _dynamic_max_tokens(chunk: str) -> int:
     """Tính max_new_tokens tối thiểu cần thiết dựa trên độ dài chunk.
-    Tránh generate dư token → nhanh hơn đáng kể cho chunk ngắn.
+    Tiếng Việt ~1.5 token/ký tự (sentencepiece), buffer 1.3x.
     """
-    word_count = len(chunk.split())
-    # Tiếng Việt ~1.3 token/từ, buffer 1.4x để chắc chắn
-    estimated = int(word_count * 1.3 * 1.4)
-    return max(32, min(estimated, 120))
+    estimated = int(len(chunk) * 1.5 * 1.3)
+    return max(32, min(estimated, 110))
 
 
 def _vit5_correct_chunks(chunks: list[str], tokenizer, model) -> list[str]:
-    """Chạy ViT5 theo batch trên danh sách chunks, trả về danh sách đã sửa.
-    - BATCH=6: giảm overhead padding/decode so với BATCH=3
-    - max_new_tokens động: tiết kiệm ~30-40% thời gian cho chunk ngắn
+    """Chạy ViT5 theo batch trên danh sách chunks.
+    - BATCH=4: cân bằng giữa tốc độ (batch) và độ chính xác (padding ít hơn)
+    - max_new_tokens động theo độ dài thực tế của chunk
     """
     import torch
-    BATCH = 6  # Tăng từ 3→6: RPi4 RAM đủ, giảm số lần forward pass
+    BATCH = 4  # 3→4: vẫn nhanh hơn 3, padding ít hơn 6
     corrected: list[str] = []
 
     for i in range(0, len(chunks), BATCH):
         batch = chunks[i:i + BATCH]
-
-        # max_new_tokens = max của tất cả chunk trong batch (để batch hợp lệ)
         max_tok = max(_dynamic_max_tokens(c) for c in batch)
 
         inputs = tokenizer(
@@ -237,8 +233,8 @@ def _vit5_correct_chunks(chunks: list[str], tokenizer, model) -> list[str]:
         with torch.inference_mode():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=max_tok,   # Động thay vì cố định 100
-                num_beams=1,              # Greedy — nhanh nhất
+                max_new_tokens=max_tok,
+                num_beams=1,
                 do_sample=False,
                 repetition_penalty=1.5,
                 no_repeat_ngram_size=4,
@@ -250,17 +246,30 @@ def _vit5_correct_chunks(chunks: list[str], tokenizer, model) -> list[str]:
     return corrected
 
 
-def _split_prose_to_chunks(paragraph: str, max_chunk: int = 120) -> list[str]:
+def _split_prose_to_chunks(paragraph: str, max_chunk: int = 80) -> list[str]:
     """Tách đoạn văn xuôi thành các chunk ≤ max_chunk ký tự theo dấu câu.
-    Tăng max_chunk 100→120: giảm số chunk → ít forward pass hơn.
+
+    Tại sao max_chunk=80?
+    - ViT5 tokenizer tiếng Việt: ~1.5 token/ký tự (có dấu thanh)
+    - 80 ký tự x 1.5 = 120 token ≤ 128 (context window) → không bị truncate
+    - Việc truncate mất ngữ cảnh cuối câu là nguyên nhân chính gây sửa sai
     """
     sentences = re.split(r'(?<=[.!?])\s+', paragraph)
     sentences = [s.strip() for s in sentences if s.strip()]
     chunks: list[str] = []
+    prev_tail = ""  # Năm cuối chunk trước làm ngữ cảnh slide-in
+
     for sent in sentences:
         if len(sent) <= max_chunk:
-            chunks.append(sent)
+            # Câu vừa: thêm ngữ cảnh từ câu trước (tối đa 20 ký tự)
+            if prev_tail and len(prev_tail + " " + sent) <= max_chunk:
+                chunks.append(prev_tail + " " + sent)
+                prev_tail = sent
+            else:
+                chunks.append(sent)
+                prev_tail = sent
         else:
+            # Câu dài: tách theo dấu phẩy
             parts = re.split(r',\s+', sent)
             current = ""
             for part in parts:
@@ -270,9 +279,12 @@ def _split_prose_to_chunks(paragraph: str, max_chunk: int = 120) -> list[str]:
                 else:
                     if current:
                         chunks.append(current)
-                    current = part if len(part) <= max_chunk else part
+                        prev_tail = current
+                    # Nếu bản thân part vẫn dài, cắt cứng
+                    current = part[:max_chunk]
             if current:
                 chunks.append(current)
+                prev_tail = current
     return chunks
 
 
