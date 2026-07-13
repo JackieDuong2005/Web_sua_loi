@@ -11,20 +11,24 @@ echo [2/3] Dang khoi dong AI Service (ViT5 Python - Port 8000)...
 echo Dang ap dung Quantize INT8 de chay muot tren CPU...
 start "ViT5 AI Service" cmd /k "cd python_service && python main.py"
 
-echo [3/3] Dang khoi dong MCP Server cho Xiaozhi AI (Port 8200)...
-start "Xiaozhi MCP Server" cmd /k "cd mcp_service && pip install -r requirements.txt -q && python main.py"
+echo [3/3] Dang khoi dong MCP Service cho Xiaozhi Chatbot...
+echo Ket noi den xiaozhi.me qua WebSocket...
+start "Xiaozhi MCP Service" cmd /k "cd mcp_service && python main.py"
 
 echo.
 echo ========================================================
 echo TAT CA CAC DICH VU DANG DUOC KHOI DONG!
-echo - Web UI se chay tai: http://localhost:3000
-echo - AI Service chay tai: http://localhost:8000
-echo - Xiaozhi MCP Server:  http://localhost:8200/sse
 echo.
-echo Cau hinh tren xiaozhi.me:
-echo   MCP URL: http://<IP_may_ban>:8200/sse
+echo - Web UI:         http://localhost:3000
+echo - AI Service:     http://localhost:8000
+echo - MCP Service:    Ket noi den wss://api.xiaozhi.me/mcp/
 echo.
-echo Luu y: Vui long cho khoang 15-30 giay de mo hinh AI load len RAM.
-echo De tat he thong, hay dong cac cua so Terminal vua hien len.
+echo LUU Y QUAN TRONG:
+echo   MCP Service can file mcp_service/.env co chua:
+echo   XIAOZHI_WSS_URL=wss://api.xiaozhi.me/mcp/?token=...
+echo   (Copy URL nay tu: xiaozhi.me - Agent - MCP Endpoint)
+echo.
+echo Cho khoang 15-30 giay de mo hinh AI load len RAM.
+echo De tat he thong, hay dong cac cua so Terminal.
 echo ========================================================
 pause
