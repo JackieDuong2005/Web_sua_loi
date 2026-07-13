@@ -27,20 +27,48 @@ model Class {
 }
 
 model Grade {
-  id                String   @id @default(cuid())
-  studentName       String
-  assignmentTitle   String
-  className         String   @default("")
-  originalText      String
-  fixedText         String
-  corrections       String
-  score             String
-  scoreNum          Float
-  scoreBreakdown    String   @default("")
-  feedback          String
-  overallRating     String
-  processingTimeMs  Int      @default(0)
-  tokenCount        Int      @default(0)
-  imageBase64       String   @default("")
-  createdAt         DateTime @default(now())
+  id                   String   @id @default(cuid())
+  studentName          String
+  assignmentTitle      String
+  className            String   @default("")
+  originalText         String
+  fixedText            String
+  corrections          String
+  score                String
+  scoreNum             Float
+  scoreBreakdown       String   @default("")
+  feedback             String
+  overallRating        String
+  processingTimeMs     Int      @default(0)
+  tokenCount           Int      @default(0)
+  imageBase64          String   @default("")
+  dictationSessionId   String   @default("")  // Liên kết với phiên đọc chính tả Xiaozhi (tuỳ chọn)
+  createdAt            DateTime @default(now())
+}
+
+// ============================================================
+// Module Xiaozhi Dictation — Lưu phiên đọc chính tả AI Chatbot
+// ============================================================
+
+// Phiên đọc chính tả: mỗi lần giáo viên nhờ Xiaozhi đọc bài cho học sinh
+model DictationSession {
+  id            String   @id @default(cuid())
+  title         String                             // Tiêu đề bài đọc (VD: "Nghe viết: Ai có lỗi")
+  passage       String                             // Đoạn văn chính tả đầy đủ mà Xiaozhi đã đọc
+  className     String   @default("")              // Lớp học
+  teacherName   String   @default("")              // Tên giáo viên yêu cầu
+  status        String   @default("completed")     // "completed" | "in_progress"
+  summary       String   @default("")              // Tóm tắt phiên (Xiaozhi tự tạo)
+  createdAt     DateTime @default(now())
+  logs          DictationLog[]
+}
+
+// Nhật ký hội thoại chi tiết từng lượt trong phiên
+model DictationLog {
+  id           String   @id @default(cuid())
+  sessionId    String                              // Liên kết DictationSession
+  session      DictationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  speaker      String                              // "xiaozhi" | "teacher" | "student"
+  content      String                              // Nội dung chat (đã được Xiaozhi ghi lại)
+  createdAt    DateTime @default(now())
 }
