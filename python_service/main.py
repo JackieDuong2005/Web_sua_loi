@@ -123,6 +123,35 @@ def preprocess(text: str) -> str:
     return '\n'.join(cleaned_lines)
 
 
+def remove_adjacent_duplicates(text: str) -> str:
+    """Xóa từ lặp liền kề do học sinh viết nhầm: 'đồng đồng' → 'đồng', 'là là' → 'là'.
+    Chỉ áp dụng cho từ đơn (không phải cụm nghĩa).
+    Bảo toàn ngữ pháp: không xóa khi từ là danh từ rưới (cháu cháu, mãi mãi, xa xa...).
+    """
+    # Giữ nguyên các từ lặp có chủ ý (có nghĩa văn học)
+    INTENTIONAL_REPEATS = {
+        'xa xa', 'mãi mãi', 'chạy chạy', 'hót hót', 'vui vui',
+        'buồn buồn', 'chậm chậm', 'nhanh nhanh', 'lín lín', 'năm năm'
+    }
+    words = text.split()
+    result = []
+    i = 0
+    while i < len(words):
+        if (
+            i + 1 < len(words)
+            and words[i].lower() == words[i+1].lower()
+            and (words[i].lower() + ' ' + words[i+1].lower()) not in INTENTIONAL_REPEATS
+            and len(words[i]) > 1  # Giữ các từ 1 ký tự (a, b, c...)
+        ):
+            result.append(words[i])
+            logger.info(f"🔧 Bỏ từ lặp liền kề: '{words[i]} {words[i+1]}' → '{words[i]}'")
+            i += 2  # Bỏ qua từ thứ 2
+        else:
+            result.append(words[i])
+            i += 1
+    return ' '.join(result)
+
+
 def detect_text_type(text: str) -> str:
     """Nhận biết văn bản là THƠ CA hay VĂN XUÔI dựa trên cấu trúc dòng.
     Output: 'tho' hoặc 'van_xuoi'
@@ -170,16 +199,20 @@ def _is_header_line(line: str) -> bool:
 
 
 def _remove_repetition(text: str, original: str) -> str:
-    """Phát hiện và loại bỏ repetition loop trong output của ViT5.
-    Nếu phát hiện lặp, trả về original (OCR gốc) và đánh dấu là FAILED để không cache.
+    """Phát hiện và loại bỏ hallucination trong output của ViT5.
+    Fallback về original nếu:
+      - Output lặp cụm từ ≥ 3 lần liên tiếp (repetition loop)
+      - Output dài hơn input quá 1.5x (sinh thêm nội dung)
+      - Output ngắn hơn input quá 0.5x (mất nội dung / cắt sai)
     """
     words = text.split()
-    if len(words) < 6:
+    orig_words = original.split()
+    if len(words) < 4:
         return text
 
-    # Kiểm tra: nếu có cụm ≥ 3 từ lặp lại ≥ 3 lần liên tiếp → đang bị loop
+    # 1. Kiểm tra repetition loop: cụm ≥ 3 từ lặp ≥ 3 lần liên tiếp
     for window in range(3, 6):
-        for start in range(len(words) - window * 3):
+        for start in range(max(0, len(words) - window * 4)):
             phrase = tuple(words[start:start + window])
             count = 0
             for i in range(start, len(words) - window + 1, window):
@@ -189,11 +222,17 @@ def _remove_repetition(text: str, original: str) -> str:
                     break
             if count >= 3:
                 logger.warning(f"⚠️ ViT5 repetition loop: '{' '.join(phrase)}' x{count} — fallback")
-                return None  # None = đánh dấu FAILED, không cache
+                return None
 
-    # Kiểm tra tỉ lệ output/input quá lớn
-    if len(words) > len(original.split()) * 2.5:
-        logger.warning(f"⚠️ ViT5 output quá dài ({len(words)} vs {len(original.split())} từ) — fallback")
+    # 2. Kiểm tra hallucination: output dài hơn input 1.5x
+    #    (ngưỡng cũ 2.5x quá cao — lặp gần x2 vẫn không bị bắt)
+    if len(orig_words) >= 5 and len(words) > len(orig_words) * 1.5:
+        logger.warning(f"⚠️ ViT5 output quá dài ({len(words)} vs {len(orig_words)} từ, ×{len(words)/len(orig_words):.2f}) — fallback")
+        return None
+
+    # 3. Kiểm tra mất nội dung: output ngắn hơn input 0.5x (model bị cắt sai)
+    if len(orig_words) >= 8 and len(words) < len(orig_words) * 0.5:
+        logger.warning(f"⚠️ ViT5 output quá ngắn ({len(words)} vs {len(orig_words)} từ, ×{len(words)/len(orig_words):.2f}) — fallback")
         return None
 
     if text.strip() == original.strip():
@@ -204,10 +243,11 @@ def _remove_repetition(text: str, original: str) -> str:
 
 def _dynamic_max_tokens(chunk: str) -> int:
     """Tính max_new_tokens tối thiểu cần thiết dựa trên độ dài chunk.
-    Tiếng Việt ~1.5 token/ký tự (sentencepiece), buffer 1.3x.
+    Tiếng Việt ~1.5 token/ký tự (sentencepiece), buffer 1.5x để đủ cho output.
+    Giới hạn 256 để khớp với max_length=256 của tokenizer.
     """
-    estimated = int(len(chunk) * 1.5 * 1.3)
-    return max(32, min(estimated, 110))
+    estimated = int(len(chunk) * 1.5 * 1.5)
+    return max(32, min(estimated, 256))
 
 
 def _vit5_correct_chunks(chunks: list[str], tokenizer, model) -> list[str]:
@@ -228,7 +268,7 @@ def _vit5_correct_chunks(chunks: list[str], tokenizer, model) -> list[str]:
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=128,
+            max_length=256,  # Tăng lên 256 để không truncate input dài (128 quá nhỏ cho tiếng Việt có dấu)
         )
         with torch.inference_mode():
             outputs = model.generate(
@@ -246,28 +286,23 @@ def _vit5_correct_chunks(chunks: list[str], tokenizer, model) -> list[str]:
     return corrected
 
 
-def _split_prose_to_chunks(paragraph: str, max_chunk: int = 80) -> list[str]:
+def _split_prose_to_chunks(paragraph: str, max_chunk: int = 160) -> list[str]:
     """Tách đoạn văn xuôi thành các chunk ≤ max_chunk ký tự theo dấu câu.
 
-    Tại sao max_chunk=80?
+    Tại sao max_chunk=160?
     - ViT5 tokenizer tiếng Việt: ~1.5 token/ký tự (có dấu thanh)
-    - 80 ký tự x 1.5 = 120 token ≤ 128 (context window) → không bị truncate
-    - Việc truncate mất ngữ cảnh cuối câu là nguyên nhân chính gây sửa sai
+    - 160 ký tự x 1.5 ≈ 240 token ≤ 256 (context window mới) → không bị truncate
+    - QUAN TRỌNG: KHÔNG dùng sliding window (prev_tail) vì nó khiến model
+      "nhìn thấy" câu trước trong input và sinh lại câu đó trong output,
+      gây ra hiện tượng lặp/thêm câu không có trong bản gốc.
     """
     sentences = re.split(r'(?<=[.!?])\s+', paragraph)
     sentences = [s.strip() for s in sentences if s.strip()]
     chunks: list[str] = []
-    prev_tail = ""  # Năm cuối chunk trước làm ngữ cảnh slide-in
 
     for sent in sentences:
         if len(sent) <= max_chunk:
-            # Câu vừa: thêm ngữ cảnh từ câu trước (tối đa 20 ký tự)
-            if prev_tail and len(prev_tail + " " + sent) <= max_chunk:
-                chunks.append(prev_tail + " " + sent)
-                prev_tail = sent
-            else:
-                chunks.append(sent)
-                prev_tail = sent
+            chunks.append(sent)
         else:
             # Câu dài: tách theo dấu phẩy
             parts = re.split(r',\s+', sent)
@@ -279,12 +314,10 @@ def _split_prose_to_chunks(paragraph: str, max_chunk: int = 80) -> list[str]:
                 else:
                     if current:
                         chunks.append(current)
-                        prev_tail = current
-                    # Nếu bản thân part vẫn dài, cắt cứng
+                    # Nếu bản thân part vẫn dài, cắt cứng tại max_chunk
                     current = part[:max_chunk]
             if current:
                 chunks.append(current)
-                prev_tail = current
     return chunks
 
 
@@ -356,6 +389,17 @@ def correct_with_vit5(text: str) -> str:
         corrected_body = '\n'.join(corrected_paragraphs)
 
     result = (title_line + '\n' + corrected_body) if has_real_title else corrected_body
+
+    # === Post-processing: xóa từ lặp liền kề mà ViT5 không xử lý được ===
+    # (VD: "đồng đồng", "là là" do học sinh viết nhầm)
+    result_lines = result.split('\n')
+    result_lines_dedup = []
+    for line in result_lines:
+        if line.strip() and not _is_header_line(line):
+            result_lines_dedup.append(remove_adjacent_duplicates(line))
+        else:
+            result_lines_dedup.append(line)
+    result = '\n'.join(result_lines_dedup)
 
     # Lưu cache — chỉ cache khi kết quả không phải fallback hoàn toàn
     ck_result = _cache_key(result)

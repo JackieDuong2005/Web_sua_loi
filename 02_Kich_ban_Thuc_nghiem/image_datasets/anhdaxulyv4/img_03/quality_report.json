@@ -1,0 +1,41 @@
+{
+  "fileName": "img_03",
+  "config": {
+    "enableDeskew": true,
+    "deskewMaxAngle": 15,
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "enableShadowRemoval": true,
+    "shadowKernelSize": 51,
+    "enableFftNotch": true,
+    "minLineSpacing": 8,
+    "maxLineSpacing": 120,
+    "notchThreshold": 0.015,
+    "notchWidth": 3,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.5,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 0,
+    "adaptiveC": 20,
+    "blurThreshold": 80,
+    "brightnessLow": 50,
+    "brightnessHigh": 220,
+    "minResolution": 250,
+    "minTextAreaRatio": 0.005
+  },
+  "quality": {
+    "is_good": false,
+    "warnings": [
+      "Ảnh cháy sáng"
+    ],
+    "blur_score": 9395.03,
+    "brightness": 224.82,
+    "resolution": 558,
+    "dark_pixel_ratio": 0.0285,
+    "text_area_ratio": 0.1377
+  },
+  "elapsed_ms": 2422
+}

@@ -1,0 +1,6 @@
+ enableMorphoLineRemoval: true,
+  lineKernelLen: 0,     // 0 = tự tính (40% chiều rộng). Tăng → chỉ xóa đường dài hơn.
+  removeHLines: true,   // Xóa đường kẻ ngang (ô ly ngang)
+  removeVLines: false,  // Xóa đường kẻ dọc (thường không cần với giấy ô ly)
+  vLineKernelLen: 0,    // 0 = tự tính (30% chiều cao)
+  repairKernel: 1,      // Dilation nhỏ sau khi xóa để nối nét đứt (0 = tắt)

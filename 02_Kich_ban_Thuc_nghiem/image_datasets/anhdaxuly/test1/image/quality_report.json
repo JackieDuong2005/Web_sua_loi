@@ -1,0 +1,32 @@
+{
+  "fileName": "image",
+  "config": {
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "enableShadowRemoval": true,
+    "shadowKernelSize": 51,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.5,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 0,
+    "adaptiveC": 50,
+    "blurThreshold": 80,
+    "brightnessLow": 50,
+    "brightnessHigh": 220,
+    "minResolution": 250,
+    "minTextAreaRatio": 0.005
+  },
+  "quality": {
+    "is_good": true,
+    "warnings": [],
+    "blur_score": 527.34,
+    "brightness": 182.35,
+    "resolution": 900,
+    "dark_pixel_ratio": 0.1203,
+    "text_area_ratio": 0.1428
+  },
+  "elapsed_ms": 8860
+}

@@ -1,0 +1,345 @@
+﻿=== BAO CAO TOM TAT ===
+PH├üT TRIß╗éN THIß║╛T Bß╗è Sß╗¼A Lß╗ûI V├Ç CHß║ñM ─ÉIß╗éM CH├ìNH Tß║ó Tß╗░ ─Éß╗ÿNG CHO Hß╗îC SINH TIß╗éU Hß╗îC
+D╞░╞íng Th├ánh Long, Lß╗¢p 23040201, Khoa ─Éiß╗çn ΓÇô ─Éiß╗çn tß╗¡
+Phß║ím Ho├ái Quß╗æc Bß║úo, Lß╗¢p 23040302, Khoa ─Éiß╗çn ΓÇô ─Éiß╗çn tß╗¡
+Nguyß╗àn Thanh Ph├║c, Lß╗¢p 23040302, Khoa ─Éiß╗çn ΓÇô ─Éiß╗çn tß╗¡
+I. T├ôM Tß║«T C├öNG TR├îNH
+Viß╗çc chß║Ñm b├ái ch├¡nh tß║ú viß║┐t tay cß╗ºa hß╗ìc sinh tiß╗âu hß╗ìc lu├┤n l├á mß╗Öt th├ích thß╗⌐c ─æß╗æi vß╗¢i gi├ío vi├¬n, ti├¬u tß╗æn nhiß╗üu thß╗¥i gian v├á c├┤ng sß╗⌐c. Mß║╖c d├╣ c├┤ng nghß╗ç tr├¡ tuß╗ç nh├ón tß║ío (AI) ─æa ph╞░╞íng thß╗⌐c ─æ├ú ph├ít triß╗ân mß║ính mß║╜, viß╗çc xß╗¡ l├╜ h├¼nh ß║únh chß╗» viß║┐t tay chß║Ñt l╞░ß╗úng thß║Ñp, bß╗ï nhiß╗àu do d├▓ng kß║╗ ├┤ ly v├á nhß║¡n dß║íng c├íc lß╗ùi ph╞░╞íng ngß╗» ─æß║╖c th├╣ vß║½n l├á mß╗Öt b├ái to├ín kh├│.
+─Éß╗ü t├ái n├áy tß║¡p trung x├óy dß╗▒ng thiß║┐t bß╗ï mang hß╗ç thß╗æng chß║Ñm ─æiß╗âm ch├¡nh tß║ú tiß║┐ng Viß╗çt tß╗▒ ─æß╗Öng. Hß╗ç thß╗æng l├á sß╗▒ kß║┐t hß╗úp giß╗»a quy tr├¼nh tiß╗ün xß╗¡ l├╜ ß║únh 9 b╞░ß╗¢c ─æß╗â n├óng cao chß║Ñt l╞░ß╗úng h├¼nh ß║únh, loß║íi bß╗Å nhiß╗àu v├á d├▓ng kß║╗ ├┤ ly, c├╣ng vß╗¢i kiß║┐n tr├║c Hybrid AI kß║┐t hß╗úp m├┤ h├¼nh ng├┤n ngß╗» lß╗¢n ─æ├ím m├óy Google Gemini ─æß╗â tr├¡ch xuß║Ñt v─ân bß║ún th├┤ OCR v├á m├┤ h├¼nh ng├┤n ngß╗» cß╗Ñc bß╗Ö ViT5 kß║┐t hß╗úp thuß║¡t to├ín Levenshtein ─æß╗â sß╗¡a lß╗ùi v├á tß╗▒ ─æß╗Öng chß║Ñm ─æiß╗âm. Hß╗ç thß╗æng gi├║p giß║úi quyß║┐t triß╗çt ─æß╗â ß║úo gi├íc cß╗ºa AI, nhß║¡n diß╗çn lß╗ùi sai v├á ─æ╞░a ra nhß║¡n x├⌐t s╞░ phß║ím minh bß║ích, tß╗▒ ─æß╗Öng h├│a to├án diß╗çn quy tr├¼nh chß║Ñm ─æiß╗âm.
+II. QU├ü TR├îNH NGHI├èN Cß╗¿U V├Ç Kß║╛T QUß║ó
+2.1. Mß╗Ñc ti├¬u nghi├¬n cß╗⌐u
+Nghi├¬n cß╗⌐u v├á ph├ít triß╗ân mß╗Öt thiß║┐t bß╗ï mang hß╗ç thß╗æng cung cß║Ñp c├┤ng cß╗Ñ nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt, ─æß╗ông thß╗¥i tß╗▒ ─æß╗Öng chß║Ñm ─æiß╗âm v├á sß╗¡a lß╗ùi ch├¡nh tß║ú dß╗▒a tr├¬n c├┤ng nghß╗ç tr├¡ tuß╗ç nh├ón tß║ío. Hß╗ç thß╗æng ─æ╞░ß╗úc thiß║┐t kß║┐ ─æß╗â ph├ón t├¡ch trß╗▒c tiß║┐p tr├¬n c├íc bß╗⌐c ß║únh chß╗Ñp b├ái l├ám tr├¬n giß║Ñy ├┤ ly cß╗ºa hß╗ìc sinh tiß╗âu hß╗ìc.
+Thß╗▒c nghiß╗çm triß╗ân khai to├án bß╗Ö phß║ºn mß╗üm l├¬n thiß║┐t bß╗ï nh├║ng gi├í rß║╗ tß║ío th├ánh thiß║┐t bß╗ï mang hß╗ç thß╗æng ho├án chß╗ënh nhß║▒m chß╗⌐ng minh t├¡nh khß║ú thi vß╗ü mß║╖t kinh tß║┐, cho ph├⌐p ├íp dß╗Ñng rß╗Öng r├úi tß║íi c├íc c╞í sß╗ƒ gi├ío dß╗Ñc vß╗¢i chi ph├¡ cß╗▒c thß║Ñp
+X├óy dß╗▒ng hß╗ç thß╗æng Web PWA (Progressive Web App) chß║Ñm ─æiß╗âm b├ái thi d╞░ß╗¢i 30 gi├óy/b├ái.
+T├¡ch hß╗úp bß╗Ö tiß╗ün xß╗¡ l├╜ ß║únh 9 b╞░ß╗¢c ─æß╗â n├óng cao chß║Ñt l╞░ß╗úng ß║únh chß╗Ñp n├⌐t chß╗» ch├¼ mß╗¥ nhß║ít, ─æß║ít ─æß╗Ö ch├¡nh x├íc nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt.
+ß╗¿ng dß╗Ñng m├┤ h├¼nh Edge AI ViT5 v├á thuß║¡t to├ín khoß║úng c├ích Levenshtein ─æß╗â ph├ón t├¡ch lß╗ùi ch├¡nh tß║ú chi tiß║┐t, ph├ón loß║íi lß╗ùi v├á ─æß║┐m sß╗æ lß╗ùi ─æß╗â tß╗▒ ─æß╗Öng trß╗½ ─æiß╗âm theo ─æ├║ng barem cß╗ºa Bß╗Ö Gi├ío dß╗Ñc.
+Triß╗ân khai thß╗▒c nghiß╗çm th├ánh c├┤ng hß╗ç thß╗æng tr├¬n c├íc thiß║┐t bß╗ï nh├║ng gi├í rß║╗ nh╞░ Raspberry Pi 4 ─æß╗â chß╗⌐ng minh t├¡nh khß║ú thi kinh tß║┐.
+2.2. Qu├í tr├¼nh nghi├¬n cß╗⌐u
+H├¼nh 1 Pipeline nghi├¬n cß╗⌐u
+2.2.1. X├óy dß╗▒ng bß╗Ö tiß╗ün xß╗¡ l├╜ h├¼nh ß║únh (Image Pipeline)
+Nghi├¬n cß╗⌐u v├á thiß║┐t lß║¡p thuß║¡t to├ín 9 b╞░ß╗¢c viß║┐t bß║▒ng TypeScript/Jimp thß╗▒c thi tr├¬n server, bao gß╗ôm: Auto-rotate, Resize, White Balance, Grayscale, Shadow Removal, CLAHE ─æß╗â t─âng t╞░╞íng phß║ún n├⌐t b├║t ch├¼, Sharpen v├á Adaptive Thresholding. ─Éß║╖c biß╗çt, hß╗ç thß╗æng ─æ├ính gi├í chß║Ñt l╞░ß╗úng ─æ╞░ß╗úc ph├ít triß╗ân nhß║▒m cß║únh b├ío sß╗¢m vß╗ü ─æß╗Ö mß╗¥ hoß║╖c ─æß╗Ö s├íng tr╞░ß╗¢c khi gß╗¡i dß╗» liß╗çu cho AI.
+2.2.2. T├¡ch hß╗úp m├┤ h├¼nh AI
+ß║ónh gß╗æc ─æ╞░ß╗úc gß╗¡i qua Google Gemini vß╗¢i prompt kß╗╣ thuß║¡t ─æß╗â lß║Ñy kß║┐t quß║ú OCR th├┤ cß╗▒c kß╗│ chuß║⌐n x├íc. Sau ─æ├│, v─ân bß║ún th├┤ ─æ╞░ß╗úc chuyß╗ân vß╗ü m├┤ h├¼nh ViT5 tr├¬n dß╗ïch vß╗Ñ cß╗Ñc bß╗Ö ─æß╗â sß╗¡a lß╗ùi ngß╗» ph├íp. Thuß║¡t to├ín Levenshtein ─æ╞░ß╗úc lß║¡p tr├¼nh ─æß╗â so khß╗¢p tß╗▒ ─æß╗Öng, ─æß║┐m lß╗ùi sai v├á trß╗½ ─æiß╗âm theo ─æ├║ng quy chuß║⌐n barem ti├¬u ch├¡ cß╗ºa bß╗Ö gi├ío dß╗Ñc.
+2.2.3. X├óy dß╗▒ng ß╗⌐ng dß╗Ñng v├á quß║ún l├╜ C╞í sß╗ƒ dß╗» liß╗çu
+Ph├ít triß╗ân ß╗⌐ng dß╗Ñng Full-stack bß║▒ng Next.js App Router kß║┐t hß╗úp Prisma ORM v├á SQLite. C├íc ph├ón quyß╗ün ng╞░ß╗¥i d├╣ng (Gi├ío vi├¬n, Hß╗ìc sinh, Admin) ─æ╞░ß╗úc t├ích biß╗çt r├╡ r├áng, hß╗ù trß╗ú quß║ún l├╜ ─æiß╗âm sß╗æ, xem lß║íi ß║únh gß╗æc, lß╗ùi sai v├á theo d├╡i qu├í tr├¼nh hß╗ìc tß║¡p.
+H├¼nh 2 L╞░u ─æß╗ô ph├ón quyß╗ün v├á kiß╗âm so├ít truy cß║¡p hß╗ç thß╗æng
+2.3. Kß║┐t quß║ú nghi├¬n cß╗⌐u
+2.3.1. Hiß╗çu suß║Ñt hß╗ç thß╗æng v├á thuß║¡t to├ín
+Hß╗ç thß╗æng ─æ├ú chß║Ñm thß╗¡ nghiß╗çm tr├¬n 100 mß║½u ß║únh b├ái viß║┐t thß╗▒c tß║┐. Thß╗¥i gian chß║Ñm trung b├¼nh ─æß║ít 2.3 - 4.5 gi├óy/b├ái (v╞░ß╗út mß╗Ñc ti├¬u < 30 gi├óy). Bß╗Ö tiß╗ün xß╗¡ l├╜ loß║íi bß╗Å hiß╗çu quß║ú > 90% n├⌐t l╞░ß╗¢i ├┤ ly tß║¡p hß╗ìc sinh.
+H├¼nh 2: Biß╗üu ─æß╗ô ─æ├ính gi├í hiß╗çu n─âng thß╗¥i gian thß╗▒c phß║ún hß╗ôi dß╗▒a tr├¬n khß╗æi l╞░ß╗úng dß╗» liß╗çu ─æß║ºu v├áo cß╗ºa 50 mß║½u trong tß║¡p dß╗» liß╗çu 100 ß║únh
+2.3.2. Cß║úi thiß╗çn ─æß╗Ö ch├¡nh x├íc OCR
+Nhß╗¥ ß╗⌐ng dß╗Ñng quy tr├¼nh tiß╗ün xß╗¡ l├╜ ß║únh ─æß║╖c biß╗çt l├á b╞░ß╗¢c CLAHE v├á Shadow Removal, ─æß╗Ö ch├¡nh x├íc OCR cß╗ºa m├┤ h├¼nh Gemini ─æ├ú t─âng 73.3% trong c├íc ─æiß╗üu kiß╗çn ├ính s├íng.
+─Éß║╖c biß╗çt, nhß╗¥ kiß║┐n tr├║c Hybrid AI ├íp dß╗Ñng┬ám├┤ h├¼nh ViT5 v├á thuß║¡t to├ín Levenshtein┬áchß║íy cß╗Ñc bß╗Ö tr├¬n Raspberry Pi, hß╗ç thß╗æng triß╗çt ti├¬u ho├án to├án t├¡nh bß║Ñt ß╗òn ─æß╗ïnh cß╗ºa LLM, trß║ú vß╗ü ─æiß╗âm sß╗æ v├á lß╗ùi nhß║Ñt qu├ín 100% trong tß║Ñt cß║ú c├íc lß║ºn chß║íy, c├╣ng tß╗╖ lß╗ç phß║ún hß╗ôi kß║┐t quß║ú hß╗úp lß╗ç ─æß║ít┬á96.3%.
+2.3.3. Bß║úng ─æiß╗üu khiß╗ân quß║ún l├╜ ─æiß╗âm sß╗æ
+Giao diß╗çn trß╗▒c quan ─æ├ú "dß╗ïch" kß║┐t quß║ú trß║ú vß╗ü tß╗½ API AI th├ánh c├íc thß║╗ lß╗ùi r├╡ r├áng tr├¬n tr├¼nh duyß╗çt hiß╗ân thß╗ï "tß╗½ sai", "tß╗½ ─æß╗ü xuß║Ñt" v├á "nguy├¬n nh├ón". Gi├ío vi├¬n c├│ thß╗â duyß╗çt, t├╣y chß╗ënh ─æiß╗âm thß╗º c├┤ng tr╞░ß╗¢c khi chß╗æt, tß║ío ra mß╗Öt Hß╗ç thß╗æng hß╗ù trß╗ú quyß║┐t ─æß╗ïnh tin cß║¡y, kh├ích quan trong m├┤i tr╞░ß╗¥ng gi├ío dß╗Ñc.
+III. Kß║╛T LUß║¼N
+─Éß╗ü t├ái ─æ├ú ho├án th├ánh xuß║Ñt sß║»c viß╗çc x├óy dß╗▒ng┬áthiß║┐t bß╗ï sß╗ƒ hß╗»u hß╗ç thß╗æng giß║úi quyß║┐t triß╗çt ─æß╗â c├íc th├ích thß╗⌐c vß╗ü chß║Ñt l╞░ß╗úng ß║únh chß╗Ñp b├ái l├ám tiß╗âu hß╗ìc bß║▒ng bß╗Ö lß╗ìc 9 b╞░ß╗¢c chuy├¬n dß╗Ñng. Viß╗çc t├¡ch hß╗úp c├íc m├┤ h├¼nh AI kß║┐t hß╗úp kiß║┐n tr├║c Web gß╗ìn nhß║╣ ─æ├ú gi├║p tß║ío ra mß╗Öt hß╗ç thß╗æng tß╗▒ ─æß╗Öng h├│a ─æß║┐n 80% c├┤ng viß╗çc chß║Ñm b├ái, cung cß║Ñp dß╗» liß╗çu minh bß║ích, hß╗»u ├¡ch cho cß║ú gi├ío vi├¬n v├á hß╗ìc sinh. ─Éß╗ü t├ái c├│ t├¡nh ß╗⌐ng dß╗Ñng thß╗▒c tiß╗àn cao, sß║╡n s├áng triß╗ân khai diß╗çn rß╗Öng v├á c├│ tiß╗üm n─âng mß╗ƒ rß╗Öng sang ph├ón t├¡ch c├íc b├ái tß╗▒ luß║¡n phß╗⌐c tß║íp h╞ín trong t╞░╞íng lai.
+IV. T├ÇI LIß╗åU THAM KHß║óO
+Bijoy, M. H., Hossain, N., Islam, S., & Shatabda, S. (2022). A transformer-based spelling error correction framework for Bangla and resource scarce Indic languages. Computer Speech & Language.
+Cao, W., et al. (2023). Handwriting removal method based on CNN.
+Celik, I., et al. (2022). The promises and challenges of artificial intelligence for teachers: A systematic review of research. TechTrends, 66, 616ΓÇô630.
+Cheng, E. C. K., & Wang, T. (2023). Leading digital transformation and eliminating barriers for teachers to incorporate artificial intelligence in basic education in Hong Kong. Computers and Education: Artificial Intelligence, 5, 100171.
+Huynh, T.-B., et al. (2025). Adversarial robustness evaluation of a Vietnamese handwriting OCR system. Proceedings of the International Conference on Multimedia Analysis and Pattern Recognition (MAPR).
+
+
+=== BAO CAO TONG KET (first 300 lines) ===
+Tß╗öNG LI├èN ─ÉO├ÇN LAO ─Éß╗ÿNG VIß╗åT NAM
+TR╞»ß╗£NG ─Éß║áI Hß╗îC T├öN ─Éß╗¿C THß║«NG
+---------------------------------
+C├┤ng tr├¼nh Nghi├¬n cß╗⌐u khoa hß╗ìc sinh vi├¬n n─âm hß╗ìc 2025 - 2026
+PH├üT TRIß╗éN THIß║╛T Bß╗è Sß╗¼A Lß╗ûI V├Ç CHß║ñM ─ÉIß╗éM CH├ìNH Tß║ó Tß╗░ ─Éß╗ÿNG CHO Hß╗îC SINH TIß╗éU Hß╗îC
+─É╞áN Vß╗è: KHOA ─ÉIß╗åN ΓÇô ─ÉIß╗åN Tß╗¼
+GIß║óNG VI├èN H╞»ß╗ÜNG Dß║¬N: TS. L├è ANH V┼¿
+SINH VI├èN/NH├ôM SINH VI├èN THß╗░C HIß╗åN:
+1. D╞»╞áNG TH├ÇNH LONG - 42300176
+2. PHß║áM HO├ÇI QUß╗ÉC Bß║óO - 42300262
+3. NGUYß╗äN THANH PH├ÜC ΓÇô 42300350
+TP. Hß╗ô Ch├¡ Minh, th├íng 05 n─âm 2026
+Mß╗ñC Lß╗ñC
+Mß╗ñC Lß╗ñC1
+DANH S├üCH H├îNH Vß║╝5
+DANH S├üCH Bß║óNG BIß╗éU7
+DANH Mß╗ñC Tß╗¬ VIß║╛T Tß║«T8
+T├ôM Tß║«T9
+CH╞»╞áNG 1 ΓÇô Tß╗öNG QUAN Vß╗Ç ─Éß╗Ç T├ÇI10
+1.1 L├╜ do chß╗ìn ─æß╗ü t├ái10
+1.2 C├íc nghi├¬n cß╗⌐u tr├¬n to├án thß║┐ giß╗¢i11
+1.2.1 C├íc nghi├¬n cß╗⌐u trong n╞░ß╗¢c11
+1.2.2 C├íc nghi├¬n cß╗⌐u ngo├ái n╞░ß╗¢c12
+1.3 ├¥ ngh─⌐a thß╗▒c tiß╗àn v├á ─æß╗æi t╞░ß╗úng ─æß╗ü t├ái14
+1.4 ─Éiß╗âm nß╗òi bß║¡t cß╗ºa ─æß╗ü t├ái14
+CH╞»╞áNG 2. C╞á Sß╗₧ L├¥ THUYß║╛T16
+2.1 Nhß║¡n dß║íng chß╗» viß║┐t tay tß╗▒ ─æß╗Öng16
+2.1.1 Kh├íi niß╗çm v├á ph├ón loß║íi16
+2.1.2 Th├ích thß╗⌐c trong nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt16
+2.1.3 C├íc ph╞░╞íng ph├íp nhß║¡n dß║íng chß╗» viß║┐t tay17
+2.2 M├┤ h├¼nh ng├┤n ngß╗» lß╗¢n ─æa ph╞░╞íng thß╗⌐c18
+2.2.1 M├┤ h├¼nh ng├┤n ngß╗» lß╗¢n v├á kiß║┐n tr├║c Transformer18
+2.2.2 M├┤ h├¼nh ─æa ph╞░╞íng thß╗⌐c19
+2.2.3 Google Gemini19
+2.2.4 Kiß║┐n tr├║c google API20
+2.2.6 Prompt Engineering21
+2.3 B├ái to├ín hiß╗çu chß╗ënh lß╗ùi ch├¡nh tß║ú tiß║┐ng Viß╗çt21
+2.3.1 C├íc h╞░ß╗¢ng tiß║┐p cß║¡n trong sß╗¡a lß╗ùi ch├¡nh tß║ú21
+2.3.2 M├┤ h├¼nh cß╗Ñc bß╗Ö ViT522
+2.4 Thuß║¡t to├ín ─æo khoß║úng c├ích chuß╗ùi Levenshtein Distance22
+2.4.1 ─Éß╗ïnh ngh─⌐a v├á nguy├¬n l├╜22
+2.4.2 C├┤ng thß╗⌐c quy hoß║ích ─æß╗Öng trong hß╗ç thß╗æng22
+2.5 Xß╗¡ l├╜ ß║únh sß╗æ trong nhß║¡n dß║íng v─ân bß║ún24
+2.5.1 Tß╗òng quan v├á vai tr├▓ trong hß╗ç thß╗æng24
+2.5.2 C├ón bß║▒ng trß║»ng v├á Gray World Assumption24
+2.5.3 Khß╗¡ b├│ng ─æß╗ò25
+2.5.4 Integral Image25
+2.5.5 Ng╞░ß╗íng nhß╗ï ph├ón h├│a tß╗æi ╞░u Otsu26
+2.5.6 CLAHE26
+2.5.7 L├ám sß║»c n├⌐t27
+2.6 ─Éß║╖c ─æiß╗âm ch├¡nh tß║ú tiß║┐ng Viß╗çt v├á ph├ón loß║íi lß╗ùi27
+2.6.1 Hß╗ç thß╗æng chß╗» viß║┐t tiß║┐ng Viß╗çt27
+2.7 Tß╗▒ ─æß╗Öng h├│a chß║Ñm ─æiß╗âm b├ái viß║┐t28
+2.7.1 Tß╗òng quan Automated Essay Scoring28
+2.7.2 H╞░ß╗¢ng tiß║┐p cß║¡n dß╗▒a tr├¬n AI28
+2.7.3 Phß║ún hß╗ôi mang t├¡nh x├óy dß╗▒ng v├á vai tr├▓ con ng╞░ß╗¥i29
+2.8 Triß╗ân khai hß╗ç thß╗æng tr├¬n thiß║┐t bß╗ï Raspberry Pi 429
+2.8.1 Vai tr├▓ trong hß╗ç thß╗æng EdTech29
+2.8.2. L╞░ß╗úng tß╗¡ h├│a m├┤ h├¼nh tr├¬n Raspberry Pi 430
+2.8.3. Mß║íng l╞░ß╗¢i kß║┐t nß╗æi an to├án vß╗¢i Cloudflare Tunnel31
+CH╞»╞áNG 3: THIß║╛T Kß║╛ Hß╗å THß╗ÉNG V├Ç M├ö H├îNH33
+3.1 Kiß║┐n tr├║c tß╗òng thß╗â hß╗ç thß╗æng33
+3.2 Quy tr├¼nh tiß╗ün xß╗¡ l├╜ ß║únh sß╗æ33
+3.2.1 Chi tiß║┐t thuß║¡t to├ín tß╗½ng b╞░ß╗¢c trong pipeline34
+3.3 Quy tr├¼nh chß║Ñm ─æiß╗âm bß║▒ng AI ─æa ph╞░╞íng thß╗⌐c37
+3.3.1. C├íc th├ánh phß║ºn ch├¡nh cß╗ºa quy tr├¼nh chß║Ñm ─æiß╗âm37
+3.4 Ph├ón quyß╗ün v├á x├íc thß╗▒c ng╞░ß╗¥i d├╣ng39
+3.4.1 C╞í chß║┐ quß║ún l├╜ v├á ph├ón quyß╗ün dß╗» liß╗çu40
+CH╞»╞áNG 4: X├éY Dß╗░NG ß╗¿NG Dß╗ñNG41
+4.1 M├┤ tß║ú hß╗ç thß╗æng41
+4.1.1 Mß╗Ñc ti├¬u hß╗ç thß╗æng41
+4.1.2 Quy tr├¼nh ph├ít triß╗ân hß╗ç thß╗æng41
+4.1.3 C├ích hoß║ít ─æß╗Öng cß╗ºa hß╗ç thß╗æng44
+4.1.4 Nhß╗»ng lß╗úi ├¡ch cß╗ºa hß╗ç thß╗æng44
+4.1.5 Mß║╖t hß║ín chß║┐ cß╗ºa hß╗ç thß╗æng45
+4.2 C├┤ng nghß╗ç sß╗¡ dß╗Ñng45
+4.2.1 Database cß╗ºa hß╗ç thß╗æng45
+4.2.2 Front-end cß╗ºa hß╗ç thß╗æng46
+4.2.3 Back-end cß╗ºa hß╗ç thß╗æng47
+4.3 Triß╗ân khai hß╗ç thß╗æng49
+4.3.1 Cß║Ñu h├¼nh v├á c├ái ─æß║╖t tr├¬n thiß║┐t bß╗ï phß║ºn cß╗⌐ng49
+4.3.2 M├┤ h├¼nh kß║┐t nß╗æi v├á truy cß║¡p mß║íng51
+4.3.3 Quß║ún l├╜ l╞░u trß╗» dß╗» liß╗çu v├á li├¬n kß║┐t kh├│a tr├¡ tuß╗ç nh├ón tß║ío51
+CH╞»╞áNG 5: THß╗░C NGHIß╗åM V├Ç Kß║╛T QUß║ó53
+5.1 Mß╗Ñc ti├¬u thß╗▒c nghiß╗çm53
+5.2. Lß╗▒a chß╗ìn m├┤ h├¼nh AI53
+5.2.1 Tß╗òng quan c├íc m├┤ h├¼nh53
+5.2.2 ╞»u/nh╞░ß╗úc ─æiß╗âm v├á phß║ím vi ß╗⌐ng dß╗Ñng55
+5.2.3 Quyß║┐t ─æß╗ïnh lß╗▒a chß╗ìn m├┤ h├¼nh Gemini ph├╣ hß╗úp56
+5.3 Quy tr├¼nh tiß╗ün xß╗¡ l├╜ ß║únh59
+5.4 M├┤i tr╞░ß╗¥ng v├á ph╞░╞íng ph├íp thß╗▒c nghiß╗çm69
+5.4.1 Cß║Ñu h├¼nh kß╗╣ thuß║¡t69
+5.4.2 Thß╗¡ nghiß╗çm ß║únh chß╗» viß║┐t tay ├┤ ly tß╗▒ tß║ío┬á─æ├║ng sai tß║ú69
+5.4.3 Thß╗¡ nghiß╗çm ß║únh chß╗» viß║┐t tay ├┤ ly tß╗▒ tß║ío┬á─æ├║ng ch├¡nh tß║ú70
+5.4.4 Thß╗¡ nghiß╗çm ß║únh chß╗» viß║┐t tay hß╗ìc sinh72
+5.4.4.1 Thß╗¡ nghiß╗çm tß║¡p dß╗» liß╗çu tß╗½ Internet72
+5.4.4.2 Thß╗¡ nghiß╗çm tß║¡p dß╗» liß╗çu thß╗▒c tß║┐74
+5.5 Thß╗▒c nghiß╗çm m├┤ h├¼nh ViT5 sß╗¡a lß╗ùi ch├¡nh tß║ú75
+5.5.1. Huß║Ñn luyß╗çn m├┤ h├¼nh sß╗¡a lß╗ùi ch├¡nh tß║ú75
+5.5.2 C├íc m├┤ h├¼nh ─æ╞░ß╗úc ─æ├ính gi├í78
+5.5.3 Bß╗Ö dß╗» liß╗çu thß╗¡ nghiß╗çm v├á so s├ính78
+5.5.4 Kß║┐t quß║ú tß╗òng qu├ít thß╗¡ nghiß╗çm sß╗¡a lß╗ùi ch├¡nh tß║ú79
+5.6 Ph├ít triß╗ân thuß║¡t to├ín chß║Ñm ─æiß╗âm82
+5.6.1 Lß╗▒a chß╗ìn thuß║¡t to├ín82
+5.6.2. Tß╗æc ─æß╗Ö v├á T├¡nh nhß║Ñt qu├ín cß╗ºa83
+5.6 Thß╗▒c nghiß╗çm triß╗ân khai tr├¬n Raspberry Pi 484
+5.6.1 Mß╗Ñc ti├¬u v├á m├┤i tr╞░ß╗¥ng triß╗ân khai nh├║ng84
+5.6.2 Kß║┐t quß║ú thß╗▒c nghiß╗çm triß╗ân khai84
+CH╞»╞áNG 6. Kß║╛T LUß║¼N V├Ç H╞»ß╗ÜNG PH├üT TRIß╗éN86
+6.1 Kß║┐t luß║¡n86
+6.2 H╞░ß╗¢ng ph├ít triß╗ân87
+T├ÇI LIß╗åU THAM KHß║óO89
+DANH S├üCH H├îNH Vß║╝
+H├¼nh 2.1 C├íc mß║½u c├íc k├╜ tß╗▒ viß║┐t tay tiß║┐ng Viß╗çt18
+H├¼nh 2.2 Google Gemini20
+H├¼nh 2.3 Kiß║┐n tr├║c cß╗ºa google API21
+H├¼nh 2.4 Raspberry Pi 431
+H├¼nh 2.5 L╞░ß╗úng tß╗¡ h├│a tß╗½ FP32 sang INT832
+H├¼nh 2.6 M├┤ h├¼nh ─æß╗ïnh tuyß║┐n l╞░u l╞░ß╗úng qua Cloudflare.33
+H├¼nh 3.1 S╞í ─æß╗ô luß╗ông hoß║ít ─æß╗Öng tß╗òng thß╗â cß╗ºa hß╗ç thß╗æng34
+H├¼nh 3.2 L╞░u ─æß╗ô cß║Ñu tr├║c chi tiß║┐t cß╗ºa tiß╗ün xß╗¡ l├╜ ß║únh35
+H├¼nh 3.3 L╞░u ─æß╗ô quy tr├¼nh chß║Ñm ─æiß╗âm bß║▒ng c├íc m├┤ h├¼nh38
+H├¼nh 3.4 L╞░u ─æß╗ô ph├ón quyß╗ün v├á kiß╗âm so├ít truy cß║¡p hß╗ç thß╗æng40
+H├¼nh 4.1 S╞í ─æß╗ô quy tr├¼nh ph├ít triß╗ân hß╗ç thß╗æng42
+H├¼nh 4.2 SQLite47
+H├¼nh 4.3 Tailwind CSS48
+H├¼nh 4.4 Next.js49
+H├¼nh 4.5 Demo hß╗ç thß╗æng50
+H├¼nh 4.6 S╞í ─æß╗ô kiß║┐n tr├║c hß╗ç thß╗æng tr├¬n Raspberry Pi 4 kß║┐t hß╗úp Cloudflare Tunnel51
+H├¼nh 4.7 Bß║úo mß║¡t quß║ún l├╜ l╞░u trß╗» dß╗» liß╗çu v├á li├¬n kß║┐t kh├│a tr├¡ tuß╗ç nh├ón tß║ío52
+H├¼nh 5.1 Mß╗Öt mß║½u trong bß╗Ö dß╗» liß╗çu ─æ├ú ─æ╞░ß╗úc m├┤ h├¼nh ph├ít hiß╗çn55
+H├¼nh 5.2 C├íc chß╗» ─æ╞░ß╗úc cß║»t ra tß╗½ mß╗Öt mß║½u trong bß╗Ö dß╗» liß╗çu55
+H├¼nh 5.3 ─Éß╗Ö ch├¡nh x├íc cß╗ºa c├íc m├┤ h├¼nh OCR chß╗» viß║┐t tay tiß║┐ng Viß╗çt tr├¬n nß╗ün trß║»ng56
+H├¼nh 5.4┬áKß║┐t quß║ú benchmark OCR giß╗»a c├íc thß║┐ hß╗ç m├┤ h├¼nh Gemini58
+H├¼nh 5.5 Qu├í tr├¼nh xß╗¡ l├╜ ß║únh60
+H├¼nh 5.6 ß║ónh ─æ╞░ß╗úc xoay ─æ├║ng theo chiß╗üu61
+H├¼nh 5.7 ß║ónh ─æ╞░ß╗úc resize62
+H├¼nh 5.8 V├¡ dß╗Ñ c├ón bß║▒ng trß║»ng tr├¬n ß║únh viß║┐t tay63
+H├¼nh 5.9 V├¡ dß╗Ñ sang ß║únh x├ím63
+H├¼nh 5.10 Biß╗âu ─æß╗ô so s├ính ph├ón bß╗ò mß╗⌐c x├ím tr╞░ß╗¢c v├á sau65
+H├¼nh 5.11 ß║ónh chß╗» viß║┐t tay tr╞░ß╗¢c v├á sau qu├í tr├¼nh khß╗¡ b├│ng ─æß╗ò65
+H├¼nh 5.12 Kß║┐t quß║ú sau khi sß╗¡ dß╗Ñng CLAHE ─æß╗â t─âng c╞░╞íng t╞░╞íng phß║ún66
+H├¼nh 5.13 Kß║┐t quß║ú nhß╗ï ph├ón h├│a cß╗ºa c├╣ng mß╗Öt ─æoß║ín chß╗» tß║íi adaptiveC 60 v├á 8068
+H├¼nh 5.14 Kß║┐t quß║ú nhß╗ï ph├ón h├│a th├¡ch cß╗ºa nh├│m69
+H├¼nh 5.15 Biß╗âu ─æß╗ô so s├ính token v├á ─æß╗Ö trß╗à cß╗ºa mß║½u nhiß╗üu lß╗ùi nhß║Ñt71
+H├¼nh 5.16 Biß╗âu ─æß╗ô so s├ính giß╗»a sß╗æ l╞░ß╗úng Tokens v├á thß╗¥i gian phß║ún hß╗ôi cß╗ºa 9 mß║½u ß║únh73
+H├¼nh 5.17 Biß╗üu ─æß╗ô ─æ├ính gi├í hiß╗çu n─âng thß╗¥i gian thß╗▒c phß║ún hß╗ôi dß╗▒a tr├¬n khß╗æi l╞░ß╗úng dß╗» liß╗çu ─æß║ºu v├áo cß╗ºa 50 mß║½u trong tß║¡p dß╗» liß╗çu 100 ß║únh74
+H├¼nh 5.18 ─Éß╗ô thß╗ï h├ám Loss v├á chß╗ë sß╗æ SacreBLEU theo c├íc b╞░ß╗¢c huß║Ñn luyß╗çn78
+H├¼nh 5.19 Biß╗âu ─æß╗ô kß║┐t quß║ú tr├¬n 3 m├┤ h├¼nh sß╗¡a lß╗ùi ch├¡nh tß║ú81
+H├¼nh 5.20 V├¡ dß╗Ñ mß╗Öt mß║½u trong bß╗Ö thß╗¡ nghiß╗çm82
+H├¼nh 5.21 S╞í ─æß╗ô triß╗ân khai thuß║¡t to├ín chß║Ñm ─æiß╗âm83
+H├¼nh 5.22 Thß╗▒c nghiß╗çm Web tr├¬n Raspberry Pi 485
+DANH S├üCH Bß║óNG BIß╗éU
+Bß║úng 3.1 Th├┤ng sß╗æ kß╗╣ thuß║¡t thuß║¡t to├ín CLAHE38
+Bß║úng 3.2 Bß║úng ti├¬u ch├¡ ─æ├ính gi├í chß║Ñt l╞░ß╗úng ß║únh38
+Bß║úng 3.3 Barem chß║Ñm ─æiß╗âm t├¡ch hß╗úp trong hß╗ç thß╗æng40
+Bß║úng 4.1 Ph├ón loß║íi lß╗ùi ch├¡nh tß║ú tiß║┐ng Viß╗çt tiß╗âu hß╗ìc44
+Bß║úng 4.2 Barem chß║Ñm ─æiß╗âm 4 ti├¬u ch├¡ theo Th├┤ng t╞░ 27/2020/TT-BGD─ÉT45
+Bß║úng 5.1 Hiß╗çu suß║Ñt c├íc m├┤ h├¼nh OCR cho chß╗» viß║┐t tay tiß║┐ng Viß╗çt tr├¬n nß╗ün trß║»ng58
+Bß║úng 5.2┬áKß║┐t quß║ú benchmark OCR giß╗»a c├íc thß║┐ hß╗ç m├┤ h├¼nh Gemini60
+Bß║úng 5.3 Tß╗òng hß╗úp c├íc lß╗ùi kß╗╣ thuß║¡t tr├¬n ß║únh chß╗» viß║┐t tay62
+Bß║úng 5.4 Th├┤ng sß╗æ cß║Ñu h├¼nh kß╗╣ thuß║¡t hß╗ç thß╗æng thß╗▒c nghiß╗çm71
+Bß║úng 5.5 Th├ánh phß║ºn v├á ─æß║╖c ─æiß╗âm bß╗Ö dß╗» liß╗çu thß╗¡ nghiß╗çm71
+Bß║úng 5.6┬áKß║┐t quß║ú chß║Ñm ─æiß╗âm 10 mß║½u ß║únh viß║┐t tay ├┤ ly tß╗▒ tß║ío (c├│ lß╗ùi ch├¡nh tß║ú)72
+Bß║úng 5.7┬áKß║┐t quß║ú chß║Ñm ─æiß╗âm 10 mß║½u ß║únh ├┤ ly tß╗▒ tß║ío (─æ├║ng ch├¡nh tß║ú)73
+Bß║úng 5.8┬áThß╗æng k├¬ tß╗òng hß╗úp nh├│m ß║únh hß╗ìc sinh tiß╗âu hß╗ìc 100+75
+Bß║úng 5.9┬áThß╗æng k├¬ tß╗òng hß╗úp nh├│m ß║únh thß╗▒c tß║┐ tr╞░ß╗¥ng hß╗ìc76
+Bß║úng 5.10┬áChß╗ë sß╗æ tß╗òng thß╗â qua 3 lß║ºn xß╗¡ l├╜ c├╣ng mß╗Öt tß║¡p dß╗» liß╗çu77
+Bß║úng 5.11┬áMß╗⌐c ─æß╗Ö ─æß╗ông nhß║Ñt tuyß╗çt ─æß╗æi qua 3 lß║ºn chß║íy77
+Bß║úng 5.12┬áHiß╗çu n─âng kh├┤i phß╗Ñc c├óu cß╗ºa m├┤ h├¼nh ViT578
+Bß║úng 5.13┬áChi tiß║┐t ph├ón bß╗ò c├íc nh├│m lß╗ùi ch├¡nh tß║ú ─æß║╖c th├╣78
+Bß║úng 5.14 C├íc m├┤ h├¼nh thß╗¡ nghiß╗çm80
+Bß║úng 5.15 Thß╗æng k├¬ bß╗Ö dß╗» liß╗çu thß╗¡ nghiß╗çm81
+Bß║úng 5.16 Tß╗òng hß╗úp kß║┐t quß║ú tr├¬n to├án bß╗Ö 10000 mß║½u thß╗¡ nghiß╗çm82
+Bß║úng 5.17┬áHiß╗çu suß║Ñt cß╗ºa thuß║¡t to├ín so khß╗¢p Levenshtein85
+Bß║úng 5.18 Hiß╗çu n─âng vß║¡n h├ánh chß║Ñm ─æiß╗âm Raspberry Pi 487
+Bß║úng 5.19┬áSo s├ính hiß╗çu n─âng giß╗»a m├┤i tr╞░ß╗¥ng ph├ít triß╗ân v├á Raspberry Pi 487
+DANH Mß╗ñC Tß╗¬ VIß║╛T Tß║«T
+AI
+Artificial Intelligence
+API
+Application Programming Interface
+ARM
+Advanced RISC Machine
+CLAHE
+Contrast Limited Adaptive Histogram Equalization
+CSS
+Cascading Style Sheets
+DSS
+Decision Support System
+HTTP
+HyperText Transfer Protocol
+JSON
+JavaScript Object Notation
+JWT
+JSON Web Token
+LLM
+Large Language Model
+MLLM
+Multimodal Large Language Model
+LMS
+Learning Management System
+NLP
+Natural Language Processing
+OCR
+Optical Character Recognition
+OMR
+Optical Mark Recognition
+ORM
+Object-Relational Mapping
+OS
+Operating System
+SD
+Standard Deviation
+SLM
+Small Language Model
+SQL
+Structured Query Language
+SSR
+Server-Side Rendering
+UI
+User Interface
+URL
+Uniform Resource Locator
+UX
+User Experience
+Wasm
+WebAssembly
+T├ôM Tß║«T
+Mß║╖c d├╣ hiß╗çn nay c├┤ng nghß╗ç th├┤ng tin ─æ├ú c├│ nhß╗»ng b╞░ß╗¢c tiß║┐n v╞░ß╗út bß║¡c trong l─⌐nh vß╗▒c gi├ío dß╗Ñc vß╗¢i sß╗▒ ra ─æß╗¥i cß╗ºa nhiß╗üu hß╗ç thß╗æng hß╗ìc trß╗▒c tuyß║┐n v├á quß║ún l├╜ ─æ├áo tß║ío, nh╞░ng viß╗çc chß║Ñm b├ái kiß╗âm tra tß╗▒ luß║¡n, ─æß║╖c biß╗çt l├á v─ân bß║ún chß╗» viß║┐t tay cß╗ºa hß╗ìc sinh tiß╗âu hß╗ìc, vß║½n chß╗º yß║┐u ─æ╞░ß╗úc thß╗▒c hiß╗çn bß║▒ng ph╞░╞íng ph├íp thß╗º c├┤ng. C├┤ng viß╗çc n├áy chiß║┐m phß║ºn lß╗¢n thß╗¥i gian v├á c├┤ng sß╗⌐c cß╗ºa gi├ío vi├¬n, ─æß╗ông thß╗¥i dß╗à gß║╖p phß║úi sai s├│t hoß║╖c thiß║┐u t├¡nh nhß║Ñt qu├ín do ├íp lß╗▒c khß╗æi l╞░ß╗úng c├┤ng viß╗çc lß╗¢n. Tuy nhi├¬n, hiß╗çn tß║íi vß║½n ch╞░a c├│ nhiß╗üu c├┤ng cß╗Ñ hß╗ù trß╗ú tß╗▒ ─æß╗Öng h├│a mß╗Öt c├ích to├án diß╗çn trong viß╗çc nhß║¡n dß║íng n├⌐t chß╗» trß║╗ em, ─æß╗æi chiß║┐u lß╗ùi ch├¡nh tß║ú v├á ph├ón t├¡ch ngß╗» ph├íp tiß║┐ng Viß╗çt tß╗½ ß║únh chß╗Ñp thß╗▒c tß║┐, dß║½n ─æß║┐n viß╗çc thiß║┐u hß╗Ñt phß║ún hß╗ôi chi tiß║┐t v├á tß╗⌐c thß╗¥i cho hß╗ìc sinh.
+Gß║ºn ─æ├óy, sß╗▒ ph├ít triß╗ân ─æß╗Öt ph├í cß╗ºa tr├¡ tuß╗ç nh├ón tß║ío, ─æß║╖c biß╗çt l├á c├íc m├┤ h├¼nh ng├┤n ngß╗» lß╗¢n ─æa ph╞░╞íng thß╗⌐c nh╞░ Google Gemini, ─æ├ú mang lß║íi nhß╗»ng c├┤ng cß╗Ñ mß║ính mß║╜ trong viß╗çc ph├ón t├¡ch h├¼nh ß║únh v├á xß╗¡ l├╜ ng├┤n ngß╗» tß╗▒ nhi├¬n. Mß║╖c d├╣ ─æ├ú c├│ nhiß╗üu nghi├¬n cß╗⌐u v├á ß╗⌐ng dß╗Ñng sß╗¡ dß╗Ñng AI trong gi├ío dß╗Ñc, nh╞░ng viß╗çc xß╗¡ l├╜ h├¼nh ß║únh chß╗» viß║┐t tay vß╗¢i chß║Ñt l╞░ß╗úng thß║Ñp nh╞░ chß╗Ñp thiß║┐u s├íng, bß╗ï nh├▓e, m├⌐o g├│c v├á nhß║¡n dß║íng c├íc lß╗ùi ph╞░╞íng ngß╗» ─æß║╖c th├╣ cß╗ºa tiß║┐ng Viß╗çt tiß╗âu hß╗ìc vß║½n l├á mß╗Öt b├ái to├ín ─æß║ºy th├ích thß╗⌐c v├á ch╞░a c├│ nhiß╗üu giß║úi ph├íp mang t├¡nh thß╗▒c tiß╗àn cao, dß╗à d├áng ├íp dß╗Ñng tß║íi c├íc tr╞░ß╗¥ng hß╗ìc.
+Do vß║¡y, b├ío c├ío n├áy nhß║▒m mß╗Ñc ─æ├¡ch tr├¼nh b├áy qu├í tr├¼nh nghi├¬n cß╗⌐u v├á ph├ít triß╗ân mß╗Öt hß╗ç thß╗æng chß║Ñm ─æiß╗âm v├á nhß║¡n diß╗çn lß╗ùi ch├¡nh tß║ú tß╗▒ ─æß╗Öng dß╗▒a tr├¬n c├┤ng nghß╗ç AI. B├¬n cß║ính ─æ├│, b├ío c├ío tr├¼nh b├áy chi tiß║┐t vß╗ü viß╗çc x├óy dß╗▒ng ß╗⌐ng dß╗Ñng Web ho├án chß╗ënh hß╗ù trß╗ú gi├ío vi├¬n quß║ún l├╜ ─æiß╗âm sß╗æ, v├á thß╗▒c nghiß╗çm triß╗ân khai to├án bß╗Ö hß╗ç thß╗æng l├¬n thiß║┐t bß╗ï nh├║ng gi├í rß║╗ ─æß╗â chß╗⌐ng minh t├¡nh khß║ú thi vß╗ü mß║╖t kinh tß║┐ khi ├íp dß╗Ñng tß║íi c├íc c╞í sß╗ƒ gi├ío dß╗Ñc. ─Éß╗ông thß╗¥i, b├ío c├ío c┼⌐ng ─æß╗ü cß║¡p ─æß║┐n c├íc h╞░ß╗¢ng ph├ít triß╗ân t╞░╞íng lai nhß║▒m n├óng cao ─æß╗Ö tin cß║¡y cß╗ºa AI v├á mß╗ƒ rß╗Öng t├¡nh n─âng hß╗ù trß╗ú to├án diß╗çn cho gi├ío vi├¬n v├á hß╗ìc sinh.
+CH╞»╞áNG 1 ΓÇô Tß╗öNG QUAN Vß╗Ç ─Éß╗Ç T├ÇI
+1.1 L├╜ do chß╗ìn ─æß╗ü t├ái
+Trong hß╗ç thß╗æng gi├ío dß╗Ñc phß╗ò th├┤ng n├│i chung v├á bß║¡c tiß╗âu hß╗ìc n├│i ri├¬ng, tiß║┐ng Viß╗çt l├á m├┤n hß╗ìc c├┤ng cß╗Ñ ─æ├│ng vai tr├▓ nß╗ün tß║úng gi├║p hß╗ìc sinh h├¼nh th├ánh, ph├ít triß╗ân n─âng lß╗▒c ng├┤n ngß╗», t╞░ duy logic v├á kß╗╣ n─âng giao tiß║┐p. Trong ─æ├│, ch├¡nh tß║ú l├á mß╗Öt ph├ón m├┤n thß╗▒c h├ánh c├│ ├╜ ngh─⌐a v├┤ c├╣ng quan trß╗ìng ß╗ƒ c├íc lß╗¢p ─æß║ºu cß║Ñp lß╗¢p 1 ─æß║┐n lß╗¢p 5. Viß╗çc viß║┐t ─æ├║ng ch├¡nh tß║ú kh├┤ng chß╗ë gi├║p hß╗ìc sinh tiß║┐p thu tß╗æt c├íc m├┤n hß╗ìc kh├íc m├á c├▓n r├¿n luyß╗çn cho c├íc em nhß╗»ng phß║⌐m chß║Ñt ─æß║ío ─æß╗⌐c tß╗æt ─æß║╣p nh╞░ t├¡nh cß║⌐n thß║¡n, t├¡nh kß╗╖ luß║¡t, ├│c thß║⌐m mß╗╣ v├á l├▓ng tß╗▒ t├┤n tiß║┐ng Viß╗çt. Ng╞░ß╗úc lß║íi, mß╗Öt hß╗ìc sinh viß║┐t sai ch├¡nh tß║ú nhiß╗üu sß║╜ gß║╖p r├áo cß║ún lß╗¢n trong viß╗çc diß╗àn ─æß║ít ├╜ t╞░ß╗ƒng, ─æß╗ìc hiß╗âu v─ân bß║ún v├á dß╗à dß║½n ─æß║┐n sß╗▒ thiß║┐u tß╗▒ tin trong hß╗ìc tß║¡p.
+Mß║╖c d├╣ c├│ vai tr├▓ cß╗æt l├╡i, quy tr├¼nh giß║úng dß║íy v├á ─æ├ính gi├í ph├ón m├┤n ch├¡nh tß║ú hiß╗çn nay vß║½n ─æang ─æ├¿ nß║╖ng ├íp lß╗▒c l├¬n vai c├íc gi├ío vi├¬n tiß╗âu hß╗ìc. Vß╗¢i s─⌐ sß╗æ lß╗¢p hß╗ìc ─æ├┤ng tß║íi Viß╗çt Nam th╞░ß╗¥ng dao ─æß╗Öng tß╗½ 35 ─æß║┐n 45 hß╗ìc sinh/lß╗¢p, mß╗ùi ng├áy gi├ío vi├¬n phß║úi thß╗▒c hiß╗çn chß║Ñm thß╗º c├┤ng h├áng chß╗Ñc quyß╗ân tß║¡p viß║┐t tay. Trung b├¼nh, ─æß╗â ─æß╗ìc kß╗╣, ph├ít hiß╗çn tß╗½ng lß╗ùi nhß╗Å, sß╗¡a b├ái bß║▒ng b├║t ─æß╗Å v├á viß║┐t lß╗¥i nhß║¡n x├⌐t cho mß╗Öt b├ái viß║┐t ngß║»n khoß║úng 80ΓÇô300 tß╗½, gi├ío vi├¬n phß║úi mß║Ñt tß╗½ 3 ─æß║┐n 5 ph├║t. Quy ─æß╗òi ra cß║ú lß╗¢p, c├┤ng viß╗çc n├áy ti├¬u tß╗æn tß╗½ 2 ─æß║┐n 3 tiß║┐ng ─æß╗ông hß╗ô mß╗ùi ng├áy ngo├ái giß╗¥ l├¬n lß╗¢p. Viß╗çc li├¬n tß╗Ñc ─æß╗ìc chß╗» viß║┐t tay ch╞░a ─æß╗ïnh h├¼nh, n├⌐t chß╗» nguß╗çch ngoß║íc cß╗ºa trß║╗ nhß╗Å trong ─æiß╗üu kiß╗çn thiß║┐u s├íng hoß║╖c mß╗Åi mß║»t k├⌐o d├ái dß╗à dß║½n ─æß║┐n viß╗çc bß╗Å s├│t lß╗ùi. ─Éß║╖c biß╗çt, theo quy ─æß╗ïnh mß╗¢i nhß║Ñt cß╗ºa Bß╗Ö Gi├ío dß╗Ñc v├á ─É├áo tß║ío vß╗ü ─æ├ính gi├í hß╗ìc sinh tiß╗âu hß╗ìc ban h├ánh k├¿m theo Th├┤ng t╞░ sß╗æ 27/2020/TT-BGD─ÉT, hoß║ít ─æß╗Öng ─æ├ính gi├í th╞░ß╗¥ng xuy├¬n phß║úi kß║┐t hß╗úp chß║╖t chß║╜ giß╗»a ─æiß╗âm sß╗æ v├á nhß║¡n x├⌐t. Lß╗¥i nhß║¡n x├⌐t y├¬u cß║ºu phß║úi cß╗Ñ thß╗â, kß╗ïp thß╗¥i, chß╗ë r├╡ tiß║┐n bß╗Ö v├á biß╗çn ph├íp khß║»c phß╗Ñc lß╗ùi cho tß╗½ng hß╗ìc sinh. Khß╗æi l╞░ß╗úng c├┤ng viß╗çc vß╗½a chß║Ñm ─æiß╗âm, vß╗½a viß║┐t lß╗¥i nhß║¡n x├⌐t c├í nh├ón h├│a n├áy sau nhiß╗üu giß╗¥ l├ám viß╗çc mß╗çt mß╗Åi rß║Ñt kh├│ giß╗» ─æ╞░ß╗úc t├¡nh ─æß╗ông ─æß╗üu v├á ch├¡nh x├íc, tß║ío ra mß╗Öt ├íp lß╗▒c khß╗òng lß╗ô ─æ├▓i hß╗Åi phß║úi c├│ sß╗▒ hß╗ù trß╗ú cß╗ºa c├íc giß║úi ph├íp tß╗▒ ─æß╗Öng h├│a.
+Sß╗▒ ph├ít triß╗ân cß╗ºa gi├ío dß╗Ñc sß╗æ ─æ├▓i hß╗Åi c├íc giß║úi ph├íp hiß╗çn ─æß║íi h├│a qu├í tr├¼nh ─æ├ính gi├í. Tuy nhi├¬n, viß╗çc nhß║¡n dß║íng chß╗» viß║┐t tay OCR cß╗ºa hß╗ìc sinh tiß╗âu hß╗ìc hiß╗çn l├á mß╗Öt th├ích thß╗⌐c kß╗╣ thuß║¡t rß║Ñt lß╗¢n ─æß╗æi vß╗¢i giß╗¢i nghi├¬n cß╗⌐u c├┤ng nghß╗ç. ─Éß║ºu ti├¬n, hß╗ìc sinh tiß╗âu hß╗ìc bß║»t buß╗Öc phß║úi viß║┐t tr├¬n tß║¡p tß║¡p c├│ l╞░ß╗¢i ├┤ ly 4 ├┤ ly hoß║╖c 5 ├┤ ly ─æß╗â c─ân chß╗ënh ─æß╗Ö cao chß╗», ─æ╞░ß╗¥ng kß║╗ ├┤ ly n├áy th╞░ß╗¥ng ─æ├¿ l├¬n c├íc dß║Ñu thanh tiß║┐ng Viß╗çt gß╗ôm sß║»c, huyß╗ün, hß╗Åi, ng├ú, nß║╖ng khiß║┐n c├íc hß╗ç thß╗æng OCR th├┤ng th╞░ß╗¥ng bß╗ï nhß║ºm lß║½n nghi├¬m trß╗ìng. Thß╗⌐ hai, ß║únh chß╗Ñp b├ái viß║┐t tß╗½ phß╗Ñ huynh tß╗▒ hß╗ìc ß╗ƒ nh├á hoß║╖c gi├ío vi├¬n chß╗Ñp nhanh qua ─æiß╗çn thoß║íi di ─æß╗Öng th╞░ß╗¥ng bß╗ï m├⌐o g├│c, rung tay, mß╗¥ n├⌐t v├á bß╗ï b├│ng che khuß║Ñt do thiß║┐t bß╗ï cß║ún ├ính s├íng.
+Xuß║Ñt ph├ít tß╗½ nhß╗»ng l├╜ do kh├ích quan vß╗ü mß║╖t gi├ío dß╗Ñc s╞░ phß║ím, y├¬u cß║ºu ph├íp l├╜ cß╗ºa Th├┤ng t╞░ 27/2020/TT-BGD─ÉT v├á nhß╗»ng tiß║┐n bß╗Ö c├┤ng nghß╗ç v╞░ß╗út bß║¡c cß╗ºa tr├¡ tuß╗ç nh├ón tß║ío ─æa ph╞░╞íng thß╗⌐c kß║┐t hß╗úp thß╗ï gi├íc m├íy t├¡nh, nh├│m quyß║┐t ─æß╗ïnh chß╗ìn ─æß╗ü t├ái "Ph├ít triß╗ân thiß║┐t bß╗ï sß╗¡a lß╗ùi v├á chß║Ñm ─æiß╗âm ch├¡nh tß║ú tß╗▒ ─æß╗Öng cho hß╗ìc sinh tiß╗âu hß╗ìc". Nghi├¬n cß╗⌐u n├áy kh├┤ng chß╗ë mang lß║íi gi├í trß╗ï khoa hß╗ìc trong viß╗çc giß║úi quyß║┐t b├ái to├ín nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt bß╗ï nhiß╗àu ├┤ ly, m├á c├▓n mang t├¡nh thß╗▒c tiß╗àn v├á nh├ón v─ân s├óu sß║»c, gi├║p giß║úi ph├│ng sß╗⌐c lao ─æß╗Öng cho ng╞░ß╗¥i gi├ío vi├¬n, ─æß╗ông thß╗¥i hiß╗çn thß╗▒c h├│a chß╗º tr╞░╞íng chuyß╗ân ─æß╗òi sß╗æ to├án diß╗çn cß╗ºa ng├ánh Gi├ío dß╗Ñc & ─É├áo tß║ío Viß╗çt Nam.
+1.2 C├íc nghi├¬n cß╗⌐u tr├¬n to├án thß║┐ giß╗¢i
+1.2.1 C├íc nghi├¬n cß╗⌐u trong n╞░ß╗¢c
+Tß║íi Viß╗çt Nam, c├íc nghi├¬n cß╗⌐u vß╗ü nhß║¡n dß║íng k├╜ tß╗▒ quang hß╗ìc (OCR) v├á nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt ─æ├ú ─æß║ít ─æ╞░ß╗úc nhiß╗üu b╞░ß╗¢c tiß║┐n quan trß╗ìng nhß╗¥ ß╗⌐ng dß╗Ñng c├íc kiß║┐n tr├║c mß║íng n╞í-ron hß╗ìc s├óu nh╞░ CNN, RNN/BiLSTM, CRNN, v├á biß║┐n thß╗â n├óng cao nh╞░ BiCRNN hay TransformerOCR. C├íc nghi├¬n cß╗⌐u n├áy tß║¡p trung giß║úi quyß║┐t nhß╗»ng th├ích thß╗⌐c ─æß║╖c th├╣ cß╗ºa chß╗» viß║┐t tiß║┐ng Viß╗çt, n╞íi m├á sß╗▒ phß╗⌐c tß║íp cß╗ºa c├íc dß║Ñu phß╗Ñ v├á dß║Ñu thanh ─æiß╗çu dß╗à g├óy nhß║ºm lß║½n cho c├íc hß╗ç thß╗æng thß╗ï gi├íc m├íy t├¡nh.
+Nhiß╗üu c├┤ng tr├¼nh ─æ├ú mß╗ƒ rß╗Öng b├ái to├ín sang nhß║¡n dß║íng chß╗» viß║┐t tay tß╗▒ do. ─Éiß╗ân h├¼nh, nh├│m t├íc giß║ú tß╗½ ─Éß║íi hß╗ìc C├┤ng nghß╗ç Th├┤ng tin (UIT) ─æ├ú x├óy dß╗▒ng bß╗Ö dß╗» liß╗çu UIT-HWDB nhß║▒m cung cß║Ñp mß╗Öt ti├¬u chuß║⌐n ─æ├ính gi├í mß╗¢i, s├ít vß╗¢i thß╗▒c tß║┐ h╞ín cho chß╗» viß║┐t tay tiß║┐ng Viß╗çt. Qua c├íc thß╗▒c nghiß╗çm tr├¬n bß╗Ö dß╗» liß╗çu n├áy, kß║┐t quß║ú cho thß║Ñy nhß╗»ng m├┤ h├¼nh c├│ cß║Ñu tr├║c tr├¡ch xuß║Ñt ─æß║╖c tr╞░ng CNN s├óu nh╞░ BiCRNN v├á TransformerOCR mang lß║íi hiß╗çu n─âng v╞░ß╗út trß╗Öi so vß╗¢i kiß║┐n tr├║c CRNN hay NRTR truyß╗ün thß╗æng khi xß╗¡ l├╜ h├¼nh ß║únh ß╗ƒ cß║ú cß║Ñp ─æß╗Ö d├▓ng v├á cß║Ñp ─æß╗Ö tß╗½. B├¬n cß║ính ─æ├│, th├┤ng qua c├íc cuß╗Öc thi nhß║¡n dß║íng quß╗æc tß║┐ nh╞░ ICFHR 2018 tr├¬n bß╗Ö dß╗» liß╗çu VNOnDB, nhiß╗üu hß╗ç thß╗æng mß║ính mß║╜ kh├íc c┼⌐ng ─æ├ú ─æ╞░ß╗úc ph├ít triß╗ân, ti├¬u biß╗âu l├á m├┤ h├¼nh Bß╗Ö m├ú h├│a - giß║úi m├ú dß╗▒a tr├¬n sß╗▒ ch├║ ├╜ (AED) kß║┐t hß╗úp mß║íng DenseNet v├á BiLSTM.
+Mß║╖c d├╣ n─âng lß╗▒c nhß║¡n dß║íng ─æ├ú ─æ╞░ß╗úc cß║úi thiß╗çn, v─ân bß║ún ─æß║ºu ra vß║½n th╞░ß╗¥ng xuy├¬n gß║╖p c├íc lß╗ùi ch├¡nh tß║ú, lß╗ùi t├ích tß╗½ hoß║╖c sai dß║Ñu do hß║ín chß║┐ cß╗ºa phß║ºn mß╗üm hoß║╖c n├⌐t chß╗» ─æa dß║íng cß╗ºa ng╞░ß╗¥i viß║┐t. ─Éß╗â khß║»c phß╗Ñc triß╗çt ─æß╗â v├á n├óng cao ─æß╗Ö ch├¡nh x├íc, mß╗Öt sß╗æ nghi├¬n cß╗⌐u trong n╞░ß╗¢c ─æ├ú ph├ít triß╗ân c├íc ph╞░╞íng ph├íp hß║¡u xß╗¡ l├╜. C├íc m├┤ h├¼nh ß╗⌐ng dß╗Ñng dß╗ïch m├íy thß║ºn kinh dß╗▒a tr├¬n mß║íng BiLSTM, m├┤ h├¼nh ng├┤n ngß╗» n-gram, hoß║╖c h╞░ß╗¢ng tiß║┐p cß║¡n kh├┤ng gi├ím s├ít sß╗¡ dß╗Ñng thuß║¡t to├ín Hill Climbing ─æ├ú ─æ╞░ß╗úc thß╗¡ nghiß╗çm th├ánh c├┤ng. C├íc hß╗ç thß╗æng n├áy chß╗⌐ng minh ─æ╞░ß╗úc hiß╗çu quß║ú khß║ú quan khi l├ám giß║úm ─æ├íng kß╗â sai sß╗æ, ─æ╞░a tß╗╖ lß╗ç lß╗ùi k├╜ tß╗▒ (CER) tr├¬n bß╗Ö dß╗» liß╗çu chß╗» viß║┐t tay VNOnDB xuß╗æng mß╗⌐c rß║Ñt thß║Ñp, chß╗ë c├▓n khoß║úng 4.13%
+1.2.2 C├íc nghi├¬n cß╗⌐u ngo├ái n╞░ß╗¢c
+Tr├¬n thß║┐ giß╗¢i, viß╗çc xß╗¡ l├╜ v├á n├óng cao chß║Ñt l╞░ß╗úng ß║únh t├ái liß╗çu ─æ╞░ß╗úc xem l├á b╞░ß╗¢c tiß╗ün ─æß╗ü sß╗æng c├▓n ─æß╗â giß║úi quyß║┐t c├íc th├ích thß╗⌐c trong nhß║¡n dß║íng chß╗» viß║┐t tay tr╞░ß╗¢c khi ─æ╞░a v├áo c├íc m├┤ h├¼nh hß╗ìc m├íy. C├íc nghi├¬n cß╗⌐u ngo├ái n╞░ß╗¢c ─æ├ú ph├ón loß║íi chi tiß║┐t c├íc dß║íng suy tho├íi t├ái liß╗çu th╞░ß╗¥ng gß║╖p trong thß╗▒c tß║┐ nh╞░ nhiß╗àu hß╗ìa tiß║┐t nß╗ün, vß║┐t bß║⌐n, n├⌐t mß╗▒c mß╗¥ nhß║ít, ─æiß╗üu kiß╗çn thiß║┐u s├íng hay nh├▓e mß╗¥. ─Éß╗â khß║»c phß╗Ñc nhß╗»ng vß║Ñn ─æß╗ü n├áy, nhiß╗üu ph╞░╞íng ph├íp hß╗ìc m├íy v├á hß╗ìc s├óu ti├¬n tiß║┐n ─æ├ú ─æ╞░ß╗úc ─æß╗ü xuß║Ñt v├á ├íp dß╗Ñng. Chß║│ng hß║ín, c├íc m├┤ h├¼nh kh├┤i phß╗Ñc ß║únh t├ái liß╗çu dß╗▒a tr├¬n mß║íng n╞í-ron hay m├┤ h├¼nh khuß║┐ch t├ín nh╞░ DocDiff ─æ├ú chß╗⌐ng minh khß║ú n─âng triß╗çt ti├¬u nhiß╗àu, khß╗¡ b├│ng mß╗¥ v├á l├ám sß║»c n├⌐t v─ân bß║ún v╞░ß╗út trß╗Öi. Viß╗çc tß╗æi ╞░u h├│a c├íc thuß║¡t to├ín tiß╗ün xß╗¡ l├╜ kh├┤ng chß╗ë gi├║p b├│c t├ích chß╗» viß║┐t khß╗Åi nß╗ün giß║Ñy phß╗⌐c tß║íp m├á c├▓n tß║ío ra dß╗» liß╗çu ─æß║ºu v├áo ho├án hß║úo, l├ám nß╗ün tß║úng vß╗»ng chß║»c ─æß╗â giß║úm thiß╗âu sai sß╗æ cho c├íc hß╗ç thß╗æng nhß║¡n dß║íng ß╗ƒ c├íc b╞░ß╗¢c tiß║┐p theo.
+B├¬n cß║ính tiß╗ün xß╗¡ l├╜ ß║únh, b├ái to├ín ph├ít hiß╗çn lß╗ùi ch├¡nh tß║ú v├á chß║Ñm ─æiß╗âm tß╗▒ ─æß╗Öng c┼⌐ng ─æß║ít ─æ╞░ß╗úc nhß╗»ng b╞░ß╗¢c tiß║┐n d├ái nhß╗¥ sß╗▒ hß╗ù trß╗ú cß╗ºa c├íc thuß║¡t to├ín Tr├¡ tuß╗ç nh├ón tß║ío ─æa ng├┤n ngß╗». C├íc nghi├¬n cß╗⌐u quß╗æc tß║┐ ─æ├ú ß╗⌐ng dß╗Ñng th├ánh c├┤ng mß║íng n╞í-ron hß╗ìc s├óu nh╞░ Bi-LSTM v├á kiß║┐n tr├║c Transformer ─æß╗â x├óy dß╗▒ng hß╗ç thß╗æng ph├ít hiß╗çn, sß╗¡a lß╗ùi ch├¡nh tß║ú cho nhiß╗üu ng├┤n ngß╗» ─æa dß║íng nh╞░ tiß║┐ng Indonesia, tiß║┐ng Thß╗ò Nh─⌐ Kß╗│, hay c├íc ng├┤n ngß╗» c├│ nguß╗ôn t├ái nguy├¬n hß║ín chß║┐ nh╞░ tiß║┐ng Bangla. H╞ín thß║┐ nß╗»a, c├íc hß╗ç thß╗æng chß║Ñm ─æiß╗âm v├á cung cß║Ñp phß║ún hß╗ôi tß╗▒ ─æß╗Öng ─æß╗æi vß╗¢i c├íc c├óu trß║ú lß╗¥i ngß║»n hoß║╖c b├ái luß║¡n ─æ├ú ─æ╞░ß╗úc chß╗⌐ng minh mang lß║íi hiß╗çu quß║ú r├╡ rß╗çt trong viß╗çc gi├║p gi├ío vi├¬n giß║úm thiß╗âu h├áng chß╗Ñc giß╗¥ chß║Ñm b├ái mß╗ùi tuß║ºn, ─æß╗ông thß╗¥i t─âng c╞░ß╗¥ng sß╗▒ t╞░╞íng t├íc v├á cß║úi thiß╗çn hiß╗çu suß║Ñt hß╗ìc tß║¡p cß╗ºa hß╗ìc sinh.
+─Éß║╖c biß╗çt, sß╗▒ b├╣ng nß╗ò cß╗ºa c├íc m├┤ h├¼nh ng├┤n ngß╗» lß╗¢n ─æa ph╞░╞íng thß╗⌐c gß║ºn ─æ├óy ─æ├ú tß║ío ra mß╗Öt cuß╗Öc c├ích mß║íng thay ─æß╗òi ho├án to├án c├ích tiß║┐p cß║¡n trong l─⌐nh vß╗▒c gi├ío dß╗Ñc. C├íc m├┤ h├¼nh ti├¬n tiß║┐n nh╞░ GPT-4V, Gemini hay Qwen-VL sß╗ƒ hß╗»u khß║ú n─âng nh├¼n v├á trß╗▒c tiß║┐p hiß╗âu ngß╗» ngh─⌐a tß╗½ h├¼nh ß║únh, cho ph├⌐p thß╗▒c hiß╗çn song song viß╗çc ─æß╗ìc hiß╗âu v─ân bß║ún viß║┐t tay, suy luß║¡n logic v├á ─æ├ính gi├í b├ái l├ám m├á kh├┤ng bß╗ï phß╗Ñ thuß╗Öc v├áo c├íc ─æ╞░ß╗¥ng ß╗æng tr├¡ch xuß║Ñt v─ân bß║ún th├┤ truyß╗ün thß╗æng. Khi kß║┐t hß╗úp vß╗¢i c├íc kß╗╣ thuß║¡t Prompt Engineering tß╗æi ╞░u th├┤ng qua viß╗çc ─æß╗ïnh h├¼nh vai tr├▓ v├á v├¡ dß╗Ñ ngß╗» cß║únh, c├íc MLLM c├│ thß╗â hoß║ít ─æß╗Öng nh╞░ mß╗Öt trß╗ú l├╜ s╞░ phß║ím thß╗▒c thß╗Ñ. C├íc thß╗▒c nghiß╗çm s╞░ phß║ím ─æ├ú khß║│ng ─æß╗ïnh rß║▒ng, nhß╗»ng phß║ún hß╗ôi chi tiß║┐t dß╗▒a tr├¬n minh chß╗⌐ng do LLM tß║ío ra c├│ t├íc ─æß╗Öng rß║Ñt t├¡ch cß╗▒c, gi├║p hß╗ìc sinh t─âng c╞░ß╗¥ng khß║ú n─âng tß╗▒ sß╗¡a lß╗ùi b├ái viß║┐t, n├óng cao ─æß╗Öng lß╗▒c hß╗ìc tß║¡p v├á h├¼nh th├ánh nhß╗»ng cß║úm x├║c t├¡ch cß╗▒c trong gi├ío dß╗Ñc. Sß╗▒ dß╗ïch chuyß╗ân sang AI ─æa ph╞░╞íng thß╗⌐c n├áy ch├¡nh l├á xu h╞░ß╗¢ng thiß║┐t yß║┐u ─æß╗â triß╗ân khai c├íc hß╗ç thß╗æng hß╗ìc tß║¡p th├¡ch nghi v├á ─æ├ính gi├í th├┤ng minh mß╗Öt c├ích bß╗ün vß╗»ng.
+1.3 ├¥ ngh─⌐a thß╗▒c tiß╗àn v├á ─æß╗æi t╞░ß╗úng ─æß╗ü t├ái
+─Éß╗ü t├ái┬á"Ph├ít triß╗ân thiß║┐t bß╗ï sß╗¡a lß╗ùi v├á chß║Ñm ─æiß╗âm ch├¡nh tß║ú tß╗▒ ─æß╗Öng cho hß╗ìc sinh tiß╗âu hß╗ìc"┬ámang lß║íi nhß╗»ng ├╜ ngh─⌐a thß╗▒c tiß╗àn s├óu sß║»c tr├¬n cß║ú ba ph╞░╞íng diß╗çn l├á giß║úm tß║úi ├íp lß╗▒c cho gi├ío vi├¬n, n├óng cao chß║Ñt l╞░ß╗úng gi├ío dß╗Ñc cho hß╗ìc sinh v├á hß╗ù trß╗ú nh├á tr╞░ß╗¥ng quß║ún l├╜ sß╗æ h├│a hiß╗çu quß║ú. ─Éß╗æi vß╗¢i gi├ío vi├¬n tiß╗âu hß╗ìc, hiß╗çn nay phß║úi d├ánh tß╗½┬á2 ─æß║┐n 3 tiß║┐ng ─æß╗ông hß╗ô mß╗ùi ng├áy┬áchß╗ë ─æß╗â chß║Ñm thß╗º c├┤ng b├ái ch├¡nh tß║ú viß║┐t tay cß╗ºa hß╗ìc sinh trung b├¼nh 3ΓÇô5 ph├║t/b├ái, s─⌐ sß╗æ lß╗¢p tß╗½ 35ΓÇô45 em.
+Hß╗ç thß╗æng tß║ío ra m├┤i tr╞░ß╗¥ng hß╗ìc tß║¡p chß╗º ─æß╗Öng bß║▒ng c├ích cung cß║Ñp phß║ún hß╗ôi tß╗⌐c thß╗¥i, ph├ón t├¡ch lß╗ùi sai chi tiß║┐t v├á h╞░ß╗¢ng dß║½n sß╗¡a lß╗ùi ngay lß║¡p tß╗⌐c, gi├║p hß╗ìc sinh hiß╗âu s├óu kiß║┐n thß╗⌐c thay v├¼ chß╗ë nhß║¡n ─æiß╗âm sß╗æ ─æ╞ín thuß║ºn. Th├┤ng qua viß╗çc tra cß╗⌐u lß╗ïch sß╗¡ tiß║┐n bß╗Ö c├í nh├ón v├á khß║ú n─âng hß╗ù trß╗ú kiß╗âm tra b├ái viß║┐t tß║íi nh├á, hß╗ç thß╗æng kh├┤ng chß╗ë th├║c ─æß║⌐y tinh thß║ºn tß╗▒ gi├íc, tß╗▒ chß╗º trong hß╗ìc tß║¡p cß╗ºa trß║╗ m├á c├▓n trß╗ƒ th├ánh cß║ºu nß╗æi hiß╗çu quß║ú, gi├║p phß╗Ñ huynh ─æß╗ông h├ánh s├ít sao c├╣ng qu├í tr├¼nh r├¿n luyß╗çn cß╗ºa con em m├¼nh.
+Tuy nhi├¬n hß╗ç thß╗æng c├│ giß╗¢i hß║ín trong c├íc b├ái ch├¡nh tß║ú cß╗ºa hß╗ìc sinh lß╗¢p 1 ─æß║┐n lß╗¢p 5 sß╗¡ dß╗Ñng tß║¡p ├┤ ly ti├¬u chuß║⌐n tß║íi Viß╗çt Nam, bao qu├ít to├án bß╗Ö hß╗ç thß╗æng dß║Ñu thanh v├á phß╗Ñ ├óm ─æß║╖c th├╣ cß╗ºa tiß║┐ng Viß╗çt. Vß╗ü mß║╖t kß╗╣ thuß║¡t, phß║ím vi ß╗⌐ng dß╗Ñng ─æ╞░ß╗úc ─æß╗ïnh h╞░ß╗¢ng ph├ít triß╗ân d╞░ß╗¢i dß║íng Web linh hoß║ít, c├│ khß║ú n─âng t╞░╞íng th├¡ch tr├¬n nhiß╗üu thiß║┐t bß╗ï m├á kh├┤ng cß║ºn c├ái ─æß║╖t phß╗⌐c tß║íp, ─æß╗ông thß╗¥i hß╗ù trß╗ú triß╗ân khai ─æa dß║íng tß╗½ m├┤ h├¼nh cß╗Ñc bß╗Ö ─æß║┐n ─æ├ím m├óy nhß║▒m ─æß║úm bß║úo t├¡nh khß║ú thi v├á tiß║┐t kiß╗çm hß║í tß║ºng phß║ºn cß╗⌐ng
+1.4 ─Éiß╗âm nß╗òi bß║¡t cß╗ºa ─æß╗ü t├ái
+Giß║úi ph├íp kß╗╣ thuß║¡t ─æß║╖c th├╣ gß╗ôm bß╗Ö tiß╗ün xß╗¡ l├╜ ß║únh 9 b╞░ß╗¢c chuy├¬n biß╗çt cho giß║Ñy ├┤ ly tiß╗âu hß╗ìc l├á ─æ├│ng g├│p kß╗╣ thuß║¡t cß╗æt l├╡i v├á ─æß╗Öc ─æ├ío nhß║Ñt cß╗ºa ─æß╗ü t├ái.┬áKh├┤ng c├│ hß╗ç thß╗æng OCR th╞░╞íng mß║íi hay giß║úi ph├íp nguß╗ôn mß╗ƒ n├áo hiß╗çn c├│ ─æ╞░ß╗úc thiß║┐t kß║┐ chuy├¬n biß╗çt ─æß╗â xß╗¡ l├╜ ─æß║╖c th├╣ cß╗ºa ß║únh chß╗Ñp b├ái viß║┐t tay hß╗ìc sinh tiß╗âu hß╗ìc Viß╗çt Nam tr├¬n giß║Ñy ├┤ ly. Nh├│m nghi├¬n cß╗⌐u ─æ├ú thiß║┐t kß║┐ v├á triß╗ân khai Image Preprocessing Pipeline 9 b╞░ß╗¢c┬áho├án to├án bß║▒ng TypeScript/Jimp, kh├┤ng phß╗Ñ thuß╗Öc v├áo c├íc th╞░ viß╗çn C++/Python nß║╖ng nß╗ü nh╞░ OpenCV.
+T├¡ch hß╗úp AI ─æa ph╞░╞íng thß╗⌐c thß║┐ hß╗ç mß╗¢i theo h╞░ß╗¢ng End-to-End┬ábß║▒ng c├ích gß╗¡i trß╗▒c tiß║┐p ß║únh gß╗æc chß║Ñt l╞░ß╗úng cao sang┬áGoogle Gemini m├┤ h├¼nh AI ─æa ph╞░╞íng thß╗⌐c c├│ khß║ú n─âng ─æß╗ìc v├á hiß╗âu ─æß╗ông thß╗¥i, ph├ón t├¡ch ─æa ti├¬u ch├¡, tß╗æc ─æß╗Ö thß╗▒c tß║┐ ph├╣ hß╗úp vß╗¢i ─æß╗ü t├ái.
+Kß╗╣ thuß║¡t Prompt Engineering t├¡ch hß╗úp barem s╞░ phß║ím chuß║⌐n Viß╗çt Nam l├á 1 trong nhß╗»ng th├ích thß╗⌐c lß╗¢n nhß║Ñt khi d├╣ng AI chß║Ñm ─æiß╗âm l├á t├¡nh ch├¡nh x├íc v├á nhß║Ñt qu├ín theo chuß║⌐n s╞░ phß║ím. ─Éß╗ü t├ái giß║úi quyß║┐t triß╗çt ─æß╗â vß║Ñn ─æß╗ü n├áy th├┤ng qua hß╗ç thß╗æng barem theo chuß║⌐n Bß╗Ö Gi├ío dß╗Ñc & ─É├áo tß║ío Viß╗çt Nam v├á c├íc ph╞░╞íng ph├íp t├╣y chß╗ënh cß║Ñu h├¼nh c├íc tham sß╗æ gi├║p AI nhß║¡n dß║íng ch├¡nh x├íc v├á c├│ khß║ú n─âng triß╗çt ti├¬u ho├án to├án hiß╗çn t╞░ß╗úng ΓÇ£ß║úo gi├ícΓÇ¥.
+CH╞»╞áNG 2. C╞á Sß╗₧ L├¥ THUYß║╛T
+2.1 Nhß║¡n dß║íng chß╗» viß║┐t tay tß╗▒ ─æß╗Öng
+2.1.1 Kh├íi niß╗çm v├á ph├ón loß║íi
+Nhß║¡n dß║íng chß╗» viß║┐t tay hay c├▓n gß╗ìi l├á Handwritten Text Recognition ΓÇô HTR l├á l─⌐nh vß╗▒c nghi├¬n cß╗⌐u thuß╗Öc thß╗ï gi├íc m├íy t├¡nh v├á xß╗¡ l├╜ ng├┤n ngß╗» tß╗▒ nhi├¬n, vß╗¢i mß╗Ñc ti├¬u chuyß╗ân ─æß╗òi h├¼nh ß║únh chß╗⌐a v─ân bß║ún viß║┐t tay th├ánh dß║íng v─ân bß║ún kß╗╣ thuß║¡t sß╗æ c├│ thß╗â ─æß╗ìc ─æ╞░ß╗úc bß╗ƒi m├íy t├¡nh.
+HTR ─æ╞░ß╗úc ph├ón th├ánh hai nh├ính ch├¡nh, thß╗⌐ nhß║Ñt l├á nhß║¡n dß║íng trß╗▒c tuyß║┐n (Online HTR) l├á xß╗¡ l├╜ dß╗» liß╗çu viß║┐t tay thu thß║¡p theo thß╗¥i gian thß╗▒c tß╗½ thiß║┐t bß╗ï cß║úm ß╗⌐ng, l╞░u trß╗» cß║ú thß╗⌐ tß╗▒ n├⌐t b├║t, v├á thß╗⌐ hai nhß║¡n dß║íng ngoß║íi tuyß║┐n (Offline HTR) ΓÇô xß╗¡ l├╜ ß║únh t─⌐nh cß╗ºa v─ân bß║ún viß║┐t tay, kh├┤ng c├│ th├┤ng tin vß╗ü thß╗⌐ tß╗▒ n├⌐t b├║t.Thiß║┐t bß╗ï thuß╗Öc nh├│m Offline HTR, ph├ón t├¡ch ß║únh chß╗Ñp b├ái viß║┐t tay cß╗ºa hß╗ìc sinh tß╗½ camera ─æiß╗çn thoß║íi.
+Nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt l├á mß╗Öt b├ái to├ín ─æß║ºy th├ích thß╗⌐c do ─æß║╖c th├╣ phß╗⌐c tß║íp cß╗ºa 6 thanh ─æiß╗çu, c├íc dß║Ñu phß╗Ñ (─â, ├ó, ├¬, ├┤, ╞í, ╞░) v├á sß╗▒ kh├┤ng ─æß╗ông ─æß╗üu trong n├⌐t chß╗». Tr╞░ß╗¢c ─æ├óy, c├íc m├┤ h├¼nh hß╗ìc s├óu truyß╗ün thß╗æng th╞░ß╗¥ng tiß║┐p cß║¡n theo cß║Ñu tr├║c hai giai ─æoß║ín l├á sß╗¡ dß╗Ñng mß║íng CNN kß║┐t hß╗úp RNN nh╞░ m├┤ h├¼nh CRNN hoß║╖c c├íc biß║┐n thß╗â ├íp dß╗Ñng c╞í chß║┐ Attention/TransformerOCR ─æß╗â nhß║¡n dß║íng ß║únh th├ánh v─ân bß║ún th├┤, sau ─æ├│ mß╗¢i d├╣ng m├┤ h├¼nh xß╗¡ l├╜ ng├┤n ngß╗» tß╗▒ nhi├¬n ─æß╗â sß╗¡a lß╗ùi. Tuy nhi├¬n, ph╞░╞íng ph├íp n├áy gß║╖p phß║úi hß║ín chß║┐ lß╗¢n l├á sß╗▒ cß╗Öng dß╗ôn sai sß╗æ nß║┐u OCR nhß║¡n diß╗çn sai, NLP rß║Ñt kh├│ kh├┤i phß╗Ñc lß║íi tß╗½ ─æ├║ng. ─Éß║╖c biß╗çt, c├íc c├┤ng cß╗Ñ m├ú nguß╗ôn mß╗ƒ nh╞░ EasyOCR hay Tesseract gß║╖p nh╞░ß╗úc ─æiß╗âm l├á kh├┤ng hiß╗âu ─æ╞░ß╗úc ngß╗» cß║únh, rß║Ñt nhß║íy cß║úm vß╗¢i ─æß╗Ö nghi├¬ng cß╗ºa n├⌐t b├║t v├á nhiß╗àu.
+2.1.2 Th├ích thß╗⌐c trong nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt
+Tiß║┐ng Viß╗çt l├á ng├┤n ngß╗» ─æ╞ín lß║¡p, sß╗¡ dß╗Ñng bß╗Ö chß╗» Latin cß║úi tiß║┐n chß╗» Quß╗æc ngß╗» vß╗¢i hß╗ç thß╗æng dß║Ñu thanh ─æiß╗çu v├á dß║Ñu phß╗Ñ phß╗⌐c tß║íp. Bß╗Ö k├╜ tß╗▒ tiß║┐ng Viß╗çt gß╗ôm 29 chß╗» c├íi c╞í bß║ún, nh╞░ng khi kß║┐t hß╗úp vß╗¢i 5 dß║Ñu thanh ─æiß╗çu l├á sß║»c, huyß╗ün, hß╗Åi, ng├ú, nß║╖ng v├á c├íc dß║Ñu phß╗Ñ nh╞░ ─â, ├ó, ├¬, ├┤, ╞í, ╞░, ─æ,ΓÇª ─É├ú tß║ío ra h╞ín 130 k├╜ tß╗▒ Unicode ph├ón biß╗çt, ─æß║╖t ra th├ích thß╗⌐c ─æß║╖c th├╣ so vß╗¢i c├íc ng├┤n ngß╗» Latin th├┤ng th╞░ß╗¥ng. Mß╗ùi ├óm tiß║┐t tiß║┐ng Viß╗çt ─æ╞░ß╗úc cß║Ñu th├ánh tß╗½ ba th├ánh phß║ºn nh╞░ ├óm ─æß║ºu, vß║ºn v├á thanh ─æiß╗çu.
+H├¼nh 2.1 C├íc mß║½u c├íc k├╜ tß╗▒ viß║┐t tay tiß║┐ng Viß╗çt
+Ngo├ái yß║┐u tß╗æ ng├┤n ngß╗», chß║Ñt l╞░ß╗úng ß║únh chß╗Ñp b├ái viß║┐t tay cß╗ºa hß╗ìc sinh tiß╗âu hß╗ìc th╞░ß╗¥ng gß║╖p c├íc vß║Ñn ─æß╗ü l├á n├⌐t b├║t ch├¼ nhß║ít, thiß║┐u ─æß╗Ö t╞░╞íng phß║ún, ├ính s├íng kh├┤ng ─æß╗ông ─æß╗üu, b├│ng ─æß╗ò tß╗½ tay ng╞░ß╗¥i chß╗Ñp, giß║Ñy kß║╗ ├┤ ly tß║ío nhiß╗àu nß╗ün, ß║únh bß╗ï mß╗¥ do rung tay hoß║╖c lß║Ñy n├⌐t kh├┤ng ch├¡nh x├íc, lß╗çch m├áu tß╗½ nguß╗ôn s├íng nh├ón tß║ío. C├íc yß║┐u tß╗æ n├áy l├ám giß║úm ─æ├íng kß╗â hiß╗çu suß║Ñt cß╗ºa c├íc hß╗ç thß╗æng OCR truyß╗ün thß╗æng, ─æ├▓i hß╗Åi b╞░ß╗¢c tiß╗ün xß╗¡ l├╜ ß║únh chuy├¬n biß╗çt.
+2.1.3 C├íc ph╞░╞íng ph├íp nhß║¡n dß║íng chß╗» viß║┐t tay
+Nh├│m ph├ít hiß╗çn ra ─æ╞░ß╗úc 3 ph╞░╞íng ph├íp:
+Ph╞░╞íng ph├íp truyß╗ün thß╗æng: C├íc ph╞░╞íng ph├íp HTR truyß╗ün thß╗æng sß╗¡ dß╗Ñng pipeline gß╗ôm ph├ón ─æoß║ín d├▓ng v├á k├╜ tß╗▒, tr├¡ch xuß║Ñt ─æß║╖c tr╞░ng thß╗º c├┤ng HOG, v├á ph├ón loß║íi bß║▒ng SVM, HMM, hoß║╖c mß║íng n╞í-ron n├┤ng. Nh╞░ß╗úc ─æiß╗âm ch├¡nh l├á phß╗Ñ thuß╗Öc nhiß╗üu v├áo b╞░ß╗¢c ph├ón ─æoß║ín k├╜ tß╗▒ ΓÇô vß╗æn rß║Ñt kh├│ thß╗▒c hiß╗çn ch├¡nh x├íc vß╗¢i chß╗» viß║┐t tay d├¡nh liß╗ün.
+Ph╞░╞íng ph├íp hß╗ìc s├óu: Xu h╞░ß╗¢ng hiß╗çn ─æß║íi sß╗¡ dß╗Ñng c├íc kiß║┐n tr├║c hß╗ìc s├óu nh╞░ mß║íng t├¡ch chß║¡p kß║┐t hß╗úp LSTM v├á c╞í chß║┐ Attention ─æ├ú cß║úi thiß╗çn ─æ├íng kß╗â ─æß╗Ö ch├¡nh x├íc. M├┤ h├¼nh CTC loß║íi bß╗Å nhu cß║ºu ph├ón ─æoß║ín k├╜ tß╗▒ r├╡ r├áng, cho ph├⌐p nhß║¡n dß║íng chuß╗ùi k├╜ tß╗▒ tß╗½ ß║únh mß╗Öt c├ích end-to-end.
+Ph╞░╞íng ph├íp ─æa ph╞░╞íng thß╗⌐c: C├íc m├┤ h├¼nh ─æa ph╞░╞íng thß╗⌐c dß╗▒a tr├¬n kiß║┐n tr├║c Transformer nh╞░ Google Gemini, GPT-4V ─æ├ú chß╗⌐ng minh khß║ú n─âng v╞░ß╗út trß╗Öi trong viß╗çc ─æß╗ìc v├á hiß╗âu v─ân bß║ún viß║┐t tay theo h╞░ß╗¢ng end-to-end m├á kh├┤ng cß║ºn ph├ón ─æoß║ín k├╜ tß╗▒, ─æß║╖c biß╗çt hiß╗çu quß║ú vß╗¢i c├íc ng├┤n ngß╗» phß╗⌐c tß║íp nh╞░ tiß║┐ng Viß╗çt. Trong thiß║┐t bß╗ï, m├┤ h├¼nh Google Gemini ─æ╞░ß╗úc sß╗¡ dß╗Ñng ─æß╗â thß╗▒c hiß╗çn ─æß╗ông thß╗¥i hai t├íc vß╗Ñ: nhß║¡n dß║íng chß╗» viß║┐t tay tiß║┐ng Viß╗çt v├á chß║Ñm ─æiß╗âm theo barem trong mß╗Öt lß║ºn gß╗ìi API duy nhß║Ñt.
+2.2 M├┤ h├¼nh ng├┤n ngß╗» lß╗¢n ─æa ph╞░╞íng thß╗⌐c
+2.2.1 M├┤ h├¼nh ng├┤n ngß╗» lß╗¢n v├á kiß║┐n tr├║c Transformer
+M├┤ h├¼nh ng├┤n ngß╗» lß╗¢n LLM l├á c├íc hß╗ç thß╗æng hß╗ìc s├óu ─æ╞░ß╗úc huß║Ñn luyß╗çn tr├¬n tß║¡p dß╗» liß╗çu v─ân bß║ún khß╗òng lß╗ô nhß║▒m hiß╗âu, tß║ío sinh v├á suy luß║¡n vß╗ü ng├┤n ngß╗» tß╗▒ nhi├¬n. LLM ─æiß╗ân h├¼nh dß╗▒a tr├¬n kiß║┐n tr├║c Transformer, sß╗¡ dß╗Ñng c╞í chß║┐ tß╗▒ ch├║ ├╜ ─æß╗â m├┤ h├¼nh h├│a mß╗æi quan hß╗ç ngß╗» ngh─⌐a giß╗»a tß║Ñt cß║ú c├íc token trong chuß╗ùi ─æß║ºu v├áo:
+(2.1)
+Trong ─æ├│ Q (Query), K (Key), V (Value) l├á ba ma trß║¡n chiß║┐u tuyß║┐n t├¡nh tß╗½ embedding ─æß║ºu v├áo vß╗¢i dΓéû l├á chiß╗üu cß╗ºa vector key d├╣ng ─æß╗â chuß║⌐n h├│a tr├ính gradient vanishing khi dΓéû lß╗¢n. C╞í chß║┐ Multi-Head Attention chß║íy h ph├⌐p Self-Attention song song tr├¬n c├íc kh├┤ng gian biß╗âu diß╗àn kh├íc nhau, cho ph├⌐p m├┤ h├¼nh ─æß╗ông thß╗¥i ch├║ ├╜ ─æß║┐n nhiß╗üu kh├¡a cß║ính kh├íc nhau cß╗ºa mß╗æi quan hß╗ç token.
+Kiß║┐n tr├║c n├áy cho ph├⌐p m├┤ h├¼nh hß╗ìc ─æ╞░ß╗úc mß╗æi quan hß╗ç ngß╗» cß║únh giß╗»a c├íc tß╗½, bß║Ñt kß╗â khoß║úng c├ích giß╗»a ch├║ng trong chuß╗ùi. Sß╗▒ ph├ít triß╗ân cß╗ºa LLM ─æ├ú tß║ío ra nhß╗»ng ─æß╗Öt ph├í trong c├íc t├íc vß╗Ñ dß╗ïch m├íy, t├│m tß║»t v─ân bß║ún, trß║ú lß╗¥i c├óu hß╗Åi v├á ─æß║╖c biß╗çt l├á chß║Ñm ─æiß╗âm b├ái viß║┐t tß╗▒ ─æß╗Öng.
+2.2.2 M├┤ h├¼nh ─æa ph╞░╞íng thß╗⌐c
+M├┤ h├¼nh ─æa ph╞░╞íng thß╗⌐c l├á c├íc LLM ─æ╞░ß╗úc mß╗ƒ rß╗Öng ─æß╗â xß╗¡ l├╜ ─æß╗ông thß╗¥i nhiß╗üu loß║íi dß╗» liß╗çu ─æß║ºu v├áo, bao gß╗ôm v─ân bß║ún v├á h├¼nh ß║únh. Kiß║┐n tr├║c n├áy kß║┐t hß╗úp mß╗Öt bß╗Ö m├ú h├│a thß╗ï gi├íc th╞░ß╗¥ng l├á Vision Transformer ViT vß╗¢i m├┤ h├¼nh ng├┤n ngß╗» th├┤ng qua c├íc lß╗¢p kß║┐t nß╗æi trung gian, cho ph├⌐p xß╗¡ l├╜ chung cß║ú ß║únh v├á v─ân bß║ún.
+Trong bß╗æi cß║únh nhß║¡n dß║íng chß╗» viß║┐t tay, m├┤ h├¼nh ─æa ph╞░╞íng thß╗⌐c c├│ lß╗úi thß║┐ r├╡ rß╗çt thay v├¼ t├ích biß╗çt hai b╞░ß╗¢c OCR v├á hiß╗âu v─ân bß║ún, m├┤ h├¼nh c├│ thß╗â ─æß╗ông thß╗¥i nhß║¡n diß╗çn k├╜ tß╗▒ tß╗½ ß║únh v├á ph├ón t├¡ch ngß╗» ngh─⌐a to├án c├óu, cho ph├⌐p sß╗¡a lß╗ùi nhß║¡n dß║íng dß╗▒a tr├¬n ngß╗» cß║únh mß╗Öt c├ích tß╗▒ nhi├¬n. Kh├┤ng giß╗æng c├íc m├┤ h├¼nh kß║┐t hß╗úp vision-language truyß╗ün thß╗æng, c├íc m├┤ h├¼nh nß╗ün tß║úng lß╗¢n ─æ╞░ß╗úc huß║Ñn luyß╗çn end-to-end tr├¬n dß╗» liß╗çu ─æa ph╞░╞íng thß╗⌐c ngay tß╗½ ─æß║ºu, cho ph├⌐p hiß╗âu s├óu h╞ín vß╗ü mß╗æi quan hß╗ç giß╗»a nß╗Öi dung h├¼nh ß║únh v├á v─ân bß║ún.
+2.2.3 Google Gemini
+Google Gemini l├á hß╗ì m├┤ h├¼nh ─æa ph╞░╞íng thß╗⌐c thß║┐ hß╗ç mß╗¢i cß╗ºa Google DeepMind, ─æ╞░ß╗úc ph├ít triß╗ân vß╗¢i kiß║┐n tr├║c gß╗æc ─æa ph╞░╞íng thß╗⌐c, cho ph├⌐p xß╗¡ l├╜ ─æß╗ông thß╗¥i h├¼nh ß║únh, v─ân bß║ún, ├óm thanh v├á video trong mß╗Öt m├┤ h├¼nh thß╗æng nhß║Ñt. Kh├íc vß╗¢i c├íc m├┤ h├¼nh kß║┐t hß╗úp tß║ºng ngo├ái, Gemini ─æ╞░ß╗úc huß║Ñn luyß╗çn tß╗½ ─æß║ºu vß╗¢i dß╗» liß╗çu ─æa ph╞░╞íng thß╗⌐c, tß║ío ra khß║ú n─âng l├╜ luß║¡n li├¬n ph╞░╞íng thß╗⌐c s├óu h╞ín.
+H├¼nh 2.2 Google Gemini
+Gemini Flash l├á phi├¬n bß║ún tß╗æi ╞░u vß╗ü tß╗æc ─æß╗Ö v├á chi ph├¡ trong hß╗ì Gemini, duy tr├¼ hiß╗çu suß║Ñt cao vß╗¢i thß╗¥i gian phß║ún hß╗ôi thß║Ñp ph├╣ hß╗úp vß╗¢i ß╗⌐ng dß╗Ñng thß╗▒c tß║┐ cß║ºn xß╗¡ l├╜ theo thß╗¥i gian gß║ºn thß╗▒c. M├┤ h├¼nh hß╗ù trß╗ú cß╗¡a sß╗ò ngß╗» cß║únh lß╗¢n v├á c├│ khß║ú n─âng xuß║Ñt kß║┐t quß║ú c├│ cß║Ñu tr├║c JSON theo schema ─æß╗ïnh tr╞░ß╗¢c, rß║Ñt thuß║¡n tiß╗çn cho c├íc t├íc vß╗Ñ chß║Ñm ─æiß╗âm tß╗▒ ─æß╗Öng.
+Gemini API ─æ╞░ß╗úc t├¡ch hß╗úp vß╗¢i tham sß╗æ ph├╣ hß╗úp nhß║▒m ╞░u ti├¬n t├¡nh nhß║Ñt qu├ín v├á ch├¡nh x├íc thay v├¼ t├¡nh s├íng tß║ío, ─æß╗ông thß╗¥i ─æß╗â ─æß║úm bß║úo ─æß╗º kh├┤ng gian cho nhß║¡n x├⌐t chi tiß║┐t v├á danh s├ích lß╗ùi to├án diß╗çn. M├┤ h├¼nh nhß║¡n ß║únh b├ái l├ám hß╗ìc sinh d╞░ß╗¢i dß║íng base64 inline v├á thß╗▒c hiß╗çn ─æß╗ông thß╗¥i c├íc t├íc vß╗Ñ nh╞░ nhß║¡n dß║íng chß╗» viß║┐t tay, ph├ít hiß╗çn lß╗ùi ch├¡nh tß║ú v├á chß║Ñm ─æiß╗âm theo barem.
+2.2.4 Kiß║┐n tr├║c google API
+API Giao diß╗çn lß║¡p tr├¼nh ß╗⌐ng dß╗Ñng┬ál├á mß╗Öt tß║¡p hß╗úp c├íc quy tß║»c, giao thß╗⌐c v├á c├┤ng cß╗Ñ cho ph├⌐p hai hß╗ç thß╗æng phß║ºn mß╗üm kh├íc nhau giao tiß║┐p v├á trao ─æß╗òi dß╗» liß╗çu vß╗¢i nhau theo mß╗Öt c├ích thß╗⌐c ─æ╞░ß╗úc ─æß╗ïnh ngh─⌐a tr╞░ß╗¢c, m├á kh├┤ng cß║ºn b├¬n gß╗ìi biß║┐t chi tiß║┐t vß╗ü c├ích c├ái ─æß║╖t nß╗Öi tß║íi cß╗ºa b├¬n cung cß║Ñp.
+H├¼nh 2.3 Kiß║┐n tr├║c cß╗ºa google API
+─Éß╗â h├¼nh dung mß╗Öt c├ích trß╗▒c quan, c╞í chß║┐ hoß║ít ─æß╗Öng cß╗ºa API t╞░╞íng tß╗▒ nh╞░ vai tr├▓ cß╗ºa mß╗Öt nh├ón sß╗▒ ─æiß╗üu phß╗æi trung gian trong m├┤ h├¼nh cung ß╗⌐ng dß╗ïch vß╗Ñ. Trong ─æ├│, hß╗ç thß╗æng y├¬u cß║ºu kh├┤ng cß║ºn truy cß║¡p trß╗▒c tiß║┐p v├áo ph├ón hß╗ç xß╗¡ l├╜ nß╗Öi bß╗Ö ─æß╗â khai th├íc t├ái nguy├¬n; thay v├áo ─æ├│, API ─æ├│ng vai tr├▓ tiß║┐p nhß║¡n c├íc tham sß╗æ ─æß║ºu v├áo tß╗½ Client, chuyß╗ân giao ─æß║┐n hß╗ç thß╗æng l├╡i ─æß╗â thß╗▒c thi nghiß╗çp vß╗Ñ, v├á phß║ún hß╗ôi kß║┐t quß║ú vß╗ü ph├¡a Client theo ─æ├║ng ─æß╗ïnh dß║íng cß║Ñu tr├║c ─æ├ú ─æ╞░ß╗úc chuß║⌐n h├│a tr╞░ß╗¢c.
+2.2.6 Prompt Engineering
+Prompt Engineering l├á kß╗╣ thuß║¡t thiß║┐t kß║┐ ngß╗» cß║únh ─æß║ºu v├áo ─æß╗â ─æß╗ïnh h╞░ß╗¢ng h├ánh vi cß╗ºa LLM theo y├¬u cß║ºu cß╗Ñ thß╗â m├á kh├┤ng cß║ºn huß║Ñn luyß╗çn lß║íi m├┤. ─É├óy l├á c├ích tiß║┐p cß║¡n ─æß║╖c biß╗çt ph├╣ hß╗úp vß╗¢i c├íc ng├┤n ngß╗» ├¡t t├ái nguy├¬n nh╞░ tiß║┐ng Viß╗çt, n╞íi kh├┤ng c├│ ─æß╗º dß╗» liß╗çu ─æß╗â fine-tuning m├┤ h├¼nh chuy├¬n biß╗çt.
+Thay v├¼ chß╗ë sinh v─ân bß║ún tß╗▒ do, c├íc MLLM ─æ╞░ß╗úc ─æiß╗üu h╞░ß╗¢ng th├┤ng qua Kß╗╣ nghß╗ç Prompt hay c├▓n gß╗ìi l├á Prompt Engineering ─æß╗â ─æ├íp ß╗⌐ng c├íc ti├¬u chuß║⌐n khß║»t khe cß╗ºa ─æ├ính gi├í s╞░ phß║ím. C├íc nghi├¬n cß╗⌐u chß╗ë ra rß║▒ng viß╗çc kß║┐t hß╗úp ─æß╗ông thß╗¥i viß╗çc chß║Ñm ─æiß╗âm v├á sinh phß║ún hß╗ôi gi├║p c├íc m├┤ h├¼nh LLM t─âng c╞░ß╗¥ng khß║ú n─âng lß║¡p luß║¡n, tß╗½ ─æ├│ cß║úi thiß╗çn ─æß╗Ö ch├¡nh x├íc cß╗ºa ─æiß╗âm sß╗æ.
+2.3 B├ái to├ín hiß╗çu chß╗ënh lß╗ùi ch├¡nh tß║ú tiß║┐ng Viß╗çt
+2.3.1 C├íc h╞░ß╗¢ng tiß║┐p cß║¡n trong sß╗¡a lß╗ùi ch├¡nh tß║ú
+Rule-based: Sß╗¡ dß╗Ñng c├íc tß╗½ ─æiß╗ân v├á quy tß║»c ngß╗» ph├íp t─⌐nh, ph╞░╞íng ph├íp n├áy tß╗æc ─æß╗Ö cao nh╞░ng k├⌐m linh hoß║ít v├á kh├┤ng giß║úi quyß║┐t ─æ╞░ß╗úc c├íc lß╗ùi li├¬n quan ─æß║┐n ngß╗» cß║únh.
+Statistical: Sß╗¡ dß╗Ñng m├┤ h├¼nh N-gram kß║┐t hß╗úp vß╗¢i m├┤ h├¼nh k├¬nh nhiß╗àu ─æß╗â x├íc ─æß╗ïnh x├íc suß║Ñt xß║úy ra cß╗ºa chuß╗ùi tß╗½.
+Neural-based:┬áTiß║┐p cß║¡n b├ái to├ín d╞░ß╗¢i dß║íng dß╗ïch m├íy, dß╗ïch tß╗½ c├óu sai sang mß╗Öt c├óu ─æ├║ng. C├íc m├┤ h├¼nh nh╞░ Sequence-to-Sequence tß╗Å ra v╞░ß╗út trß╗Öi nhß╗¥ khß║ú n─âng nß║»m bß║»t ngß╗» cß║únh rß╗Öng v├á mß╗æi quan hß╗ç phß╗⌐c tß║íp giß╗»a c├íc tß╗½ trong c├óu.
+2.3.2 M├┤ h├¼nh cß╗Ñc bß╗Ö ViT5
+Text-to-Text Transfer Transformer l├á mß╗Öt m├┤ h├¼nh NLP biß║┐n mß╗ìi b├ái to├ín ng├┤n ngß╗» th├ánh mß╗Öt ─æß╗ïnh dß║íng "Text-to-Text". ViT5 l├á phi├¬n bß║ún ─æ╞░ß╗úc tiß╗ün huß║Ñn luyß╗çn chuy├¬n biß╗çt tr├¬n tß║¡p dß╗» liß╗çu tiß║┐ng Viß╗çt khß╗òng lß╗ô. Trong thiß║┐t bß╗ï, ViT5 ─æ╞░ß╗úc l╞░ß╗úng tß╗¡ h├│a vß╗ü INT8 ─æß╗â c├│ thß╗â chß║íy m╞░ß╗út m├á tr├¬n CPU cß╗ºa Raspberry Pi 4. ViT5 nhß║¡n v─ân bß║ún th├┤ tß╗½ Gemini v├á dß╗ïch th├ánh c├óu tiß║┐ng Viß╗çt chuß║⌐n x├íc ─æß╗ïnh dß║íng ch├¡nh tß║ú. Viß╗çc xß╗¡ l├╜ ng├┤n ngß╗» diß╗àn ra ho├án to├án ß╗ƒ local, giß║úi quyß║┐t giß╗¢i hß║ín ─æß╗Ö d├ái trß║ú vß╗ü cß╗ºa API ─æ├ím m├óy.
+Ph├╣ hß╗úp vß╗¢i ─æß║╖c th├╣ Seq2Seq sß╗¡a c├óu sai th├ánh c├óu ─æ├║ng bß║ún chß║Ñt l├á mß╗Öt t├íc vß╗Ñ dß╗ïch chuß╗ùi. Kh├íc vß╗¢i c├íc m├┤ h├¼nh chß╗ë c├│ Encoder d├╣ng ─æß╗â ph├ón loß║íi, ViT5 c├│ khß║ú n─âng sinh ra mß╗Öt c├óu ho├án to├án mß╗¢i, tß╗▒ nhi├¬n v├á m╞░ß╗út m├á.
+Khß║ú n─âng nß║»m bß║»t ngß╗» cß║únh tiß║┐ng Viß╗çt:┬áViT5 giß║úi quyß║┐t triß╗çt ─æß╗â c├íc lß╗ùi ─æß╗ông ├óm hoß║╖c ph╞░╞íng ngß╗» nhß╗¥ viß╗çc hiß╗âu ngß╗» cß║únh cß╗ºa to├án bß╗Ö c├óu thay v├¼ chß╗ë x├⌐t tß╗½ng tß╗½ ─æ╞ín lß║╗.

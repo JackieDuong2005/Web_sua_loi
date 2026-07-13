@@ -1,0 +1,1345 @@
+=== TOM TAT ===
+PHÁT TRIỂN THIẾT BỊ SỬA LỖI VÀ CHẤM ĐIỂM CHÍNH TẢ TỰ ĐỘNG CHO HỌC SINH TIỂU HỌC
+Dương Thành Long, Lớp 23040201, Khoa Điện – Điện tử
+Phạm Hoài Quốc Bảo, Lớp 23040302, Khoa Điện – Điện tử
+Nguyễn Thanh Phúc, Lớp 23040302, Khoa Điện – Điện tử
+
+I. TÓM TẮT CÔNG TRÌNH
+Việc chấm bài chính tả viết tay của học sinh tiểu học luôn là một thách thức đối với giáo viên, tiêu tốn nhiều thời gian và công sức. Mặc dù công nghệ trí tuệ nhân tạo (AI) đa phương thức đã phát triển mạnh mẽ, việc xử lý hình ảnh chữ viết tay chất lượng thấp, bị nhiễu do dòng kẻ ô ly và nhận dạng các lỗi phương ngữ đặc thù vẫn là một bài toán khó.
+Đề tài này tập trung xây dựng thiết bị mang hệ thống chấm điểm chính tả tiếng Việt tự động. Hệ thống là sự kết hợp giữa quy trình tiền xử lý ảnh 9 bước để nâng cao chất lượng hình ảnh, loại bỏ nhiễu và dòng kẻ ô ly, cùng với kiến trúc Hybrid AI kết hợp mô hình ngôn ngữ lớn đám mây Google Gemini để trích xuất văn bản thô OCR và mô hình ngôn ngữ cục bộ ViT5 kết hợp thuật toán Levenshtein để sửa lỗi và tự động chấm điểm. Hệ thống giúp giải quyết triệt để ảo giác của AI, nhận diện lỗi sai và đưa ra nhận xét sư phạm minh bạch, tự động hóa toàn diện quy trình chấm điểm.
+II. QUÁ TRÌNH NGHIÊN CỨU VÀ KẾT QUẢ
+2.1. Mục tiêu nghiên cứu
+Nghiên cứu và phát triển một thiết bị mang hệ thống cung cấp công cụ nhận dạng chữ viết tay tiếng Việt, đồng thời tự động chấm điểm và sửa lỗi chính tả dựa trên công nghệ trí tuệ nhân tạo. Hệ thống được thiết kế để phân tích trực tiếp trên các bức ảnh chụp bài làm trên giấy ô ly của học sinh tiểu học.
+Thực nghiệm triển khai toàn bộ phần mềm lên thiết bị nhúng giá rẻ tạo thành thiết bị mang hệ thống hoàn chỉnh nhằm chứng minh tính khả thi về mặt kinh tế, cho phép áp dụng rộng rãi tại các cơ sở giáo dục với chi phí cực thấp
+Xây dựng hệ thống Web PWA (Progressive Web App) chấm điểm bài thi dưới 30 giây/bài.
+Tích hợp bộ tiền xử lý ảnh 9 bước để nâng cao chất lượng ảnh chụp nét chữ chì mờ nhạt, đạt độ chính xác nhận dạng chữ viết tay tiếng Việt.
+Ứng dụng mô hình Edge AI ViT5 và thuật toán khoảng cách Levenshtein để phân tích lỗi chính tả chi tiết, phân loại lỗi và đếm số lỗi để tự động trừ điểm theo đúng barem của Bộ Giáo dục.
+Triển khai thực nghiệm thành công hệ thống trên các thiết bị nhúng giá rẻ như Raspberry Pi 4 để chứng minh tính khả thi kinh tế.
+2.2. Quá trình nghiên cứu
+
+Hình 1 Pipeline nghiên cứu
+2.2.1. Xây dựng bộ tiền xử lý hình ảnh (Image Pipeline)
+Nghiên cứu và thiết lập thuật toán 9 bước viết bằng TypeScript/Jimp thực thi trên server, bao gồm: Auto-rotate, Resize, White Balance, Grayscale, Shadow Removal, CLAHE để tăng tương phản nét bút chì, Sharpen và Adaptive Thresholding. Đặc biệt, hệ thống đánh giá chất lượng được phát triển nhằm cảnh báo sớm về độ mờ hoặc độ sáng trước khi gửi dữ liệu cho AI.
+2.2.2. Tích hợp mô hình AI
+Ảnh gốc được gửi qua Google Gemini với prompt kỹ thuật để lấy kết quả OCR thô cực kỳ chuẩn xác. Sau đó, văn bản thô được chuyển về mô hình ViT5 trên dịch vụ cục bộ để sửa lỗi ngữ pháp. Thuật toán Levenshtein được lập trình để so khớp tự động, đếm lỗi sai và trừ điểm theo đúng quy chuẩn barem tiêu chí của bộ giáo dục.
+2.2.3. Xây dựng ứng dụng và quản lý Cơ sở dữ liệu
+Phát triển ứng dụng Full-stack bằng Next.js App Router kết hợp Prisma ORM và SQLite. Các phân quyền người dùng (Giáo viên, Học sinh, Admin) được tách biệt rõ ràng, hỗ trợ quản lý điểm số, xem lại ảnh gốc, lỗi sai và theo dõi quá trình học tập.
+
+Hình 2 Lưu đồ phân quyền và kiểm soát truy cập hệ thống
+2.3. Kết quả nghiên cứu
+2.3.1. Hiệu suất hệ thống và thuật toán
+Hệ thống đã chấm thử nghiệm trên 100 mẫu ảnh bài viết thực tế. Thời gian chấm trung bình đạt 2.3 - 4.5 giây/bài (vượt mục tiêu < 30 giây). Bộ tiền xử lý loại bỏ hiệu quả > 90% nét lưới ô ly tập học sinh.
+
+Hình 2: Biều đồ đánh giá hiệu năng thời gian thực phản hồi dựa trên khối lượng dữ liệu đầu vào của 50 mẫu trong tập dữ liệu 100 ảnh
+2.3.2. Cải thiện độ chính xác OCR
+Nhờ ứng dụng quy trình tiền xử lý ảnh đặc biệt là bước CLAHE và Shadow Removal, độ chính xác OCR của mô hình Gemini đã tăng 73.3% trong các điều kiện ánh sáng.
+Đặc biệt, nhờ kiến trúc Hybrid AI áp dụng mô hình ViT5 và thuật toán Levenshtein chạy cục bộ trên Raspberry Pi, hệ thống triệt tiêu hoàn toàn tính bất ổn định của LLM, trả về điểm số và lỗi nhất quán 100% trong tất cả các lần chạy, cùng tỷ lệ phản hồi kết quả hợp lệ đạt 96.3%.
+2.3.3. Bảng điều khiển quản lý điểm số
+Giao diện trực quan đã "dịch" kết quả trả về từ API AI thành các thẻ lỗi rõ ràng trên trình duyệt hiển thị "từ sai", "từ đề xuất" và "nguyên nhân". Giáo viên có thể duyệt, tùy chỉnh điểm thủ công trước khi chốt, tạo ra một Hệ thống hỗ trợ quyết định tin cậy, khách quan trong môi trường giáo dục.
+III. KẾT LUẬN
+Đề tài đã hoàn thành xuất sắc việc xây dựng thiết bị sở hữu hệ thống giải quyết triệt để các thách thức về chất lượng ảnh chụp bài làm tiểu học bằng bộ lọc 9 bước chuyên dụng. Việc tích hợp các mô hình AI kết hợp kiến trúc Web gọn nhẹ đã giúp tạo ra một hệ thống tự động hóa đến 80% công việc chấm bài, cung cấp dữ liệu minh bạch, hữu ích cho cả giáo viên và học sinh. Đề tài có tính ứng dụng thực tiễn cao, sẵn sàng triển khai diện rộng và có tiềm năng mở rộng sang phân tích các bài tự luận phức tạp hơn trong tương lai.
+IV. TÀI LIỆU THAM KHẢO
+Bijoy, M. H., Hossain, N., Islam, S., & Shatabda, S. (2022). A transformer-based spelling error correction framework for Bangla and resource scarce Indic languages. Computer Speech & Language.
+Cao, W., et al. (2023). Handwriting removal method based on CNN.
+Celik, I., et al. (2022). The promises and challenges of artificial intelligence for teachers: A systematic review of research. TechTrends, 66, 616–630.
+Cheng, E. C. K., & Wang, T. (2023). Leading digital transformation and eliminating barriers for teachers to incorporate artificial intelligence in basic education in Hong Kong. Computers and Education: Artificial Intelligence, 5, 100171.
+Huynh, T.-B., et al. (2025). Adversarial robustness evaluation of a Vietnamese handwriting OCR system. Proceedings of the International Conference on Multimedia Analysis and Pattern Recognition (MAPR).
+
+=== TONG KET (cau truc) ===
+TỔNG LIÊN ĐOÀN LAO ĐỘNG VIỆT NAM
+TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG
+---------------------------------
+
+
+
+
+
+
+
+Công trình Nghiên cứu khoa học sinh viên năm học 2025 - 2026
+
+PHÁT TRIỂN THIẾT BỊ SỬA LỖI VÀ CHẤM ĐIỂM CHÍNH TẢ TỰ ĐỘNG CHO HỌC SINH TIỂU HỌC
+
+
+
+ĐƠN VỊ: KHOA ĐIỆN – ĐIỆN TỬ
+GIẢNG VIÊN HƯỚNG DẪN: TS. LÊ ANH VŨ
+SINH VIÊN/NHÓM SINH VIÊN THỰC HIỆN:
+1. DƯƠNG THÀNH LONG - 42300176
+2. PHẠM HOÀI QUỐC BẢO - 42300262
+3. NGUYỄN THANH PHÚC – 42300350
+
+TP. Hồ Chí Minh, tháng 05 năm 2026
+MỤC LỤC
+MỤC LỤC1
+DANH SÁCH HÌNH VẼ5
+DANH SÁCH BẢNG BIỂU7
+DANH MỤC TỪ VIẾT TẮT8
+TÓM TẮT9
+CHƯƠNG 1 – TỔNG QUAN VỀ ĐỀ TÀI10
+1.1 Lý do chọn đề tài10
+1.2 Các nghiên cứu trên toàn thế giới11
+1.2.1 Các nghiên cứu trong nước11
+1.2.2 Các nghiên cứu ngoài nước12
+1.3 Ý nghĩa thực tiễn và đối tượng đề tài14
+1.4 Điểm nổi bật của đề tài14
+CHƯƠNG 2. CƠ SỞ LÝ THUYẾT16
+2.1 Nhận dạng chữ viết tay tự động16
+2.1.1 Khái niệm và phân loại16
+2.1.2 Thách thức trong nhận dạng chữ viết tay tiếng Việt16
+2.1.3 Các phương pháp nhận dạng chữ viết tay17
+2.2 Mô hình ngôn ngữ lớn đa phương thức18
+2.2.1 Mô hình ngôn ngữ lớn và kiến trúc Transformer18
+2.2.2 Mô hình đa phương thức19
+2.2.3 Google Gemini19
+2.2.4 Kiến trúc google API20
+2.2.6 Prompt Engineering21
+2.3 Bài toán hiệu chỉnh lỗi chính tả tiếng Việt21
+2.3.1 Các hướng tiếp cận trong sửa lỗi chính tả21
+2.3.2 Mô hình cục bộ ViT522
+2.4 Thuật toán đo khoảng cách chuỗi Levenshtein Distance22
+2.4.1 Định nghĩa và nguyên lý22
+2.4.2 Công thức quy hoạch động trong hệ thống22
+2.5 Xử lý ảnh số trong nhận dạng văn bản24
+2.5.1 Tổng quan và vai trò trong hệ thống24
+2.5.2 Cân bằng trắng và Gray World Assumption24
+2.5.3 Khử bóng đổ25
+2.5.4 Integral Image25
+2.5.5 Ngưỡng nhị phân hóa tối ưu Otsu26
+2.5.6 CLAHE26
+2.5.7 Làm sắc nét27
+2.6 Đặc điểm chính tả tiếng Việt và phân loại lỗi27
+2.6.1 Hệ thống chữ viết tiếng Việt27
+2.7 Tự động hóa chấm điểm bài viết28
+2.7.1 Tổng quan Automated Essay Scoring28
+2.7.2 Hướng tiếp cận dựa trên AI28
+2.7.3 Phản hồi mang tính xây dựng và vai trò con người29
+2.8 Triển khai hệ thống trên thiết bị Raspberry Pi 429
+2.8.1 Vai trò trong hệ thống EdTech29
+2.8.2. Lượng tử hóa mô hình trên Raspberry Pi 430
+2.8.3. Mạng lưới kết nối an toàn với Cloudflare Tunnel31
+CHƯƠNG 3: THIẾT KẾ HỆ THỐNG VÀ MÔ HÌNH33
+3.1 Kiến trúc tổng thể hệ thống33
+3.2 Quy trình tiền xử lý ảnh số33
+3.2.1 Chi tiết thuật toán từng bước trong pipeline34
+3.3 Quy trình chấm điểm bằng AI đa phương thức37
+3.3.1. Các thành phần chính của quy trình chấm điểm37
+3.4 Phân quyền và xác thực người dùng39
+3.4.1 Cơ chế quản lý và phân quyền dữ liệu40
+CHƯƠNG 4: XÂY DỰNG ỨNG DỤNG41
+4.1 Mô tả hệ thống41
+4.1.1 Mục tiêu hệ thống41
+4.1.2 Quy trình phát triển hệ thống41
+4.1.3 Cách hoạt động của hệ thống44
+4.1.4 Những lợi ích của hệ thống44
+4.1.5 Mặt hạn chế của hệ thống45
+4.2 Công nghệ sử dụng45
+4.2.1 Database của hệ thống45
+4.2.2 Front-end của hệ thống46
+4.2.3 Back-end của hệ thống47
+4.3 Triển khai hệ thống49
+4.3.1 Cấu hình và cài đặt trên thiết bị phần cứng49
+4.3.2 Mô hình kết nối và truy cập mạng51
+4.3.3 Quản lý lưu trữ dữ liệu và liên kết khóa trí tuệ nhân tạo51
+CHƯƠNG 5: THỰC NGHIỆM VÀ KẾT QUẢ53
+5.1 Mục tiêu thực nghiệm53
+5.2. Lựa chọn mô hình AI53
+5.2.1 Tổng quan các mô hình53
+5.2.2 Ưu/nhược điểm và phạm vi ứng dụng55
+5.2.3 Quyết định lựa chọn mô hình Gemini phù hợp56
+5.3 Quy trình tiền xử lý ảnh59
+5.4 Môi trường và phương pháp thực nghiệm69
+5.4.1 Cấu hình kỹ thuật69
+5.4.2 Thử nghiệm ảnh chữ viết tay ô ly tự tạo đúng sai tả69
+5.4.3 Thử nghiệm ảnh chữ viết tay ô ly tự tạo đúng chính tả70
+5.4.4 Thử nghiệm ảnh chữ viết tay học sinh72
+5.4.4.1 Thử nghiệm tập dữ liệu từ Internet72
+5.4.4.2 Thử nghiệm tập dữ liệu thực tế74
+5.5 Thực nghiệm mô hình ViT5 sửa lỗi chính tả75
+5.5.1. Huấn luyện mô hình sửa lỗi chính tả75
+5.5.2 Các mô hình được đánh giá78
+5.5.3 Bộ dữ liệu thử nghiệm và so sánh78
+5.5.4 Kết quả tổng quát thử nghiệm sửa lỗi chính tả79
+5.6 Phát triển thuật toán chấm điểm82
+5.6.1 Lựa chọn thuật toán82
+5.6.2. Tốc độ và Tính nhất quán của83
+5.6 Thực nghiệm triển khai trên Raspberry Pi 484
+5.6.1 Mục tiêu và môi trường triển khai nhúng84
+5.6.2 Kết quả thực nghiệm triển khai84
+CHƯƠNG 6. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN86
+6.1 Kết luận86
+6.2 Hướng phát triển87
+TÀI LIỆU THAM KHẢO89
+
+
+DANH SÁCH HÌNH VẼ
+Hình 2.1 Các mẫu các ký tự viết tay tiếng Việt18
+Hình 2.2 Google Gemini20
+Hình 2.3 Kiến trúc của google API21
+Hình 2.4 Raspberry Pi 431
+Hình 2.5 Lượng tử hóa từ FP32 sang INT832
+Hình 2.6 Mô hình định tuyến lưu lượng qua Cloudflare.33
+
+Hình 3.1 Sơ đồ luồng hoạt động tổng thể của hệ thống34
+Hình 3.2 Lưu đồ cấu trúc chi tiết của tiền xử lý ảnh35
+Hình 3.3 Lưu đồ quy trình chấm điểm bằng các mô hình38
+Hình 3.4 Lưu đồ phân quyền và kiểm soát truy cập hệ thống40
+
+Hình 4.1 Sơ đồ quy trình phát triển hệ thống42
+Hình 4.2 SQLite47
+Hình 4.3 Tailwind CSS48
+Hình 4.4 Next.js49
+Hình 4.5 Demo hệ thống50
+Hình 4.6 Sơ đồ kiến trúc hệ thống trên Raspberry Pi 4 kết hợp Cloudflare Tunnel51
+Hình 4.7 Bảo mật quản lý lưu trữ dữ liệu và liên kết khóa trí tuệ nhân tạo52
+
+Hình 5.1 Một mẫu trong bộ dữ liệu đã được mô hình phát hiện55
+Hình 5.2 Các chữ được cắt ra từ một mẫu trong bộ dữ liệu55
+Hình 5.3 Độ chính xác của các mô hình OCR chữ viết tay tiếng Việt trên nền trắng56
+Hình 5.4 Kết quả benchmark OCR giữa các thế hệ mô hình Gemini58
+Hình 5.5 Quá trình xử lý ảnh60
+Hình 5.6 Ảnh được xoay đúng theo chiều61
+Hình 5.7 Ảnh được resize62
+Hình 5.8 Ví dụ cân bằng trắng trên ảnh viết tay63
+Hình 5.9 Ví dụ sang ảnh xám63
+Hình 5.10 Biểu đồ so sánh phân bổ mức xám trước và sau65
+Hình 5.11 Ảnh chữ viết tay trước và sau quá trình khử bóng đổ65
+Hình 5.12 Kết quả sau khi sử dụng CLAHE để tăng cương tương phản66
+Hình 5.13 Kết quả nhị phân hóa của cùng một đoạn chữ tại adaptiveC 60 và 8068
+Hình 5.14 Kết quả nhị phân hóa thích của nhóm69
+Hình 5.15 Biểu đồ so sánh token và độ trễ của mẫu nhiều lỗi nhất71
+Hình 5.16 Biểu đồ so sánh giữa số lượng Tokens và thời gian phản hồi của 9 mẫu ảnh73
+Hình 5.17 Biều đồ đánh giá hiệu năng thời gian thực phản hồi dựa trên khối lượng dữ liệu đầu vào của 50 mẫu trong tập dữ liệu 100 ảnh74
+Hình 5.18 Đồ thị hàm Loss và chỉ số SacreBLEU theo các bước huấn luyện78
+Hình 5.19 Biểu đồ kết quả trên 3 mô hình sửa lỗi chính tả81
+Hình 5.20 Ví dụ một mẫu trong bộ thử nghiệm82
+Hình 5.21 Sơ đồ triển khai thuật toán chấm điểm83
+Hình 5.22 Thực nghiệm Web trên Raspberry Pi 485
+
+
+
+DANH SÁCH BẢNG BIỂU
+Bảng 3.1 Thông số kỹ thuật thuật toán CLAHE38
+Bảng 3.2 Bảng tiêu chí đánh giá chất lượng ảnh38
+Bảng 3.3 Barem chấm điểm tích hợp trong hệ thống40
+
+Bảng 4.1 Phân loại lỗi chính tả tiếng Việt tiểu học44
+Bảng 4.2 Barem chấm điểm 4 tiêu chí theo Thông tư 27/2020/TT-BGDĐT45
+
+Bảng 5.1 Hiệu suất các mô hình OCR cho chữ viết tay tiếng Việt trên nền trắng58
+Bảng 5.2 Kết quả benchmark OCR giữa các thế hệ mô hình Gemini60
+Bảng 5.3 Tổng hợp các lỗi kỹ thuật trên ảnh chữ viết tay62
+Bảng 5.4 Thông số cấu hình kỹ thuật hệ thống thực nghiệm71
+Bảng 5.5 Thành phần và đặc điểm bộ dữ liệu thử nghiệm71
+Bảng 5.6 Kết quả chấm điểm 10 mẫu ảnh viết tay ô ly tự tạo (có lỗi chính tả)72
+Bảng 5.7 Kết quả chấm điểm 10 mẫu ảnh ô ly tự tạo (đúng chính tả)73
+Bảng 5.8 Thống kê tổng hợp nhóm ảnh học sinh tiểu học 100+75
+Bảng 5.9 Thống kê tổng hợp nhóm ảnh thực tế trường học76
+Bảng 5.10 Chỉ số tổng thể qua 3 lần xử lý cùng một tập dữ liệu77
+Bảng 5.11 Mức độ đồng nhất tuyệt đối qua 3 lần chạy77
+Bảng 5.12 Hiệu năng khôi phục câu của mô hình ViT578
+Bảng 5.13 Chi tiết phân bổ các nhóm lỗi chính tả đặc thù78
+Bảng 5.14 Các mô hình thử nghiệm80
+Bảng 5.15 Thống kê bộ dữ liệu thử nghiệm81
+Bảng 5.16 Tổng hợp kết quả trên toàn bộ 10000 mẫu thử nghiệm82
+Bảng 5.17 Hiệu suất của thuật toán so khớp Levenshtein85
+Bảng 5.18 Hiệu năng vận hành chấm điểm Raspberry Pi 487
+Bảng 5.19 So sánh hiệu năng giữa môi trường phát triển và Raspberry Pi 487
+
+
+DANH MỤC TỪ VIẾT TẮT
+AI
+Artificial Intelligence
+API
+Application Programming Interface
+ARM
+Advanced RISC Machine
+CLAHE
+Contrast Limited Adaptive Histogram Equalization
+CSS
+Cascading Style Sheets
+DSS
+Decision Support System
+HTTP
+HyperText Transfer Protocol
+JSON
+JavaScript Object Notation
+JWT
+JSON Web Token
+LLM
+Large Language Model
+MLLM
+Multimodal Large Language Model
+LMS
+Learning Management System
+NLP
+Natural Language Processing
+OCR
+Optical Character Recognition
+OMR
+Optical Mark Recognition
+ORM
+Object-Relational Mapping
+OS
+Operating System
+SD
+Standard Deviation
+SLM
+Small Language Model
+SQL
+Structured Query Language
+SSR
+Server-Side Rendering
+UI
+User Interface
+URL
+Uniform Resource Locator
+UX
+User Experience
+Wasm
+WebAssembly
+
+
+
+
+
+
+
+
+TÓM TẮT
+Mặc dù hiện nay công nghệ thông tin đã có những bước tiến vượt bậc trong lĩnh vực giáo dục với sự ra đời của nhiều hệ thống học trực tuyến và quản lý đào tạo, nhưng việc chấm bài kiểm tra tự luận, đặc biệt là văn bản chữ viết tay của học sinh tiểu học, vẫn chủ yếu được thực hiện bằng phương pháp thủ công. Công việc này chiếm phần lớn thời gian và công sức của giáo viên, đồng thời dễ gặp phải sai sót hoặc thiếu tính nhất quán do áp lực khối lượng công việc lớn. Tuy nhiên, hiện tại vẫn chưa có nhiều công cụ hỗ trợ tự động hóa một cách toàn diện trong việc nhận dạng nét chữ trẻ em, đối chiếu lỗi chính tả và phân tích ngữ pháp tiếng Việt từ ảnh chụp thực tế, dẫn đến việc thiếu hụt phản hồi chi tiết và tức thời cho học sinh.
+Gần đây, sự phát triển đột phá của trí tuệ nhân tạo, đặc biệt là các mô hình ngôn ngữ lớn đa phương thức như Google Gemini, đã mang lại những công cụ mạnh mẽ trong việc phân tích hình ảnh và xử lý ngôn ngữ tự nhiên. Mặc dù đã có nhiều nghiên cứu và ứng dụng sử dụng AI trong giáo dục, nhưng việc xử lý hình ảnh chữ viết tay với chất lượng thấp như chụp thiếu sáng, bị nhòe, méo góc và nhận dạng các lỗi phương ngữ đặc thù của tiếng Việt tiểu học vẫn là một bài toán đầy thách thức và chưa có nhiều giải pháp mang tính thực tiễn cao, dễ dàng áp dụng tại các trường học.
+Do vậy, báo cáo này nhằm mục đích trình bày quá trình nghiên cứu và phát triển một hệ thống chấm điểm và nhận diện lỗi chính tả tự động dựa trên công nghệ AI. Bên cạnh đó, báo cáo trình bày chi tiết về việc xây dựng ứng dụng Web hoàn chỉnh hỗ trợ giáo viên quản lý điểm số, và thực nghiệm triển khai toàn bộ hệ thống lên thiết bị nhúng giá rẻ để chứng minh tính khả thi về mặt kinh tế khi áp dụng tại các cơ sở giáo dục. Đồng thời, báo cáo cũng đề cập đến các hướng phát triển tương lai nhằm nâng cao độ tin cậy của AI và mở rộng tính năng hỗ trợ toàn diện cho giáo viên và học sinh.
+
+CHƯƠNG 1 – TỔNG QUAN VỀ ĐỀ TÀI
+1.1 Lý do chọn đề tài
+Trong hệ thống giáo dục phổ thông nói chung và bậc tiểu học nói riêng, tiếng Việt là môn học công cụ đóng vai trò nền tảng giúp học sinh hình thành, phát triển năng lực ngôn ngữ, tư duy logic và kỹ năng giao tiếp. Trong đó, chính tả là một phân môn thực hành có ý nghĩa vô cùng quan trọng ở các lớp đầu cấp lớp 1 đến lớp 5. Việc viết đúng chính tả không chỉ giúp học sinh tiếp thu tốt các môn học khác mà còn rèn luyện cho các em những phẩm chất đạo đức tốt đẹp như tính cẩn thận, tính kỷ luật, óc thẩm mỹ và lòng tự tôn tiếng Việt. Ngược lại, một học sinh viết sai chính tả nhiều sẽ gặp rào cản lớn trong việc diễn đạt ý tưởng, đọc hiểu văn bản và dễ dẫn đến sự thiếu tự tin trong học tập.
+Mặc dù có vai trò cốt lõi, quy trình giảng dạy và đánh giá phân môn chính tả hiện nay vẫn đang đè nặng áp lực lên vai các giáo viên tiểu học. Với sĩ số lớp học đông tại Việt Nam thường dao động từ 35 đến 45 học sinh/lớp, mỗi ngày giáo viên phải thực hiện chấm thủ công hàng chục quyển tập viết tay. Trung bình, để đọc kỹ, phát hiện từng lỗi nhỏ, sửa bài bằng bút đỏ và viết lời nhận xét cho một bài viết ngắn khoảng 80–300 từ, giáo viên phải mất từ 3 đến 5 phút. Quy đổi ra cả lớp, công việc này tiêu tốn từ 2 đến 3 tiếng đồng hồ mỗi ngày ngoài giờ lên lớp. Việc liên tục đọc chữ viết tay chưa định hình, nét chữ nguệch ngoạc của trẻ nhỏ trong điều kiện thiếu sáng hoặc mỏi mắt kéo dài dễ dẫn đến việc bỏ sót lỗi. Đặc biệt, theo quy định mới nhất của Bộ Giáo dục và Đào tạo về đánh giá học sinh tiểu học ban hành kèm theo Thông tư số 27/2020/TT-BGDĐT, hoạt động đánh giá thường xuyên phải kết hợp chặt chẽ giữa điểm số và nhận xét. Lời nhận xét yêu cầu phải cụ thể, kịp thời, chỉ rõ tiến bộ và biện pháp khắc phục lỗi cho từng học sinh. Khối lượng công việc vừa chấm điểm, vừa viết lời nhận xét cá nhân hóa này sau nhiều giờ làm việc mệt mỏi rất khó giữ được tính đồng đều và chính xác, tạo ra một áp lực khổng lồ đòi hỏi phải có sự hỗ trợ của các giải pháp tự động hóa.
+Sự phát triển của giáo dục số đòi hỏi các giải pháp hiện đại hóa quá trình đánh giá. Tuy nhiên, việc nhận dạng chữ viết tay OCR của học sinh tiểu học hiện là một thách thức kỹ thuật rất lớn đối với giới nghiên cứu công nghệ. Đầu tiên, học sinh tiểu học bắt buộc phải viết trên tập tập có lưới ô ly 4 ô ly hoặc 5 ô ly để căn chỉnh độ cao chữ, đường kẻ ô ly này thường đè lên các dấu thanh tiếng Việt gồm sắc, huyền, hỏi, ngã, nặng khiến các hệ thống OCR thông thường bị nhầm lẫn nghiêm trọng. Thứ hai, ảnh chụp bài viết từ phụ huynh tự học ở nhà hoặc giáo viên chụp nhanh qua điện thoại di động thường bị méo góc, rung tay, mờ nét và bị bóng che khuất do thiết bị cản ánh sáng.
+Xuất phát từ những lý do khách quan về mặt giáo dục sư phạm, yêu cầu pháp lý của Thông tư 27/2020/TT-BGDĐT và những tiến bộ công nghệ vượt bậc của trí tuệ nhân tạo đa phương thức kết hợp thị giác máy tính, nhóm quyết định chọn đề tài "Phát triển thiết bị sửa lỗi và chấm điểm chính tả tự động cho học sinh tiểu học". Nghiên cứu này không chỉ mang lại giá trị khoa học trong việc giải quyết bài toán nhận dạng chữ viết tay tiếng Việt bị nhiễu ô ly, mà còn mang tính thực tiễn và nhân văn sâu sắc, giúp giải phóng sức lao động cho người giáo viên, đồng thời hiện thực hóa chủ trương chuyển đổi số toàn diện của ngành Giáo dục & Đào tạo Việt Nam.
+1.2 Các nghiên cứu trên toàn thế giới
+1.2.1 Các nghiên cứu trong nước
+Tại Việt Nam, các nghiên cứu về nhận dạng ký tự quang học (OCR) và nhận dạng chữ viết tay tiếng Việt đã đạt được nhiều bước tiến quan trọng nhờ ứng dụng các kiến trúc mạng nơ-ron học sâu như CNN, RNN/BiLSTM, CRNN, và biến thể nâng cao như BiCRNN hay TransformerOCR. Các nghiên cứu này tập trung giải quyết những thách thức đặc thù của chữ viết tiếng Việt, nơi mà sự phức tạp của các dấu phụ và dấu thanh điệu dễ gây nhầm lẫn cho các hệ thống thị giác máy tính.
+Nhiều công trình đã mở rộng bài toán sang nhận dạng chữ viết tay tự do. Điển hình, nhóm tác giả từ Đại học Công nghệ Thông tin (UIT) đã xây dựng bộ dữ liệu UIT-HWDB nhằm cung cấp một tiêu chuẩn đánh giá mới, sát với thực tế hơn cho chữ viết tay tiếng Việt. Qua các thực nghiệm trên bộ dữ liệu này, kết quả cho thấy những mô hình có cấu trúc trích xuất đặc trưng CNN sâu như BiCRNN và TransformerOCR mang lại hiệu năng vượt trội so với kiến trúc CRNN hay NRTR truyền thống khi xử lý hình ảnh ở cả cấp độ dòng và cấp độ từ. Bên cạnh đó, thông qua các cuộc thi nhận dạng quốc tế như ICFHR 2018 trên bộ dữ liệu VNOnDB, nhiều hệ thống mạnh mẽ khác cũng đã được phát triển, tiêu biểu là mô hình Bộ mã hóa - giải mã dựa trên sự chú ý (AED) kết hợp mạng DenseNet và BiLSTM.
+Mặc dù năng lực nhận dạng đã được cải thiện, văn bản đầu ra vẫn thường xuyên gặp các lỗi chính tả, lỗi tách từ hoặc sai dấu do hạn chế của phần mềm hoặc nét chữ đa dạng của người viết. Để khắc phục triệt để và nâng cao độ chính xác, một số nghiên cứu trong nước đã phát triển các phương pháp hậu xử lý. Các mô hình ứng dụng dịch máy thần kinh dựa trên mạng BiLSTM, mô hình ngôn ngữ n-gram, hoặc hướng tiếp cận không giám sát sử dụng thuật toán Hill Climbing đã được thử nghiệm thành công. Các hệ thống này chứng minh được hiệu quả khả quan khi làm giảm đáng kể sai số, đưa tỷ lệ lỗi ký tự (CER) trên bộ dữ liệu chữ viết tay VNOnDB xuống mức rất thấp, chỉ còn khoảng 4.13%
+1.2.2 Các nghiên cứu ngoài nước
+Trên thế giới, việc xử lý và nâng cao chất lượng ảnh tài liệu được xem là bước tiền đề sống còn để giải quyết các thách thức trong nhận dạng chữ viết tay trước khi đưa vào các mô hình học máy. Các nghiên cứu ngoài nước đã phân loại chi tiết các dạng suy thoái tài liệu thường gặp trong thực tế như nhiễu họa tiết nền, vết bẩn, nét mực mờ nhạt, điều kiện thiếu sáng hay nhòe mờ. Để khắc phục những vấn đề này, nhiều phương pháp học máy và học sâu tiên tiến đã được đề xuất và áp dụng. Chẳng hạn, các mô hình khôi phục ảnh tài liệu dựa trên mạng nơ-ron hay mô hình khuếch tán như DocDiff đã chứng minh khả năng triệt tiêu nhiễu, khử bóng mờ và làm sắc nét văn bản vượt trội. Việc tối ưu hóa các thuật toán tiền xử lý không chỉ giúp bóc tách chữ viết khỏi nền giấy phức tạp mà còn tạo ra dữ liệu đầu vào hoàn hảo, làm nền tảng vững chắc để giảm thiểu sai số cho các hệ thống nhận dạng ở các bước tiếp theo.
+Bên cạnh tiền xử lý ảnh, bài toán phát hiện lỗi chính tả và chấm điểm tự động cũng đạt được những bước tiến dài nhờ sự hỗ trợ của các thuật toán Trí tuệ nhân tạo đa ngôn ngữ. Các nghiên cứu quốc tế đã ứng dụng thành công mạng nơ-ron học sâu như Bi-LSTM và kiến trúc Transformer để xây dựng hệ thống phát hiện, sửa lỗi chính tả cho nhiều ngôn ngữ đa dạng như tiếng Indonesia, tiếng Thổ Nhĩ Kỳ, hay các ngôn ngữ có nguồn tài nguyên hạn chế như tiếng Bangla. Hơn thế nữa, các hệ thống chấm điểm và cung cấp phản hồi tự động đối với các câu trả lời ngắn hoặc bài luận đã được chứng minh mang lại hiệu quả rõ rệt trong việc giúp giáo viên giảm thiểu hàng chục giờ chấm bài mỗi tuần, đồng thời tăng cường sự tương tác và cải thiện hiệu suất học tập của học sinh.
+Đặc biệt, sự bùng nổ của các mô hình ngôn ngữ lớn đa phương thức gần đây đã tạo ra một cuộc cách mạng thay đổi hoàn toàn cách tiếp cận trong lĩnh vực giáo dục. Các mô hình tiên tiến như GPT-4V, Gemini hay Qwen-VL sở hữu khả năng nhìn và trực tiếp hiểu ngữ nghĩa từ hình ảnh, cho phép thực hiện song song việc đọc hiểu văn bản viết tay, suy luận logic và đánh giá bài làm mà không bị phụ thuộc vào các đường ống trích xuất văn bản thô truyền thống. Khi kết hợp với các kỹ thuật Prompt Engineering tối ưu thông qua việc định hình vai trò và ví dụ ngữ cảnh, các MLLM có thể hoạt động như một trợ lý sư phạm thực thụ. Các thực nghiệm sư phạm đã khẳng định rằng, những phản hồi chi tiết dựa trên minh chứng do LLM tạo ra có tác động rất tích cực, giúp học sinh tăng cường khả năng tự sửa lỗi bài viết, nâng cao động lực học tập và hình thành những cảm xúc tích cực trong giáo dục. Sự dịch chuyển sang AI đa phương thức này chính là xu hướng thiết yếu để triển khai các hệ thống học tập thích nghi và đánh giá thông minh một cách bền vững.
+1.3 Ý nghĩa thực tiễn và đối tượng đề tài
+Đề tài "Phát triển thiết bị sửa lỗi và chấm điểm chính tả tự động cho học sinh tiểu học" mang lại những ý nghĩa thực tiễn sâu sắc trên cả ba phương diện là giảm tải áp lực cho giáo viên, nâng cao chất lượng giáo dục cho học sinh và hỗ trợ nhà trường quản lý số hóa hiệu quả. Đối với giáo viên tiểu học, hiện nay phải dành từ 2 đến 3 tiếng đồng hồ mỗi ngày chỉ để chấm thủ công bài chính tả viết tay của học sinh trung bình 3–5 phút/bài, sĩ số lớp từ 35–45 em.
+Hệ thống tạo ra môi trường học tập chủ động bằng cách cung cấp phản hồi tức thời, phân tích lỗi sai chi tiết và hướng dẫn sửa lỗi ngay lập tức, giúp học sinh hiểu sâu kiến thức thay vì chỉ nhận điểm số đơn thuần. Thông qua việc tra cứu lịch sử tiến bộ cá nhân và khả năng hỗ trợ kiểm tra bài viết tại nhà, hệ thống không chỉ thúc đẩy tinh thần tự giác, tự chủ trong học tập của trẻ mà còn trở thành cầu nối hiệu quả, giúp phụ huynh đồng hành sát sao cùng quá trình rèn luyện của con em mình.
+Tuy nhiên hệ thống có giới hạn trong các bài chính tả của học sinh lớp 1 đến lớp 5 sử dụng tập ô ly tiêu chuẩn tại Việt Nam, bao quát toàn bộ hệ thống dấu thanh và phụ âm đặc thù của tiếng Việt. Về mặt kỹ thuật, phạm vi ứng dụng được định hướng phát triển dưới dạng Web linh hoạt, có khả năng tương thích trên nhiều thiết bị mà không cần cài đặt phức tạp, đồng thời hỗ trợ triển khai đa dạng từ mô hình cục bộ đến đám mây nhằm đảm bảo tính khả thi và tiết kiệm hạ tầng phần cứng
+1.4 Điểm nổi bật của đề tài
+Giải pháp kỹ thuật đặc thù gồm bộ tiền xử lý ảnh 9 bước chuyên biệt cho giấy ô ly tiểu học là đóng góp kỹ thuật cốt lõi và độc đáo nhất của đề tài. Không có hệ thống OCR thương mại hay giải pháp nguồn mở nào hiện có được thiết kế chuyên biệt để xử lý đặc thù của ảnh chụp bài viết tay học sinh tiểu học Việt Nam trên giấy ô ly. Nhóm nghiên cứu đã thiết kế và triển khai Image Preprocessing Pipeline 9 bước hoàn toàn bằng TypeScript/Jimp, không phụ thuộc vào các thư viện C++/Python nặng nề như OpenCV.
+Tích hợp AI đa phương thức thế hệ mới theo hướng End-to-End bằng cách gửi trực tiếp ảnh gốc chất lượng cao sang Google Gemini mô hình AI đa phương thức có khả năng đọc và hiểu đồng thời, phân tích đa tiêu chí, tốc độ thực tế phù hợp với đề tài.
+Kỹ thuật Prompt Engineering tích hợp barem sư phạm chuẩn Việt Nam là 1 trong những thách thức lớn nhất khi dùng AI chấm điểm là tính chính xác và nhất quán theo chuẩn sư phạm. Đề tài giải quyết triệt để vấn đề này thông qua hệ thống barem theo chuẩn Bộ Giáo dục & Đào tạo Việt Nam và các phương pháp tùy chỉnh cấu hình các tham số giúp AI nhận dạng chính xác và có khả năng triệt tiêu hoàn toàn hiện tượng “ảo giác”.
+CHƯƠNG 2. CƠ SỞ LÝ THUYẾT
+2.1 Nhận dạng chữ viết tay tự động
+2.1.1 Khái niệm và phân loại
+Nhận dạng chữ viết tay hay còn gọi là Handwritten Text Recognition – HTR là lĩnh vực nghiên cứu thuộc thị giác máy tính và xử lý ngôn ngữ tự nhiên, với mục tiêu chuyển đổi hình ảnh chứa văn bản viết tay thành dạng văn bản kỹ thuật số có thể đọc được bởi máy tính.
+HTR được phân thành hai nhánh chính, thứ nhất là nhận dạng trực tuyến (Online HTR) là xử lý dữ liệu viết tay thu thập theo thời gian thực từ thiết bị cảm ứng, lưu trữ cả thứ tự nét bút, và thứ hai nhận dạng ngoại tuyến (Offline HTR) – xử lý ảnh tĩnh của văn bản viết tay, không có thông tin về thứ tự nét bút.Thiết bị thuộc nhóm Offline HTR, phân tích ảnh chụp bài viết tay của học sinh từ camera điện thoại.
+Nhận dạng chữ viết tay tiếng Việt là một bài toán đầy thách thức do đặc thù phức tạp của 6 thanh điệu, các dấu phụ (ă, â, ê, ô, ơ, ư) và sự không đồng đều trong nét chữ. Trước đây, các mô hình học sâu truyền thống thường tiếp cận theo cấu trúc hai giai đoạn là sử dụng mạng CNN kết hợp RNN như mô hình CRNN hoặc các biến thể áp dụng cơ chế Attention/TransformerOCR để nhận dạng ảnh thành văn bản thô, sau đó mới dùng mô hình xử lý ngôn ngữ tự nhiên để sửa lỗi. Tuy nhiên, phương pháp này gặp phải hạn chế lớn là sự cộng dồn sai số nếu OCR nhận diện sai, NLP rất khó khôi phục lại từ đúng. Đặc biệt, các công cụ mã nguồn mở như EasyOCR hay Tesseract gặp nhược điểm là không hiểu được ngữ cảnh, rất nhạy cảm với độ nghiêng của nét bút và nhiễu.
+2.1.2 Thách thức trong nhận dạng chữ viết tay tiếng Việt
+Tiếng Việt là ngôn ngữ đơn lập, sử dụng bộ chữ Latin cải tiến chữ Quốc ngữ với hệ thống dấu thanh điệu và dấu phụ phức tạp. Bộ ký tự tiếng Việt gồm 29 chữ cái cơ bản, nhưng khi kết hợp với 5 dấu thanh điệu là sắc, huyền, hỏi, ngã, nặng và các dấu phụ như ă, â, ê, ô, ơ, ư, đ,… Đã tạo ra hơn 130 ký tự Unicode phân biệt, đặt ra thách thức đặc thù so với các ngôn ngữ Latin thông thường. Mỗi âm tiết tiếng Việt được cấu thành từ ba thành phần như âm đầu, vần và thanh điệu.
+
+Hình 2.1 Các mẫu các ký tự viết tay tiếng Việt
+Ngoài yếu tố ngôn ngữ, chất lượng ảnh chụp bài viết tay của học sinh tiểu học thường gặp các vấn đề là nét bút chì nhạt, thiếu độ tương phản, ánh sáng không đồng đều, bóng đổ từ tay người chụp, giấy kẻ ô ly tạo nhiễu nền, ảnh bị mờ do rung tay hoặc lấy nét không chính xác, lệch màu từ nguồn sáng nhân tạo. Các yếu tố này làm giảm đáng kể hiệu suất của các hệ thống OCR truyền thống, đòi hỏi bước tiền xử lý ảnh chuyên biệt.
+2.1.3 Các phương pháp nhận dạng chữ viết tay
+Nhóm phát hiện ra được 3 phương pháp:
+Phương pháp truyền thống: Các phương pháp HTR truyền thống sử dụng pipeline gồm phân đoạn dòng và ký tự, trích xuất đặc trưng thủ công HOG, và phân loại bằng SVM, HMM, hoặc mạng nơ-ron nông. Nhược điểm chính là phụ thuộc nhiều vào bước phân đoạn ký tự – vốn rất khó thực hiện chính xác với chữ viết tay dính liền.
+Phương pháp học sâu: Xu hướng hiện đại sử dụng các kiến trúc học sâu như mạng tích chập kết hợp LSTM và cơ chế Attention đã cải thiện đáng kể độ chính xác. Mô hình CTC loại bỏ nhu cầu phân đoạn ký tự rõ ràng, cho phép nhận dạng chuỗi ký tự từ ảnh một cách end-to-end.
+Phương pháp đa phương thức: Các mô hình đa phương thức dựa trên kiến trúc Transformer như Google Gemini, GPT-4V đã chứng minh khả năng vượt trội trong việc đọc và hiểu văn bản viết tay theo hướng end-to-end mà không cần phân đoạn ký tự, đặc biệt hiệu quả với các ngôn ngữ phức tạp như tiếng Việt. Trong thiết bị, mô hình Google Gemini được sử dụng để thực hiện đồng thời hai tác vụ: nhận dạng chữ viết tay tiếng Việt và chấm điểm theo barem trong một lần gọi API duy nhất.
+2.2 Mô hình ngôn ngữ lớn đa phương thức
+2.2.1 Mô hình ngôn ngữ lớn và kiến trúc Transformer
+Mô hình ngôn ngữ lớn LLM là các hệ thống học sâu được huấn luyện trên tập dữ liệu văn bản khổng lồ nhằm hiểu, tạo sinh và suy luận về ngôn ngữ tự nhiên. LLM điển hình dựa trên kiến trúc Transformer, sử dụng cơ chế tự chú ý để mô hình hóa mối quan hệ ngữ nghĩa giữa tất cả các token trong chuỗi đầu vào:
+(2.1)
+Trong đó Q (Query), K (Key), V (Value) là ba ma trận chiếu tuyến tính từ embedding đầu vào với dₖ là chiều của vector key dùng để chuẩn hóa tránh gradient vanishing khi dₖ lớn. Cơ chế Multi-Head Attention chạy h phép Self-Attention song song trên các không gian biểu diễn khác nhau, cho phép mô hình đồng thời chú ý đến nhiều khía cạnh khác nhau của mối quan hệ token.
+Kiến trúc này cho phép mô hình học được mối quan hệ ngữ cảnh giữa các từ, bất kể khoảng cách giữa chúng trong chuỗi. Sự phát triển của LLM đã tạo ra những đột phá trong các tác vụ dịch máy, tóm tắt văn bản, trả lời câu hỏi và đặc biệt là chấm điểm bài viết tự động.
+2.2.2 Mô hình đa phương thức
+Mô hình đa phương thức là các LLM được mở rộng để xử lý đồng thời nhiều loại dữ liệu đầu vào, bao gồm văn bản và hình ảnh. Kiến trúc này kết hợp một bộ mã hóa thị giác thường là Vision Transformer ViT với mô hình ngôn ngữ thông qua các lớp kết nối trung gian, cho phép xử lý chung cả ảnh và văn bản.
+Trong bối cảnh nhận dạng chữ viết tay, mô hình đa phương thức có lợi thế rõ rệt thay vì tách biệt hai bước OCR và hiểu văn bản, mô hình có thể đồng thời nhận diện ký tự từ ảnh và phân tích ngữ nghĩa toàn câu, cho phép sửa lỗi nhận dạng dựa trên ngữ cảnh một cách tự nhiên. Không giống các mô hình kết hợp vision-language truyền thống, các mô hình nền tảng lớn được huấn luyện end-to-end trên dữ liệu đa phương thức ngay từ đầu, cho phép hiểu sâu hơn về mối quan hệ giữa nội dung hình ảnh và văn bản.
+2.2.3 Google Gemini
+Google Gemini là họ mô hình đa phương thức thế hệ mới của Google DeepMind, được phát triển với kiến trúc gốc đa phương thức, cho phép xử lý đồng thời hình ảnh, văn bản, âm thanh và video trong một mô hình thống nhất. Khác với các mô hình kết hợp tầng ngoài, Gemini được huấn luyện từ đầu với dữ liệu đa phương thức, tạo ra khả năng lý luận liên phương thức sâu hơn.
+
+Hình 2.2 Google Gemini
+Gemini Flash là phiên bản tối ưu về tốc độ và chi phí trong họ Gemini, duy trì hiệu suất cao với thời gian phản hồi thấp phù hợp với ứng dụng thực tế cần xử lý theo thời gian gần thực. Mô hình hỗ trợ cửa sổ ngữ cảnh lớn và có khả năng xuất kết quả có cấu trúc JSON theo schema định trước, rất thuận tiện cho các tác vụ chấm điểm tự động.
+Gemini API được tích hợp với tham số phù hợp nhằm ưu tiên tính nhất quán và chính xác thay vì tính sáng tạo, đồng thời để đảm bảo đủ không gian cho nhận xét chi tiết và danh sách lỗi toàn diện. Mô hình nhận ảnh bài làm học sinh dưới dạng base64 inline và thực hiện đồng thời các tác vụ như nhận dạng chữ viết tay, phát hiện lỗi chính tả và chấm điểm theo barem.
+2.2.4 Kiến trúc google API
+API Giao diện lập trình ứng dụng là một tập hợp các quy tắc, giao thức và công cụ cho phép hai hệ thống phần mềm khác nhau giao tiếp và trao đổi dữ liệu với nhau theo một cách thức được định nghĩa trước, mà không cần bên gọi biết chi tiết về cách cài đặt nội tại của bên cung cấp.
+
+Hình 2.3 Kiến trúc của google API
+Để hình dung một cách trực quan, cơ chế hoạt động của API tương tự như vai trò của một nhân sự điều phối trung gian trong mô hình cung ứng dịch vụ. Trong đó, hệ thống yêu cầu không cần truy cập trực tiếp vào phân hệ xử lý nội bộ để khai thác tài nguyên; thay vào đó, API đóng vai trò tiếp nhận các tham số đầu vào từ Client, chuyển giao đến hệ thống lõi để thực thi nghiệp vụ, và phản hồi kết quả về phía Client theo đúng định dạng cấu trúc đã được chuẩn hóa trước.
+2.2.6 Prompt Engineering
+Prompt Engineering là kỹ thuật thiết kế ngữ cảnh đầu vào để định hướng hành vi của LLM theo yêu cầu cụ thể mà không cần huấn luyện lại mô. Đây là cách tiếp cận đặc biệt phù hợp với các ngôn ngữ ít tài nguyên như tiếng Việt, nơi không có đủ dữ liệu để fine-tuning mô hình chuyên biệt.
+Thay vì chỉ sinh văn bản tự do, các MLLM được điều hướng thông qua Kỹ nghệ Prompt hay còn gọi là Prompt Engineering để đáp ứng các tiêu chuẩn khắt khe của đánh giá sư phạm. Các nghiên cứu chỉ ra rằng việc kết hợp đồng thời việc chấm điểm và sinh phản hồi giúp các mô hình LLM tăng cường khả năng lập luận, từ đó cải thiện độ chính xác của điểm số.
+2.3 Bài toán hiệu chỉnh lỗi chính tả tiếng Việt
+2.3.1 Các hướng tiếp cận trong sửa lỗi chính tả
+Rule-based: Sử dụng các từ điển và quy tắc ngữ pháp tĩnh, phương pháp này tốc độ cao nhưng kém linh hoạt và không giải quyết được các lỗi liên quan đến ngữ cảnh.
+Statistical: Sử dụng mô hình N-gram kết hợp với mô hình kênh nhiễu để xác định xác suất xảy ra của chuỗi từ.
+Neural-based: Tiếp cận bài toán dưới dạng dịch máy, dịch từ câu sai sang một câu đúng. Các mô hình như Sequence-to-Sequence tỏ ra vượt trội nhờ khả năng nắm bắt ngữ cảnh rộng và mối quan hệ phức tạp giữa các từ trong câu.
+2.3.2 Mô hình cục bộ ViT5
+Text-to-Text Transfer Transformer là một mô hình NLP biến mọi bài toán ngôn ngữ thành một định dạng "Text-to-Text". ViT5 là phiên bản được tiền huấn luyện chuyên biệt trên tập dữ liệu tiếng Việt khổng lồ. Trong thiết bị, ViT5 được lượng tử hóa về INT8 để có thể chạy mượt mà trên CPU của Raspberry Pi 4. ViT5 nhận văn bản thô từ Gemini và dịch thành câu tiếng Việt chuẩn xác định dạng chính tả. Việc xử lý ngôn ngữ diễn ra hoàn toàn ở local, giải quyết giới hạn độ dài trả về của API đám mây.
+Phù hợp với đặc thù Seq2Seq sửa câu sai thành câu đúng bản chất là một tác vụ dịch chuỗi. Khác với các mô hình chỉ có Encoder dùng để phân loại, ViT5 có khả năng sinh ra một câu hoàn toàn mới, tự nhiên và mượt mà.
+Khả năng nắm bắt ngữ cảnh tiếng Việt: ViT5 giải quyết triệt để các lỗi đồng âm hoặc phương ngữ nhờ việc hiểu ngữ cảnh của toàn bộ câu thay vì chỉ xét từng từ đơn lẻ.
+2.4 Thuật toán đo khoảng cách chuỗi Levenshtein Distance
+2.4.1 Định nghĩa và nguyên lý
+Thuật toán Levenshtein là một độ đo đo lường sự khác biệt giữa hai chuỗi ký tự. Khoảng cách này được định nghĩa là số lượng tối thiểu các phép biến đổi đơn ký tự (hoặc đơn từ) cần thiết để biến đổi chuỗi này thành chuỗi kia. Ba phép biến đổi cơ bản bao gồm:
+Xóa (Deletion): loại bỏ một phần tử khỏi chuỗi.
+Chèn (Insertion): thêm một phần tử mới vào chuỗi.
+Thay thế (Substitution): đổi một phần tử thành một phần tử khác.
+2.4.2 Công thức quy hoạch động trong hệ thống
+Trong khi ViT5 đảm nhiệm việc sửa câu sai thành câu đúng, hệ thống cần biết chính xác học sinh đã viết sai ở chữ nào để đánh dấu lỗi và trừ điểm. Thuật toán Levenshtein được sử dụng để so khớp văn bản gốc thu được từ OCR và văn bản đã sửa từ ViT5 ở cấp độ từ. Các thao tác chênh lệch được bóc tách và phân loại thành các lỗi chính tả cụ thể để cung cấp phản hồi trực quan.
+Gọi m=∣s1∣, n=∣s2​∣ là độ dài hai chuỗi. Đặt D(i,j) là khoảng cách Levenshtein giữa i phần tử đầu của s1​ và j phần tử đầu của s2​. Bài toán được giải bằng quy hoạch động với công thức truy hồi:
+
+Trong đó:
+
+Giải pháp cuối cùng là D(m,n). Thuật toán có độ phức tạp thời gian và không gian là O(m × n) khi cài đặt trực tiếp bằng bảng quy hoạch động hai chiều.
+Để chuẩn hóa khoảng cách thành một độ đo tương đồng nằm trong khoảng [0,1] thuận tiện cho việc đánh giá mức độ chênh lệch tương đối giữa hai chuỗi có độ dài khác nhau có thể sử dụng công thức:
+
+Ngoài việc tính khoảng cách tổng quát, một ứng dụng quan trọng của quy hoạch động Levenshtein là phép so khớp bằng cách lưu lại backtrace qua bảng D trong quá trình tính toán, ta có thể xác định chính xác vị trí và loại của từng phép biến đổi xóa, chèn, thay thế đã được áp dụng giữa hai chuỗi, không chỉ tổng khoảng cách cuối cùng.
+2.5 Xử lý ảnh số trong nhận dạng văn bản
+2.5.1 Tổng quan và vai trò trong hệ thống
+Xử lý ảnh số là lĩnh vực ứng dụng các thuật toán toán học để biến đổi, cải thiện và phân tích hình ảnh kỹ thuật số. Trong thiết bị vi xử lý ảnh đóng vai trò tiền xử lý nâng cao chất lượng ảnh đầu vào trước khi gửi cho mô hình AI phân tích. Giai đoạn này quyết định phần lớn độ chính xác của nhận dạng, vì Gemini không thể nhận diện nhiễu dòng kẻ ô ly hay bù đắp cho ảnh chụp thiếu sáng.
+Các tài liệu số hóa trong thực tế thường xuyên đối mặt với 6 vấn đề xuống cấp chính: nhiễu kết cấu nền, trang giấy bị nhòe/bẩn, nét chữ phai mờ, điều kiện ánh sáng kém, hình mờ và mờ nhòe,… Đối với bài toán chữ viết tay của học sinh tiểu học, dòng kẻ ô ly xanh/đỏ và nét bút chì mờ nhạt là tác nhân gây nhiễu nghiêm trọng nhất cho OCR.
+2.5.2 Cân bằng trắng và Gray World Assumption
+Ảnh chụp trong phòng học thường bị ảnh hưởng bởi nguồn sáng nhân tạo: đèn huỳnh quang gây ám vàng, ánh sáng buổi sáng qua kính gây ám xanh. Điều này làm lệch màu nền giấy và ảnh hưởng đến các bước nhị phân hóa tiếp theo.
+Giả thuyết Gray World phát biểu rằng trong một ảnh chụp tự nhiên, giá trị trung bình của ba kênh màu R, G, B sẽ xấp xỉ bằng nhau và bằng giá trị xám trung tính. Dựa trên giả thuyết này, hệ số bù cho từng kênh màu được tính:
+(2.2)
+, với c  {R, G, B}(2.3)
+pixel_out(c) = min(255,  pixel_in(c) × kc)(2.4)
+Kỹ thuật này hiệu chỉnh tự động ảnh bị ám vàng hoặc ám xanh mà không cần biết thông số nguồn sáng, chuẩn hóa nền giấy về màu trắng tự nhiên trước các bước xử lý tiếp theo.
+2.5.3 Khử bóng đổ
+Bóng đổ xuất hiện khi tay người chụp hoặc thân điện thoại che một phần ánh sáng chiếu lên trang giấy, tạo ra vùng tối không đồng đều. Phương pháp khử bóng dựa trên nguyên tắc: bóng là thành phần biến thiên chậm (low-frequency) trong ảnh, trong khi nét chữ là thành phần biến thiên nhanh (high-frequency).
+Bằng cách ước lượng thành phần nền qua bộ lọc làm mờ hộp (Box Blur) với kernel rất lớn (51×51 pixel), chỉ giữ lại thành phần biến thiên chậm — tức là xu hướng sáng/tối của bóng — sau đó chia ảnh gốc cho nền ước lượng:
+background(x, y) = BoxBlur(image, kernel_size = 51)(2.5)
+(2.6)
+Phép chia này triệt tiêu biến thiên độ sáng do bóng đổ, trong khi nét chữ  vốn là thành phần cục bộ vẫn được bảo toàn tốt. Kích thước kernel 51×51 được chọn để kernel đủ lớn che phủ hoàn toàn chiều rộng của nét chữ, nhưng không quá lớn đến mức làm mất thông tin biến thiên của bóng/
+2.5.4 Integral Image
+Integral Image là cấu trúc dữ liệu tiền tính toán cho phép tra cứu tổng giá trị pixel trong bất kỳ vùng hình chữ nhật nào với độ phức tạp O(1), bất kể kích thước vùng. Đây là nền tảng hiệu năng cho Box Blur và Adaptive Thresholding trong pipeline.
+Cấu trúc được xây dựng qua một lần duyệt ảnh:
+I(x, y) = img(x, y) + I(x−1, y) + I(x, y−1) − I(x−1, y−1)(2.7)
+Để truy vấn tổng pixel trong vùng hình chữ nhật từ (x₁, y₁) đến (x₂, y₂):
+Sum = I(x₂, y₂) − I(x₁−1, y₂) − I(x₂, y₁−1) + I(x₁−1, y₁−1)(2.8)
+Nhờ Integral Image, các phép tính cục bộ như tính trung bình trong cửa sổ trượt sliding window chỉ cần 4 phép tra bảng thay vì duyệt lại toàn bộ vùng giúp pipeline chạy đủ nhanh trên Raspberry Pi 4 hạn chế tài nguyên.
+2.5.5 Ngưỡng nhị phân hóa tối ưu Otsu
+Phương pháp Otsu tự động xác định ngưỡng T tối ưu để phân tách ảnh mức xám thành hai lớp nền sáng và chữ tối mà không cần tham số đầu vào từ người dùng. Nguyên lý dựa trên việc tối đa hóa phương sai liên lớp:
+(T) = w₀(T) · w₁(T) · [μ₀(T) − μ₁(T)]²(2.9)
+T* =  (T)(2.10)
+Trong đó w₀(T) và w₁(T) là tỷ lệ số pixel thuộc lớp nền và lớp chữ; μ₀(T) và μ₁(T) là giá trị trung bình cường độ sáng của từng lớp tại ngưỡng T. Ngưỡng tối ưu T* là giá trị T làm cho hai lớp phân tách nhau tốt nhất về mặt thống kê.
+Trong pipeline thiết bị, ngưỡng Otsu được dùng ở tham chiếu để tính tỷ lệ vùng chữ trong bước đánh giá chất lượng ảnh.
+2.5.6 CLAHE
+CLAHE là phương pháp tăng cường tương phản cục bộ thích nghi, giải quyết trường hợp ảnh có phân bố độ sáng không đồng đều giữa các vùng khác nhau. Khác với cân bằng histogram toàn cục áp dụng một hàm biến đổi duy nhất cho toàn bộ ảnh CLAHE xử lý riêng từng vùng nhỏ:
+Bước 1 Chia tile: Ảnh được chia thành lưới các ô nhỏ tiles kích thước 8×8 pixel.
+Bước 2 Tính histogram cục bộ: Histogram cường độ sáng được tính riêng cho từng tile.
+Bước 3 Giới hạn biên độ: Histogram được cắt tại ngưỡng clipLimit = 2.0 để ngăn khuếch đại quá mức vùng có phân bố hẹp thường là vùng nhiễu. Phần dư được phân phối đều về các mức còn lại.
+Bước 4 Tính CDF: Từ histogram đã giới hạn, tính hàm CDF chuẩn hóa làm hàm biến đổi cho tile đó.
+Bước 5 Nội suy song tuyến: Kết quả của 4 tile lân cận được nội suy song tuyến tại mỗi pixel, đảm bảo không có ranh giới sắc nét giữa các tile.
+CLAHE đặc biệt hiệu quả với ảnh bài viết tay có vùng sáng và vùng tối cùng tồn tại làm nổi bật nét bút chì nhạt ở cả hai vùng mà không gây cháy sáng ở vùng đã đủ tương phản.
+2.5.7 Làm sắc nét
+Unsharp Masking là kỹ thuật tăng cường cạnh bằng cách khuếch đại sự chênh lệch giữa ảnh gốc và phiên bản làm mờ của nó. Nguyên lý: chi tiết" = ảnh gốc − ảnh mờ. Thêm chi tiết vào ảnh gốc sẽ làm nổi bật các cạnh:
+sharpened(x, y) = original(x, y) + α · [original(x, y) − blurred(x, y)](2.11)
+Với α = 0,5 là hệ số khuếch đại. Giá trị này được chọn thực nghiệm để làm rõ viền chữ mà không khuếch đại nhiễu hạt từ bút chì quá mức. Bộ lọc làm mờ Gaussian 3×3 được dùng để tạo phiên bản mờ.
+2.6 Đặc điểm chính tả tiếng Việt và phân loại lỗi
+2.6.1 Hệ thống chữ viết tiếng Việt
+Tiếng Việt sử dụng chữ quốc ngữ, hệ thống chữ viết Latin có bổ sung dấu phụ. Mỗi âm tiết tiếng Việt được cấu thành từ ba thành phần: âm đầu, vần và thanh điệu. Hệ thống 6 thanh điệu là bằng, huyền, hỏi, ngã, sắc, nặng được biểu diễn bằng dấu đặt trên hoặc dưới nguyên âm chính, tạo ra thách thức đặc biệt cho cả OCR lẫn học sinh trong quá trình học viết chính tả.
+Ngoài ra, ảnh hưởng của phương ngữ cũng được ghi nhận: học sinh tại khu vực Nam Bộ thường nhầm lẫn giữa các cặp s/x, d/gi/r, v/b do đặc điểm phát âm vùng miền. Nhóm ghi nhận và phân tích phương ngữ nhưng vẫn áp dụng trừ điểm bình thường, nhằm khuyến khích học sinh viết đúng chính tả chuẩn.
+2.7 Tự động hóa chấm điểm bài viết
+2.7.1 Tổng quan Automated Essay Scoring
+Chấm điểm bài viết tự động AES là lĩnh vực ứng dụng AI trong giáo dục với lịch sử hơn 50 năm. Hệ thống AES sử dụng các đặc trưng ngôn ngữ và mô hình học máy để đánh giá chất lượng bài viết theo nhiều tiêu chí như ngữ pháp, từ vựng, cấu trúc câu và nội dung ý tưởng. Các hệ thống AES thương mại như e-rater, Turnitin và PEG đã được triển khai rộng rãi tại các kỳ thi chuẩn hóa quốc tế, đạt mức tương quan với giáo viên con người ở mức 0.7–0.9 tùy theo loại bài.
+2.7.2 Hướng tiếp cận dựa trên AI
+Thế hệ AES hiện đại sử dụng LLM cho phép đánh giá toàn diện và linh hoạt hơn, không bị giới hạn bởi tập đặc trưng định sẵn. LLM có khả năng hiểu ngữ nghĩa sâu, phát hiện lỗi chính tả tinh vi như nhầm âm đầu tr/ch, s/x, lỗi thanh điệu và đưa ra nhận xét mang tính sư phạm. Đặc biệt, LLM có thể thực hiện AES theo phương thức zero-shot hoặc few-shot mà không cần fine-tuning, hiệu quả cho các ngôn ngữ ít tài nguyên như tiếng Việt.
+Nhóm áp dụng kiến trúc AI để đạt sự tối ưu về tốc độ, chi phí và tính nhất quán bằng cách chia nhỏ các công đoạn như sử dụng LLM đa phương thức để đọc ảnh chữ viết tay, nhưng chỉ giới hạn ở việc trích xuất nguyên bản, nghiêm cấm AI tự ý sửa lỗi. Sử dụng mạng nơ-ron cục bộ ViT5 để sửa lỗi và thuật toán Levenshtein để đối chiếu điểm sai. Barem điểm bị trừ được tính toán bằng các công thức toán học minh bạch dựa trên số lượng lỗi thực tế, đồng thời áp dụng thuật toán phân tích từ vựng để tự động đánh giá điểm sáng tạo.
+Cách này giúp hệ thống tuân thủ nghiêm ngặt tiêu chuẩn sư phạm, đảm bảo tính nhất quán tuyệt đối giữa các lần chấm thay vì phụ thuộc vào tính ngẫu nhiên của LLM sinh tạo.
+2.7.3 Phản hồi mang tính xây dựng và vai trò con người
+Nghiên cứu về tâm lý học đường cho thấy phản hồi tức thì, cụ thể và mang tính khuyến khích có tác động tích cực đến động lực học tập của học sinh tiểu học. Trong hệ thống, luồng tạo nhận xét được xây dựng tự động dựa trên số lượng lỗi thực tế của học sinh thông qua các quy tắc lập trình hệ thống sẽ chủ động khen ngợi nếu bài xuất sắc, động viên nếu mắc ít lỗi, và nhắc nhở sửa cụ thể nếu sai nhiều. Ngôn từ được tinh chỉnh để phù hợp với lứa tuổi tiểu học.
+AI chỉ đóng vai trò trợ giảng, không thay thế hoàn toàn giáo viên. Luồng xử lý của hệ thống bắt buộc giáo viên phải là người xác nhận cuối cùng, cho phép họ chỉnh sửa điểm Hình thức, Nội dung hoặc bổ sung nhận xét thủ công trước khi lưu kết quả chính thức vào cơ sở dữ liệu. Điều này đảm bảo tính trách nhiệm và chính xác tuyệt đối về mặt sư phạm.
+2.8 Triển khai hệ thống trên thiết bị Raspberry Pi 4
+2.8.1 Vai trò trong hệ thống EdTech
+Trong các hệ thống công nghệ giáo dục EdTech hiện đại được triển khai tại trường học, máy tính bảng mạch đơn giữ vai trò quan trọng như một trung tâm xử lý cục bộ, giúp tiếp nhận dữ liệu từ người dùng, thực hiện tiền xử lý thông tin và giao tiếp với các nền tảng điện toán đám mây. Một trong những nền tảng phổ biến và phù hợp nhất cho các dự án quy mô trường học hiện nay là Raspberry Pi là dòng máy tính nhúng giá rẻ, kích thước nhỏ gọn nhưng hỗ trợ đầy đủ hệ điều hành, nền tảng web hiện đại và các thư viện phần mềm mã nguồn mở.
+
+Hình 2.4 Raspberry Pi 4
+Raspberry Pi 4 không chỉ đơn thuần đóng vai trò là một Web Server giao tiếp với Cloud, mà đảm nhiệm toàn bộ vai trò trung tâm trong kiến trúc mô hình gồm hosting nền tảng Web, tiền xử lý dữ liệu đầu vào và triển khai mô hình trí tuệ nhân tạo cục bộ.
+2.8.2. Lượng tử hóa mô hình trên Raspberry Pi 4
+Raspberry Pi 4 giữ vị trí trung tâm trong kiến trúc hệ thống, đóng vai trò là một Web Server công cộng làm trung gian xử lý thông tin giữa thiết bị của giáo viên/học sinh và API Trí tuệ nhân tạo đám mây.
+Để một thiết bị nhỏ gọn với CPU hiệu năng giới hạn không có GPU chuyên dụng ,Raspberry Pi 4 khó có thể gánh vác việc chạy mô hình Transformer ViT5 mượt mà, vì thế mà kỹ thuật lượng tử hóa mô hình đã được áp dụng.
+Cụ thể, hệ thống tích hợp Dynamic INT8 Quantization để chuyển đổi động các ma trận trọng số của mô hình từ số thực dấu phẩy động 32-bit (FP32) sang số nguyên 8-bit (INT8) trong quá trình suy luận. Việc này giúp giảm lượng RAM chiếm dụng của mô hình xuống gần 4 lần (phù hợp với mức RAM 4GB của thiết bị) và tăng tốc độ tính toán trực tiếp trên CPU ARM, đảm bảo thời gian phản hồi ở mức chấp nhận được trong môi trường học đường.
+
+Hình 2.5 Lượng tử hóa từ FP32 sang INT8
+2.8.3. Mạng lưới kết nối an toàn với Cloudflare Tunnel
+Nhằm thiết lập một kênh liên lạc từ xa an toàn, không gián đoạn mà không cần can thiệp phức tạp vào hệ thống mạng của nhà trường như mở port/NAT router, Raspberry Pi 4 được cấu hình tích hợp giải pháp Cloudflare Tunnel. Công nghệ này tạo ra một đường hầm mạng mã hóa bằng giao thức TLS trực tiếp từ thiết bị ra Internet, cấp phát một tên miền bảo mật. Nhờ đó, giáo viên có thể truy cập hệ thống từ điện thoại cá nhân thông qua 4G/Wifi một cách dễ dàng và an toàn để chụp ảnh bài viết của học sinh, truyền dữ liệu thẳng về máy chủ Raspberry Pi.
+
+
+Hình 2.6 Mô hình định tuyến lưu lượng qua Cloudflare.
+CHƯƠNG 3: THIẾT KẾ HỆ THỐNG VÀ MÔ HÌNH
+3.1 Kiến trúc tổng thể hệ thống
+Thiết bị mang hệ thống được nhóm thiết kế dựa trên kiến trúc Web hiện đại, sử dụng framework Next.js App Router cho cả frontend và backend, kết hợp với cơ sở dữ liệu SQLite thông qua Prisma ORM. Mô hình hoạt động dựa trên sự phối hợp chặt chẽ giữa bộ tiền xử lý ảnh số, mô hình xử lý chính tả cục bộ và trí tuệ nhân tạo đa phương thức trên điện toán đám mây.
+
+Hình 3.1 Sơ đồ luồng hoạt động tổng thể của hệ thống
+3.2 Quy trình tiền xử lý ảnh số
+
+Hình 3.2 Lưu đồ cấu trúc chi tiết của tiền xử lý ảnh
+3.2.1 Chi tiết thuật toán từng bước trong pipeline
+Bước 1 Sẽ tự động xoay ảnh do ảnh chụp từ điện thoại thường chứa siêu dữ liệu định hướng EXIF orientation tag khiến hình ảnh bị ngược hoặc nghiêng khi đưa lên web. Ngay khi đọc file, thư viện Jimp sẽ tự động nhận diện thẻ dữ liệu này và xoay ma trận điểm ảnh về đúng hướng trực diện của tài liệu.
+Bước 2 sẽ tối ưu kích thước ảnh (Resize), bước này giúp giảm độ trễ truyền tải mạng và tiết kiệm chi phí token khi gửi dữ liệu đến API Gemini. Hệ thống tự động co tỷ lệ ảnh gốc về chiều rộng tối đa, vừa giúp giảm dung lượng vừa giữ nguyên cấu trúc khung hình và độ chi tiết của chữ viết tay.
+Bước 3 sẽ khắc phục các sự cố sai lệch màu sắc do môi trường chụp như ánh đèn bị ám vàng hoặc ánh sáng ngoài trời bị ám xanh, hệ thống sử dụng giải thuật Gray World. Thuật toán giả định rằng giá trị trung bình của các kênh màu đỏ (R), xanh lá (G) và xanh dương (B) trong một bức ảnh chuẩn đều bằng một mức xám trung tính :
+(3.1)
+Giá trị mới của từng điểm ảnh tại vị trí (x,y) được nhân tương ứng với các hệ số này để đưa nền giấy ô ly về trạng thái màu trắng tự nhiên.
+Bước 4 sẽ chuyển ảnh sang màu xám sau khi cân bằng trắng, ảnh màu được chuyển đổi sang hệ màu xám đơn kênh nhằm giảm dung lượng bộ nhớ xử lý xuống còn một phần ba, đồng thời chuẩn bị dữ liệu cho các bước lọc hình thái kế tiếp. Quá trình chuyển đổi này áp dụng công thức tính toán dựa trên phân bổ độ nhạy sáng của mắt người đối với ba kênh màu đỏ, xanh lá và xanh dương. Công thức chuyển đổi sử dụng phân bổ độ nhạy sáng của mắt người đối với ba kênh màu:
+(3.2)
+Bước 5 xử lý bóng đen do tay giáo viên hoặc điện thoại che khi chụp bài viết dưới ánh đèn, hệ thống sử dụng phương pháp chuẩn hóa nền (Background Normalization). Đầu tiên, ảnh nền ước lượng được tạo ra bằng phép lọc làm mờ hộp (Box Blur) với kích thước kernel cực đại kernel_size=51:
+background(x, y) = BoxBlur(image, kernel_size = 51)(3.3)
+Ảnh đã khử bóng được tạo thành bằng cách chia giá trị của ảnh xám gốc cho ảnh nền ước lượng:
+(3.4)
+Nhờ ứng dụng cấu trúc Integral Image (Summed-Area Table), phép lọc mờ Box Blur với kernel lớn vẫn đạt hiệu suất thực thi trên mỗi pixel, giúp giảm thiểu tối đa thời gian tính toán.
+Bước 6 sử dụng CLAHE (Cân bằng Histogram cục bộ giới hạn tương phản) để tăng cường độ tương phản cho nét chữ viết tay của học sinh (đặc biệt là nét bút chì mờ nhạt), thuật toán CLAHE được áp dụng:
+Bước
+Nội dung thực hiện
+Thông số kỹ thuật
+1
+Chia lưới ảnh
+Lưới 8 x 8 khối (tiles)
+2
+Tính biểu đồ
+Histogram cục bộ từng khối
+3
+Giới hạn tương phản
+clipLimit = 2.0
+4
+Nội suy
+Nội suy song tuyến (bilinear)
+Bảng 3.1 Thông số kỹ thuật thuật toán CLAHE
+Bước 7 sẽ làm sắc nét bằng mặt nạ mờ nghĩa là tăng cường độ rõ nét cho các nét chữ viết tay bị nhòe thông qua việc cộng thêm một phần sai khác giữa ảnh gốc và ảnh mờ:
+sharpened(x, y) = original(x, y) + α · [original(x, y) − blurred(x, y)](3.5)
+Với α = 0.5 là hệ số sắc nét sẽ mang lại độ chi tiết cao mà không làm tăng quá nhiều nhiễu hạt.
+Bước 8 Hệ thống đo lường chất lượng ảnh thực tế và xuất ra báo cáo QualityReport gồm các cảnh báo sư phạm trực quan:
+Tiêu chí đánh giá
+Phương pháp tính
+Độ mờ (Blur score)
+Phương sai toán tử Laplacian (3 x 3)
+Độ sáng (Brightness)
+Trung bình cường độ pixel
+Nét chữ (Độ đậm)
+Tỷ lệ pixel tối (< 100)
+Bảng 3.2 Bảng tiêu chí đánh giá chất lượng ảnh
+Bước cuối cùng cũng là bước quan trọng nhất, sử dụng nhị phân hóa thích nghi để chuyển đổi ảnh xám liên tục thành ảnh nhị phân (chữ đen hoàn toàn trên nền trắng tinh khiết). Ngưỡng thích nghi cục bộ được tính toán cho từng điểm ảnh dựa trên giá trị trung bình Gaussian của cửa sổ lân cận kích thước 31×31:
+T(x, y) = mean_local(x, y) − C(3.6)
+Với C=5 (đã được tối ưu thực nghiệm giúp giữ lại trọn vẹn nét bút chì mảnh nhất mà không bị đứt nét).
+3.3 Quy trình chấm điểm bằng AI đa phương thức
+Quy trình chấm điểm AI tích hợp chặt chẽ công nghệ thị giác máy tính và xử lý ngôn ngữ tự nhiên thành một luồng xử lý đồng nhất End-to-End.
+
+Hình 3.3 Lưu đồ quy trình chấm điểm bằng các mô hình
+3.3.1. Các thành phần chính của quy trình chấm điểm
+Chuẩn bị Payload đầu vào Ảnh nhị phân thu được từ bước tiền xử lý được mã hóa thành dữ liệu Base64 với định dạng ảnh image/jpeg. Việc nhị phân hóa giúp AI tập trung hoàn toàn vào hình thái nét chữ, triệt tiêu hoàn toàn sự ảnh hưởng của màu sắc giấy hay vết bẩn trên tập ô ly.
+Ảnh sau khi qua luồng tiền xử lý sẽ được gửi lên gemini để trích xuất văn bản, mô hình bị buộc tuân thủ nguyên tắc để trích xuất nguyên văn kể cả những từ sai chính tả, không tự ý sửa đổi và bỏ qua các nét gạch xóa, chữ nháp. Kết quả trả về là một đoạn văn bản thô đại diện chính xác cho những gì học sinh đã viết.
+Văn bản thô sau khi thu nhận từ API Gemini sẽ trải qua một bộ lọc tiền xử lý cục bộ nhằm loại bỏ nhiễu ngữ nghĩa. Tầng này áp dụng các tập luật heuristic để chuẩn hóa ký tự đặc biệt, khử bỏ các yếu tố phi ngôn ngữ chuẩn để biên dịch chuỗi câu sai thành một chuỗi câu hoàn chỉnh đúng ngữ pháp và chính tả tiếng Việt.
+Dịch vụ này thực hiện đồng thời sửa lỗi chính tả và sử dụng thuật toán Levenshtein SequenceMatcher so sánh văn bản gốc và bản đúng để định vị chính xác vị trí lỗi, phân loại lỗi như phụ âm đầu, vần, dấu thanh, viết hoa,... và tính toán điểm số trừ.
+Tiêu chí
+Điểm tối đa
+Phương pháp đánh giá
+Chính tả & Ngữ pháp
+4.0
+Trừ 0.5đ/lỗi khác nhau (lớp 1–3); lỗi lặp chỉ trừ 1 lần
+Hình thức trình bày
+3.0
+Đánh giá theo mức (3.0 / 2.0 / 1.0 / 0.0đ)
+Nội dung & Ý tưởng
+2.0
+Đánh giá theo mức (2.0 → 0.0đ)
+Sáng tạo (từ láy, so sánh, nhân hóa)
+1.0
+Điểm thưởng cộng thêm
+Bảng 3.3 Barem chấm điểm tích hợp trong hệ thống
+Để triệt tiêu hoàn toàn hiện tượng ảo giác của mô hình AI, hệ thống thiết lập tham số temperature ở mức phù hợp. Giá trị này buộc Gemini luôn đưa ra phản hồi chính xác, nhất quán và bám sát ảnh chụp thực tế.
+Để Next.js Backend có thể lưu trữ dữ liệu trực tiếp vào database, mô hình được cấu hình để phản hồi duy nhất một định dạng JSON hợp lệ theo lược đồ định nghĩa sẵn. Lược đồ này chứa các trường dữ liệu quan trọng như: điểm tổng, điểm chi tiết, văn bản nhận dạng được, văn bản đã sửa đúng chính tả, mảng danh sách lỗi chi tiết và nhận xét khuyến khích học sinh.
+3.4 Phân quyền và xác thực người dùng
+Nhằm đảm bảo an toàn thông tin và tính cách ly dữ liệu trong môi trường giáo dục học đường, hệ thống triển khai mô hình phân quyền dựa trên vai trò (Role-Based Access Control - RBAC). Có ba vai trò người dùng chính được định nghĩa chặt chẽ trong hệ thống: Quản trị viên (Admin), Giáo viên (Teacher), và Học sinh (Student).
+
+Hình 3.4 Lưu đồ phân quyền và kiểm soát truy cập hệ thống
+3.4.1 Cơ chế quản lý và phân quyền dữ liệu
+Hệ thống quản lý phiên làm việc của người dùng và thực hiện phân vùng giao diện chức năng tương ứng tại Next.js Backend Middleware:
+Phân hệ giáo viên đóng vai trò trung tâm trong quy trình đánh giá. Giáo viên được cấp quyền tương tác với API trí tuệ nhân tạo để thực hiện chức năng chấm bài tự động qua hình ảnh. Nhằm đảm bảo tính cá nhân hóa và bảo mật thông tin, quyền quản lý, xem danh sách và thống kê báo cáo của giáo viên bị giới hạn nghiêm ngặt trong phạm vi các lớp học được phân công giảng dạy hoặc chủ nhiệm. Đặc biệt, để tôn trọng tính chủ động trong sư phạm, phân hệ cho phép giáo viên duyệt, chỉnh sửa điểm số và nhận xét thủ công trước khi dữ liệu được đồng bộ chính thức vào cơ sở dữ liệu SQLite.
+Phân hệ học sinh được thiết kế theo nguyên lý cách ly tối đa nhằm bảo vệ quyền riêng tư trong giáo dục. Phân hệ này chặn toàn bộ quyền cấu hình, gọi API chấm điểm hoặc can thiệp vào cơ sở dữ liệu. Dựa trên cơ chế định danh, học sinh chỉ có quyền truy cập ở chế độ đọc đối với các dữ liệu cá nhân bao gồm: lịch sử điểm số, bảng phân tích lỗi sai và biểu đồ trực quan hóa tiến trình phát triển kỹ năng chính tả.
+Phân hệ quản trị viên sở hữu thẩm quyền tối cao trong toàn hệ thống. Phân hệ này chịu trách nhiệm điều phối các nghiệp vụ quản trị cấp cao bao gồm: khởi tạo và cấu trúc lớp học, quản lý vòng đời tài khoản giáo viên và học sinh, thiết lập ma trận phân công giảng dạy, đồng thời thực hiện các tác vụ tối ưu hóa hệ thống như quản lý và giải phóng dung lượng bộ nhớ lưu trữ hình ảnh.
+
+
+
+
+CHƯƠNG 4: XÂY DỰNG ỨNG DỤNG
+4.1 Mô tả hệ thống
+4.1.1 Mục tiêu hệ thống
+Mục tiêu chính của hệ thống là cung cấp một công cụ hỗ trợ nhận dạng chữ viết tay tiếng Việt và chấm điểm, sửa lỗi chính tả tự động trên ảnh chụp tập học sinh tiểu học, nhằm nâng cao hiệu suất làm việc của giáo viên và tăng cường trải nghiệm học tập của học sinh.
+Hệ thống được thiết kế để hỗ trợ trực tiếp cho giáo viên tiểu học trong quá trình chấm bài và đưa ra quyết định đánh giá sư phạm dựa trên các bức ảnh chụp bài viết trên giấy ô ly của học sinh. Từ đó giúp giảm tải áp lực chấm bài thủ công hàng ngày, đồng thời hạn chế tối đa việc bỏ sót các lỗi chính tả đặc thù của tiếng Việt như lỗi phụ âm đầu, vần, dấu thanh do ảnh hưởng của phương ngữ vùng miền vốn thường khó nhận biết hoặc dễ bị bỏ qua trong khối lượng bài tập lớn. Đối với học sinh, hệ thống hướng đến việc cung cấp một kênh xem lại bài làm trực quan, hiển thị chi tiết các từ viết sai kèm từ gợi ý sửa đúng và những lời nhận xét sư phạm mang tính động viên kịp thời.
+4.1.2 Quy trình phát triển hệ thống
+
+
+Hình 4.1 Sơ đồ quy trình phát triển hệ thống
+Quy trình phát triển hệ bao gồm các bước sau:
+Thu thập ảnh chụp bài viết ô ly của học sinh từ nhiều nguồn khác nhau nhằm đảm bảo tính đa dạng về nét chữ, cấp học và điều kiện chụp ảnh. Dữ liệu được xây dựng và gán nhãn theo các tiêu chí đánh giá chữ viết nhằm phục vụ quá trình huấn luyện và kiểm thử hệ thống.
+Tiến hành nghiên cứu đặc điểm chữ viết học sinh và phân loại các nhóm lỗi thường gặp như sai kích thước chữ, sai khoảng cách, sai độ cao, sai nét chữ hoặc trình bày chưa đúng quy định. Xem xét đặc trưng chữ viết và phân tích phân phối 5 nhóm lỗi chính tả:
+Tên lỗi
+Ví dụ
+Nguyên nhân phổ biến
+Nhầm phụ âm đầu
+"chường" → "trường"
+Phương ngữ Nam Bộ (ch/tr); đọc chưa chuẩn xác
+Sai vần
+"mát rợi" → "mát rượi"
+Nhầm vần có âm đệm phức tạp; ảnh hưởng phương ngữ
+Sai/thiếu dấu thanh
+"ngã" → "ngả"
+Không phân biệt hỏi/ngã; bỏ quên đánh dấu khi viết nhanh
+Sai quy tắc viết hoa
+"nguyễn văn hùng"
+Không viết hoa tên riêng, đầu câu; chưa nắm quy tắc viết hoa
+Bỏ sót/thêm chữ
+"tiếng" → "tiến"
+Viết thiếu âm cuối; thêm chữ do lẫn âm tiết gần nhau
+Bảng 4.1 Phân loại lỗi chính tả tiếng Việt tiểu học
+Thiết kế kiến trúc hệ thống kết hợp xử lý ảnh và mô hình ngôn ngữ lớn để nhận diện, phân tích và đánh giá chất lượng chữ viết. Đồng thời xây dựng bộ tiêu chí theo Thông tư 27/2020/TT-BGDĐT và cấu trúc dữ liệu đầu ra theo định dạng JSON nhằm đảm bảo tính nhất quán trong quá trình chấm điểm.
+Tiêu chí
+Điểm tối đa
+Phương pháp đánh giá
+Chính tả & Ngữ pháp
+4,0đ
+Trừ 0,5đ/loại lỗi phân biệt (lớp 1–3); 0,25đ/lỗi (lớp 4–5). Lỗi lặp cùng loại chỉ trừ 1 lần
+Hình thức trình bày
+3,0đ
+Mức 3,0: Chữ đẹp, đều, đúng cỡ; 2,0: Khá rõ ràng; 1,0: Đọc được; 0,0: Quá cẩu thả
+Nội dung & Ý tưởng
+2,0đ
+Đánh giá mức 0 / 0,5 / 1,0 / 1,5 / 2,0 theo đầy đủ, mạch lạc và sáng tạo nội dung
+Sáng tạo (từ láy, so sánh, nhân hóa)
+1,0đ
+Điểm thưởng: cộng thêm khi phát hiện sử dụng biện pháp tu từ phù hợp, không trừ
+Bảng 4.2 Barem chấm điểm 4 tiêu chí theo Thông tư 27/2020/TT-BGDĐT
+Hiện thực hóa và kiểm thử độc lập đường ống tiền xử lý ảnh 9 bước bằng thư viện Jimp, đảm bảo chất lượng ảnh đầu ra đạt chuẩn toán học thực nghiệm trước khi nhận dạng ký tự.
+Thiết kế kết nối với Google Gemini API thông qua kỹ thuật Prompt Engineering nghiêm ngặt, đảm bảo mô hình chỉ trích xuất văn bản nguyên văn và giữ nguyên các lỗi sai hình thái của học sinh.
+Phát triển module chấm điểm AI cục bộ ViT5 trên thiết bị, áp dụng kỹ thuật Lượng tử hóa động Dynamic INT8 Quantization để tối ưu RAM và CPU. Đóng gói phân hệ thành mô hình chạy cục bộ, kết hợp giải thuật Levenshtein để định vị, phân loại lỗi sư phạm và tự động trừ điểm theo các tiêu chí ở trên.
+Thiết kế kiến trúc giao diện người bằng cách xây dựng hệ thống giao diện đa tác nhân gồm admin, giáo viên và học sinh, đáp ứng tính linh hoạt trong nghiệp vụ và hiển thị trực quan đồ thị tiến bộ.
+Triển khai thực địa và kiểm thử hệ thống, cài đặt toàn bộ mã nguồn lên phần cứng Raspberry Pi 4, cấu hình đường truyền mã hóa qua Cloudflare Tunnel để truy cập từ xa và tiến hành đánh giá thực nghiệm bằng các bài chính tả thực tế của học sinh.
+4.1.3 Cách hoạt động của hệ thống
+Người dùng truy cập vào hệ thống qua giao diện Web. Phía giáo viên, luồng chính gồm 5 bước:
+Hệ thống kết hợp kỹ thuật tiền xử lý ảnh số cục bộ và công nghệ trí tuệ nhân tạo đa phương thức đám mây để phân tích, nhận dạng chữ viết tay và tự động sửa lỗi chính tả tiếng Việt.
+Hệ thống ngay lập tức kích hoạt pipeline xử lý ảnh 9 bước chạy trên máy chủ cục bộ (Raspberry Pi 4) để chuẩn hóa ảnh về định dạng tối ưu. Toàn bộ quy trình này là hoàn toàn tự động, không cần thao tác thủ công.
+Ảnh sau xử lý được mã hóa Base64 và gửi lên Google Gemini API để trích xuất văn bản nguyên bản. Hệ thống sử dụng kỹ thuật Prompt engineering để đảm bảo AI chỉ "đọc chữ" mà không tự sửa lỗi.
+Văn bản thô từ OCR được gửi sang dịch vụ ViT5 chạy cục bộ. Mô hình ViT5 sẽ tạo ra phiên bản văn bản đúng, sau đó giải thuật Levenshtein so khớp để xác định từng lỗi cụ thể, phân loại nguyên nhân và tự động trừ điểm. Kết quả trả về bao gồm điểm 4 tiêu chí, danh sách lỗi chi tiết và lời nhận xét tự động.
+Kết quả chấm được hiển thị dưới dạng bản nháp để giáo viên kiểm duyệt. Giáo viên có thể chỉnh sửa điểm thành phần hoặc bổ sung nhận xét cá nhân trước khi nhấn "Xác nhận lưu". Chỉ sau bước này, dữ liệu mới được ghi vào cơ sở dữ liệu.
+4.1.4 Những lợi ích của hệ thống
+Nhờ công nghệ AI đa phương thức mạnh mẽ, hệ thống giúp giáo viên chấm bài chính tả với độ chính xác cao, nhận diện đúng các nét chữ nguệch ngoạc và phân loại lỗi chuẩn xác theo 5 nhóm lỗi chính tả tiếng Việt. Điều này giúp giáo viên nhanh chóng phát hiện các lỗ hổng kiến thức thường gặp của học sinh để điều chỉnh phương pháp dạy học kịp thời.
+Giáo viên khi dùng chỉ cần chụp ảnh bài viết của học sinh tải lên hệ thống và nhận kết quả chấm điểm toàn diện chỉ trong khoảng 30s. Điều này giúp giảm thiểu tối đa thời gian chấm bài thủ công hàng ngày, giải phóng sức lao động và giảm đáng kể áp lực công việc hành chính cho giáo viên tiểu học.
+Kết quả phân tích chi tiết cùng nhận xét gợi ý giúp giáo viên đưa ra các định hướng kèm cặp, phụ đạo học sinh hiệu quả hơn. Đồng thời, hệ thống cung cấp lịch sử và các biểu đồ thống kê trực quan giúp giáo viên, phụ huynh dễ dàng đánh giá sự tiến bộ của học sinh qua thời gian.
+4.1.5 Mặt hạn chế của hệ thống
+Chỉ mang tính chất hỗ trợ, không thay thế hoàn toàn vai trò của giáo viên vì hệ thống được thiết kế như một công cụ trợ lý đắc lực hỗ trợ chấm bài. Giáo viên luôn giữ vai trò cốt lõi trong việc phê duyệt, chỉnh sửa điểm số và nhận xét trước khi lưu chính thức vào cơ sở dữ liệu để đảm bảo phù hợp với thực tế tâm lý sư phạm của từng học sinh.
+Độ chính xác phụ thuộc vào chất lượng ảnh chụp và nét chữ, kết quả phân tích có thể bị ảnh hưởng bởi nhiều yếu tố ngoại cảnh như ảnh chụp bị mờ nhòe quá mức, ánh sáng cực đoan, nét viết bút chì quá mờ nhạt hoặc chữ viết quá nguệch ngoạc nằm ngoài khả năng nhận dạng tự nhiên của mô hình.
+4.2 Công nghệ sử dụng
+4.2.1 Database của hệ thống
+Hệ thống lựa chọn hệ quản trị cơ sở dữ liệu SQLite kết hợp cùng thư viện better-sqlite3 làm công cụ lưu trữ dữ liệu chính thức. Lựa chọn này xuất phát từ các yêu cầu đặc thù của kiến trúc phần cứng nhúng Raspberry Pi 4 cũng như bài toán vận hành độc lập tại các trường tiểu học:
+Sự gọn nhẹ và không tốn tài nguyên nền, SQLite lưu trữ toàn bộ cơ sở dữ liệu trong một tệp tin duy nhất. Khác với MySQL, PostgreSQL hay SQL Server yêu cầu chạy service ngầm tốn tài nguyên CPU/RAM, SQLite là một hệ thống phi máy chủ và nhúng trực tiếp vào tiến trình ứng dụng Next.js. Điều này giúp tối ưu hóa dung lượng RAM 4GB giới hạn của Raspberry Pi 4.
+Thư viện better-sqlite3 triển khai các cơ chế giao tiếp đồng bộ trực tiếp với SQLite C-API, mang lại tốc độ truy vấn vượt trội so với các adapter bất đồng bộ thông thường, phù hợp với các thao tác truy vấn đồng thời từ nhiều lớp học trong trường học.
+Khi giáo viên muốn sao lưu toàn bộ dữ liệu học sinh, danh sách lớp và lịch sử chấm điểm, họ chỉ cần thực hiện sao chép duy nhất một tệp tin mà không cần các lệnh kết xuất dữ liệu phức tạp.
+Để giao tiếp an toàn và nhất quán với cơ sở dữ liệu, dự án sử dụng Prisma ORM làm tầng trừu tượng hóa dữ liệu. Prisma mang lại khả năng truy vấn hướng đối tượng mạnh mẽ, tự động đồng bộ hóa cấu trúc bảng Prisma Migrate và ngăn chặn hoàn toàn các lỗ hổng bảo mật phổ biến như SQL Injection.
+
+Hình 4.2 SQLite
+4.2.2 Front-end của hệ thống
+Tailwind CSS là một framework CSS theo trường phái tiện ích trước tiên vô cùng phổ biến và mạnh mẽ, được nhóm phát triển lựa chọn để xây dựng giao diện người dùng cho hệ thống .Thay vì cung cấp các thành phần giao diện được định nghĩa sẵn và khó tùy biến, Tailwind CSS cung cấp hàng nghìn lớp tiện ích cấp thấp giúp lập trình viên trực tiếp xây dựng giao diện trực quan, sinh động và linh hoạt ngay trong tệp JSX/TSX.
+
+Hình 4.3 Tailwind CSS
+Bộ công cụ này giúp thiết kế giao diện cực nhanh nhờ các mẫu có sẵn như nút bấm, menu chỉ cần lắp ghép lại, tiết kiệm tối đa thời gian. Đồng thời, hệ thống tự động loại bỏ các chi tiết thừa giúp trang web siêu nhẹ, mở lên ngay lập tức và chạy mượt mà kể cả trên các thiết bị cấu hình yếu.
+Bên cạnh đó, trang web luôn có vẻ ngoài đẹp mắt, đồng bộ về màu sắc, phông chữ và tự động co giãn để vừa vặn với mọi loại màn hình. Nhờ vậy, giao diện luôn hiển thị rõ ràng và chuyên nghiệp trên cả máy tính của giáo viên lẫn điện thoại di động của phụ huynh, học sinh.
+4.2.3 Back-end của hệ thống
+Next.js App Router kết hợp Node.js runtime và Prisma ORM là một trong những framework phát triển web hiện đại được sử dụng rộng rãi và có nhiều lợi ích vượt trội. Trong ứng dụng này, Next.js API Routes đóng vai trò quan trọng, chủ chốt xuyên suốt quá trình xây dựng và phát triển ứng dụng, bởi đây là một giải pháp phát triển web full-stack toàn diện được sử dụng rộng rãi, mang lại khả năng xử lý nhanh chóng, an toàn và hiệu quả cao.
+
+Hình 4.4 Next.js
+Kiến trúc Full-stack đồng bộ và dễ tiếp cận thay vì phải duy trì hai dự án độc lập như Frontend chạy React độc lập kết nối đến Backend chạy Python/Flask riêng biệt, Next.js cho phép gộp cả giao diện người dùng và các API xử lý logic server vào trong một mã nguồn duy nhất. Nhờ đó, các nhà phát triển có thể dễ dàng tiếp cận, lập trình nhất quán bằng ngôn ngữ TypeScript từ client đến server mà không cần cấu hình phức tạp về phân giải CORS.
+Hiệu năng cao và khả năng tùy chỉnh linh hoạt Next.js App Router sử dụng cơ chế xử lý bất đồng bộ mạnh mẽ trên nền tảng Node.js V8 Engine, không áp đặt cấu hình cứng nhắc mà cho phép tùy biến linh hoạt cấu trúc phản hồi. Các hàm xử lý API được thiết kế dạng Route Handlers, giúp nhà phát triển dễ dàng cấu hình phương thức truy cập (GET, POST, PUT, DELETE) trực quan, tự do tối ưu hóa luồng dữ liệu theo đặc thù của dự án.
+Tích hợp sâu và mạnh mẽ với các công cụ ORM hiện đại vì Next.js API Routes tích hợp hoàn hảo với Prisma ORM và SQLite Database. Sự kết hợp này mang lại khả năng truy vấn hướng đối tượng an toàn kiểu dữ liệu, loại bỏ hoàn toàn các lỗi cú pháp SQL thủ công và hỗ trợ quản trị cơ sở dữ liệu gọn nhẹ, an toàn cao và vô cùng lý tưởng để chạy mượt mà trên phần cứng Raspberry Pi 4 vốn giới hạn về dung lượng RAM.
+Khả năng mở rộng vượt trội và tối ưu hóa tài nguyên phần cứng: Next.js đáp ứng xuất sắc cho cả các ứng dụng quy mô nội bộ nhỏ chạy cục bộ trong mạng trường học lẫn các hệ thống lớn chịu tải cao phục vụ hàng ngàn học sinh khi triển khai đám mây. Khả năng tự động tối ưu hóa gói bundle đầu ra giúp giảm thiểu tối đa tài nguyên bộ nhớ tiêu ha
+4.3 Triển khai hệ thống
+Để đưa phần mềm chấm điểm từ môi trường thử nghiệm vào vận hành thực tế tại các trường tiểu học, nhóm nghiên cứu đã xây dựng một quy trình cài đặt tối ưu và mô hình kết nối mạng đơn giản. Mục tiêu là đảm bảo hệ thống luôn hoạt động ổn định, bảo mật cao nhưng không đòi hỏi chi phí đầu tư lớn hay nhân sự vận hành có trình độ kỹ thuật chuyên sâu.
+
+Hình 4.5 Demo hệ thống
+4.3.1 Cấu hình và cài đặt trên thiết bị phần cứng
+Thay vì sử dụng các hệ thống máy chủ đắt đỏ và cồng kềnh, toàn bộ phần mềm được đóng gói gọn nhẹ để chạy trực tiếp trên một chiếc máy tính mini Raspberry Pi 4 đặt ngay tại trường học.
+
+
+Hình 4.6 Sơ đồ kiến trúc hệ thống trên Raspberry Pi 4 kết hợp Cloudflare Tunnel
+Nhóm nghiên cứu đã thiết lập sẵn 3 quy trình tự động hóa nhằm đơn giản hóa tối đa việc quản trị:
+Tự động hóa môi trường hệ thống: Quy trình này chịu trách nhiệm chuẩn bị bộ nhớ đệm, tối ưu dung lượng và khởi tạo cơ sở dữ liệu trên thiết bị. Đặc biệt, hệ thống được cấu hình chạy ngầm tự động; nhờ đó, mỗi khi trường học bật nguồn điện, máy tính mini sẽ tự khởi động phần mềm chấm điểm mà không cần con người phải thao tác thủ công trên màn hình.
+Tự động hóa cấu hình mạng: Quy trình này giúp cấu hình đường truyền kết nối của thiết bị trong mạng WiFi của trường học. Đồng thời, nó cũng tích hợp sẵn giải pháp kết nối an toàn của Cloudflare, giúp thiết bị liên kết ra Internet một cách chính thống và an toàn mà không cần can thiệp vào hệ thống bảo mật sẵn có của nhà trường.
+Tự động hóa cập nhật dữ liệu: Hỗ trợ người quản trị dễ dàng làm mới danh sách các khóa kết nối trí tuệ nhân tạo hoặc tải về các bản cập nhật sửa lỗi từ xa chỉ bằng một thao tác, giúp hệ thống luôn vận hành ổn định liên tục.
+4.3.2 Mô hình kết nối và truy cập mạng
+Hệ thống được thiết kế theo hướng tối giản và tiện lợi nhất cho người sử dụng. Bất kể là giáo viên, học sinh hay quản trị viên, chỉ cần thiết bị như điện thoại, máy tính bảng, máy tính xách tay là có kết nối mạng Internet dù là sử dụng WiFi tại trường, WiFi tại nhà hay mạng dữ liệu di động 4G/5G là đều có thể truy cập thẳng vào địa chỉ trang web chính thức của phần mềm để đăng nhập và sử dụng mọi tính năng.
+Nhờ giải pháp kết nối trung gian an toàn được thiết lập sẵn, người dùng không cần phải thực hiện bất kỳ bước cài đặt mạng phức tạp nào, giúp việc xem kết quả bài làm hay chấm điểm diễn ra linh hoạt mọi lúc, mọi nơi.
+4.3.3 Quản lý lưu trữ dữ liệu và liên kết khóa trí tuệ nhân tạo
+
+Hình 4.7 Bảo mật quản lý lưu trữ dữ liệu và liên kết khóa trí tuệ nhân tạo
+Mọi thông số vận hành cốt lõi của phần mềm được quản lý tập trung và bảo mật trong tệp cấu hình hệ thống, tập trung vào hai tác vụ then chốt:
+Lưu trữ dữ liệu tập trung: Chỉ định đường dẫn lưu trữ toàn bộ thông tin học sinh, danh sách lớp học và lịch sử kết quả chấm bài vào một tệp tin duy nhất nằm trên thẻ nhớ của thiết bị. Cơ chế này giúp việc sao lưu dữ liệu dự phòng cực kỳ dễ dàng, người quản trị chỉ cần sao chép tệp tin này ra ổ cứng ngoài là có thể bảo toàn toàn bộ dữ liệu của nhà trường.
+Điều phối bể khóa AI: Lưu trữ tập hợp các khóa kết nối với mô hình trí tuệ nhân tạo Google Gemini. Hệ thống sẽ áp dụng thuật toán tự động hoán đổi và lựa chọn ngẫu nhiên các khóa này khi có yêu cầu chấm bài gửi lên. Cơ chế xoay vòng thông minh này giúp phân phối đều tải lượng dữ liệu, tránh tình trạng hệ thống bị nghẽn hay bị từ chối dịch vụ khi có nhiều giáo viên cùng chụp ảnh chấm bài vào giờ cao điểm.
+
+CHƯƠNG 5: THỰC NGHIỆM VÀ KẾT QUẢ
+5.1 Mục tiêu thực nghiệm
+Thực nghiệm được tiến hành nhằm đánh giá hiệu năng thực tế của mô hình trên ba phương diện chính:
+Thời gian phản hồi: Đo thời gian từ lúc gửi yêu cầu đến lúc nhận kết quả chấm điểm hoàn chỉnh, đối chiếu với mục tiêu thiết kế dưới 1 phút/bài.
+Độ tin cậy kỹ thuật: Đánh giá tỷ lệ phản hồi thành công của API và tỷ lệ trích xuất JSON hợp lệ từ mô hình AI.
+Khả năng phát hiện lỗi chính tả: Kiểm chứng năng lực nhận dạng chữ viết tay (OCR) và phát hiện, phân loại lỗi chính tả tiếng Việt từ ảnh thật.
+5.2. Lựa chọn mô hình AI
+5.2.1 Tổng quan các mô hình
+Để có cơ sở đánh giá thực tế và khách quan trước khi tích hợp vào hệ thống, nhóm nghiên cứu đã xây dựng một quy trình thực nghiệm chuẩn hóa gồm hai giai đoạn và triển khai trực tiếp trên môi trường Google Colab.
+Nhóm tiến hành thu thập hơn 400 tấm ảnh chữ viết tay tiếng Việt trên nền tập ô ly và nền trắng để huấn luyện một mô hình Yolov5 trên chuyên biệt để phát hiện và định vị các dòng chữ viết tay tiếng Việt có dấu trên nền tập ô ly. Mô hình Yolov5 này đóng vai trò trích xuất, cắt tự động các phân đoạn chữ viết tay ra khỏi ảnh gốc để loại bỏ nhiễu nền.
+
+Hình 5.1 Một mẫu trong bộ dữ liệu đã được mô hình phát hiện
+Sau khi Yolov5 phát hiện các đối tượng từng chữ trong văn bản, kết quả thu được là một bộ dữ liệu thực nghiệm chuẩn hóa gồm hơn 5000 ảnh phân đoạn chữ viết tay trên nền trắng. Bộ dữ liệu này được đưa qua các mô hình OCR phiên bản pre-trained tối ưu nhất cho tiếng Việt để đo lường cấu hình nguyên bản dưới cùng một điều kiện phần cứng.
+
+Hình 5.2 Các chữ được cắt ra từ một mẫu trong bộ dữ liệu
+
+Cấu hình môi trường thử nghiệm trên Google Colab:
+GPU: NVIDIA T4 và NVIDIA A100.
+CPU: Intel(R) Xeon(R) @ 2.20GHz.
+RAM hệ thống: Khởi tạo từ 12.7 GB đến 51 GB.
+Dưới đây là bảng tổng hợp kết quả đối chiếu hiệu suất kỹ thuật thu được sau quá trình thực nghiệm và chạy benchmark trực tiếp của các mô hình trên Google Colab:
+
+Hình 5.3 Độ chính xác của các mô hình OCR chữ viết tay tiếng Việt trên nền trắng
+5.2.2 Ưu/nhược điểm và phạm vi ứng dụng
+Gemini API đạt độ chính xác cao nhất 85–95% nhờ khả năng suy luận ngữ cảnh có thể đoán chữ dựa vào nghĩa của cả câu, giải quyết được nét chữ mất dấu hoặc nguệch ngoạc. Hệ thống không yêu cầu hạ tầng GPU, trả về JSON trực tiếp, phù hợp triển khai nhanh. Hạn chế là chi phí vận hành theo lượng request và rủi ro bảo mật khi đẩy dữ liệu lên Cloud.
+EasyOCR nhẹ, miễn phí, dễ tích hợp real-time nhưng thiếu khả năng suy luận ngữ cảnh và hiệu suất nhận diện chữ viết tay tiếng Việt còn hạn chế khi chưa fine-tune. Chỉ phù hợp làm bộ lọc thô hoặc xử lý chữ số, mã vạch, block letters.
+Tesseract và VietOCR tốc độ nhanh nhất, tiêu tốn ít tài nguyên nhất nhưng tỷ lệ sai chính tả và mất dấu tiếng Việt quá cao trên tài liệu thực tế. Không khuyến khích cho chữ viết tay doanh nghiệp, chỉ nên dùng cho scan tài liệu in chất lượng cao.
+Tiêu chí
+Gemini 3.0 API
+EasyOCR
+Tesseract và VietOCR
+Chandra OCR
+Light-on-OCR1B
+Độ chính xác trích xuất văn bản
+85–95%
+0%
+0-5%
+80–87%
+78–84%
+Xử lý chữ tiếng Việt nền trắng
+Xuất sắc, hiểu ngữ cảnh
+Kém khi gặp nhiễu
+Kém khi gặp nhiễu
+Tốt
+Khá, đôi khi nhầm dấu thanh nhỏ
+Bảng 5.1 Hiệu suất các mô hình OCR cho chữ viết tay tiếng Việt trên nền trắng
+5.2.3 Quyết định lựa chọn mô hình Gemini phù hợp
+Để tìm ra giải pháp tối ưu nhất trước khi đưa vào sử dụng thực tế, nhóm nghiên cứu đã tiến hành một thử nghiệm đánh giá độc lập. Quá trình này so sánh hiệu năng của 5 thế hệ mô hình Gemini từ phiên bản 2.5 đến bản 3.5 mới nhất dựa trên một bộ dữ liệu gồm 20 ảnh chụp chữ viết tay thực tế. Kết quả nhận diện của các mô hình sẽ được đối chiếu trực tiếp với phần văn bản gốc đã được chuẩn hóa từ nhóm nghiên cứu:
+
+Hình 5.4 Kết quả benchmark OCR giữa các thế hệ mô hình Gemini
+Mô hình
+Độ trễ TB (s)
+Tokens TB
+Độ tương đồng TB (%)
+Độ chính xác TB (%)
+gemini-2.5-flash
+7.32
+523
+97.6%
+92.4%
+gemini-2.5-flash-lite
+5.12
+365
+96.8%
+89.3%
+gemini-3-flash-preview
+29.89
+2,548
+98.5%
+95.4%
+gemini-3.1-flash-lite
+5.06
+1,269
+98.0%
+93.4%
+gemini-3.5-flash
+36.81
+2,448
+100.0%
+100.0%
+Bảng 5.2 Kết quả benchmark OCR giữa các thế hệ mô hình Gemini
+Qua thực nghiệm, mô hình này chứng minh được sự ổn định và hiệu năng rất xuất sắc. Thời gian xử lý trung bình chỉ mất 5.06 giây cho mỗi bài viết  đây là tốc độ nhanh nhất trong các phiên bản được thử nghiệm. Dù tốc độ rất nhanh, mô hình vẫn đảm bảo độ tương đồng trung bình đạt 98.0% và độ chính xác cấp từ đạt 93.4%. Đặc biệt, hệ thống ghi nhận tỷ lệ chính xác tuyệt đối 100% trên các mẫu chữ viết tay có độ khó cao. Kết quả này là minh chứng rõ nét cho thấy thế hệ 3.1 đã tối ưu hóa sâu sắc năng lực nhận diện ký tự quang học đa phương thức đối với hệ thống chữ viết tiếng Việt có cấu trúc phức tạp.
+Thứ hai, về khả năng xử lý ngữ cảnh của dòng Flash đời trước các dòng Gemini 2.5 cho thấy mô hình này thể hiện tính thực tiễn cao khi đạt tỷ lệ lỗi API bằng 0% với thời gian phản hồi trung bình ổn định ở mức 7.32 giây. Nhờ năng lực nhận diện tốt các tổ hợp từ ghép tiếng Việt và không bị ảnh hưởng nhiều bởi các nét viết nghiêng hay nguệch ngoạc, nhóm đánh giá Gemini 2.5 là một phương án dự phòng vô cùng đáng tin cậy cho hệ thống.
+Thứ ba, về giới hạn và tiềm năng của thế hệ mới nhất Gemini 3.5: Đây là mô hình duy nhất đạt độ chính xác tuyệt đối 100% cả về ký tự, cách xuống dòng lẫn dấu câu trên các mẫu ảnh. Tuy nhiên, vì đây là dòng mô hình biên giới mới được phát hành, tần suất gặp phải các lỗi hệ thống như phản hồi quá tải hoặc nghẽn hạn ngạch trong quá trình test còn khá cao. Do đó, nhóm nhận thấy mô hình này chưa thực sự phù hợp để đưa vào vận hành chính thức cho môi trường lớp học thực tế ở thời điểm hiện tại.
+Kết luận về việc lựa chọn mô hình triển khai: Từ những luận cứ thực nghiệm nêu trên, nhóm nghiên cứu hoàn toàn ủng hộ phương án lựa chọn Gemini 3.1 Flash-Lite làm động cơ nhận diện và phân tích chính cho hệ thống. Mô hình này mang lại sự cân bằng tối ưu giữa tốc độ xử lý nhanh (~5.0 giây), chi phí vận hành token thấp, độ chính xác tiệm cận mức tuyệt đối (98.0%) cùng với độ ổn định hoạt động cao nhất.
+5.3 Quy trình tiền xử lý ảnh
+Trong giai đoạn đầu của dự án, nhóm nghiên cứu thử nghiệm tiếp cận trực tiếp: chụp ảnh bài viết tay của học sinh và gửi thẳng lên Gemini API mà không qua bất kỳ bước tiền xử lý nào. Kết quả ban đầu mô hình AI sẽ tùy lúc sẽ nhận diện sai các đường kẻ ô ly thành ký tự gạch ngang, bỏ sót toàn bộ những nét chữ bút chì nhạt trong vùng bóng tối, và thỉnh thoảng từ chối phân tích do ảnh quá mờ.
+Nhóm nhận ra rằng bài toán tiền xử lý ảnh chữ viết tay học sinh tiểu học Việt Nam có những đặc thù rất riêng mà các thư viện xử lý ảnh thông thường không giải quyết được chỉ bằng một hoặc hai bước. Đây là điểm khởi đầu của hành trình thiết kế pipeline từ bước 1 đến bước 10.
+
+Hình 5.5 Quá trình xử lý ảnh
+Nhóm nghiên cứu tổ chức phiên phân tích ảnh thực tế từ việc thu thập bộ dữ ảnh bài viết tay thật từ học sinh lớp 1–4 rồi từng người trong nhóm quan sát và ghi chú những lỗi thấy bằng mắt thường.
+Vấn đề
+Nguồn gốc
+Ảnh bị xoay 90° hoặc 270°
+Chụp ngang
+File ảnh nặng 3–5MB
+Camera điện thoại 12–24MP
+Nhiễu từ giấy bị ám vàng/xanh
+Ánh sáng môi trường
+Vùng bóng tối che khuất chữ
+Bóng tay, bóng điện thoại
+Nhiễu từ đường ô ly đậm
+Tập ô ly Việt Nam
+Nét chữ mờ hoặc mảnh
+Trẻ lớp 1–2 viết nhẹ tay
+Chữ nhòe do rung tay/mất nét
+Chụp bằng tay không dùng chân máy
+Bảng 5.3 Tổng hợp các lỗi kỹ thuật trên ảnh chữ viết tay
+Trong thực tế, ảnh từ điện thoại chụp thực tế rất dễ bị ngược hoặc lệch góc. Nếu bắt đầu thay đổi kích thước hay xử lý chi tiết ngay khi ảnh chưa đúng chiều, hệ tọa độ các điểm ảnh sẽ bị sai lệch hoàn toàn. Điều này làm hỏng kết quả của các bước lọc bóng mờ hay xóa ô ly ở phía sau.
+Vì vậy, ở bước 1 nhóm sử dụng EXIF Auto-rotate để đọc siêu dữ liệu hướng chụp (Orientation tag) từ file ảnh, từ đó tự động xoay ảnh về đúng chiều dọc hoặc chiều ngang chuẩn ngay khi tiếp nhận đầu vào.
+
+Hình 5.6 Ảnh được xoay đúng theo chiều
+Bước tiếp theo là Điều chỉnh kích thước thu nhỏ ảnh về một chiều rộng tối đa xác định 1600px. Nếu để gốc ảnh 5MB chứa hàng chục triệu điểm ảnh. Mọi thuật toán lọc sau đó sẽ chạy chậm nếu áp dụng trên ảnh nguyên gốc. Resize sớm giúp tất cả các bước sau nhanh hơn 3–4 lần. Việc này giúp giảm đáng kể kích thước file ảnh tới 85–95% nhằm tăng tốc độ truyền tải mạng, tiết kiệm token đầu vào của mô hình, đồng thời loại bỏ bớt nhiễu hạt tần số cao mà vẫn bảo toàn độ sắc nét cần có.
+
+Hình 5.7 Ảnh được resize
+Bước kế tiếp dùng cân bằng trắng trước khi chuyển xám. Để cân bằng màu phải làm khi ảnh còn đủ 3 kênh R, G, B. Sau khi chuyển xám, thông tin màu mất đi vĩnh viễn và không thể cân bằng trắng nữa. Mục đích là để đảm bảo hệ thống nhận diện chính xác vùng nào là nền giấy trắng và vùng nào là nét chữ bằng cách chuẩn hóa màu sắc ngay từ đầu.
+Công thức chuyển đổi cụ thể được áp dụng là:
+= 0.333R + 0.333G + 0.333B(5.1)
+
+Hình 5.8 Ví dụ cân bằng trắng trên ảnh viết tay
+Sau khi điều chỉnh về độ cân bằng của màu sắc, bước 3 sẽ chuyển sang ảnh xám Grayscale Conversion. Hệ thống tiến hành loại bỏ thông tin sắc độ, chuyển đổi ảnh từ không gian màu RGB sang ảnh một kênh mức xám.
+Để chuyển đổi ảnh màu sang ảnh xám, hệ thống sử dụng công thức tính toán dựa trên sự phân bổ độ nhạy sáng của mắt người đối với ba kênh màu.
+Công thức chuyển đổi cụ thể được áp dụng là:
+(5.2)
+
+Hình 5.9 Ví dụ sang ảnh xám
+Sau khi màu sắc nền giấy đã được chuẩn hóa ở bước 3, việc giữ lại 3 kênh màu là không còn cần thiết. Chuyển sang ảnh xám giúp giảm 2/3 lượng dữ liệu ma trận điểm ảnh cần tính toán, tối ưu hóa bộ nhớ và chuẩn bị cấu trúc đầu vào đồng nhất cho các bộ lọc hình thái học phía sau.
+Bước 5 là tiến hành khử bóng mờ nền Hệ thống sử dụng bộ lọc làm mờ với kích thước cửa sổ lớn để ước lượng dải sáng của ảnh nền, sau đó thực hiện phép chia ma trận để triệt tiêu các vùng bóng đổ loang lổ do tay hoặc thiết bị chụp che khuất. Bước này bắt buộc phải làm trước khi xóa đường kẻ ô ly. Vùng bóng tối cục bộ sẽ làm sai lệch biểu đồ mật độ điểm ảnh (histogram). Nếu cố tình xóa ô ly khi nền giấy bị loang lổ, thuật toán dò đường kẻ sẽ tính toán sai ngưỡng động, dẫn đến việc xóa nhầm nét chữ viết tay của học sinh hoặc bỏ sót lưới ô ly gây nhiễu cho mô hình AI.
+Công thức ước lượng ảnh nền (Background Estimation):
+background(x, y) = BoxBlur(image, kernel_size = 51)(5.3)
+Trong đó, Imagegray​(x,y) là giá trị điểm ảnh của ảnh xám thu được từ bước 4.
+Công thức triệt tiêu bóng đổ (Shadow Removal):
+(5.4)
+Nhờ cấu trúc này, thời gian tính toán được giảm xuống chỉ còn O(W×H), hoàn toàn độc lập với kích thước của cửa sổ lọc, giúp hệ thống hoạt động mượt mà và nhanh chóng.
+
+Hình 5.10 Biểu đồ so sánh phân bổ mức xám trước và sau
+
+Hình 5.11 Ảnh chữ viết tay trước và sau quá trình khử bóng đổ
+Ở bước 6 sẽ thực hiện tăng tương phản cục bộ thích nghi CLAHE. Ở bước này, hệ thống sẽ chia bức ảnh thành một lưới nhỏ gồm các ô 8 x 8 rồi áp dụng bộ lọc CLAHE với các thông số tối ưu để tự động đẩy độ tương phản của từng vùng lên. Mục đích ở đây là phải xóa sạch lưới ô ly ở bước trước rồi mới chạy CLAHE.
+khi phân tích dữ liệu, nét chữ viết tay của các bé tiểu học đặc biệt là lớp 1, lớp 2 thường rất mảnh, mờ và nhạt do nhấn bút chưa mạnh tay. Nếu chúng ta tham lam, để nguyên dòng kẻ ô ly (vốn có màu sắc rất đậm và rõ) mà tăng tương phản ngay, thuật toán sẽ bị phân tán hoàn toàn. Nó sẽ khuếch đại luôn cả những hạt nhiễu, vết lem mực bẩn của dòng kẻ cũ, làm hỏng vùng biên của chữ.
+
+Hình 5.12 Kết quả sau khi sử dụng CLAHE để tăng cương tương phản
+Ngay sau khi chạy CLAHE, hệ thống sẽ quét qua một bộ lọc làm sắc nét gọi là Unsharp Masking là bước thứ 7 của quy trình. Quá trình tăng tương phản CLAHE trước đó có xu hướng làm nhòe nhẹ ranh giới của ký tự sang các pixel lân cận. Bước Sharpen đóng vai trò tái tạo lại độ sắc sảo, tách biệt rõ ràng giữa mực đen và nền giấy, giúp mô hình OCR nhận diện chữ dễ dàng hơn.
+Ở bước 8, sẽ đánh giá chất lượng ảnh hệ thống tính toán các chỉ số độ mờ và độ sáng trực tiếp trên ma trận ảnh xám hiện tại. Đây là quyết định chốt chặn quan trọng. Nếu ảnh không đạt chuẩn chất lượng quá mờ hoặc quá tối, hệ thống sẽ chặn lại ngay tại Client để cảnh báo giáo viên chụp lại, không gửi lên API. Việc nhóm đặt ở bước này trước khi nhị phân hóa giúp đo đạc các chỉ số xám chính xác nhất, giúp tiết kiệm tài nguyên hệ thống và triệt tiêu tỷ lệ gọi API thất bại.
+Ở bước cuối, nhóm sử dụng nhị phân hóa thích nghi Gauss Adaptive Gaussian Thresholding. Hệ thống tính toán ngưỡng động cho từng vùng cửa sổ 31x31 với hằng số trừ tối ưu hóa qua thực nghiệm phu hợp để chuyển ảnh thành hai màu đen - trắng tuyệt đối. Để xác định giá trị hằng số trừ tối ưu, nhóm nghiên cứu đã tiến hành khảo sát và thực nghiệm đối chứng với dải cấu hình adaptiveC chạy từ 20 đến 100 bước nhảy C = 20.
+Công thức toán học được sử dụng để tính toán ngưỡng động trong bước Nhị phân hóa thích nghi là:
+T(x, y) = mean_local(x, y) − C(5.5)
+Chi tiết các thành phần trong công thức được giải thích như sau:
+T(x,y): Là giá trị ngưỡng nhị phân được tính toán động (adaptive) cho từng điểm ảnh cụ thể tại tọa độ (x,y).
+meanlocal​(x,y): Là giá trị trung bình cường độ sáng (tính theo phân phối Gaussian hoặc Mean) của tất cả các điểm ảnh nằm trong vùng cửa sổ lân cận có kích thước 31×31 pixel (tham số blockSize) xung quanh điểm x,y. Để hệ thống không bị quá tải khi tính toán trên từng vùng cửa sổ, thuật toán đã tận dụng cấu trúc Ảnh tích lũy (Integral Image) giúp đạt tốc độ tính toán siêu tốc với độ phức tạp chỉ O
+C: Là hằng số điều chỉnh dùng để trừ hao tham số/adaptiveC
+Khi tăng adaptiveC lên các mức cao hơn từ 40, 60, 80 thì thuật toán có xu hướng triệt tiêu quá mức các vùng có độ tương phản thấp. Hệ quả là các nét bút mảnh, nhạt màu hoặc các chi tiết chữ viết tay đặc trưng của học sinh tiểu học bị hiện tượng đứt nét, rỗng ruột hoặc biến mất hoàn toàn trên ảnh nhị phân. Điều này làm mất đi tính toàn vẹn của dữ liệu gốc.
+
+Hình 5.13 Kết quả nhị phân hóa của cùng một đoạn chữ tại adaptiveC 60 và 80
+Tại ngưỡng adaptiveC = 20: Hệ thống đạt được trạng thái cân bằng tối ưu. Cấu hình này không chỉ ép toàn bộ các hạt nhiễu xám li ti còn sót lại từ nền giấy chuyển thẳng sang màu trắng tinh khiết, mà còn bảo toàn nguyên vẹn cấu trúc hình thái và từng đường nét đen mộc mạc trong nét chữ của học sinh.
+
+Hình 5.14 Kết quả nhị phân hóa thích của nhóm
+Kết quả phân tích định lượng sau đó minh chứng rằng, dữ liệu ảnh nhị phân tại adaptiveC = 20 là trạng thái tiền xử lý lý tưởng nhất. Khi truyền vào Gemini API, tỷ lệ nhận dạng ký tự chính xác đạt mức tối đa, đồng thời triệt tiêu hoàn toàn hiện tượng bịa chữ một lỗi phổ biến của các mô hình ngôn ngữ lớn khi phải xử lý ảnh đầu vào có độ nhiễu nền cao. Do đó, nhóm nghiên cứu quyết định lựa chọn làm tham số chuẩn hóa cố định cho toàn bộ tiến trình thực nghiệm tiếp theo.
+5.4 Môi trường và phương pháp thực nghiệm
+5.4.1 Cấu hình kỹ thuật
+Thành phần
+Chi tiết
+Mô hình OCR
+Google Gemini 3.1 flash lite
+Mô hình sửa chính tả
+ViT5 (Được fine-tune cho sửa lỗi chính tả)
+Bảng 5.4 Thông số cấu hình kỹ thuật hệ thống thực nghiệm
+Nhóm ảnh
+Mô tả
+Số mẫu
+Nguồn
+Chữ viết tay ô ly tự tạo (Đúng chính tả)
+Ảnh bài viết tay đẹp trên giấy ô ly tự tạo
+10
+Internet
+Chữ viết tay ô ly tự tạo(Sai chính tả)
+Ảnh bài viết tay đẹp trên giấy ô ly tự tạo
+10
+Internet
+Chữ viết tay học sinh tiểu học trên nền ô ly
+Ảnh chụp bài viết tay có lỗi chính tả
+100+
+Internet
+
+Ảnh chụp bài viết tay có lỗi chính tả
+70+
+Ảnh thực tế
+Bảng 5.5 Thành phần và đặc điểm bộ dữ liệu thử nghiệm
+5.4.2 Thử nghiệm ảnh chữ viết tay ô ly tự tạo đúng sai tả
+Nhóm thử nghiệm này sử dụng 10 ảnh chụp bài viết tay đẹp trên giấy ô ly được tự tạo, trong đó nội dung cố tình chứa các lỗi chính tả phổ biến của học sinh tiểu học. Đây là nhóm kiểm soát điều kiện "lý tưởng": chữ viết rõ ràng, nền giấy sạch, ánh sáng tốt — nhằm đánh giá thuần túy khả năng phát hiện lỗi chính tả của AI mà không bị ảnh hưởng bởi chất lượng hình ảnh.
+Mẫu
+Mô tả
+Latency (s)
+Tokens
+Điểm
+Số lỗi
+01
+Sai nhiều (tr/ch, thiếu dấu)
+9.23
+2,697
+3.0
+9
+02
+Sai vừa (s/x, d/gi)
+6.62
+2,055
+7.0
+2
+03
+Gần đúng (nhầm vần)
+6.36
+1,883
+8.0
+2
+04
+Chính xác cao
+6.25
+1,814
+10.0
+0
+05
+Lỗi dấu thanh nhiều
+21.83
+5,597
+3.0
+13
+06
+Nhầm n/l phương ngữ
+26.29
+8,680
+—
+—
+07
+Bài dài, ít lỗi
+6.98
+1,894
+10.0
+0
+08
+Rất ngắn, nhiều lỗi cơ bản
+12.40
+3,413
+3.0
+9
+09
+Nhầm ch/tr, c/k
+20.70
+4,648
+7.0
+3
+10
+Sai viết hoa tên riêng
+8.27
+2,291
+7.5
+3
+Bảng 5.6 Kết quả chấm điểm 10 mẫu ảnh viết tay ô ly tự tạo (có lỗi chính tả)
+Mẫu 06 (26.29s) là trường hợp duy nhất JSON parse thất bại — phản hồi vượt giới hạn 8,192 tokens do bài viết chứa quá nhiều nội dung lẫn cả lỗi phương ngữ n/l liên tục khiến AI sinh giải thích quá dài. Điều này cho thấy giới hạn token đầu ra là điểm nghẽn cần xử lý khi bài viết có mật độ lỗi cao. Hệ thống đạt tỷ lệ thành công 90% và 100% hoàn thành dưới 30 giây.
+
+Hình 5.15 Biểu đồ so sánh token và độ trễ của mẫu nhiều lỗi nhất
+Biểu đồ này chỉ ra rằng khối lượng dữ liệu (Tokens) là yếu tố chính kéo dài thời gian xử lý, và các mẫu có cấu trúc ngôn ngữ bị lỗi nặng như mẫu 05 là những trường hợp hệ thống đang gặp khó khăn nhất cả về độ chính xác lẫn hiệu suất.
+5.4.3 Thử nghiệm ảnh chữ viết tay ô ly tự tạo đúng chính tả
+Nhóm này gồm 10 ảnh chữ viết tay đẹp trên giấy ô ly tự tạo, không có lỗi chính tả. Mục tiêu là để kiểm chứng hệ thống không báo lỗi sai khi bài viết hoàn toàn đúng chính tả. Điều kiện ảnh lý tưởng là chữ rõ, nền sạch, đủ sáng để đảm bảo đầu ra ổn định.
+Mẫu
+Nội dung
+Latency (s)
+Tokens
+Tỉ lệ OCR
+01
+"Ngôi trường tiểu học thân thương của em..."
+12.07
+1,981
+100%
+02
+"Em rất yêu mùa xuân..."
+3.29
+1,947
+100%
+03
+"Bầu trời mùa thu cao xanh lồng lộng..."
+3.32
+1,917
+100%
+04
+"Con đường làng quanh co rợp bóng mát..."
+2.92
+1,918
+100%
+05
+"Đàn cò trắng nhởn nhơ bay lượn..."
+2.79
+1,942
+100%
+06
+"Người thầy như người đưa đò thầm lặng..."
+2.83
+1,897
+100%
+07
+"Cuộc sống giống như một cuốn sách..."
+4.67
+1,927
+100%
+08
+"Chú mèo con nhà em có bộ lông trắng muốt..."
+3.22
+1,947
+100%
+09
+"Tiếng mưa rơi tí tách trên mái tôn..."
+3.53
+1,967
+100%
+Bảng 5.7 Kết quả chấm điểm 10 mẫu ảnh ô ly tự tạo (đúng chính tả)
+Latency trung bình 4.29 giây — nhanh hơn đáng kể so với nhóm bài có lỗi (~12–15+ giây) vì mô hình ViT5 không cần phải sửa chính tả. OCR nhận dạng chính xác 100% toàn bộ 6 dấu thanh tiếng Việt và ký tự đặc biệt từ ảnh.
+
+Hình 5.16 Biểu đồ so sánh giữa số lượng Tokens và thời gian phản hồi của 9 mẫu ảnh
+Biểu đồ cho thấy khả năng duy trì hiệu suất rất đồng đều trên đại đa số các mẫu dữ liệu từ mẫu 2 đến mẫu 9. Hệ thống giữ được mức phản hồi cực thấp và lý tưởng (dưới 5 giây).
+Tuy nhiên mẫu số 01 xuất hiện như một điểm dị biệt đáng chú ý trên biểu đồ khi độ trễ tăng vọt lên mức 12.07 giây, mặc dù khối lượng tải dữ liệu tokens không hề cao hơn các mẫu khác. Hiện tượng này là minh chứng kỹ thuật cho thấy độ trễ xử lý của mô hình AI phụ thuộc mạnh mẽ vào độ phức tạp nội dung hoặc chất lượng ảnh đầu vào hơn là dung lượng dữ liệu thuần túy.
+Nếu bỏ qua lỗi ở mẫu thứ nhất thì hệ thống đạt hiệu suất tối ưu và phản hồi nhanh trên các văn bản chuẩn, tuy nhiên cũng xem xét các tình trạng trễ có dấu hiệu biến động tăng đối với các trường hợp đặc biệt sở hữu độ phức tạp nội dung cao.
+5.4.4 Thử nghiệm ảnh chữ viết tay học sinh
+5.4.4.1 Thử nghiệm tập dữ liệu từ Internet
+Nhóm này là tập dữ liệu quy mô lớn nhất, gồm hơn 100 ảnh chụp bài viết tay thực tế của học sinh tiểu học thu thập từ Internet. Đặc điểm: chữ viết đa dạng về nét đẹp, xấu, nguệch ngoạc, nhiều loại giấy ô ly và giấy trắng, ánh sáng và góc chụp không đồng nhất. Đây là nhóm kiểm tra độ bền của hệ thống trước điều kiện ảnh thực tế.
+Chỉ số
+Giá trị
+Tổng số mẫu
+104
+Thành công (JSON hợp lệ)
+96% (100/104)
+Hoàn thành < 30s
+100% (104)
+Mean latency
+5.32 giây
+Độ lệch chuẩn
+0.67 giây
+Token trung bình / request
+2,343
+TB lỗi/ảnh có lỗi
+3.6
+Bảng 5.8 Thống kê tổng hợp nhóm ảnh học sinh tiểu học 100+
+
+Hình 5.17 Biều đồ đánh giá hiệu năng thời gian thực phản hồi dựa trên khối lượng dữ liệu đầu vào của 50 mẫu trong tập dữ liệu 100 ảnh
+Biểu đồ thực nghiệm cho thấy quy mô độ dài văn bản của nhóm dữ liệu này rất đồng đều. Sự đồng đều về mặt dung lượng đầu vào chính là nguyên nhân cốt lõi giúp hệ thống kiểm soát độ trễ ổn định độ lệch chuẩn chỉ 0.67s, không xảy ra hiện tượng thắt nút cổ chai hoặc hiện tượng tăng vọt độ trễ như đã từng ghi nhận ở các nhóm mẫu giả lập có độ dài bất thường trước đây.
+So với nhóm ảnh điều kiện lý tưởng có dung lượng cao sau tiền xử lý khoảng từ 500–1.200KB thì latency chỉ tăng từ 4.3s lên 5.3s thể hiện khả năng xử lý ảnh lớn tốt của các mô hình.
+5.4.4.2 Thử nghiệm tập dữ liệu thực tế
+Nhóm quan trọng nhất về mặt ứng dụng thực tiễn sử dụng 70+ ảnh do nhóm chụp được và nghiên cứu trực tiếp thu thập từ bài làm thật của học sinh tại trường. Ảnh chụp bằng điện thoại trong điều kiện lớp học có đèn huỳnh quang, bóng tay,góc chụp đa dạng,…
+Chỉ số
+Run 1
+Run 2
+Run 3
+TB 3 lần
+Biến động
+Hoàn thành
+100% (70/70)
+98% (68/70)
+95.9% (67/70)
+97.9%
+±2%
+Mean latency
+4.43s
+4.62s
+3.71s
+4.25s
+±0.46s
+Latency min
+3.18s
+3.17s
+2.88s
+—
+
+Latency max
+6.00s
+9.96s
+4.60s
+—
+
+SD latency
+0.69s
+1.11s
+0.44s
+—
+
+Token trung bình
+2,379
+2,370
+2,359
+2,369
+±10
+Bảng 5.9 Thống kê tổng hợp nhóm ảnh thực tế trường học
+Nhóm ảnh thực tế cho kết quả nổi bật, độ trễ trung bình chỉ 4.25 giây nhanh hơn đáng kể so với kỳ vọng. Độ ổn định cao thời gian dao động giữa 3 phiên thử nghiệm độc lập cực kỳ thấp. Kết quả này chứng minh pipeline tiền xử lý ảnh, kiến trúc gọi API, mô hình sửa lỗi chính tả đều hoạt động rất đồng đều, ổn định, không bị ảnh hưởng bởi các yếu tố thắt nút cổ chai về mặt kỹ thuật.
+Nhóm tiếp tục thiết lập xử lý cùng một ảnh 3 lần liên tiếp. Quá trình này kiểm tra xem mô hình ngôn ngữ lớn có đưa ra kết quả nhận dạng chữ viết (OCR) và phát hiện lỗi giống hệt nhau ở mỗi lần chạy hay không.
+Chỉ số
+Lần 1
+Lần 2
+Lần 3
+Trung bình
+Hoàn thành
+~100%
+~100%
+~100%
+~100%
+Điểm trung bình
+7.90
+7.86
+7.81
+7.86/10
+Mean latency
+5.84s
+4.41s
+4.41s
+4.89s
+Bảng 5.10 Chỉ số tổng thể qua 3 lần xử lý cùng một tập dữ liệu
+Tiêu chí
+Số ảnh giống hệt (3/3 lần)
+Tỷ lệ
+Đánh giá
+Nhận dạng chữ (OCR)
+52 / 70 ảnh
+73.3%
+Bình thường với LLM
+Văn bản sau sửa lỗi
+44 / 70 ảnh
+63.1%
+Trung bình - Khá
+Bảng 5.11 Mức độ đồng nhất tuyệt đối qua 3 lần chạy
+Quá trình thử nghiệm đạt độ ổn định. Tuy nhiên, ở cấp độ vi mô, mô hình vẫn có tính không hoàn toàn deterministic, với 73.3% bài có chuỗi OCR giống hệt nhau 100%.  Đây là kết quả phản ánh đúng bản chất kỹ thuật không hoàn toàn định hình của các mô hình dòng Gemini. Ở 26.7% số ảnh còn lại, AI có xu hướng thay đổi linh hoạt cách nhận diện các nét chữ mờ, hệ thống dấu câu hoặc quy tắc viết hoa cục bộ.
+5.5 Thực nghiệm mô hình ViT5 sửa lỗi chính tả
+5.5.1. Huấn luyện mô hình sửa lỗi chính tả
+ViT5-base với 226 triệu tham số, được fine-tune trên các tập dữ liệu của nhóm. Việc tập trung huấn luyện trên bộ ngữ liệu đặc thù này giúp mô hình tối ưu hóa khả năng nhận diện ngữ nghĩa và sửa lỗi chính tả bám sát theo đúng văn phong, hệ thống từ vựng của học sinh tiểu học.
+Nhóm đã train với bộ dữ liệu hơn 300.000 đoạn văn bao gồm các văn bản ngữ cảnh sạch được trích xuất từ chương trình giáo dục phổ thông kết hợp với các kịch bản sinh lỗi nhân tạo mô phỏng thực tế. Quy mô dữ liệu lớn này đóng vai trò quyết định giúp mạng nơ-ron của ViT5-base học được các biểu diễn không gian từ vựng phong phú, đồng thời tối ưu hóa khả năng nhận diện lỗi chính tả bám sát theo đúng domain văn phong của học sinh tiểu học.
+Thành phần dữ liệu
+Tỷ lệ
+Số lượng đoạn văn
+Văn bản chứa lỗi
+80%
+240000~
+Văn bản hoàn toàn sạch
+20%
+60.000~
+Tổng cộng kho ngữ liệu
+100%
+300.000~
+Bảng 5.12 Hiệu năng khôi phục câu của mô hình ViT5
+Trong thành phần dữ liệu các văn bản chứa lỗi sẽ bao gồm các nhóm như sau:
+STT
+Nhóm lỗi đặc thù
+Tỷ lệ
+Mô tả chi tiết hành vi sai sót
+1
+Phụ âm đầu theo phương ngữ
+35%
+Tập trung vào các cặp phụ âm dễ sai sót
+2
+Sai lệch dấu thanh
+25%
+Mô phỏng lỗi sai do thói quen phát âm
+3
+Vần và âm cuối
+20%
+Xử lý các cấu trúc phần vần phức tạp, phụ âm
+4
+Lỗi gõ phím máy tính
+15%
+Mô phỏng hành vi dính phím liền kề, thiếu ký tự
+5
+Quy tắc viết hoa hình thức
+5%
+Cố tình hạ chuẩn viết hoa để ép mô hình nhận dạng
+Bảng 5.13 Chi tiết phân bổ các nhóm lỗi chính tả đặc thù
+Phụ âm đầu phương ngữ (35% - Cao nhất) Khắc phục triệt để thói quen "nghĩ gì viết nấy" của học sinh do nhầm lẫn phát âm vùng miền (l/n, ch/tr, s/x, d/gi/v).
+Sai lệch dấu thanh (25%): Xử lý lỗi nhầm dấu hỏi/ngã hoặc thiếu dấu do phát âm bản địa; ép mô hình dựa vào từ ngữ xung quanh để bù đắp thông tin.
+Vần và âm cuối (20%): Giải quyết các lỗi phức tạp về cấu trúc âm vị (o/oa, n/ng, t/c), đòi hỏi mô hình phải hiểu sâu ngữ cảnh toàn câu để khôi phục đúng từ gốc.
+Gõ phím máy tính (15%): Mô phỏng lỗi vật lý nhằm tăng tính công nghiệp và độ ổn định của mô hình khi nhận dữ liệu từ bàn phím.
+Viết hoa hình thức (5%): Sửa lỗi bỏ quên viết hoa đầu câu hoặc danh từ riêng, đáp ứng tiêu chí đánh giá ngữ pháp bắt buộc trong sư phạm tiểu học.
+
+Hình 5.18 Đồ thị hàm Loss và chỉ số SacreBLEU theo các bước huấn luyện
+Biểu đồ Dashboard huấn luyện của mô hình ViT5 qua 60.000 bước gồm hai phần chính với các điểm cốt lõi sau:
+Đồ thị bên trái thể hiện Loss History bao gồm 2 chỉ số training Loss và Validation Loss Giảm, việc training Loss đều đặn từ 0.3190 xuống 0.0501 chứng tỏ mô hình học rất tốt và ghi nhớ sâu dữ liệu huấn luyện. Validation Loss đạt điểm tối ưu tại bước 15.000 tại 0.1700, sau đó có xu hướng tăng nhẹ trở lại. Đây là dấu hiệu kinh điển của hiện tượng Overfitting từ sau Epoch 5, khi mô hình bắt đầu bám quá chặt vào các quy tắc của tập train.
+Đồ thị bên phải thế hiện chất lượng sửa lỗi (SacreBLEU Metric). Bao gồm Validation SacreBLEU được tăng trưởng liên tục và đạt đỉnh cao nhất ở cuối phiên tại Step 60.000 (39.17%). Mặc dù Validation Loss tăng nhẹ vì học vẹt về mặt từ vựng/ký tự, nhưng năng lực hiểu ngữ cảnh và khôi phục trọn vẹn ý nghĩa của câu văn vẫn liên tục được cải thiện tốt hơn.
+5.5.2 Các mô hình được đánh giá
+Nhóm tiến hành so sánh ba mô hình ViT5 sửa lỗi chính tả được fine-tune phổ biến để đối sánh:
+STT
+Model
+Tác giả
+1
+vn-spell-correction-base
+NRL-AI
+2
+vit5-correction
+HoangHaiDuong
+3
+ViT5_Vietnamese_Correction
+ViHand Grade (mô hình của nhóm)
+Bảng 5.14 Các mô hình thử nghiệm
+Cả ba mô hình đều có cùng kiến trúc nền ViT5-base với 226 triệu tham số, được fine-tune trên các tập dữ liệu khác nhau nhưng đều cùng một mục đích là sửa lỗi chính tả đảm bảo so sánh phản ánh đúng chất lượng dữ liệu huấn luyện và kỹ thuật fine-tuning.
+5.5.3 Bộ dữ liệu thử nghiệm và so sánh
+Nhóm nghiên cứu xây dựng bộ dữ liệu tổng hợp có kiểm soát vào đối tượng sửa lỗi chính tả tiếng Việt theo văn phong học sinh tiểu học. Nhóm tiến hành tạo và chuẩn hóa 10000 đoạn văn mô phỏng chính xác văn phong, ngữ pháp và phân phối từ vựng của học sinh khối lớp 1 đến lớp 5. Các mẫu văn bản được giới hạn độ dài từ 2 đến 4 câu nhằm tối ưu hóa cấu trúc ngữ cảnh trung bình. Nội dung dữ liệu tập trung vào các chủ đề quen thuộc thuộc chương trình giáo dục tiểu học bao gồm các từ quen thuộc về gia đình, thiên nhiên, ngày lễ truyền thống, địa danh Việt Nam.
+
+
+Thông số
+Giá trị
+Tổng số mẫu
+10000 đoạn văn
+Tổng số mẫu lỗi chính tả
+7000 đoạn văn
+Tổng số mẫu đúng chính tả
+3000 đoạn văn
+Độ dài trung bình
+2–4 câu/đoạn
+Bảng 5.15 Thống kê bộ dữ liệu thử nghiệm
+Từ tập văn bản gốc, các kỹ thuật mô phỏng lỗi dựa trên luật rule-based được áp dụng nhằm tạo ra tập văn bản đầu vào chứa các biến thể lỗi. Quá trình này mô hình hóa cấu trúc lỗi thực tế của học sinh tiểu học Việt Nam thành 5 danh mục đặc thù:
+Lỗi phân vị dấu thanh: Khuyết thiếu hoặc nhầm lẫn hệ thống thanh điệu
+Lỗi biến thể phụ âm đầu theo phương ngữ: Nhầm lẫn các cặp phụ âm có sự tương đồng về âm vị hoặc bị ảnh hưởng bởi đặc trưng phát âm vùng miền
+Lỗi cấu trúc vần: Biến đổi sai lệch phần vần của âm tiết
+Lỗi nhiễu ký tự: Thừa, thiếu hoặc thay thế ngẫu nhiên các ký tự trong phân đoạn từ
+Lỗi quy chuẩn chính tả chỉnh thể: Vi phạm các nguyên tắc viết hoa hành chính ở vị trí mở đầu câu
+5.5.4 Kết quả tổng quát thử nghiệm sửa lỗi chính tả
+
+Hình 5.19 Biểu đồ kết quả trên 3 mô hình sửa lỗi chính tả
+Mô hình
+SacreBLEU ↑
+WER ↓ (%)
+CER ↓ (%)
+Exact Match ↑ (%)
+NRL-AI ViT5
+84,45
+7,73
+2,56
+15,2%
+HoangHaiDuong ViT5
+89,87
+4,62
+1,59
+33,3%
+ViHand Grade
+92,45
+3,59
+1,65
+48,2%
+Bảng 5.16 Tổng hợp kết quả trên toàn bộ 10000 mẫu thử nghiệm
+Khi đối sánh trên bộ dữ liệu thực nghiệm gồm 10000 mẫu dữ liệu văn bản của học sinh tiểu học, mô hình ViHand Grade do nhóm phát triển đã chứng minh được sự vượt trội rõ rệt so với hai mô hình hiện hành của HoangHaiDuong và NRL-AI trên hầu hết các khía cạnh cốt lõi.
+Khả năng khôi phục văn bản gốc (SacreBLEU) cho thấy mô hình đạt 92,45 điểm, vượt xa hai mô hình đối chứng. Điều này đồng nghĩa với việc văn bản sau khi qua hệ thống sửa lỗi của nhóm đạt độ tương đồng và tự nhiên gần như tuyệt đối so với văn bản chuẩn của học sinh.
+Tỷ lệ sai lệch ở mức từ (WER) của mô hình sửa lỗi chính tả của nhóm đạt mức lỗi thấp nhất, chỉ 3,59%. Kết quả này phản ánh khả năng nhận diện ngữ cảnh từ ngữ thông minh, hạn chế tối đa việc bỏ sót lỗi hoặc tự ý sửa đổi những từ vốn đã viết đúng.
+
+Hình 5.20 Ví dụ một mẫu trong bộ thử nghiệm
+Tỷ lệ sửa đúng hoàn toàn (Exact Match) cho thấy mô hình đạt tỷ lệ ấn tượng 48,2%. Về mặt thực tiễn sư phạm, con số này có nghĩa là cứ khoảng 2 câu học sinh viết sai thì hệ thống sẽ sửa chính xác hoàn toàn 100% được 1 câu mà không cần bất kỳ sự can thiệp nào của giáo viên.
+Tỷ lệ sai lệch ở mức ký tự (CER) của mô hình sửa lỗi chính tả của nhóm đạt 1,65%, chỉ chênh lệch hiệu năng không đáng kể (~0,06%) so với mô hình của tác giả HoangHaiDuong (1,59%).
+5.6 Phát triển thuật toán chấm điểm
+Sau khi mô hình sửa lỗi chính tả, nhóm cần một thuật toán định lượng chính xác số lỗi và phân loại từng loại lỗi để tính điểm và sinh nhận xét sư phạm tự động. Nhóm nghiên cứu tiến hành nghiên cứu các phương pháp và thuật toán hợp lý.
+5.6.1 Lựa chọn thuật toán
+
+Hình 5.21 Sơ đồ triển khai thuật toán chấm điểm
+SequenceMatcher là phương pháp được nhóm lựa chọn để triển khai vì đáp ứng tốt yêu cầu chỉ ra từng vị trí sai, đồng thời làm tiền đề để phân loại chính xác 4 nhóm lỗi chính tả đặc thù của học sinh tiểu học.
+Thuật toán này giúp máy nhận biết rõ ràng 3 trạng thái: từ viết sai (replace), từ viết thiếu (delete) và từ viết thừa (insert). Nhờ đó, máy sẽ đếm đúng số từ sai để trừ điểm chuẩn xác.
+Khi phát hiện ra từ viết sai, hệ thống sẽ lấy từ đó ra để phân tích tiếp xem học sinh đang bị sai dấu thanh, sai vần hay sai phụ âm đầu (như nhầm ch/tr, l/n). Từ đây, máy mới đưa ra được lời khuyên sư phạm gần gũi.
+Nhóm sử dụng thuật toán levenshtein so khớp và phân tích lỗi chi tiết bao gồm các bước như:
+Chuẩn hóa và làm sạch văn bản đầu vào
+So khớp cấp độ từ bằng SequenceMatcher
+Phân loại 4 nhóm lỗi chính tả tiếng Việt
+5.6.2. Tốc độ và Tính nhất quán của
+Thuật toán Levenshtein được tinh chỉnh bằng Dynamic Programming để so khớp chuỗi OCR gốc và chuỗi ViT5 đã sửa, qua đó xác định số lượng từ bị sai và phân loại chúng vào các nhóm lỗi mà học sinh tiểu học thường mắc phải.
+Chỉ số
+Kết quả thực nghiệm
+Đánh giá so với LLM
+Tốc độ so khớp đoạn văn (150 từ)
+~12ms
+Nhanh hơn LLM gấp hàng trăm lần
+Tỷ lệ phân loại đúng nhóm lỗi
+98.2%
+Tương đương hệ thống luật (Rule-based)
+Tính đồng nhất (Determinism)
+100% Tuyệt đối
+Vượt trội hoàn toàn so với LLM (63.3%)
+Bảng 5.17 Hiệu suất của thuật toán so khớp Levenshtein
+Thuật toán Levenshtein chính là mảnh ghép giải quyết triệt để bài toán "ảo giác" của trí tuệ nhân tạo. Với cùng một đầu vào văn bản, thuật toán toán học luôn trả về chính xác cùng một số lượng lỗi và một điểm số duy nhất ở mọi lần chạy. Việc tính toán chỉ mất vài mili-giây, hoàn toàn không tạo thêm độ trễ đáng kể cho toàn bộ hệ thống.
+5.6 Thực nghiệm triển khai trên Raspberry Pi 4
+5.6.1 Mục tiêu và môi trường triển khai nhúng
+Bên cạnh việc đánh giá chất lượng AI và pipeline OCR, nhóm nghiên cứu tiến hành thực nghiệm triển khai toàn bộ hệ thống lên Raspberry Pi 4 Model B đặt cố định qua mạng WiFi nội bộ và Internet qua Cloudflare Tunnel.
+
+Hình 5.22 Thực nghiệm Web trên Raspberry Pi 4
+5.6.2 Kết quả thực nghiệm triển khai
+Chỉ số
+Giá trị
+Tổng mẫu test
+10 ảnh (Lấy từ tập dữ ảnh thực tế)
+Tỷ lệ thành công
+100% (10/10)
+Latency Min
+~3.8 giây
+Latency Max
+~7.5 giây
+Latency Mean (End-to-End)
+~5.1 giây
+Tất cả < 30 giây
+100%
+RAM lúc vận hành
+~+800MB / 4GB
+Nhiệt độ CPU (idle)
+~45°C
+Nhiệt độ CPU (peak)
+~58°C
+Bảng 5.18 Hiệu năng vận hành chấm điểm Raspberry Pi 4
+Tiêu chí cốt lõi
+Môi trường Google Colab
+Máy tính cá nhân
+Raspberry Pi 4
+Page load
+Siêu nhanh ~65ms
+Nhanh ~80ms
+Mượt mà ~153ms
+Vận hành End-to-End
+~4.89s
+~4.89s
+~5.1s
+Bảng 5.19 So sánh hiệu năng giữa môi trường phát triển và Raspberry Pi 4
+Thiết bị phần cứng Raspberry Pi 4 đã mang lại kết quả tối ưu toàn diện, vừa đảm bảo giao diện phản hồi mượt mà, nhanh chóng giúp giáo viên có trải nghiệm thanh thoát, vừa chứng minh hiệu quả xử lý tại chỗ xuất sắc khi các tác vụ nội bộ diễn ra gần như tức thì và chỉ chiếm một phần rất nhỏ trong tổng độ trễ toàn trình. Sự tối ưu hóa mã nguồn này giúp ứng dụng tiêu tốn cực kỳ ít tài nguyên bộ nhớ và giữ cho vi xử lý luôn hoạt động ở mức nhiệt độ lý tưởng, khẳng định độ bền bỉ cao và năng lực sẵn sàng đáp ứng kịch bản triển khai thực tế, lâu dài tại các nhà trường.
+
+
+CHƯƠNG 6. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
+6.1 Kết luận
+Bài toán chấm điểm và nhận diện lỗi chính tả trong văn bản chữ viết tay của học sinh tiểu học là một thách thức lớn, tiêu tốn nhiều thời gian và công sức của giáo viên. Nghiên cứu này đã chứng minh tiềm năng to lớn của việc ứng dụng Trí tuệ nhân tạo AI, cụ thể là mô hình đa phương thức lớn Gemini của Google kết hợp với các kỹ thuật tiền xử lý ảnh số, vào lĩnh vực công nghệ giáo dục.
+Bằng cách xây dựng một quy trình khép kín từ việc số hóa ảnh chụp bài làm, tiền xử lý hình ảnh 9 bước của nhóm, cho đến việc sử dụng LLM để thực hiện OCR và phân tích ngôn ngữ tự nhiên, thiết bị và hệ thống đã tự động hóa thành công quá trình phát hiện các dấu hiệu sai sót về chính tả, ngữ pháp và hình thức trình bày. Kết quả thực nghiệm cho thấy đã giúp giáo viên đưa ra các nhận xét chi tiết, nhanh chóng và chính xác hơn đáng kể so với phương pháp chấm bài thủ công truyền thống.
+Ứng dụng của bài toán này không chỉ giúp giảm bớt gánh nặng hành chính và thời gian chấm bài cho giáo viên, mà còn cung cấp một công cụ học tập phản hồi tức thời cho học sinh. Điều này tạo điều kiện cho việc cá nhân hóa lộ trình học tập, giúp phụ huynh và giáo viên dễ dàng theo dõi sự tiến bộ của con em mình. Nhìn xa hơn, nó có tiềm năng thu hẹp khoảng cách tiếp cận giáo dục chất lượng cao, mang lại sự công bằng trong đánh giá.
+Tuy nhiên, cần phải lưu ý rằng hệ thống AI hiện tại được thiết kế dưới dạng công cụ hỗ trợ quyết định. Việc áp dụng mô hình này vào môi trường giáo dục thực tế vẫn cần sự giám sát định kỳ của giáo viên để đảm bảo tính nhân văn và sự khích lệ phù hợp với tâm lý trẻ nhỏ. Ngoài ra, việc bảo vệ quyền riêng tư, an toàn dữ liệu hình ảnh và thông tin cá nhân của học sinh cũng là một vấn đề pháp lý và đạo đức cực kỳ quan trọng cần được tuân thủ nghiêm ngặt.
+Nghiên cứu này hứa hẹn mang lại nhiều lợi ích thiết thực. Việc kết hợp linh hoạt giữa kiến trúc Web hiện đại, phần cứng nhúng chi phí thấp Raspberry Pi 4 và sức mạnh của Cloud AI Gemini đã tạo ra một giải pháp toàn diện, khả thi và dễ dàng triển khai ở quy mô trường học, góp phần thúc đẩy công cuộc chuyển đổi số trong giáo dục tại Việt Nam.
+6.2 Hướng phát triển
+Hướng 1: Xây dựng và tinh chỉnh mô hình ngôn ngữ nhỏ chuyên biệt cho tiếng Việt để chạy cục bộ hoàn toàn trên các thiết bị Raspberry Pi. Điều này giúp loại bỏ sự phụ thuộc vào API của bên thứ ba, giảm độ trễ do mạng lưới và giải quyết triệt để bài toán bảo mật dữ liệu học sinh.
+Hướng 2: Hợp tác với các giáo viên, chuyên gia giáo dục tiểu học để chuẩn hóa bộ tiêu chí chấm điểm. Đồng thời, triển khai thử nghiệm thực tế tại các trường học để thu thập một tập dữ liệu chữ viết tay đa dạng hơn về loại giấy, loại bút, vùng miền, các lỗi phương ngữ đặc thù, từ đó áp dụng các kỹ thuật Fine-tuning giúp hệ thống xử lý tốt hơn các mẫu chữ viết rối rắm hoặc rất khó đọc.
+Hướng 3: Tích hợp sâu các công nghệ Xử lý Ngôn ngữ Tự nhiên để không chỉ dừng lại ở việc bắt lỗi chính tả mà còn có khả năng đánh giá cảm thụ văn học. Mô hình sẽ được huấn luyện để phân tích cấu trúc đoạn văn miêu tả, văn kể chuyện, đánh giá tính logic, vốn từ vựng và sự sáng tạo trong diễn đạt của học sinh.
+Hướng 4: Phát triển ứng dụng di động đa nền tảng iOS/Android tích hợp các công nghệ AR để hướng dẫn người dùng căn chỉnh khung hình khi chụp ảnh bài viết tốt hơn, kết hợp với các cơ chế Gamification để khích lệ học sinh sau khi nhận được kết quả chấm điểm.
+Ngoài 4 hướng phát triển chính như trên, nhóm nghiên cứu còn đề xuất thêm một số hướng phát triển phụ như sau:
+Tối ưu hóa hiệu suất: Chuyển đổi các thuật toán tiền xử lý ảnh sang các ngôn ngữ biên dịch hiệu năng cao như C++/OpenCV hoặc WebAssembly. Điều này giúp tiết kiệm tài nguyên bộ nhớ và giảm thời gian tính toán trên phần cứng hạn chế của Raspberry Pi.
+Xử lý sự cố Hallucination của AI: Phát triển cơ chế kiểm tra chéo bằng nhiều mô hình hoặc sử dụng các từ điển tiếng Việt đối chiếu nội bộ nhằm đánh giá độ tin cậy của các dự đoán, đảm bảo AI không tự bịa ra các lỗi chính tả không tồn tại trong bài.
+Mở rộng khả năng xử lý bài kiểm tra trắc nghiệm và Toán học: Tích hợp thêm các module nhận dạng quang học đặc thù để chấm điểm các bài thi trắc nghiệm và nhận diện công thức toán học, biến hệ thống thành một nền tảng chấm thi toàn diện.
+Tích hợp với hệ thống giáo dục hiện hành: Cải tiến hệ thống để có khả năng giao tiếp và đồng bộ điểm số, nhận xét trực tiếp vào các phần mềm quản lý trường học như VnEdu, SMAS, tạo ra sự liền mạch trong quy trình quản lý điểm của nhà trường.
+Giao diện tương tác thân thiện với trẻ em: Thay vì chỉ trả về báo cáo dạng văn bản, hệ thống có thể kết hợp với AI Voice Text-to-Speech và AI Avatar để đọc nhận xét bằng giọng nói truyền cảm, thân thiện, giúp học sinh tiểu học dễ dàng tiếp thu phản hồi mà không bị áp lực điểm số.
+Nghiên cứu tác động sư phạm: Thực hiện các nghiên cứu A/B Testing trong môi trường lớp học thực tế để đánh giá tác động của việc nhận phản hồi từ AI đối với tốc độ cải thiện chữ viết và ngữ pháp của học sinh theo thời gian.
+Quyền riêng tư và đạo đức AI: Xây dựng cơ chế làm mờ hoặc tự động cắt bỏ phần chứa tên, trường lớp của học sinh trên ảnh trước khi truyền tải dữ liệu, đảm bảo tuyệt đối các quy định về bảo vệ trẻ em trên không gian mạng và Luật An ninh mạng.
+
+TÀI LIỆU THAM KHẢO
+Bijoy, M. H., Hossain, N., Islam, S., & Shatabda, S. (2022). A transformer-based spelling error correction framework for Bangla and resource scarce Indic languages. Computer Speech & Language.
+Cao, W., et al. (2023). Handwriting removal method based on CNN.
+Celik, I., et al. (2022). The promises and challenges of artificial intelligence for teachers: A systematic review of research. TechTrends, 66, 616–630.
+Cheng, E. C. K., & Wang, T. (2023). Leading digital transformation and eliminating barriers for teachers to incorporate artificial intelligence in basic education in Hong Kong. Computers and Education: Artificial Intelligence, 5, 100171.
+Huynh, T.-B., et al. (2025). Adversarial robustness evaluation of a Vietnamese handwriting OCR system. Proceedings of the International Conference on Multimedia Analysis and Pattern Recognition (MAPR).
+Langove, S. A., et al. (2024). Automated grading and feedback systems: Reducing teacher workload and improving student performance. Journal of Asian Development Studies.
+Meyer, J., Jansen, T., Schiller, R., Liebenow, L. W., Steinbach, M., Horbach, A., & Fleckenstein, J. (2024). Using LLMs to bring evidence-based feedback into the classroom: AI-generated feedback increases secondary students' text revision, motivation, and positive emotions. Computers and Education: Artificial Intelligence, 6, 100199.
+Nguyen, N. H., Vo, D. T. D., & Nguyen, K. V. (2022). UIT-HWDB: Using transferring method to construct a novel benchmark for evaluating unconstrained handwriting image recognition in Vietnamese. RIVF International Conference on Computing and Communication Technologies.
+Nguyen, Q.-D., Phan, N.-M., Krömer, P., & Le, D.-A. (2023). An efficient unsupervised approach for OCR error correction of Vietnamese OCR text. IEEE Access, 11.
+Sahoo, P., et al. (2024). A systematic survey of prompt engineering in large language models: Techniques and applications. ArXiv.
+Son, M., & Lee, S. (2025). Advancing multimodal large language models: Optimizing prompt engineering strategies for enhanced performance. Applied Sciences, 15(7), 3992.
+Stahl, M., Biermann, L., Nehring, A., & Wachsmuth, H. (2024). Exploring LLM prompting strategies for joint essay scoring and feedback generation. ArXiv.
+Strielkowski, W., Samoilikova, A., Smutka, L., Civín, L., & Lieonov, S. (2024). AI‐driven adaptive learning for sustainable educational transformation. Sustainable Development, 33(2), 1921–1947.
+Turhan, C. G. (2025). Leveraging large language models for spelling correction in Turkish. PeerJ Computer Science, 11, e2889.
+Vatsal, S., et al. (2024). A survey of prompt engineering methods in large language models for different NLP tasks. ArXiv.
+Weegar, R., & Idestam-Almquist, P. (2024). Reducing workload in short answer grading using machine learning. International Journal of Artificial Intelligence in Education, 34, 247–273.
+Wu, Z., et al. (2024). DeepSeek-VL2: Mixture-of-experts vision-language models for advanced multimodal understanding. ArXiv.
+Xiao, C., et al. (2024). Human-AI collaborative essay scoring: A dual-process framework with LLMs. Proceedings of the 15th International Learning Analytics and Knowledge Conference.
+Yanfi, Y., Soeparno, H., Setiawan, R., & Budiharto, W. (2024). Multi-head attention based bidirectional LSTM for spelling error detection in the Indonesian language. IEEE Access, 12, 93227–93237.
+Yang, Z., Liu, B., Xiong, Y., Yi, L., Wu, G., Tang, X., Liu, Z., Zhou, J., & Zhang, X. (2023). DocDiff: Document enhancement via residual diffusion models. Proceedings of the 31st ACM International Conference on Multimedia, 1–12.
+Yim, I. H. Y., & Su, J. (2025). Artificial intelligence literacy education in primary schools: A review. International Journal of Technology and Design Education.
+Yin, S., et al. (2023). A survey on multimodal large language models. National Science Review.
+Zhou, Y., Zuo, S., Yang, Z., He, J., Shi, J., & Zhang, R. (2023). A review of document image enhancement based on document degradation problem. Applied Sciences, 13(13), 7855.
+
+

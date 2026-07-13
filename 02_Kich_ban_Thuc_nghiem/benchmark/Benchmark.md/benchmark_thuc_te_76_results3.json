@@ -1,0 +1,1856 @@
+{
+  "model": "gemini-3.1-flash-lite",
+  "date": "2026-06-02T18:47:15.045Z",
+  "folder": "Ảnh viết tay 76 thực tế",
+  "totalImages": 49,
+  "stats": {
+    "success": 49,
+    "successRate": "100.0%",
+    "jsonOk": 47,
+    "jsonOkRate": "95.9%",
+    "totalTimeMinutes": "5.5",
+    "latency": {
+      "min": "2.88",
+      "max": "4.60",
+      "mean": "3.71",
+      "sd": "0.44",
+      "lt10": 49,
+      "lt20": 0,
+      "lt30": 0,
+      "gt30": 0
+    },
+    "avgToken": 2359,
+    "avgScore": "7.90",
+    "totalErrors": 180,
+    "errTypes": {
+      "phu_am_dau": 30,
+      "van": 23,
+      "dau_thanh": 10,
+      "viet_hoa": 40,
+      "bo_sot_them": 67,
+      "other": 10
+    },
+    "withErrors": 47,
+    "withoutErrors": 0,
+    "ratings": {
+      "Tốt": 37,
+      "Khá": 6,
+      "Xuất sắc": 4
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "file": "CamScanner 06-12-2025 10.00_11 (1).jpg",
+      "label": "D01",
+      "latencyMs": 4152,
+      "tokens": 2244,
+      "jsonOk": true,
+      "score": "8.6/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 382.3,
+      "corrections": [
+        {
+          "error": "sửa",
+          "suggestion": "sứa",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu, từ đúng là 'sứa' (con sứa)."
+        },
+        {
+          "error": "thiếu dấu câu",
+          "suggestion": "thêm dấu phẩy và dấu chấm",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu câu ngắt nghỉ khiến câu văn bị dài và khó hiểu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 2,
+      "file": "CamScanner 06-12-2025 10.00_12 (1).jpg",
+      "label": "D02",
+      "latencyMs": 3908,
+      "tokens": 2542,
+      "jsonOk": true,
+      "score": "8.3/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 358.8,
+      "corrections": [
+        {
+          "error": "Thái Tư",
+          "suggestion": "Thứ Tư",
+          "error_type": "van",
+          "reason": "Sai vần trong từ chỉ thứ trong tuần."
+        },
+        {
+          "error": "Ba mẹ và cháu đã xem cao thêm 10cm.",
+          "suggestion": "Bỏ câu này vì lặp ý và sai chính tả từ 'xem'.",
+          "error_type": "bo_sot_them",
+          "reason": "Câu bị lặp lại thông tin chiều cao và dùng sai từ."
+        },
+        {
+          "error": "Cháu đã vẫn cố gắng",
+          "suggestion": "Cháu vẫn cố gắng",
+          "error_type": "bo_sot_them",
+          "reason": "Dùng thừa từ 'đã'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 3,
+      "file": "CamScanner 06-12-2025 10.00_15 (1).jpg",
+      "label": "D03",
+      "latencyMs": 4100,
+      "tokens": 2510,
+      "jsonOk": true,
+      "score": "6.3/10",
+      "rating": "Khá",
+      "errCount": 6,
+      "sizeKB": 354.8,
+      "corrections": [
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Lỗi chính tả vần (oe thay vì oe)"
+        },
+        {
+          "error": "con",
+          "suggestion": "Con",
+          "error_type": "viet_hoa",
+          "reason": "Cần viết hoa đầu câu"
+        },
+        {
+          "error": "à",
+          "suggestion": "À",
+          "error_type": "viet_hoa",
+          "reason": "Cần viết hoa đầu câu"
+        },
+        {
+          "error": "dogki",
+          "suggestion": "Dogki",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng cần viết hoa"
+        },
+        {
+          "error": "nhổ",
+          "suggestion": "nhú",
+          "error_type": "phu_am_dau",
+          "reason": "Dùng sai từ (nhú mầm mới đúng ngữ cảnh)"
+        },
+        {
+          "error": "cây",
+          "suggestion": "Cây",
+          "error_type": "viet_hoa",
+          "reason": "Cần viết hoa đầu câu"
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 4,
+      "file": "CamScanner 06-12-2025 10.00_18 (1).jpg",
+      "label": "D04",
+      "latencyMs": 3765,
+      "tokens": 2363,
+      "jsonOk": true,
+      "score": "8.3/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 494.8,
+      "corrections": [
+        {
+          "error": "Dì năm",
+          "suggestion": "Dì Năm",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng/danh từ chỉ người cần viết hoa chữ cái đầu."
+        },
+        {
+          "error": "đang gà",
+          "suggestion": "đàn gà",
+          "error_type": "phu_am_dau",
+          "reason": "Sai chính tả từ vựng."
+        },
+        {
+          "error": "hết rồi",
+          "suggestion": "lớn rồi",
+          "error_type": "noi_dung",
+          "reason": "Dùng từ chưa phù hợp ngữ cảnh (đàn gà lớn lên chứ không hết)."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 5,
+      "file": "CamScanner 06-12-2025 10.00_20 (1).jpg",
+      "label": "D05",
+      "latencyMs": 3674,
+      "tokens": 2383,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 5,
+      "sizeKB": 506.5,
+      "corrections": [
+        {
+          "error": "năm",
+          "suggestion": "Năm",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng cần viết hoa."
+        },
+        {
+          "error": "mũ",
+          "suggestion": "mủ",
+          "error_type": "phu_am_dau",
+          "reason": "Sai chính tả từ vựng."
+        },
+        {
+          "error": "việc việc",
+          "suggestion": "việc",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ không cần thiết."
+        },
+        {
+          "error": "tét",
+          "suggestion": "té",
+          "error_type": "van",
+          "reason": "Sai chính tả từ vựng."
+        },
+        {
+          "error": "vỗ.",
+          "suggestion": "vỗ về.",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ để hoàn thiện câu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 6,
+      "file": "CamScanner 06-12-2025 10.00_21 (1).jpg",
+      "label": "D06",
+      "latencyMs": 3158,
+      "tokens": 2222,
+      "jsonOk": true,
+      "score": "9.3/10",
+      "rating": "Xuất sắc",
+      "errCount": 1,
+      "sizeKB": 474.5,
+      "corrections": [
+        {
+          "error": "My",
+          "suggestion": "Mỹ",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng cần viết hoa và có dấu thanh đầy đủ."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 7,
+      "file": "CamScanner 06-12-2025 10.00_22 (1).jpg",
+      "label": "D07",
+      "latencyMs": 2984,
+      "tokens": 2094,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 532.5,
+      "corrections": [
+        {
+          "error": "con",
+          "suggestion": "Con",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa đầu câu."
+        },
+        {
+          "error": "xung",
+          "suggestion": "xung",
+          "error_type": "phu_am_dau",
+          "reason": "Từ 'xung quanh' viết đúng, nhưng cần lưu ý dấu phẩy trước 'và' không cần thiết."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 8,
+      "file": "CamScanner 06-12-2025 10.00_23 (1).jpg",
+      "label": "D08",
+      "latencyMs": 4365,
+      "tokens": 2560,
+      "jsonOk": true,
+      "score": "8.3/10",
+      "rating": "Tốt",
+      "errCount": 5,
+      "sizeKB": 510.6,
+      "corrections": [
+        {
+          "error": "Bên: Chy",
+          "suggestion": "Gửi: Ông bà",
+          "error_type": "noi_dung",
+          "reason": "Người nhận thư chưa phù hợp với nội dung bài viết."
+        },
+        {
+          "error": "kể về tình gia đình",
+          "suggestion": "kể về tình hình gia đình",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ 'hình' để câu văn đủ nghĩa."
+        },
+        {
+          "error": "nuôi lớn",
+          "suggestion": "trồng",
+          "error_type": "noi_dung",
+          "reason": "Cây cối dùng từ 'trồng' thay vì 'nuôi'."
+        },
+        {
+          "error": "đây ông bà",
+          "suggestion": "đấy ông bà",
+          "error_type": "phu_am_dau",
+          "reason": "Sai chính tả từ cảm thán."
+        },
+        {
+          "error": "lấy giấy về",
+          "suggestion": "lấy giấy khen về",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ 'khen' để rõ nghĩa."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 9,
+      "file": "CamScanner 06-12-2025 10.00_24 (1).jpg",
+      "label": "D09",
+      "latencyMs": 3872,
+      "tokens": 2358,
+      "jsonOk": true,
+      "score": "8.3/10",
+      "rating": "Tốt",
+      "errCount": 5,
+      "sizeKB": 439,
+      "corrections": [
+        {
+          "error": "tết",
+          "suggestion": "Tết",
+          "error_type": "viet_hoa",
+          "reason": "Tên ngày lễ cần viết hoa chữ cái đầu."
+        },
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Chính tả chuẩn là 'khỏe' (o-e)."
+        },
+        {
+          "error": "nhé! và",
+          "suggestion": "nhé và",
+          "error_type": "viet_hoa",
+          "reason": "Sau dấu chấm than là câu mới, hoặc nếu nối câu thì không viết hoa chữ 'và'."
+        },
+        {
+          "error": "Các cô các bác",
+          "suggestion": "Các cô, các bác",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách các thành phần liệt kê."
+        },
+        {
+          "error": "cháu,",
+          "suggestion": "cháu.",
+          "error_type": "bo_sot_them",
+          "reason": "Kết thúc câu cần dấu chấm thay vì dấu phẩy."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 10,
+      "file": "CamScanner 06-12-2025 10.00_25 (1).jpg",
+      "label": "D10",
+      "latencyMs": 3835,
+      "tokens": 2380,
+      "jsonOk": true,
+      "score": "6.8/10",
+      "rating": "Khá",
+      "errCount": 5,
+      "sizeKB": 556.3,
+      "corrections": [
+        {
+          "error": "Chín",
+          "suggestion": "Chí",
+          "error_type": "phu_am_dau",
+          "reason": "Sai tên riêng địa danh."
+        },
+        {
+          "error": "tình học tập",
+          "suggestion": "tình hình học tập",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ để câu văn đầy đủ nghĩa."
+        },
+        {
+          "error": "khẻo",
+          "suggestion": "khỏe",
+          "error_type": "dau_thanh",
+          "reason": "Sai dấu thanh."
+        },
+        {
+          "error": "nhiều các bạn",
+          "suggestion": "nhiều bạn",
+          "error_type": "bo_sot_them",
+          "reason": "Lỗi diễn đạt, dư từ 'các'."
+        },
+        {
+          "error": "nữa đấy ở trường",
+          "suggestion": "ở trường nữa đấy",
+          "error_type": "bo_sot_them",
+          "reason": "Sắp xếp trật tự từ trong câu chưa hợp lý."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 11,
+      "file": "CamScanner 06-12-2025 10.00_26 (1).jpg",
+      "label": "D11",
+      "latencyMs": 3439,
+      "tokens": 2280,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 483,
+      "corrections": [
+        {
+          "error": "miệng",
+          "suggestion": "",
+          "error_type": "bo_sot_them",
+          "reason": "Từ 'miệng' bị thừa trong ngữ cảnh 'cô hơi nghiêm khắc'."
+        },
+        {
+          "error": "vẫn rất nhớ rất nhớ",
+          "suggestion": "vẫn rất nhớ",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ không cần thiết."
+        },
+        {
+          "error": "phụng lộ",
+          "suggestion": "phụng sự",
+          "error_type": "van",
+          "reason": "Sai từ vựng, 'phụng sự' mới đúng nghĩa."
+        },
+        {
+          "error": "cô",
+          "suggestion": "Cô",
+          "error_type": "viet_hoa",
+          "reason": "Cần viết hoa đầu câu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 12,
+      "file": "CamScanner 06-12-2025 10.00_28 (1).jpg",
+      "label": "D12",
+      "latencyMs": 3966,
+      "tokens": 2417,
+      "jsonOk": true,
+      "score": "7.0/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 499.9,
+      "corrections": [
+        {
+          "error": "em bao",
+          "suggestion": "em Bao",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng cần viết hoa chữ cái đầu."
+        },
+        {
+          "error": "mái",
+          "suggestion": "mấy",
+          "error_type": "van",
+          "reason": "Sai vần, từ đúng là 'mấy'."
+        },
+        {
+          "error": "cam cem",
+          "suggestion": "kem",
+          "error_type": "van",
+          "reason": "Sai chính tả, từ đúng là 'kem'."
+        },
+        {
+          "error": "thiếu dấu câu",
+          "suggestion": "Thêm dấu phẩy, dấu chấm, dấu hỏi",
+          "error_type": "bo_sot_them",
+          "reason": "Câu văn thiếu dấu câu khiến người đọc khó hiểu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 13,
+      "file": "CamScanner 06-12-2025 10.00_29 (1).jpg",
+      "label": "D13",
+      "latencyMs": 4437,
+      "tokens": 2658,
+      "jsonOk": false,
+      "score": "N/A",
+      "rating": "N/A",
+      "errCount": 0,
+      "sizeKB": 558.9,
+      "corrections": [],
+      "success": true
+    },
+    {
+      "id": 14,
+      "file": "CamScanner 06-12-2025 10.00_3 (1).jpg",
+      "label": "D14",
+      "latencyMs": 4118,
+      "tokens": 2687,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 7,
+      "sizeKB": 477.6,
+      "corrections": [
+        {
+          "error": "không? Bà ngoại Em Long",
+          "suggestion": "Không? Bà ngoại, em Long",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa đầu câu và thiếu dấu phẩy ngăn cách thành phần gọi đáp."
+        },
+        {
+          "error": "tết",
+          "suggestion": "Tết",
+          "error_type": "viet_hoa",
+          "reason": "Tên ngày lễ cần viết hoa."
+        },
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Cách viết chuẩn chính tả hiện nay là 'khỏe'."
+        },
+        {
+          "error": "khoẻ khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ không cần thiết."
+        },
+        {
+          "error": "Năm Năm",
+          "suggestion": "Năm",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ."
+        },
+        {
+          "error": "đã lớp 4",
+          "suggestion": "đã học lớp 4",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu động từ."
+        },
+        {
+          "error": "toán",
+          "suggestion": "Toán",
+          "error_type": "viet_hoa",
+          "reason": "Tên môn học cần viết hoa."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 15,
+      "file": "CamScanner 06-12-2025 10.00_30 (1).jpg",
+      "label": "D15",
+      "latencyMs": 3715,
+      "tokens": 2468,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 595.9,
+      "corrections": [
+        {
+          "error": "đọc hay",
+          "suggestion": "đọc truyện hay",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu danh từ để câu văn có nghĩa rõ ràng."
+        },
+        {
+          "error": "Bà cho cháu",
+          "suggestion": "Bà kể cho cháu",
+          "error_type": "bo_sot_them",
+          "reason": "Dùng từ chưa chính xác trong ngữ cảnh kể chuyện."
+        },
+        {
+          "error": "như",
+          "suggestion": "nhưng",
+          "error_type": "phu_am_dau",
+          "reason": "Sai từ nối trong câu ghép."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 16,
+      "file": "CamScanner 06-12-2025 10.00_31 (1).jpg",
+      "label": "D16",
+      "latencyMs": 4101,
+      "tokens": 2416,
+      "jsonOk": true,
+      "score": "9.3/10",
+      "rating": "Xuất sắc",
+      "errCount": 3,
+      "sizeKB": 557.6,
+      "corrections": [
+        {
+          "error": "chúng to ra nhiều trái rất lắm",
+          "suggestion": "chúng to ra nhiều trái lắm",
+          "error_type": "bo_sot_them",
+          "reason": "Lỗi diễn đạt thừa từ 'rất' khi đã có 'nhiều'."
+        },
+        {
+          "error": "đúng ạ",
+          "suggestion": "đúng không ạ",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ để tạo thành câu hỏi hoàn chỉnh."
+        },
+        {
+          "error": "luôn lại còn",
+          "suggestion": "vậy mà vẫn",
+          "error_type": "bo_sot_them",
+          "reason": "Diễn đạt chưa tự nhiên, cần dùng từ nối phù hợp hơn."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 17,
+      "file": "CamScanner 06-12-2025 10.00_33 (1).jpg",
+      "label": "D17",
+      "latencyMs": 3448,
+      "tokens": 2227,
+      "jsonOk": true,
+      "score": "7.1/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 388.3,
+      "corrections": [
+        {
+          "error": "năm",
+          "suggestion": "Năm",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa đầu câu."
+        },
+        {
+          "error": "giỡ",
+          "suggestion": "dỗ",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu (d/gi)."
+        },
+        {
+          "error": "tết",
+          "suggestion": "Tết",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa danh từ riêng chỉ ngày lễ."
+        },
+        {
+          "error": "khéa",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Sai vần."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 18,
+      "file": "CamScanner 06-12-2025 10.00_34 (1).jpg",
+      "label": "D18",
+      "latencyMs": 3542,
+      "tokens": 2356,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 456.6,
+      "corrections": [
+        {
+          "error": "thăm hỏi bà",
+          "suggestion": "thăm hỏi bà,",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách vế câu."
+        },
+        {
+          "error": "cũng trái",
+          "suggestion": "cũng ra trái",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu động từ 'ra' để câu văn rõ nghĩa."
+        },
+        {
+          "error": "cháu khóc",
+          "suggestion": ", cháu khóc",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách các vế câu liệt kê hành động."
+        },
+        {
+          "error": "đi chơi bà",
+          "suggestion": "đi chơi, bà",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách vế câu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 19,
+      "file": "CamScanner 06-12-2025 10.00_35 (1).jpg",
+      "label": "D19",
+      "latencyMs": 4600,
+      "tokens": 2857,
+      "jsonOk": true,
+      "score": "6.1/10",
+      "rating": "Khá",
+      "errCount": 7,
+      "sizeKB": 457.8,
+      "corrections": [
+        {
+          "error": "vì đó",
+          "suggestion": "vì thế",
+          "error_type": "van",
+          "reason": "Dùng từ sai ngữ cảnh."
+        },
+        {
+          "error": "Con chó, con cháu",
+          "suggestion": "Con chó con cháu",
+          "error_type": "bo_sot_them",
+          "reason": "Dư dấu phẩy làm sai nghĩa câu."
+        },
+        {
+          "error": "sau sau",
+          "suggestion": "sau",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ không cần thiết."
+        },
+        {
+          "error": "cũng cũng",
+          "suggestion": "cũng",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ."
+        },
+        {
+          "error": "làm bài, làm bài cùng lu em",
+          "suggestion": "làm bài cùng em",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ và sai chính tả 'lu'."
+        },
+        {
+          "error": "cho rất nhiều",
+          "suggestion": "có rất nhiều",
+          "error_type": "phu_am_dau",
+          "reason": "Sai chính tả."
+        },
+        {
+          "error": "chùng",
+          "suggestion": "trúng",
+          "error_type": "phu_am_dau",
+          "reason": "Sai chính tả."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 20,
+      "file": "CamScanner 06-12-2025 10.00_37 (1).jpg",
+      "label": "D20",
+      "latencyMs": 3819,
+      "tokens": 2373,
+      "jsonOk": true,
+      "score": "7.3/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 561.1,
+      "corrections": [
+        {
+          "error": "khói",
+          "suggestion": "khóc",
+          "error_type": "van",
+          "reason": "Sai vần, từ đúng là 'khóc' (khóc lóc)."
+        },
+        {
+          "error": "vui ở lòng",
+          "suggestion": "vui lòng",
+          "error_type": "bo_sot_them",
+          "reason": "Thừa từ 'ở', cụm từ đúng là 'vui lòng'."
+        },
+        {
+          "error": "đi xì",
+          "suggestion": "lì xì",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu, từ đúng là 'lì xì'."
+        },
+        {
+          "error": "chân ngập",
+          "suggestion": "tràn ngập",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu, từ đúng là 'tràn ngập'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 21,
+      "file": "CamScanner 06-12-2025 10.00_38 (1).jpg",
+      "label": "D21",
+      "latencyMs": 3203,
+      "tokens": 2214,
+      "jsonOk": true,
+      "score": "8.3/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 332.3,
+      "corrections": [
+        {
+          "error": "Ba",
+          "suggestion": "ba",
+          "error_type": "viet_hoa",
+          "reason": "Từ 'ba' đứng sau dấu phẩy hoặc trong câu không cần viết hoa đầu dòng."
+        },
+        {
+          "error": "không.",
+          "suggestion": "không?",
+          "error_type": "dau_thanh",
+          "reason": "Câu hỏi cần dùng dấu chấm hỏi."
+        },
+        {
+          "error": "2",
+          "suggestion": "hai",
+          "error_type": "viet_hoa",
+          "reason": "Trong văn viết, nên dùng chữ thay vì số."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 22,
+      "file": "CamScanner 06-12-2025 10.00_39 (1).jpg",
+      "label": "D22",
+      "latencyMs": 3485,
+      "tokens": 2268,
+      "jsonOk": true,
+      "score": "6.8/10",
+      "rating": "Khá",
+      "errCount": 5,
+      "sizeKB": 470.4,
+      "corrections": [
+        {
+          "error": "bà a",
+          "suggestion": "Bà ạ",
+          "error_type": "viet_hoa",
+          "reason": "Cần viết hoa đầu câu và dùng dấu thanh đúng."
+        },
+        {
+          "error": "A bà",
+          "suggestion": "Bà",
+          "error_type": "bo_sot_them",
+          "reason": "Thừa từ 'A' không cần thiết."
+        },
+        {
+          "error": "mặc",
+          "suggestion": "mặt",
+          "error_type": "van",
+          "reason": "Sai vần 'ac' thay vì 'at'."
+        },
+        {
+          "error": "bông bóng",
+          "suggestion": "bóng bay",
+          "error_type": "van",
+          "reason": "Từ địa phương/dùng từ chưa chuẩn xác."
+        },
+        {
+          "error": "me",
+          "suggestion": "mẹ",
+          "error_type": "dau_thanh",
+          "reason": "Thiếu dấu thanh."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 23,
+      "file": "CamScanner 06-12-2025 10.00_4 (1).jpg",
+      "label": "D23",
+      "latencyMs": 4224,
+      "tokens": 2603,
+      "jsonOk": true,
+      "score": "7.3/10",
+      "rating": "Tốt",
+      "errCount": 7,
+      "sizeKB": 440.2,
+      "corrections": [
+        {
+          "error": "4",
+          "suggestion": "Tư",
+          "error_type": "viet_hoa",
+          "reason": "Thứ trong tuần cần viết bằng chữ."
+        },
+        {
+          "error": "tr 18",
+          "suggestion": "tr. 18",
+          "error_type": "hinh_thuc",
+          "reason": "Thiếu dấu chấm viết tắt."
+        },
+        {
+          "error": "ơn lũ",
+          "suggestion": "lũ lụt",
+          "error_type": "phu_am_dau",
+          "reason": "Sai từ ngữ, dùng từ 'lũ lụt' chính xác hơn."
+        },
+        {
+          "error": "miền trung",
+          "suggestion": "miền Trung",
+          "error_type": "viet_hoa",
+          "reason": "Tên địa danh cần viết hoa."
+        },
+        {
+          "error": "ổn khỏe",
+          "suggestion": "khỏe mạnh",
+          "error_type": "noi_dung",
+          "reason": "Dùng từ chưa tự nhiên."
+        },
+        {
+          "error": "coi em",
+          "suggestion": "trông em",
+          "error_type": "noi_dung",
+          "reason": "Dùng từ địa phương, nên dùng từ phổ thông."
+        },
+        {
+          "error": "không bao",
+          "suggestion": "không bao giờ quên",
+          "error_type": "bo_sot_them",
+          "reason": "Câu bị thiếu kết thúc."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 24,
+      "file": "CamScanner 06-12-2025 10.00_40 (1).jpg",
+      "label": "D24",
+      "latencyMs": 4178,
+      "tokens": 2461,
+      "jsonOk": true,
+      "score": "7.5/10",
+      "rating": "Tốt",
+      "errCount": 5,
+      "sizeKB": 552.9,
+      "corrections": [
+        {
+          "error": "Vì vậy hôm nay",
+          "suggestion": "Vì vậy, hôm nay",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách trạng ngữ."
+        },
+        {
+          "error": "sức khoẻ",
+          "suggestion": "sức khỏe",
+          "error_type": "van",
+          "reason": "Quy tắc chính tả hiện hành ưu tiên viết 'khỏe' (o-e)."
+        },
+        {
+          "error": "đầu khóc",
+          "suggestion": "đầu, con khóc",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu chủ ngữ và dấu câu để câu văn rõ nghĩa."
+        },
+        {
+          "error": "sưng mắt sưng mũi",
+          "suggestion": "sưng mắt, sưng mũi",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy liệt kê."
+        },
+        {
+          "error": "em Bơ không biết",
+          "suggestion": "em Bơ, không biết",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách các vế câu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 25,
+      "file": "CamScanner 06-12-2025 10.00_41 (1).jpg",
+      "label": "D25",
+      "latencyMs": 4159,
+      "tokens": 2683,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 6,
+      "sizeKB": 421.6,
+      "corrections": [
+        {
+          "error": "1",
+          "suggestion": "một",
+          "error_type": "viet_hoa",
+          "reason": "Nên viết bằng chữ thay vì dùng số trong văn bản hành chính/thư từ."
+        },
+        {
+          "error": "độc lập - tự do - hạnh phúc",
+          "suggestion": "Độc lập - Tự do - Hạnh phúc",
+          "error_type": "viet_hoa",
+          "reason": "Cần viết hoa chữ cái đầu của mỗi cụm từ trong tiêu đề quốc hiệu."
+        },
+        {
+          "error": "Giáng Sinh",
+          "suggestion": "Giáng sinh",
+          "error_type": "viet_hoa",
+          "reason": "Chỉ viết hoa chữ cái đầu của danh từ riêng."
+        },
+        {
+          "error": "như nào",
+          "suggestion": "như thế nào",
+          "error_type": "phu_am_dau",
+          "reason": "Dùng từ ngữ chuẩn mực hơn trong văn viết."
+        },
+        {
+          "error": "2",
+          "suggestion": "hai",
+          "error_type": "viet_hoa",
+          "reason": "Nên viết bằng chữ thay vì dùng số."
+        },
+        {
+          "error": "lớp lá",
+          "suggestion": "lớp Lá",
+          "error_type": "viet_hoa",
+          "reason": "Tên lớp học cần viết hoa."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 26,
+      "file": "CamScanner 06-12-2025 10.00_42 (1).jpg",
+      "label": "D26",
+      "latencyMs": 4206,
+      "tokens": 2347,
+      "jsonOk": true,
+      "score": "8.5/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 506.1,
+      "corrections": [
+        {
+          "error": "tr 78",
+          "suggestion": "tr. 78",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu chấm sau chữ viết tắt 'tr'."
+        },
+        {
+          "error": "rung rức",
+          "suggestion": "rưng rức",
+          "error_type": "van",
+          "reason": "Sai vần, từ đúng là 'rưng rức'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 27,
+      "file": "CamScanner 06-12-2025 10.00_43 (1).jpg",
+      "label": "D27",
+      "latencyMs": 3657,
+      "tokens": 2347,
+      "jsonOk": true,
+      "score": "8.5/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 506.1,
+      "corrections": [
+        {
+          "error": "tr 78",
+          "suggestion": "tr. 78",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu chấm sau chữ viết tắt 'tr'."
+        },
+        {
+          "error": "rung rức",
+          "suggestion": "rưng rức",
+          "error_type": "van",
+          "reason": "Sai vần, từ đúng là 'rưng rức'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 28,
+      "file": "CamScanner 06-12-2025 10.00_45 (1).jpg",
+      "label": "D28",
+      "latencyMs": 3752,
+      "tokens": 2321,
+      "jsonOk": true,
+      "score": "5.0/10",
+      "rating": "Khá",
+      "errCount": 7,
+      "sizeKB": 439.8,
+      "corrections": [
+        {
+          "error": "cố",
+          "suggestion": "Cố",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa đầu câu."
+        },
+        {
+          "error": "an",
+          "suggestion": "lần",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu."
+        },
+        {
+          "error": "nay",
+          "suggestion": "này",
+          "error_type": "dau_thanh",
+          "reason": "Thiếu dấu thanh."
+        },
+        {
+          "error": "cung",
+          "suggestion": "cũng",
+          "error_type": "dau_thanh",
+          "reason": "Thiếu dấu thanh."
+        },
+        {
+          "error": "an",
+          "suggestion": "em",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu."
+        },
+        {
+          "error": "an",
+          "suggestion": "đang",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu."
+        },
+        {
+          "error": "lao",
+          "suggestion": "lao",
+          "error_type": "phu_am_dau",
+          "reason": "Từ 'cơn lao' không rõ nghĩa, có thể ý là 'cơn đau' hoặc 'khó khăn'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 29,
+      "file": "CamScanner 06-12-2025 10.00_47 (1).jpg",
+      "label": "D29",
+      "latencyMs": 2999,
+      "tokens": 2112,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 286.7,
+      "corrections": [
+        {
+          "error": "cháu ông bà",
+          "suggestion": "cháu của ông bà",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ 'của' để câu văn rõ nghĩa hơn."
+        },
+        {
+          "error": "tết",
+          "suggestion": "Tết",
+          "error_type": "viet_hoa",
+          "reason": "Tết là danh từ riêng chỉ ngày lễ, cần viết hoa."
+        },
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "dau_thanh",
+          "reason": "Lỗi dấu thanh, từ đúng là 'khỏe'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 30,
+      "file": "CamScanner 06-12-2025 10.00_49 (1).jpg",
+      "label": "D30",
+      "latencyMs": 3271,
+      "tokens": 2221,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 380.6,
+      "corrections": [
+        {
+          "error": "chợt ông bà",
+          "suggestion": "chợt nhớ ông bà",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ 'nhớ' để câu văn có nghĩa."
+        },
+        {
+          "error": "điểm dạ",
+          "suggestion": "điểm ạ",
+          "error_type": "phu_am_dau",
+          "reason": "Dùng từ 'dạ' không phù hợp ngữ cảnh câu hỏi, nên dùng 'ạ'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 31,
+      "file": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "label": "D31",
+      "latencyMs": 3685,
+      "tokens": 2284,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 435.8,
+      "corrections": [
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Quy tắc chính tả hiện hành ưu tiên viết 'oe' thay vì 'oè' trong từ này."
+        },
+        {
+          "error": "thiếu dấu câu",
+          "suggestion": "thêm dấu chấm, dấu phẩy",
+          "error_type": "bo_sot_them",
+          "reason": "Đoạn văn thiếu dấu câu ngắt nghỉ khiến câu văn bị kéo dài, khó đọc."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 32,
+      "file": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "label": "D32",
+      "latencyMs": 2966,
+      "tokens": 2275,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 380.6,
+      "corrections": [
+        {
+          "error": "chợt ông bà",
+          "suggestion": "chợt nhớ ông bà",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu động từ 'nhớ' để câu văn có nghĩa."
+        },
+        {
+          "error": "anh Quốc anh",
+          "suggestion": "anh Quốc",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ 'anh' không cần thiết."
+        },
+        {
+          "error": "điểm dạ",
+          "suggestion": "điểm ạ",
+          "error_type": "phu_am_dau",
+          "reason": "Dùng từ ngữ xưng hô chưa phù hợp trong ngữ cảnh câu hỏi."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 33,
+      "file": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "label": "D33",
+      "latencyMs": 3021,
+      "tokens": 2284,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 435.8,
+      "corrections": [
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Quy tắc chính tả hiện hành ưu tiên viết 'oe' thay vì 'oè' trong từ này."
+        },
+        {
+          "error": "thiếu dấu câu",
+          "suggestion": "thêm dấu chấm, dấu phẩy",
+          "error_type": "bo_sot_them",
+          "reason": "Đoạn văn thiếu dấu câu ngắt nghỉ khiến câu văn bị kéo dài, khó đọc."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 34,
+      "file": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "label": "D34",
+      "latencyMs": 3292,
+      "tokens": 2268,
+      "jsonOk": true,
+      "score": "9.3/10",
+      "rating": "Xuất sắc",
+      "errCount": 1,
+      "sizeKB": 425.6,
+      "corrections": [
+        {
+          "error": "xung",
+          "suggestion": "xung quanh",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu từ 'quanh' để hoàn thiện cụm từ 'mọi người xung quanh' trong câu đầu tiên."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 35,
+      "file": "CamScanner 06-12-2025 10.00_56 (1).jpg",
+      "label": "D35",
+      "latencyMs": 3257,
+      "tokens": 2214,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 325.8,
+      "corrections": [
+        {
+          "error": "cho thăm hỏi",
+          "suggestion": "thăm hỏi",
+          "error_type": "bo_sot_them",
+          "reason": "Dư từ 'cho' làm câu văn bị lủng củng."
+        },
+        {
+          "error": "Đan mướp",
+          "suggestion": "Giàn mướp",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu 'Đ' thay vì 'G'."
+        },
+        {
+          "error": "ra lạnh",
+          "suggestion": "đang lạnh",
+          "error_type": "phu_am_dau",
+          "reason": "Dùng từ sai ngữ cảnh, 'đang' phù hợp hơn để chỉ thời tiết hiện tại."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 36,
+      "file": "CamScanner 06-12-2025 10.00_58 (1).jpg",
+      "label": "D36",
+      "latencyMs": 3475,
+      "tokens": 2311,
+      "jsonOk": true,
+      "score": "6.0/10",
+      "rating": "Khá",
+      "errCount": 7,
+      "sizeKB": 451.5,
+      "corrections": [
+        {
+          "error": "thi",
+          "suggestion": "Thi",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa đầu câu."
+        },
+        {
+          "error": "louis",
+          "suggestion": "Louis",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa tên riêng."
+        },
+        {
+          "error": "1a",
+          "suggestion": "1A",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa tên lớp."
+        },
+        {
+          "error": "Ba me",
+          "suggestion": "Ba mẹ",
+          "error_type": "dau_thanh",
+          "reason": "Thiếu dấu thanh."
+        },
+        {
+          "error": "buổi sáng trưa",
+          "suggestion": "buổi sáng... buổi trưa",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ gây sai nghĩa thời gian."
+        },
+        {
+          "error": "tết",
+          "suggestion": "Tết",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa tên ngày lễ."
+        },
+        {
+          "error": "hính trọng",
+          "suggestion": "kính trọng",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 37,
+      "file": "CamScanner 06-12-2025 10.00_6 (1).jpg",
+      "label": "D37",
+      "latencyMs": 3211,
+      "tokens": 2241,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 301.5,
+      "corrections": [
+        {
+          "error": "miền trung",
+          "suggestion": "miền Trung",
+          "error_type": "viet_hoa",
+          "reason": "Tên địa danh, vùng miền cần viết hoa chữ cái đầu."
+        },
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "van",
+          "reason": "Cách viết chuẩn chính tả là 'khỏe'."
+        },
+        {
+          "error": "không không",
+          "suggestion": "không",
+          "error_type": "bo_sot_them",
+          "reason": "Lỗi lặp từ không cần thiết."
+        },
+        {
+          "error": "trời trời",
+          "suggestion": "trời",
+          "error_type": "bo_sot_them",
+          "reason": "Lỗi lặp từ không cần thiết."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 38,
+      "file": "CamScanner 06-12-2025 10.00_60 (1).jpg",
+      "label": "D38",
+      "latencyMs": 4022,
+      "tokens": 2502,
+      "jsonOk": true,
+      "score": "8.1/10",
+      "rating": "Tốt",
+      "errCount": 5,
+      "sizeKB": 525.4,
+      "corrections": [
+        {
+          "error": "lúc hơn trước",
+          "suggestion": "trước",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ thừa gây rối nghĩa."
+        },
+        {
+          "error": "lo lắng cháu cho gia đình cháu",
+          "suggestion": "lo lắng cho gia đình cháu",
+          "error_type": "bo_sot_them",
+          "reason": "Thừa từ 'cháu' làm câu sai ngữ pháp."
+        },
+        {
+          "error": "chúng cục đá",
+          "suggestion": "trúng cục đá",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu 'ch' thay vì 'tr'."
+        },
+        {
+          "error": "ông Bà",
+          "suggestion": "ông bà",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa tùy tiện không đúng quy tắc."
+        },
+        {
+          "error": "khoẻ",
+          "suggestion": "khỏe",
+          "error_type": "dau_thanh",
+          "reason": "Dấu hỏi/ngã trong từ 'khỏe' thường viết theo chuẩn chính tả hiện hành."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 39,
+      "file": "CamScanner 06-12-2025 10.00_62 (1).jpg",
+      "label": "D39",
+      "latencyMs": 3719,
+      "tokens": 2365,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 304.7,
+      "corrections": [
+        {
+          "error": "đình em",
+          "suggestion": "đình",
+          "error_type": "bo_sot_them",
+          "reason": "Thừa từ 'em' làm câu văn bị lặp và sai ngữ pháp."
+        },
+        {
+          "error": "con",
+          "suggestion": "cháu",
+          "error_type": "bo_sot_them",
+          "reason": "Xưng hô chưa nhất quán, trong thư gửi ông bà nên dùng 'cháu'."
+        },
+        {
+          "error": "hậu cây",
+          "suggestion": "chậu cây",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu, từ đúng là 'chậu cây'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 40,
+      "file": "CamScanner 06-12-2025 10.00_63 (1).jpg",
+      "label": "D40",
+      "latencyMs": 4593,
+      "tokens": 2655,
+      "jsonOk": false,
+      "score": "N/A",
+      "rating": "N/A",
+      "errCount": 0,
+      "sizeKB": 466.2,
+      "corrections": [],
+      "success": true
+    },
+    {
+      "id": 41,
+      "file": "CamScanner 06-12-2025 10.00_65 (1).jpg",
+      "label": "D41",
+      "latencyMs": 4041,
+      "tokens": 2448,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 508.7,
+      "corrections": [
+        {
+          "error": "tr 78",
+          "suggestion": "tr. 78",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu chấm sau chữ viết tắt 'tr'."
+        },
+        {
+          "error": "là để hỏi",
+          "suggestion": "để hỏi",
+          "error_type": "bo_sot_them",
+          "reason": "Dùng từ thừa, làm câu văn rườm rà."
+        },
+        {
+          "error": "gia đình ông bà có khỏe không ạ",
+          "suggestion": "ông bà có khỏe không ạ",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ 'gia đình' không cần thiết."
+        },
+        {
+          "error": "Mê Sáp An",
+          "suggestion": "Mê-sáp-an",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng nước ngoài cần có dấu gạch nối giữa các âm tiết."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 42,
+      "file": "CamScanner 06-12-2025 10.00_67 (1).jpg",
+      "label": "D42",
+      "latencyMs": 3634,
+      "tokens": 2385,
+      "jsonOk": true,
+      "score": "7.3/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 608.4,
+      "corrections": [
+        {
+          "error": "Vào năm học mới anh em",
+          "suggestion": "Vào năm học mới, anh em",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách trạng ngữ."
+        },
+        {
+          "error": "Đổi lại em",
+          "suggestion": "Đổi lại, em",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách trạng ngữ."
+        },
+        {
+          "error": "Bà ơi! đã",
+          "suggestion": "Bà ơi! Đã",
+          "error_type": "viet_hoa",
+          "reason": "Sau dấu chấm câu cần viết hoa."
+        },
+        {
+          "error": "ngủ rồi cháu",
+          "suggestion": "ngủ rồi, cháu",
+          "error_type": "bo_sot_them",
+          "reason": "Thiếu dấu phẩy ngăn cách các vế câu."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 43,
+      "file": "CamScanner 06-12-2025 10.00_70 (1).jpg",
+      "label": "D43",
+      "latencyMs": 2884,
+      "tokens": 2046,
+      "jsonOk": true,
+      "score": "9.3/10",
+      "rating": "Xuất sắc",
+      "errCount": 1,
+      "sizeKB": 531.7,
+      "corrections": [
+        {
+          "error": "ca",
+          "suggestion": "cả",
+          "error_type": "dau_thanh",
+          "reason": "Thiếu dấu thanh hỏi trên từ 'cả' để chỉ sự bao gồm tất cả mọi người."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 44,
+      "file": "CamScanner 06-12-2025 10.00_71 (1).jpg",
+      "label": "D44",
+      "latencyMs": 3631,
+      "tokens": 2389,
+      "jsonOk": true,
+      "score": "8.8/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 385.3,
+      "corrections": [
+        {
+          "error": "Đây là cháu đã lên",
+          "suggestion": "Cháu đã lên",
+          "error_type": "bo_sot_them",
+          "reason": "Câu văn bị thừa từ 'Đây là', làm câu trở nên lủng củng."
+        },
+        {
+          "error": "Cháu hỏi lo",
+          "suggestion": "Cháu lo quá",
+          "error_type": "bo_sot_them",
+          "reason": "Cụm từ 'Cháu hỏi lo' không đúng ngữ pháp và không diễn đạt được ý nghĩa."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 45,
+      "file": "CamScanner 06-12-2025 10.00_73 (1).jpg",
+      "label": "D45",
+      "latencyMs": 3466,
+      "tokens": 2182,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 3,
+      "sizeKB": 392.5,
+      "corrections": [
+        {
+          "error": "bắp",
+          "suggestion": "Bắp",
+          "error_type": "viet_hoa",
+          "reason": "Tên riêng (biệt danh) cần viết hoa."
+        },
+        {
+          "error": "không.",
+          "suggestion": "không?",
+          "error_type": "dau_thanh",
+          "reason": "Câu hỏi cần dùng dấu chấm hỏi."
+        },
+        {
+          "error": "đang tàu",
+          "suggestion": "đang thả diều",
+          "error_type": "van",
+          "reason": "Từ ngữ không rõ nghĩa, dựa vào ngữ cảnh đoán là 'thả diều'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 46,
+      "file": "CamScanner 06-12-2025 10.00_74 (1).jpg",
+      "label": "D46",
+      "latencyMs": 3197,
+      "tokens": 2178,
+      "jsonOk": true,
+      "score": "8.3/10",
+      "rating": "Tốt",
+      "errCount": 2,
+      "sizeKB": 547.4,
+      "corrections": [
+        {
+          "error": "mua cho con mua cho con",
+          "suggestion": "mua cho con",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ không cần thiết."
+        },
+        {
+          "error": "cây kem đã b rơi",
+          "suggestion": "cây kem đã bị rơi",
+          "error_type": "phu_am_dau",
+          "reason": "Viết sai chính tả từ 'bị'."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 47,
+      "file": "CamScanner 06-12-2025 10.00_75 (1).jpg",
+      "label": "D47",
+      "latencyMs": 4012,
+      "tokens": 2531,
+      "jsonOk": true,
+      "score": "7.0/10",
+      "rating": "Tốt",
+      "errCount": 6,
+      "sizeKB": 388.1,
+      "corrections": [
+        {
+          "error": "Thư Mời",
+          "suggestion": "Thư gửi ông bà",
+          "error_type": "noi_dung",
+          "reason": "Tiêu đề chưa phù hợp với nội dung bức thư."
+        },
+        {
+          "error": "hỏi thăm rức khỏe",
+          "suggestion": "hỏi thăm sức khỏe",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu (r/s)."
+        },
+        {
+          "error": "con rất ông bà nhớ ông bà",
+          "suggestion": "con rất nhớ ông bà",
+          "error_type": "bo_sot_them",
+          "reason": "Lặp từ và diễn đạt lủng củng."
+        },
+        {
+          "error": "giữa anh em con",
+          "suggestion": "anh em con",
+          "error_type": "bo_sot_them",
+          "reason": "Dùng từ thừa, không đúng ngữ cảnh."
+        },
+        {
+          "error": "rửa bứa",
+          "suggestion": "rửa bát",
+          "error_type": "van",
+          "reason": "Sai vần."
+        },
+        {
+          "error": "hữu be",
+          "suggestion": "hứa với",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm đầu và vần."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 48,
+      "file": "CamScanner 06-12-2025 10.00_8 (1).jpg",
+      "label": "D48",
+      "latencyMs": 3992,
+      "tokens": 2327,
+      "jsonOk": true,
+      "score": "7.8/10",
+      "rating": "Tốt",
+      "errCount": 4,
+      "sizeKB": 404.7,
+      "corrections": [
+        {
+          "error": "nhất",
+          "suggestion": "nhức",
+          "error_type": "van",
+          "reason": "Sai vần 'ât' thay vì 'ức'."
+        },
+        {
+          "error": "Gia đình con là có sống ổn không?",
+          "suggestion": "Gia đình con vẫn sống ổn.",
+          "error_type": "ngu_phap",
+          "reason": "Câu hỏi không phù hợp ngữ cảnh khi viết thư cho bà."
+        },
+        {
+          "error": "còn bà và em có khỏe không",
+          "suggestion": "còn ba và mẹ có khỏe không",
+          "error_type": "noi_dung",
+          "reason": "Lỗi logic nội dung (đã hỏi bà ở trên, cần hỏi người thân khác)."
+        },
+        {
+          "error": "Nói chung chung",
+          "suggestion": "Nói chung",
+          "error_type": "ngu_phap",
+          "reason": "Lặp từ không cần thiết."
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": 49,
+      "file": "CamScanner 06-12-2025 10.00_9 (1).jpg",
+      "label": "D49",
+      "latencyMs": 3722,
+      "tokens": 2352,
+      "jsonOk": true,
+      "score": "7.0/10",
+      "rating": "Tốt",
+      "errCount": 5,
+      "sizeKB": 709.4,
+      "corrections": [
+        {
+          "error": "phan dũng",
+          "suggestion": "Phan Dũng",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa tên riêng."
+        },
+        {
+          "error": "Lí",
+          "suggestion": "Lí",
+          "error_type": "viet_hoa",
+          "reason": "Viết hoa đầu câu."
+        },
+        {
+          "error": "làm",
+          "suggestion": "nhớ",
+          "error_type": "bo_sot_them",
+          "reason": "Từ dùng sai ngữ cảnh, cần thay bằng 'nhớ'."
+        },
+        {
+          "error": "cho",
+          "suggestion": "chơi",
+          "error_type": "van",
+          "reason": "Sai vần, cần sửa thành 'chơi'."
+        },
+        {
+          "error": "bình anh",
+          "suggestion": "bình an",
+          "error_type": "phu_am_dau",
+          "reason": "Sai phụ âm cuối (n/nh)."
+        }
+      ],
+      "success": true
+    }
+  ]
+}

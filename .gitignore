@@ -52,6 +52,8 @@ public/icon-512x512.png
 02_Kich_ban_Thuc_nghiem/anhdaduocOCR/
 02_Kich_ban_Thuc_nghiem/*.rar
 02_Kich_ban_Thuc_nghiem/*.zip
+02_Kich_ban_Thuc_nghiem/image_datasets/*.rar
+02_Kich_ban_Thuc_nghiem/image_datasets/*.zip
 anhdaduocOCR/
 
 # Bỏ qua ảnh xử lý trung gian (step_*.jpg) — chỉ giữ quality_report.json
@@ -77,3 +79,9 @@ extracted_tom_tat.txt
 docx_content.txt
 extract_docx.py
 gemini_ocr.ipynb
+
+# Xiaozhi ESP32 firmware (separate project)
+xiaozhi-esp32-main/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo

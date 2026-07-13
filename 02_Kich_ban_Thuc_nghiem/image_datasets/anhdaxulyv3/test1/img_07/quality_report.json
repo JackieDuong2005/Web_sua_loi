@@ -1,0 +1,39 @@
+{
+  "fileName": "img_07",
+  "config": {
+    "enableDeskew": true,
+    "deskewMaxAngle": 15,
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "bgScales": [
+      31,
+      61,
+      101
+    ],
+    "bgDivGamma": 1,
+    "bgBrightClip": 240,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.6,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 0,
+    "adaptiveC": 18,
+    "blurThreshold": 80,
+    "brightnessLow": 50,
+    "brightnessHigh": 220,
+    "minResolution": 250,
+    "minTextAreaRatio": 0.005
+  },
+  "quality": {
+    "is_good": true,
+    "warnings": [],
+    "blur_score": 2229.59,
+    "brightness": 126.53,
+    "resolution": 756,
+    "dark_pixel_ratio": 0.3822,
+    "text_area_ratio": 0.3832
+  },
+  "elapsed_ms": 4261
+}

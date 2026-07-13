@@ -1,0 +1,35 @@
+{
+  "fileName": "30",
+  "config": {
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "enableShadowRemoval": true,
+    "shadowKernelSize": 51,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.5,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 0,
+    "adaptiveC": 40,
+    "blurThreshold": 80,
+    "brightnessLow": 50,
+    "brightnessHigh": 220,
+    "minResolution": 640,
+    "minTextAreaRatio": 0.005
+  },
+  "quality": {
+    "is_good": false,
+    "warnings": [
+      "Ảnh cháy sáng",
+      "Nét chữ quá nhạt"
+    ],
+    "blur_score": 465.73,
+    "brightness": 236.11,
+    "resolution": 921,
+    "dark_pixel_ratio": 0.0068,
+    "text_area_ratio": 0.1606
+  },
+  "elapsed_ms": 5239
+}

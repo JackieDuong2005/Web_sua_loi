@@ -1,0 +1,40 @@
+{
+  "fileName": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_4",
+  "config": {
+    "enableDeskew": true,
+    "deskewMaxAngle": 15,
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "enableShadowRemoval": true,
+    "shadowKernelSize": 51,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.5,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 0,
+    "adaptiveC": 20,
+    "enableMorphoLineRemoval": true,
+    "lineKernelLen": 120,
+    "removeHLines": true,
+    "removeVLines": false,
+    "vLineKernelLen": 0,
+    "repairKernel": 1,
+    "blurThreshold": 80,
+    "brightnessLow": 50,
+    "brightnessHigh": 220,
+    "minResolution": 250,
+    "minTextAreaRatio": 0.005
+  },
+  "quality": {
+    "is_good": true,
+    "warnings": [],
+    "blur_score": 1135.95,
+    "brightness": 142.94,
+    "resolution": 526,
+    "dark_pixel_ratio": 0.1562,
+    "text_area_ratio": 0.396
+  },
+  "elapsed_ms": 2560
+}

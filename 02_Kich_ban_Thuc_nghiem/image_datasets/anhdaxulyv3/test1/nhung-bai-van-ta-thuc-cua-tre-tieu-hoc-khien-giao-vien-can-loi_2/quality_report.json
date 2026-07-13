@@ -1,0 +1,42 @@
+{
+  "fileName": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_2",
+  "config": {
+    "enableDeskew": true,
+    "deskewMaxAngle": 15,
+    "resizeMaxWidth": 1600,
+    "enableWhiteBalance": true,
+    "bgScales": [
+      31,
+      61,
+      101
+    ],
+    "bgDivGamma": 1,
+    "bgBrightClip": 240,
+    "enableClahe": true,
+    "claheClipLimit": 2,
+    "claheTileGridSize": 8,
+    "enableSharpen": true,
+    "sharpenAmount": 0.6,
+    "thresholdMode": "adaptive_gaussian",
+    "adaptiveBlockSize": 0,
+    "adaptiveC": 18,
+    "blurThreshold": 80,
+    "brightnessLow": 50,
+    "brightnessHigh": 220,
+    "minResolution": 250,
+    "minTextAreaRatio": 0.005
+  },
+  "quality": {
+    "is_good": false,
+    "warnings": [
+      "Ảnh cháy sáng",
+      "Nét chữ quá nhạt"
+    ],
+    "blur_score": 2028.29,
+    "brightness": 232.3,
+    "resolution": 500,
+    "dark_pixel_ratio": 0.0014,
+    "text_area_ratio": 0.1346
+  },
+  "elapsed_ms": 1925
+}

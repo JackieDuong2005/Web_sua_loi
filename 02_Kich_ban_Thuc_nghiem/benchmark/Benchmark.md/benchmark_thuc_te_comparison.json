@@ -1,0 +1,1207 @@
+{
+  "meta": {
+    "generatedAt": "2026-06-02T08:02:43.348Z",
+    "model": "gemini-3.1-flash-lite",
+    "folder": "Ảnh viết tay 76 thực tế",
+    "totalImages": 49,
+    "run1Date": "2026-06-02T07:36:41.647Z",
+    "run2Date": "2026-06-02T07:54:13.548Z"
+  },
+  "summary": {
+    "run1": {
+      "jsonOkRate": "100.0%",
+      "avgScore": "7.86",
+      "latencyMean": "4.43s",
+      "latencySD": "0.69s",
+      "avgToken": 2379,
+      "totalErrors": 199,
+      "errTypes": {
+        "phu_am_dau": 32,
+        "van": 26,
+        "dau_thanh": 11,
+        "viet_hoa": 41,
+        "bo_sot_them": 77,
+        "other": 12
+      },
+      "ratings": {
+        "Tốt": 42,
+        "Khá": 5,
+        "Xuất sắc": 2
+      }
+    },
+    "run2": {
+      "jsonOkRate": "98.0%",
+      "avgScore": "7.87",
+      "latencyMean": "4.62s",
+      "latencySD": "1.11s",
+      "avgToken": 2370,
+      "totalErrors": 188,
+      "errTypes": {
+        "phu_am_dau": 33,
+        "van": 25,
+        "dau_thanh": 12,
+        "viet_hoa": 38,
+        "bo_sot_them": 73,
+        "other": 7
+      },
+      "ratings": {
+        "Tốt": 42,
+        "Khá": 4,
+        "Xuất sắc": 2
+      }
+    },
+    "delta": {
+      "avgScore": 0.01,
+      "totalErrors": 11,
+      "avgToken": 9,
+      "latencyMean": "0.19s"
+    }
+  },
+  "consistency": {
+    "validPairs": 48,
+    "exactMatch": {
+      "count": 0,
+      "pct": 0
+    },
+    "withinHalfPoint": {
+      "count": 40,
+      "pct": 83.3
+    },
+    "exceedHalfPoint": {
+      "count": 8,
+      "pct": 16.7
+    },
+    "highVariance": {
+      "count": 2,
+      "pct": 4.2,
+      "images": [
+        {
+          "file": "CamScanner 06-12-2025 10.00_11 (1).jpg",
+          "run1": "7.6/10",
+          "run2": "8.8/10",
+          "delta": 1.2
+        },
+        {
+          "file": "CamScanner 06-12-2025 10.00_40 (1).jpg",
+          "run1": "7.5/10",
+          "run2": "9.0/10",
+          "delta": 1.5
+        }
+      ]
+    },
+    "jsonFailBothRuns": [],
+    "jsonFailOneRun": [
+      {
+        "file": "CamScanner 06-12-2025 10.00_12 (1).jpg",
+        "run1JsonOk": true,
+        "run2JsonOk": false
+      }
+    ]
+  },
+  "errTypeComparison": {
+    "run1": {
+      "phu_am_dau": 32,
+      "van": 26,
+      "dau_thanh": 11,
+      "viet_hoa": 41,
+      "bo_sot_them": 77,
+      "other": 12
+    },
+    "run2": {
+      "phu_am_dau": 33,
+      "van": 25,
+      "dau_thanh": 12,
+      "viet_hoa": 38,
+      "bo_sot_them": 73,
+      "other": 7
+    },
+    "delta": {
+      "phu_am_dau": 1,
+      "van": 1,
+      "dau_thanh": 1,
+      "viet_hoa": 3,
+      "bo_sot_them": 4,
+      "other": 5
+    }
+  },
+  "perImageComparison": [
+    {
+      "id": 1,
+      "file": "CamScanner 06-12-2025 10.00_11 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.6/10",
+        "errCount": 3,
+        "latencyMs": 4600,
+        "tokens": 2275
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 1,
+        "latencyMs": 5223,
+        "tokens": 2172
+      },
+      "scoreDelta": 1.2,
+      "errCountDelta": 2,
+      "consistent": false,
+      "note": "HIGH_VARIANCE"
+    },
+    {
+      "id": 2,
+      "file": "CamScanner 06-12-2025 10.00_12 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 3,
+        "latencyMs": 4935,
+        "tokens": 2537
+      },
+      "run2": {
+        "jsonOk": false,
+        "score": "N/A",
+        "errCount": 0,
+        "latencyMs": 5337,
+        "tokens": 2587
+      },
+      "scoreDelta": null,
+      "errCountDelta": 3,
+      "consistent": false,
+      "note": "JSON_FAIL"
+    },
+    {
+      "id": 3,
+      "file": "CamScanner 06-12-2025 10.00_15 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 6,
+        "latencyMs": 5755,
+        "tokens": 2507
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 5,
+        "latencyMs": 6091,
+        "tokens": 2431
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 4,
+      "file": "CamScanner 06-12-2025 10.00_18 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 3,
+        "latencyMs": 4263,
+        "tokens": 2364
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 3,
+        "latencyMs": 5211,
+        "tokens": 2371
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 5,
+      "file": "CamScanner 06-12-2025 10.00_20 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 5,
+        "latencyMs": 3989,
+        "tokens": 2371
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 5,
+        "latencyMs": 4220,
+        "tokens": 2371
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 6,
+      "file": "CamScanner 06-12-2025 10.00_21 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 4247,
+        "tokens": 2327
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3787,
+        "tokens": 2320
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 7,
+      "file": "CamScanner 06-12-2025 10.00_22 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3599,
+        "tokens": 2114
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3167,
+        "tokens": 2105
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 8,
+      "file": "CamScanner 06-12-2025 10.00_23 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 6,
+        "latencyMs": 4854,
+        "tokens": 2636
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 5,
+        "latencyMs": 4486,
+        "tokens": 2560
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 1,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 9,
+      "file": "CamScanner 06-12-2025 10.00_24 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 7,
+        "latencyMs": 4798,
+        "tokens": 2467
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 6,
+        "latencyMs": 4625,
+        "tokens": 2425
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 1,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 10,
+      "file": "CamScanner 06-12-2025 10.00_25 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "6.8/10",
+        "errCount": 5,
+        "latencyMs": 5753,
+        "tokens": 2380
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 5,
+        "latencyMs": 4067,
+        "tokens": 2385
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 11,
+      "file": "CamScanner 06-12-2025 10.00_26 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 4888,
+        "tokens": 2295
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 3956,
+        "tokens": 2260
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 12,
+      "file": "CamScanner 06-12-2025 10.00_28 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.6/10",
+        "errCount": 4,
+        "latencyMs": 5070,
+        "tokens": 2397
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.0/10",
+        "errCount": 4,
+        "latencyMs": 4438,
+        "tokens": 2415
+      },
+      "scoreDelta": 0.6,
+      "errCountDelta": 0,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 13,
+      "file": "CamScanner 06-12-2025 10.00_29 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 5,
+        "latencyMs": 5269,
+        "tokens": 2563
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 5,
+        "latencyMs": 4440,
+        "tokens": 2566
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 14,
+      "file": "CamScanner 06-12-2025 10.00_3 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.6/10",
+        "errCount": 7,
+        "latencyMs": 4649,
+        "tokens": 2685
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 7,
+        "latencyMs": 4645,
+        "tokens": 2678
+      },
+      "scoreDelta": 0.2,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 15,
+      "file": "CamScanner 06-12-2025 10.00_30 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 4992,
+        "tokens": 2560
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 3,
+        "latencyMs": 4251,
+        "tokens": 2482
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 1,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 16,
+      "file": "CamScanner 06-12-2025 10.00_31 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 4316,
+        "tokens": 2446
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 4774,
+        "tokens": 2446
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 17,
+      "file": "CamScanner 06-12-2025 10.00_33 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.1/10",
+        "errCount": 4,
+        "latencyMs": 3563,
+        "tokens": 2226
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.1/10",
+        "errCount": 4,
+        "latencyMs": 3476,
+        "tokens": 2235
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 18,
+      "file": "CamScanner 06-12-2025 10.00_34 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 4,
+        "latencyMs": 4325,
+        "tokens": 2349
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 4,
+        "latencyMs": 4179,
+        "tokens": 2358
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 19,
+      "file": "CamScanner 06-12-2025 10.00_35 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.0/10",
+        "errCount": 5,
+        "latencyMs": 5219,
+        "tokens": 2767
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.6/10",
+        "errCount": 6,
+        "latencyMs": 4883,
+        "tokens": 2796
+      },
+      "scoreDelta": 0.6,
+      "errCountDelta": 1,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 20,
+      "file": "CamScanner 06-12-2025 10.00_37 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 4,
+        "latencyMs": 4723,
+        "tokens": 2381
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 4,
+        "latencyMs": 4080,
+        "tokens": 2391
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 21,
+      "file": "CamScanner 06-12-2025 10.00_38 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 4,
+        "latencyMs": 3739,
+        "tokens": 2254
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 3,
+        "latencyMs": 3756,
+        "tokens": 2225
+      },
+      "scoreDelta": null,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 22,
+      "file": "CamScanner 06-12-2025 10.00_39 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "6.8/10",
+        "errCount": 5,
+        "latencyMs": 4098,
+        "tokens": 2277
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "6.8/10",
+        "errCount": 5,
+        "latencyMs": 4452,
+        "tokens": 2289
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 23,
+      "file": "CamScanner 06-12-2025 10.00_4 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "6.8/10",
+        "errCount": 9,
+        "latencyMs": 4841,
+        "tokens": 2714
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 9,
+        "latencyMs": 5367,
+        "tokens": 2700
+      },
+      "scoreDelta": 1,
+      "errCountDelta": 0,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 24,
+      "file": "CamScanner 06-12-2025 10.00_40 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.5/10",
+        "errCount": 5,
+        "latencyMs": 4421,
+        "tokens": 2461
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "9.0/10",
+        "errCount": 3,
+        "latencyMs": 9961,
+        "tokens": 2357
+      },
+      "scoreDelta": 1.5,
+      "errCountDelta": 2,
+      "consistent": false,
+      "note": "HIGH_VARIANCE"
+    },
+    {
+      "id": 25,
+      "file": "CamScanner 06-12-2025 10.00_41 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 6,
+        "latencyMs": 5295,
+        "tokens": 2698
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 6,
+        "latencyMs": 5631,
+        "tokens": 2689
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 26,
+      "file": "CamScanner 06-12-2025 10.00_42 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.5/10",
+        "errCount": 2,
+        "latencyMs": 4542,
+        "tokens": 2347
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.5/10",
+        "errCount": 2,
+        "latencyMs": 5083,
+        "tokens": 2347
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 27,
+      "file": "CamScanner 06-12-2025 10.00_43 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "9.0/10",
+        "errCount": 2,
+        "latencyMs": 3746,
+        "tokens": 2330
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.5/10",
+        "errCount": 2,
+        "latencyMs": 4058,
+        "tokens": 2353
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 28,
+      "file": "CamScanner 06-12-2025 10.00_45 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "6.0/10",
+        "errCount": 4,
+        "latencyMs": 4587,
+        "tokens": 2200
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "5.5/10",
+        "errCount": 5,
+        "latencyMs": 3791,
+        "tokens": 2214
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 29,
+      "file": "CamScanner 06-12-2025 10.00_47 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 3,
+        "latencyMs": 3346,
+        "tokens": 2116
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 3,
+        "latencyMs": 3334,
+        "tokens": 2126
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 30,
+      "file": "CamScanner 06-12-2025 10.00_49 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.1/10",
+        "errCount": 3,
+        "latencyMs": 4018,
+        "tokens": 2276
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 3,
+        "latencyMs": 3777,
+        "tokens": 2288
+      },
+      "scoreDelta": 0.8,
+      "errCountDelta": 0,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 31,
+      "file": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3866,
+        "tokens": 2284
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 3,
+        "latencyMs": 4915,
+        "tokens": 2377
+      },
+      "scoreDelta": null,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 32,
+      "file": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 3,
+        "latencyMs": 3183,
+        "tokens": 2266
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3419,
+        "tokens": 2221
+      },
+      "scoreDelta": null,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 33,
+      "file": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3521,
+        "tokens": 2282
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3486,
+        "tokens": 2284
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 34,
+      "file": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "9.5/10",
+        "errCount": 1,
+        "latencyMs": 3828,
+        "tokens": 2262
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3998,
+        "tokens": 2335
+      },
+      "scoreDelta": 0.7,
+      "errCountDelta": 1,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 35,
+      "file": "CamScanner 06-12-2025 10.00_56 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 3,
+        "latencyMs": 4180,
+        "tokens": 2201
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 3,
+        "latencyMs": 4497,
+        "tokens": 2224
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 36,
+      "file": "CamScanner 06-12-2025 10.00_58 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "5.8/10",
+        "errCount": 7,
+        "latencyMs": 6005,
+        "tokens": 2323
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "6.3/10",
+        "errCount": 7,
+        "latencyMs": 3759,
+        "tokens": 2317
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 37,
+      "file": "CamScanner 06-12-2025 10.00_6 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 3556,
+        "tokens": 2239
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 4978,
+        "tokens": 2255
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 38,
+      "file": "CamScanner 06-12-2025 10.00_60 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 5,
+        "latencyMs": 4539,
+        "tokens": 2508
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.1/10",
+        "errCount": 5,
+        "latencyMs": 4203,
+        "tokens": 2508
+      },
+      "scoreDelta": 0.3,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 39,
+      "file": "CamScanner 06-12-2025 10.00_62 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 2,
+        "latencyMs": 4562,
+        "tokens": 2310
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 2,
+        "latencyMs": 4123,
+        "tokens": 2310
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 40,
+      "file": "CamScanner 06-12-2025 10.00_63 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.6/10",
+        "errCount": 5,
+        "latencyMs": 4552,
+        "tokens": 2512
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.0/10",
+        "errCount": 5,
+        "latencyMs": 4774,
+        "tokens": 2544
+      },
+      "scoreDelta": 0.6,
+      "errCountDelta": 0,
+      "consistent": false,
+      "note": "MODERATE_VARIANCE"
+    },
+    {
+      "id": 41,
+      "file": "CamScanner 06-12-2025 10.00_65 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 4,
+        "latencyMs": 3974,
+        "tokens": 2452
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 4,
+        "latencyMs": 4044,
+        "tokens": 2441
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 42,
+      "file": "CamScanner 06-12-2025 10.00_67 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 4,
+        "latencyMs": 4485,
+        "tokens": 2388
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 4,
+        "latencyMs": 7416,
+        "tokens": 2388
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 43,
+      "file": "CamScanner 06-12-2025 10.00_70 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.8/10",
+        "errCount": 2,
+        "latencyMs": 3205,
+        "tokens": 2078
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "9.3/10",
+        "errCount": 1,
+        "latencyMs": 3842,
+        "tokens": 2038
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 44,
+      "file": "CamScanner 06-12-2025 10.00_71 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 2,
+        "latencyMs": 4385,
+        "tokens": 2392
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 2,
+        "latencyMs": 4692,
+        "tokens": 2480
+      },
+      "scoreDelta": null,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 45,
+      "file": "CamScanner 06-12-2025 10.00_73 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.1/10",
+        "errCount": 3,
+        "latencyMs": 3324,
+        "tokens": 2196
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.8/10",
+        "errCount": 3,
+        "latencyMs": 4597,
+        "tokens": 2190
+      },
+      "scoreDelta": 0.3,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 46,
+      "file": "CamScanner 06-12-2025 10.00_74 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 2,
+        "latencyMs": 4369,
+        "tokens": 2178
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "8.3/10",
+        "errCount": 3,
+        "latencyMs": 4836,
+        "tokens": 2219
+      },
+      "scoreDelta": null,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 47,
+      "file": "CamScanner 06-12-2025 10.00_75 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.0/10",
+        "errCount": 9,
+        "latencyMs": 5115,
+        "tokens": 2724
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "6.5/10",
+        "errCount": 6,
+        "latencyMs": 5906,
+        "tokens": 2540
+      },
+      "scoreDelta": 0.5,
+      "errCountDelta": 3,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 48,
+      "file": "CamScanner 06-12-2025 10.00_8 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.3/10",
+        "errCount": 5,
+        "latencyMs": 4446,
+        "tokens": 2376
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.6/10",
+        "errCount": 5,
+        "latencyMs": 4711,
+        "tokens": 2374
+      },
+      "scoreDelta": 0.3,
+      "errCountDelta": 0,
+      "consistent": true,
+      "note": "CONSISTENT"
+    },
+    {
+      "id": 49,
+      "file": "CamScanner 06-12-2025 10.00_9 (1).jpg",
+      "run1": {
+        "jsonOk": true,
+        "score": "7.0/10",
+        "errCount": 4,
+        "latencyMs": 5705,
+        "tokens": 2284
+      },
+      "run2": {
+        "jsonOk": true,
+        "score": "7.0/10",
+        "errCount": 5,
+        "latencyMs": 5711,
+        "tokens": 2370
+      },
+      "scoreDelta": null,
+      "errCountDelta": 1,
+      "consistent": true,
+      "note": "CONSISTENT"
+    }
+  ]
+}

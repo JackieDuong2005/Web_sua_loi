@@ -1,0 +1,126 @@
+{
+  "model": "gemini-3.1-flash-lite",
+  "date": "2026-06-01T15:11:22.293Z",
+  "results": [
+    {
+      "id": 1,
+      "file": "1.JPG",
+      "latencyMs": 3195,
+      "tokens": 1981,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 90.3,
+      "success": true
+    },
+    {
+      "id": 2,
+      "file": "2.JPG",
+      "latencyMs": 3481,
+      "tokens": 1946,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 85.8,
+      "success": true
+    },
+    {
+      "id": 3,
+      "file": "3.JPG",
+      "latencyMs": 2814,
+      "tokens": 1911,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 73.7,
+      "success": true
+    },
+    {
+      "id": 4,
+      "file": "4.JPG",
+      "latencyMs": 2824,
+      "tokens": 1918,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 70.1,
+      "success": true
+    },
+    {
+      "id": 5,
+      "file": "5.JPG",
+      "latencyMs": 3077,
+      "tokens": 1946,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 70.7,
+      "success": true
+    },
+    {
+      "id": 6,
+      "file": "6.JPG",
+      "latencyMs": 2363,
+      "tokens": 1890,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 71.4,
+      "success": true
+    },
+    {
+      "id": 7,
+      "file": "7.JPG",
+      "latencyMs": 2999,
+      "tokens": 1990,
+      "jsonOk": true,
+      "score": "9.5/10",
+      "rating": "Xuất sắc",
+      "errCount": 1,
+      "sizeKB": 72.8,
+      "success": true
+    },
+    {
+      "id": 8,
+      "file": "8.JPG",
+      "latencyMs": 2792,
+      "tokens": 1912,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 72.3,
+      "success": true
+    },
+    {
+      "id": 9,
+      "file": "9.JPG",
+      "latencyMs": 2860,
+      "tokens": 1947,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 73,
+      "success": true
+    },
+    {
+      "id": 10,
+      "file": "10.JPG",
+      "latencyMs": 2678,
+      "tokens": 1964,
+      "jsonOk": true,
+      "score": "10.0/10",
+      "rating": "Xuất sắc",
+      "errCount": 0,
+      "sizeKB": 72,
+      "success": true
+    }
+  ]
+}

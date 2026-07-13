@@ -1,0 +1,407 @@
+{
+  "timestamp": "20260622_152534",
+  "generation_config": {
+    "max_new_tokens": 128,
+    "num_beams": 1,
+    "do_sample": false,
+    "early_stopping": false,
+    "repetition_penalty": 1.5,
+    "no_repeat_ngram_size": 4
+  },
+  "dataset_size": 1000,
+  "models": [
+    {
+      "model_id": "nrl-ai/vn-spell-correction-base",
+      "model_short": "NRL-AI SpellCorrection",
+      "n_params": 225950976,
+      "load_time_s": 3.26,
+      "metrics": {
+        "sacrebleu": 84.45,
+        "wer": 7.73,
+        "cer": 2.56,
+        "exact_match": 15.2,
+        "exact_match_count": 152,
+        "total_samples": 1000
+      },
+      "error_analysis": {
+        "total_errors_in_input": 2261,
+        "true_positives": 971,
+        "false_negatives": 1290,
+        "false_positives": 1043,
+        "precision": 48.21,
+        "recall": 42.95,
+        "f1_score": 45.43
+      },
+      "latency_ms": {
+        "mean": 929.5,
+        "std": 208.9,
+        "median": 945.4,
+        "p95": 1115.5
+      },
+      "sample_predictions": [
+        {
+          "input": "Tếc Nguyên Đán nà ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và trúc nhau.",
+          "reference": "Tết Nguyên Đán là ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và chúc nhau.",
+          "prediction": "Tếc Nguyên Đán mà ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và trúc nhau."
+        },
+        {
+          "input": "Bố em là bộ đội, bố đóng quân ở biênh giới. Em rất nhớ bố và mong bố sớm được về thăm lhà.",
+          "reference": "Bố em là bộ đội, bố đóng quân ở biên giới. Em rất nhớ bố và mong bố sớm được về thăm nhà.",
+          "prediction": "Bố em là bộ đội, bố đóng quân ở biên giới. Em rất nhớ bố và mong bố sớm được về thăm nhà."
+        },
+        {
+          "input": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã giìu bạn vào chạm y tế của trường.",
+          "reference": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã dìu bạn vào trạm y tế của trường.",
+          "prediction": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã dìu bạn vào chạm y tế của trường."
+        },
+        {
+          "input": "Vào mùa đông, trời rất lạnh và hay kó sương mù. Em mặc áo ấm dà quàng khăn len khi đi học.",
+          "reference": "Vào mùa đông, trời rất lạnh và hay có sương mù. Em mặc áo ấm và quàng khăn len khi đi học.",
+          "prediction": "Vào mùa đông, trời rất lạnh và hay kó sương mù. Em mặc áo ấm dà quàng khăn len khi đi học."
+        },
+        {
+          "input": "Hôm lay nà sinh nhật em, bố mẹ mua cho em một triếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật.",
+          "reference": "Hôm nay là sinh nhật em, bố mẹ mua cho em một chiếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật.",
+          "prediction": "Hôm lấy nhà sinh nhật em, bố mẹ mua cho em một triếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật."
+        },
+        {
+          "input": "Cầu Rồng ơ thành phố Đà Nẵng rất đẹp. Buổi tối, câu sáng lên nhiều màu sắc rực rỡ.",
+          "reference": "Cầu Rồng ở thành phố Đà Nẵng rất đẹp. Buổi tối, cầu sáng lên nhiều màu sắc rực rỡ.",
+          "prediction": "Cầu Rồng ở thành phố Đà Nẵng rất đẹp. Buổi tối, câu sáng lên nhiều màu sắc rực rỡ."
+        },
+        {
+          "input": "Bố em hay đọc bao vào mỗi buổi sáng sớm. bố nói đọc báo giúp mình hiểu biêt thêm nhiều điều hay.",
+          "reference": "Bố em hay đọc báo vào mỗi buổi sáng sớm. Bố nói đọc báo giúp mình hiểu biết thêm nhiều điều hay.",
+          "prediction": "Bố em hãy đọc báo vào mỗi buổi sáng sớm. bố nói đọc báo giúp mình hiểu biết thêm nhiều điều này."
+        },
+        {
+          "input": "Em học bài rất chăm chỉ để không phụ lòng bố me. Em mon muốn sau này lớn lên sẽ trở thành bác sĩ.",
+          "reference": "Em học bài rất chăm chỉ để không phụ lòng bố mẹ. Em mong muốn sau này lớn lên sẽ trở thành bác sĩ.",
+          "prediction": "Em học bài rất chăm chỉ để không phụ lòng bố mẹ. Em mong muốn sau này lớn lên sẽ trở thành bác sĩ."
+        },
+        {
+          "input": "Em rất thích chơi cầu lông với bố dào buổi chiều. bố dạy em cách đánh cầu và cách di chuyển nhanh.",
+          "reference": "Em rất thích chơi cầu lông với bố vào buổi chiều. Bố dạy em cách đánh cầu và cách di chuyển nhanh.",
+          "prediction": "Em rất thích chơi cầu lông với bố đào buổi chiều. bố dạy em cách đánh cầu và cách di chuyển nhanh."
+        },
+        {
+          "input": "Sông Hồng chảy qua Hà Nội rất đep. Hai bên bờ sông có nhiều cây xanh va nha cửa san sát.",
+          "reference": "Sông Hồng chảy qua Hà Nội rất đẹp. Hai bên bờ sông có nhiều cây xanh và nhà cửa san sát.",
+          "prediction": "Sông Hồng chảy qua Hà Nội rất đẹp. Hai bên bờ sông có nhiều cây xanh và nhà cửa san sát."
+        },
+        {
+          "input": "Em đi học về, thấy mẹ đang nấu ăng trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn.",
+          "reference": "Em đi học về, thấy mẹ đang nấu ăn trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn.",
+          "prediction": "Em đi học về, thấy mẹ đang nấu ăn trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn."
+        },
+        {
+          "input": "Ngày Tết, cả nhà em đi chuc Tết ông bà. Ông bà lì xì tro em và dặn em phai chăm ngoan học giỏi.",
+          "reference": "Ngày Tết, cả nhà em đi chúc Tết ông bà. Ông bà lì xì cho em và dặn em phải chăm ngoan học giỏi.",
+          "prediction": "Ngày Tết, cả nhà em đi chúc Tết ông bà. Ông bày lì xì tro Em và dặn mẹ phải chăm ngoan học giỏi."
+        },
+        {
+          "input": "Bác Hồ là vị lảnh tụ vĩ đại của dân tộc Việt Nam. Bác rấc yêu thương thiêu nhi và nhân dân.",
+          "reference": "Bác Hồ là vị lãnh tụ vĩ đại của dân tộc Việt Nam. Bác rất yêu thương thiếu nhi và nhân dân.",
+          "prediction": "Bác Hồ là vị lãnh tụ vĩ đại của dân tộc Việt Nam.Bác rấc yêu thương thiếu nhi và nhân dân."
+        },
+        {
+          "input": "Em có một con cho tên nà Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về.",
+          "reference": "Em có một con chó tên là Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về.",
+          "prediction": "Em có một con chó tên bà Lu.Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về."
+        },
+        {
+          "input": "trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức dà được giai nhất rất vui.",
+          "reference": "Trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức và được giải nhất rất vui.",
+          "prediction": "trường em tổ chức hội thảo vào cuối tuần. Em tham gia chạy tiếp sức dà được giải nhất rất vui."
+        },
+        {
+          "input": "Mùa xuâng đến, cây cối đâm chồi nảy lộc. Chim chóc hot líu lo trên cành cây xanh tươi.",
+          "reference": "Mùa xuân đến, cây cối đâm chồi nảy lộc. Chim chóc hót líu lo trên cành cây xanh tươi.",
+          "prediction": "Mùa xuân đến, cây cối đâm chồi nảy lộc. Chim chóc hót líu lo trên cành cây xanh tươi."
+        },
+        {
+          "input": "Mùa xuân, hoa đào nở hồng rưc rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì trúng rấc đẹp.",
+          "reference": "Mùa xuân, hoa đào nở hồng rực rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì chúng rất đẹp.",
+          "prediction": "Mùa xuân, hoa đào nở hồng rực rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì trúng rấc đẹp."
+        },
+        {
+          "input": "Ngôi nhà em ở rất ấm cúng dà sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rưc rỡ.",
+          "reference": "Ngôi nhà em ở rất ấm cúng và sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rực rỡ.",
+          "prediction": "Ngôi nhà em ở rất ấm cúng dà sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rực rỡ."
+        },
+        {
+          "input": "Mẹ em là giáo viên dạy ở trường tiểu hoc. Mẹ rất yêu học sinh và luôn tận tình giảng day.",
+          "reference": "Mẹ em là giáo viên dạy ở trường tiểu học. Mẹ rất yêu học sinh và luôn tận tình giảng dạy.",
+          "prediction": "Mẹ em là giáo viên dạy ở trường tiểu học.Mẹ rất yêu học sinh và luôn tận tình giảng dạy."
+        },
+        {
+          "input": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và nuôn đạt học sinh giỏi.",
+          "reference": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và luôn đạt học sinh giỏi.",
+          "prediction": "Chị gái em năm nay học lớp chín.Ch chị rất chăm chỉ học bài và muốn đạt học sinh giỏi."
+        }
+      ]
+    },
+    {
+      "model_id": "hoanghaiduong/vit5-correction",
+      "model_short": "HoangHaiDuong ViT5",
+      "n_params": 225950976,
+      "load_time_s": 2.96,
+      "metrics": {
+        "sacrebleu": 89.87,
+        "wer": 4.62,
+        "cer": 1.59,
+        "exact_match": 33.3,
+        "exact_match_count": 333,
+        "total_samples": 1000
+      },
+      "error_analysis": {
+        "total_errors_in_input": 2261,
+        "true_positives": 1290,
+        "false_negatives": 971,
+        "false_positives": 82,
+        "precision": 94.02,
+        "recall": 57.05,
+        "f1_score": 71.02
+      },
+      "latency_ms": {
+        "mean": 952.1,
+        "std": 186.2,
+        "median": 954.8,
+        "p95": 1177.5
+      },
+      "sample_predictions": [
+        {
+          "input": "Tếc Nguyên Đán nà ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và trúc nhau.",
+          "reference": "Tết Nguyên Đán là ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và chúc nhau.",
+          "prediction": "Tết Nguyên Đán là ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và trúc nhau."
+        },
+        {
+          "input": "Bố em là bộ đội, bố đóng quân ở biênh giới. Em rất nhớ bố và mong bố sớm được về thăm lhà.",
+          "reference": "Bố em là bộ đội, bố đóng quân ở biên giới. Em rất nhớ bố và mong bố sớm được về thăm nhà.",
+          "prediction": "Bố em là bộ đội, bố đóng quân ở biên giới. Em rất nhớ bố và mong bố sớm được về thăm nhà."
+        },
+        {
+          "input": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã giìu bạn vào chạm y tế của trường.",
+          "reference": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã dìu bạn vào trạm y tế của trường.",
+          "prediction": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã giìu bạn vào chạm y tế của trường."
+        },
+        {
+          "input": "Vào mùa đông, trời rất lạnh và hay kó sương mù. Em mặc áo ấm dà quàng khăn len khi đi học.",
+          "reference": "Vào mùa đông, trời rất lạnh và hay có sương mù. Em mặc áo ấm và quàng khăn len khi đi học.",
+          "prediction": "Vào mùa đông, trời rất lạnh và hay có sương mù. Em mặc áo ấm rồi quàng khăn len khi đi học."
+        },
+        {
+          "input": "Hôm lay nà sinh nhật em, bố mẹ mua cho em một triếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật.",
+          "reference": "Hôm nay là sinh nhật em, bố mẹ mua cho em một chiếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật.",
+          "prediction": "Hôm mừng nhà sinh nhật em, bố mẹ mua cho em một chiếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật."
+        },
+        {
+          "input": "Cầu Rồng ơ thành phố Đà Nẵng rất đẹp. Buổi tối, câu sáng lên nhiều màu sắc rực rỡ.",
+          "reference": "Cầu Rồng ở thành phố Đà Nẵng rất đẹp. Buổi tối, cầu sáng lên nhiều màu sắc rực rỡ.",
+          "prediction": "Cầu Rồng ơ thành phố Đà Nẵng rất đẹp. Buổi tối, câu sáng lên nhiều màu sắc rực rỡ."
+        },
+        {
+          "input": "Bố em hay đọc bao vào mỗi buổi sáng sớm. bố nói đọc báo giúp mình hiểu biêt thêm nhiều điều hay.",
+          "reference": "Bố em hay đọc báo vào mỗi buổi sáng sớm. Bố nói đọc báo giúp mình hiểu biết thêm nhiều điều hay.",
+          "prediction": "Bố em hay đọc báo vào mỗi buổi sáng sớm. bố nói đọc báo giúp mình hiểu biết thêm nhiều điều hay."
+        },
+        {
+          "input": "Em học bài rất chăm chỉ để không phụ lòng bố me. Em mon muốn sau này lớn lên sẽ trở thành bác sĩ.",
+          "reference": "Em học bài rất chăm chỉ để không phụ lòng bố mẹ. Em mong muốn sau này lớn lên sẽ trở thành bác sĩ.",
+          "prediction": "Em học bài rất chăm chỉ để không phụ lòng bố mẹ. Em mong muốn sau này lớn lên sẽ trở thành bác sĩ."
+        },
+        {
+          "input": "Em rất thích chơi cầu lông với bố dào buổi chiều. bố dạy em cách đánh cầu và cách di chuyển nhanh.",
+          "reference": "Em rất thích chơi cầu lông với bố vào buổi chiều. Bố dạy em cách đánh cầu và cách di chuyển nhanh.",
+          "prediction": "Em rất thích chơi cầu lông với bố vào buổi chiều. bố dạy em cách đánh cầu và cách di chuyển nhanh."
+        },
+        {
+          "input": "Sông Hồng chảy qua Hà Nội rất đep. Hai bên bờ sông có nhiều cây xanh va nha cửa san sát.",
+          "reference": "Sông Hồng chảy qua Hà Nội rất đẹp. Hai bên bờ sông có nhiều cây xanh và nhà cửa san sát.",
+          "prediction": "Sông Hồng chảy qua Hà Nội rất đẹp. Hai bên bờ sông có nhiều cây xanh và nhà cửa san sát."
+        },
+        {
+          "input": "Em đi học về, thấy mẹ đang nấu ăng trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn.",
+          "reference": "Em đi học về, thấy mẹ đang nấu ăn trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn.",
+          "prediction": "Em đi học về, thấy mẹ đang nấu ăng trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn."
+        },
+        {
+          "input": "Ngày Tết, cả nhà em đi chuc Tết ông bà. Ông bà lì xì tro em và dặn em phai chăm ngoan học giỏi.",
+          "reference": "Ngày Tết, cả nhà em đi chúc Tết ông bà. Ông bà lì xì cho em và dặn em phải chăm ngoan học giỏi.",
+          "prediction": "Ngày Tết, cả nhà em đi chúc Tết ông bà. Ông bà lì xì tro em và dặn em phải chăm ngoan học giỏi."
+        },
+        {
+          "input": "Bác Hồ là vị lảnh tụ vĩ đại của dân tộc Việt Nam. Bác rấc yêu thương thiêu nhi và nhân dân.",
+          "reference": "Bác Hồ là vị lãnh tụ vĩ đại của dân tộc Việt Nam. Bác rất yêu thương thiếu nhi và nhân dân.",
+          "prediction": "Bác Hồ là vị lãnh tụ vĩ đại của dân tộc Việt Nam. Bác rất yêu thương thanh nhi và nhân dân."
+        },
+        {
+          "input": "Em có một con cho tên nà Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về.",
+          "reference": "Em có một con chó tên là Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về.",
+          "prediction": "Em có một con cho tên nhà Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về."
+        },
+        {
+          "input": "trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức dà được giai nhất rất vui.",
+          "reference": "Trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức và được giải nhất rất vui.",
+          "prediction": "Trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức dài được giải nhất rất vui."
+        },
+        {
+          "input": "Mùa xuâng đến, cây cối đâm chồi nảy lộc. Chim chóc hot líu lo trên cành cây xanh tươi.",
+          "reference": "Mùa xuân đến, cây cối đâm chồi nảy lộc. Chim chóc hót líu lo trên cành cây xanh tươi.",
+          "prediction": "Mùa xuâng đến, cây cối đâm chồi nảy lộc. Chim chóc hót líu lo trên cành cây xanh tươi."
+        },
+        {
+          "input": "Mùa xuân, hoa đào nở hồng rưc rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì trúng rấc đẹp.",
+          "reference": "Mùa xuân, hoa đào nở hồng rực rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì chúng rất đẹp.",
+          "prediction": "Mùa xuân, hoa đào nở hồng rực rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì trúng rấc đẹp."
+        },
+        {
+          "input": "Ngôi nhà em ở rất ấm cúng dà sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rưc rỡ.",
+          "reference": "Ngôi nhà em ở rất ấm cúng và sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rực rỡ.",
+          "prediction": "Ngôi nhà em ở rất ấm cúng và sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rực rỡ."
+        },
+        {
+          "input": "Mẹ em là giáo viên dạy ở trường tiểu hoc. Mẹ rất yêu học sinh và luôn tận tình giảng day.",
+          "reference": "Mẹ em là giáo viên dạy ở trường tiểu học. Mẹ rất yêu học sinh và luôn tận tình giảng dạy.",
+          "prediction": "Mẹ em là giáo viên dạy ở trường tiểu học. Mẹ rất yêu học sinh và luôn tận tình giảng dạy."
+        },
+        {
+          "input": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và nuôn đạt học sinh giỏi.",
+          "reference": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và luôn đạt học sinh giỏi.",
+          "prediction": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và nuôn đạt học sinh giỏi."
+        }
+      ]
+    },
+    {
+      "model_id": "chamdentimem/ViT5_Vietnamese_Correction",
+      "model_short": "ChamDenTimEm ViT5",
+      "n_params": 225950976,
+      "load_time_s": 3.66,
+      "metrics": {
+        "sacrebleu": 92.45,
+        "wer": 3.59,
+        "cer": 1.65,
+        "exact_match": 48.2,
+        "exact_match_count": 482,
+        "total_samples": 1000
+      },
+      "error_analysis": {
+        "total_errors_in_input": 2261,
+        "true_positives": 1599,
+        "false_negatives": 662,
+        "false_positives": 210,
+        "precision": 88.39,
+        "recall": 70.72,
+        "f1_score": 78.57
+      },
+      "latency_ms": {
+        "mean": 1047.6,
+        "std": 234.8,
+        "median": 1002.1,
+        "p95": 1467.4
+      },
+      "sample_predictions": [
+        {
+          "input": "Tếc Nguyên Đán nà ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và trúc nhau.",
+          "reference": "Tết Nguyên Đán là ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và chúc nhau.",
+          "prediction": "Tết Nguyên Đán là ngày lễ lớn nhất của người Việt Nam. Mọi người sum họp bên gia đình và chúc nhau."
+        },
+        {
+          "input": "Bố em là bộ đội, bố đóng quân ở biênh giới. Em rất nhớ bố và mong bố sớm được về thăm lhà.",
+          "reference": "Bố em là bộ đội, bố đóng quân ở biên giới. Em rất nhớ bố và mong bố sớm được về thăm nhà.",
+          "prediction": "Bố em là bộ đội, bố đóng quân ở biên giới. Em rất nhớ bố và mong bố sớm được về thăm nhà."
+        },
+        {
+          "input": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã giìu bạn vào chạm y tế của trường.",
+          "reference": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã dìu bạn vào trạm y tế của trường.",
+          "prediction": "Bạn Minh bị ngã xe đạp và bị xước đầu gối. Em đã dìu bạn vào chạm y tế của trường."
+        },
+        {
+          "input": "Vào mùa đông, trời rất lạnh và hay kó sương mù. Em mặc áo ấm dà quàng khăn len khi đi học.",
+          "reference": "Vào mùa đông, trời rất lạnh và hay có sương mù. Em mặc áo ấm và quàng khăn len khi đi học.",
+          "prediction": "Vào mùa đông, trời rất lạnh và hay có sương mù. Em mặc áo ấm và quàng khăn len khi đi học."
+        },
+        {
+          "input": "Hôm lay nà sinh nhật em, bố mẹ mua cho em một triếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật.",
+          "reference": "Hôm nay là sinh nhật em, bố mẹ mua cho em một chiếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật.",
+          "prediction": "Hôm nay, sinh nhật em, bố mẹ mua cho em một chiếc bánh kem rất to. Em mời các bạn đến dự tiệc sinh nhật."
+        },
+        {
+          "input": "Cầu Rồng ơ thành phố Đà Nẵng rất đẹp. Buổi tối, câu sáng lên nhiều màu sắc rực rỡ.",
+          "reference": "Cầu Rồng ở thành phố Đà Nẵng rất đẹp. Buổi tối, cầu sáng lên nhiều màu sắc rực rỡ.",
+          "prediction": "Cầu Rồng ở thành phố Đà Nẵng rất đẹp. Buổi tối, câu sáng lên nhiều màu sắc rực rỡ."
+        },
+        {
+          "input": "Bố em hay đọc bao vào mỗi buổi sáng sớm. bố nói đọc báo giúp mình hiểu biêt thêm nhiều điều hay.",
+          "reference": "Bố em hay đọc báo vào mỗi buổi sáng sớm. Bố nói đọc báo giúp mình hiểu biết thêm nhiều điều hay.",
+          "prediction": "Bố em hay đọc báo vào mỗi buổi sáng sớm. Bố nói đọc báo giúp mình hiểu biết thêm nhiều điều hay."
+        },
+        {
+          "input": "Em học bài rất chăm chỉ để không phụ lòng bố me. Em mon muốn sau này lớn lên sẽ trở thành bác sĩ.",
+          "reference": "Em học bài rất chăm chỉ để không phụ lòng bố mẹ. Em mong muốn sau này lớn lên sẽ trở thành bác sĩ.",
+          "prediction": "Em học bài rất chăm chỉ để không phụ lòng bố mẹ. Em mong muốn sau này lớn lên sẽ trở thành bác sĩ."
+        },
+        {
+          "input": "Em rất thích chơi cầu lông với bố dào buổi chiều. bố dạy em cách đánh cầu và cách di chuyển nhanh.",
+          "reference": "Em rất thích chơi cầu lông với bố vào buổi chiều. Bố dạy em cách đánh cầu và cách di chuyển nhanh.",
+          "prediction": "Em rất thích chơi cầu lông với bố vào buổi chiều. Bố dạy em cách đánh cầu và cách di chuyển nhanh."
+        },
+        {
+          "input": "Sông Hồng chảy qua Hà Nội rất đep. Hai bên bờ sông có nhiều cây xanh va nha cửa san sát.",
+          "reference": "Sông Hồng chảy qua Hà Nội rất đẹp. Hai bên bờ sông có nhiều cây xanh và nhà cửa san sát.",
+          "prediction": "Sông Hồng chảy qua Hà Nội rất đẹp. Hai bên bờ sông có nhiều cây xanh và nhà cửa san sát."
+        },
+        {
+          "input": "Em đi học về, thấy mẹ đang nấu ăng trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn.",
+          "reference": "Em đi học về, thấy mẹ đang nấu ăn trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn.",
+          "prediction": "Em đi học về, thấy mẹ đang nấu nướng trong bếp. Mùi thức ăn thơm phức bay khắp nhà rất hấp dẫn."
+        },
+        {
+          "input": "Ngày Tết, cả nhà em đi chuc Tết ông bà. Ông bà lì xì tro em và dặn em phai chăm ngoan học giỏi.",
+          "reference": "Ngày Tết, cả nhà em đi chúc Tết ông bà. Ông bà lì xì cho em và dặn em phải chăm ngoan học giỏi.",
+          "prediction": "Ngày Tết, cả nhà em đi chúc Tết ông bà. Ông bà lì xì cho em và dặn em phải chăm ngoan, học giỏi."
+        },
+        {
+          "input": "Bác Hồ là vị lảnh tụ vĩ đại của dân tộc Việt Nam. Bác rấc yêu thương thiêu nhi và nhân dân.",
+          "reference": "Bác Hồ là vị lãnh tụ vĩ đại của dân tộc Việt Nam. Bác rất yêu thương thiếu nhi và nhân dân.",
+          "prediction": "Bác Hồ là vị lãnh tụ vĩ đại của dân tộc Việt Nam. Bác Hồ yêu thương thanh nhi và nhân dân."
+        },
+        {
+          "input": "Em có một con cho tên nà Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về.",
+          "reference": "Em có một con chó tên là Lu. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về.",
+          "prediction": "Em có một con cho tên này. Lu rất trung thành và hay vẫy đuôi mừng khi em đi học về."
+        },
+        {
+          "input": "trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức dà được giai nhất rất vui.",
+          "reference": "Trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức và được giải nhất rất vui.",
+          "prediction": "Trường em tổ chức hội thao vào cuối tuần. Em tham gia chạy tiếp sức, dần được giải nhất rất vui."
+        },
+        {
+          "input": "Mùa xuâng đến, cây cối đâm chồi nảy lộc. Chim chóc hot líu lo trên cành cây xanh tươi.",
+          "reference": "Mùa xuân đến, cây cối đâm chồi nảy lộc. Chim chóc hót líu lo trên cành cây xanh tươi.",
+          "prediction": "Mùa xuân đến, cây cối đâm chồi nảy lộc. Chim chóc hót líu lo trên cành cây xanh tươi."
+        },
+        {
+          "input": "Mùa xuân, hoa đào nở hồng rưc rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì trúng rấc đẹp.",
+          "reference": "Mùa xuân, hoa đào nở hồng rực rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì chúng rất đẹp.",
+          "prediction": "Mùa xuân, hoa đào nở hồng rực rỡ ở miền Bắc. Em rất thích ngắm hoa đào vì trúng rấc đẹp."
+        },
+        {
+          "input": "Ngôi nhà em ở rất ấm cúng dà sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rưc rỡ.",
+          "reference": "Ngôi nhà em ở rất ấm cúng và sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rực rỡ.",
+          "prediction": "Ngôi nhà em ở rất ấm cúng và sạch sẽ. Trước nhà có một vườn hoa với nhiều loài hoa rực rỡ."
+        },
+        {
+          "input": "Mẹ em là giáo viên dạy ở trường tiểu hoc. Mẹ rất yêu học sinh và luôn tận tình giảng day.",
+          "reference": "Mẹ em là giáo viên dạy ở trường tiểu học. Mẹ rất yêu học sinh và luôn tận tình giảng dạy.",
+          "prediction": "Mẹ em là giáo viên dạy ở trường tiểu học. Mẹ rất yêu học sinh và luôn tận tình giảng dạy."
+        },
+        {
+          "input": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và nuôn đạt học sinh giỏi.",
+          "reference": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và luôn đạt học sinh giỏi.",
+          "prediction": "Chị gái em năm nay học lớp chín. Chị rất chăm chỉ học bài và luôn đạt học sinh giỏi."
+        }
+      ]
+    }
+  ]
+}
