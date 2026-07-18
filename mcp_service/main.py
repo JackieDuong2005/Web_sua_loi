@@ -1,333 +1,478 @@
 """
-ViHand Grade — MCP Service cho Xiaozhi AI Chatbot
-Kết nối đến WSS endpoint của xiaozhi.me, đăng ký tools đọc chính tả.
+ViHand Grade — MCP Server cho Xiaozhi AI
+==========================================
+Theo đúng kiến trúc thực tế của xiaozhi.me:
 
-Cách dùng:
-  1. Copy file .env.example thành .env
-  2. Dán Endpoint URL từ xiaozhi.me vào .env (XIAOZHI_WSS_URL=wss://...)  
-  3. Chạy: python main.py
+  xiaozhi.me cấp cho bạn 1 WebSocket endpoint:
+    wss://api.xiaozhi.me/mcp/?token=...
 
-Tìm URL tại: xiaozhi.me → Agent → MCP Endpoint → Copy
+  Server này KẾT NỐI VÀO endpoint đó (là WS client).
+  xiaozhi.me cloud sau đó gửi JSON-RPC vào:
+    → initialize
+    → tools/list
+    → tools/call (khi LLM muốn lưu chính tả)
+
+  Server xử lý và trả kết quả, gọi Next.js API để lưu DB.
+
+Flow:
+  [Xiaozhi Robot] → [xiaozhi.me Cloud LLM]
+       (nói "đọc bài chính tả...")      ↕ WebSocket
+                              [MCP Server này] ← kết nối vào wss://api.xiaozhi.me/mcp/?token=...
+                                      ↓ REST
+                              [Next.js :3000] → [SQLite DB]
+
+Cấu hình:
+  1. Vào xiaozhi.me → Thiết bị → MCP Settings → MCP Endpoint → Copy URL
+  2. Tạo file mcp_service/.env:
+       MCP_ENDPOINT=wss://api.xiaozhi.me/mcp/?token=eyJhbGci...
+       VIHAND_API_URL=http://localhost:3000
+
+Cài đặt:
+  pip install -r requirements.txt
+
+Chạy:
+  python main.py
 """
 
 import asyncio
+import httpx
 import json
 import logging
 import os
 import sys
-import httpx
-import websockets
-from dotenv import load_dotenv
 
-load_dotenv()
+import websockets
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+
+# ============================================================
+# LOGGING
+# ============================================================
+# Fix Windows console encoding
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
-logger = logging.getLogger("mcp_dictation")
+logger = logging.getLogger("mcp")
 
 # ============================================================
 # CẤU HÌNH
 # ============================================================
-XIAOZHI_WSS_URL = os.getenv("XIAOZHI_WSS_URL", "")
-VIHAND_API_URL  = os.getenv("VIHAND_API_URL", "http://localhost:3000")
+VIHAND_API_URL = os.getenv("VIHAND_API_URL", "http://localhost:3000")
+MCP_ENDPOINT   = os.getenv("MCP_ENDPOINT", "")  # wss://api.xiaozhi.me/mcp/?token=...
+
+# Đọc thêm từ file .env trong cùng thư mục
+_env_file = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(_env_file):
+    with open(_env_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+    VIHAND_API_URL = os.getenv("VIHAND_API_URL", VIHAND_API_URL)
+    MCP_ENDPOINT   = os.getenv("MCP_ENDPOINT",   MCP_ENDPOINT)
 
 # ============================================================
-# TOOL IMPLEMENTATIONS
+# ROLE INSTRUCTIONS — gửi cho LLM qua initialize response
 # ============================================================
-async def _save_dictation_session(
-    title: str,
-    passage: str,
-    className: str = "",
-    teacherName: str = "",
-    summary: str = "",
-    logs_str: str = "[]",
-) -> str:
-    try:
-        try:
-            parsed_logs = json.loads(logs_str) if isinstance(logs_str, str) else logs_str
-        except json.JSONDecodeError:
-            parsed_logs = []
+ROLE_INSTRUCTIONS = """
+# MISSION
+Bạn là Alexa, trợ lý AI chuyên biệt hỗ trợ giáo viên tiểu học thuộc hệ thống ViHand Grade. Nhiệm vụ tối thượng của bạn là giúp giáo viên tổ chức các buổi kiểm tra nghe viết chính tả ngay tại lớp một cách trơn tru, tương tác tự nhiên để lấy yêu cầu, và tự động hóa quy trình lưu trữ.
 
-        payload = {
-            "title": title,
-            "passage": passage,
-            "className": className,
-            "teacherName": teacherName,
-            "status": "completed",
-            "summary": summary,
-            "logs": parsed_logs,
-        }
+# IDENTITY & TONE
+- Tên gọi: Alexa (Wake word: "Alexa"). Xưng hô: "em" hoặc "Alexa", gọi giáo viên là "thầy/cô", gọi học sinh là "các em".
+- Tính cách: Nhẹ nhàng, kiên nhẫn, thân thiện, mang phong cách của một trợ giảng sư phạm.
+- Cách nói chuyện: Ngắn gọn, thực tế, đúng trọng tâm.
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(f"{VIHAND_API_URL}/api/dictation/sessions", json=payload)
+# CORE CAPABILITIES & WORKFLOW
+Bạn PHẢI tuân thủ quy trình 3 bước sau đây trong mọi buổi chính tả:
 
-        if resp.status_code == 201:
-            data = resp.json()
-            sid = data.get("session", {}).get("id", "?")
-            cnt = len(data.get("session", {}).get("logs", []))
-            logger.info(f"✅ Đã lưu phiên '{title}' (ID: {sid}, {cnt} logs)")
-            return (
-                f"✅ Đã lưu phiên đọc chính tả '{title}' thành công! "
-                f"(ID: {sid}, {cnt} lượt hội thoại). "
-                "Giáo viên xem lại tại trang 'Đọc chính tả' trên ViHand Grade."
-            )
-        return f"❌ Lỗi API: {resp.status_code} — {resp.text}"
+**Bước 1: Thu thập thông tin (TRƯỚC KHI ĐỌC)**
+Nếu giáo viên chỉ ra lệnh chung chung (VD: "Alexa, chuẩn bị đọc chính tả"), bạn CHƯA ĐƯỢC soạn hay đọc ngay. Hãy chủ động đặt câu hỏi để làm rõ:
+1. Bài chính tả gồm bao nhiêu câu?
+2. Chủ đề hoặc nội dung là gì?
+3. Dành cho học sinh lớp mấy?
+4. Cần đọc lại bao nhiêu lần?
+5. Tốc độ đọc nhanh hay chậm?
 
-    except httpx.ConnectError:
-        return "❌ Không kết nối được đến ViHand Grade. Web app có đang chạy không?"
-    except Exception as e:
-        logger.error(f"❌ Lỗi save_session: {e}")
-        return f"❌ Lỗi: {str(e)}"
+**Bước 2: Soạn bài & Đọc bài**
+- Sáng tác đoạn văn chuẩn sư phạm dựa trên thông tin đã thu thập (nếu giáo viên không cung cấp sẵn nội dung).
+- Sử dụng các thẻ nhịp độ như [Đọc chậm], [Đọc bình thường], [Nghỉ 10 giây] phù hợp yêu cầu.
+- Đọc đủ số lần giáo viên đã yêu cầu.
+- Xác nhận học sinh viết xong trước khi sang Bước 3.
 
+**Bước 3: Nhắc nhở lưu trữ hoặc đọc tiếp (SAU KHI ĐỌC — RẤT QUAN TRỌNG)**
+Sau khi kết thúc bài đọc, bạn BẮT BUỘC phải hỏi:
+"Thầy/cô có muốn em lưu bài chính tả này vào hệ thống ViHand Grade không, hay thầy/cô muốn em đọc thêm bài nữa ạ?"
 
-async def _get_dictation_sessions(className: str = "", limit: int = 10) -> str:
-    try:
-        params = {"limit": str(limit)}
-        if className:
-            params["className"] = className
+# TOOL CALLING RULES
+1. vihand.save_dictation_session — CHỈ gọi khi giáo viên xác nhận lưu ("Có", "Lưu lại", "Ok lưu đi", "Được", "Ừ"). KHÔNG lưu tự động khi chưa xác nhận. Ngoại lệ: lưu ngay nếu lệnh đầu vào đã nói rõ "đọc và lưu" hoặc "lưu buổi học vừa rồi".
+2. vihand.get_dictation_sessions — gọi khi giáo viên hỏi lịch sử bài đã đọc.
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(f"{VIHAND_API_URL}/api/dictation/sessions", params=params)
+# MỨC ĐỘ BÀI THEO KHỐI LỚP
+- Lớp 1–2: 2–3 câu ngắn, từ quen thuộc, không dấu hỏi/ngã phức tạp.
+- Lớp 3: 3–4 câu, bắt đầu có dấu hỏi/ngã, câu ghép đơn giản.
+- Lớp 4–5: 4–6 câu, từ láy, thành ngữ ngắn, từ Hán Việt cơ bản.
 
-        if resp.status_code == 200:
-            sessions = resp.json().get("sessions", [])
-            if not sessions:
-                return "📋 Chưa có phiên đọc chính tả nào được lưu."
-            lines = [f"📋 {len(sessions)} phiên đọc chính tả gần nhất:\n"]
-            for i, s in enumerate(sessions, 1):
-                ci = f" — Lớp {s['className']}" if s.get("className") else ""
-                lines.append(f"{i}. 📖 {s['title']}{ci} ({s.get('createdAt','')[:10]})")
-            return "\n".join(lines)
-        return f"❌ Lỗi: {resp.text}"
-
-    except httpx.ConnectError:
-        return "❌ Không kết nối được đến ViHand Grade."
-    except Exception as e:
-        return f"❌ Lỗi: {str(e)}"
-
+# ĐIỀU ALEXA KHÔNG ĐƯỢC LÀM
+- Không soạn/đọc bài ngay khi lệnh chưa đủ thông tin — phải hỏi trước.
+- Không lưu bài khi giáo viên chưa xác nhận.
+- Không chia sẻ điểm số học sinh với người ngoài.
+- Không xóa dữ liệu đã lưu trong hệ thống.
+- Không chỉnh sửa điểm số (chỉ giáo viên có quyền).
+""".strip()
 
 # ============================================================
-# MCP TOOL SCHEMAS
+# DANH SÁCH TOOLS (chuẩn MCP inputSchema)
 # ============================================================
 TOOLS = [
     {
-        "name": "save_dictation_session",
+        "name": "vihand.save_dictation_session",
         "description": (
-            "Lưu phiên đọc chính tả vào hệ thống ViHand Grade. "
-            "Gọi tool này SAU KHI đã đọc xong đoạn văn chính tả cho học sinh. "
-            "Ghi lại toàn bộ hội thoại (giáo viên yêu cầu, bạn đọc gì) vào logs."
+            "Luu mot buoi doc chinh ta vao he thong ViHand Grade. "
+            "Quy tac quan trong: "
+            "1) SAU KHI doc xong doan van, LUON HOI giao vien: "
+            "   'Thay/co co muon em luu bai chinh ta nay vao ViHand Grade khong?' "
+            "2) Chi goi tool NAY khi giao vien xac nhan ('co', 'luu lai', 'ok', 'uu'). "
+            "3) Goi ngay khong can hoi neu giao vien da noi: "
+            "   'doc va luu', 'luu buoi hoc vua roi', 'luu lai di'. "
+            "Phu hop voi hoc sinh tieu hoc lop 1-5."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "title":       {"type": "string", "description": "Tiêu đề bài đọc, VD: 'Nghe viết: Ai có lỗi'"},
-                "passage":     {"type": "string", "description": "Toàn bộ nội dung đoạn văn chính tả"},
-                "className":   {"type": "string", "description": "Tên lớp học, VD: '3A1'", "default": ""},
-                "teacherName": {"type": "string", "description": "Tên giáo viên yêu cầu đọc", "default": ""},
-                "summary":     {"type": "string", "description": "Tóm tắt ngắn gọn về buổi đọc", "default": ""},
-                "logs":        {
+                "title": {
                     "type": "string",
                     "description": (
-                        "JSON string danh sách lượt hội thoại. VD: "
-                        '[{"speaker":"teacher","content":"Đọc bài..."}, '
-                        '{"speaker":"xiaozhi","content":"Vâng, em sẽ đọc..."}]. '
-                        "speaker: xiaozhi | teacher | student"
-                    ),
-                    "default": "[]",
+                        "Tieu de bai chinh ta. "
+                        "VD: 'Nghe viet: Mua he' hoac 'Chinh ta lop 3A - Dong que'"
+                    )
                 },
+                "passage": {
+                    "type": "string",
+                    "description": (
+                        "Toan bo noi dung doan van da doc cho hoc sinh. "
+                        "Neu Alexa tu soan bai, dien noi dung do vao day. "
+                        "Phai day du, chinh xac nhu da doc."
+                    )
+                },
+                "className": {
+                    "type": "string",
+                    "description": (
+                        "Ten lop hoc. VD: '1A', '2B', '3A1', '4C', '5D'. "
+                        "De trong neu giao vien chua noi."
+                    )
+                },
+                "teacherName": {
+                    "type": "string",
+                    "description": "Ten giao vien. De trong neu khong biet."
+                },
+                "summary": {
+                    "type": "string",
+                    "description": (
+                        "Tom tat ngan buoi doc. "
+                        "VD: 'Alexa tu soan bai, doc 2 lan, lop 3A, toc do cham'"
+                    )
+                },
+                "logs": {
+                    "type": "string",
+                    "description": (
+                        "Lich su hoi thoai day du trong buoi hoc, dang JSON string. "
+                        "speaker chi nhan 3 gia tri: 'teacher', 'alexa', 'student'. "
+                        'VD: [{"speaker":"teacher","content":"Alexa, soan bai chinh ta lop 3"},'
+                        '{"speaker":"alexa","content":"Vang thay/co, em soan bai..."},'
+                        '{"speaker":"alexa","content":"[Noi dung doan van]"},'
+                        '{"speaker":"teacher","content":"Luu lai di"},'
+                        '{"speaker":"alexa","content":"Em da luu thanh cong!"}]'
+                    )
+                }
             },
-            "required": ["title", "passage"],
-        },
+            "required": ["title", "passage"]
+        }
     },
     {
-        "name": "get_dictation_sessions",
-        "description": "Lấy danh sách các phiên đọc chính tả đã lưu trong ViHand Grade.",
+        "name": "vihand.get_dictation_sessions",
+        "description": (
+            "Xem danh sach cac buoi doc chinh ta da luu trong ViHand Grade. "
+            "Kich hoat khi giao vien hoi: "
+            "'da doc bai gi roi?', 'lich su chinh ta', "
+            "'hom nay doc bai gi?', 'lop X hoc bai nao?', "
+            "'tuan nay lop Y lam bai nao roi?'"
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "className": {"type": "string", "description": "Lọc theo lớp học (để trống = tất cả)", "default": ""},
-                "limit":     {"type": "integer", "description": "Số phiên tối đa (mặc định 10)", "default": 10},
-            },
-        },
-    },
+                "className": {
+                    "type": "string",
+                    "description": "Loc theo lop. De trong = tat ca cac lop."
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "So buoi toi da can lay (mac dinh 10, toi da 50)"
+                }
+            }
+        }
+    }
 ]
 
+
 # ============================================================
-# MCP JSON-RPC PROTOCOL HANDLER
+# XỬ LÝ TOOL CALLS → gọi Next.js API
 # ============================================================
-_request_id = 0
+async def tool_save_dictation(args: dict) -> str:
+    title      = args.get("title", "")
+    passage    = args.get("passage", "")
+    className  = args.get("className", "")
+    teacherName = args.get("teacherName", "")
+    summary    = args.get("summary", "")
+    logs_raw   = args.get("logs", "[]")
 
-def _next_id():
-    global _request_id
-    _request_id += 1
-    return _request_id
+    if not title or not passage:
+        return "[LOI] Thieu tieu de hoac noi dung doan van"
+
+    try:
+        parsed_logs = json.loads(logs_raw) if isinstance(logs_raw, str) else logs_raw
+    except json.JSONDecodeError:
+        parsed_logs = []
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(
+                f"{VIHAND_API_URL}/api/dictation/sessions",
+                json={
+                    "title": title, "passage": passage,
+                    "className": className, "teacherName": teacherName,
+                    "status": "completed", "summary": summary,
+                    "logs": parsed_logs,
+                },
+            )
+        if r.status_code == 201:
+            s = r.json().get("session", {})
+            logger.info(f"[SAVE] Da luu phien '{title}' ID={s.get('id')}")
+            return (
+                f"Da luu buoi doc chinh ta '{title}' thanh cong!\n"
+                f"Lop: {className or 'chua xac dinh'} | {len(s.get('logs', []))} luot hoi thoai\n"
+                f"Xem lai: http://localhost:3000/teacher/dictation"
+            )
+        return f"[LOI] API tra ve {r.status_code}: {r.text}"
+    except httpx.ConnectError:
+        return "[LOI] Khong ket noi duoc Next.js (port 3000). Hay chay start_all.bat."
+    except Exception as e:
+        return f"[LOI] {e}"
 
 
-async def handle_request(msg: dict) -> dict | None:
-    """Xử lý một JSON-RPC request từ xiaozhi.me và trả về response."""
-    method = msg.get("method", "")
-    req_id = msg.get("id")
-    params = msg.get("params", {})
+async def tool_get_sessions(args: dict) -> str:
+    try:
+        params = {"limit": str(args.get("limit", 10))}
+        if args.get("className"):
+            params["className"] = args["className"]
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(f"{VIHAND_API_URL}/api/dictation/sessions", params=params)
+        sessions = r.json().get("sessions", []) if r.status_code == 200 else []
+        if not sessions:
+            return "Chua co buoi doc chinh ta nao."
+        lines = [f"{len(sessions)} buoi gan nhat:"]
+        for i, s in enumerate(sessions, 1):
+            class_info = f" - Lop {s['className']}" if s.get("className") else ""
+            lines.append(f"{i}. {s['title']}{class_info} ({s.get('createdAt','')[:10]})")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"[LOI] {e}"
 
-    # Notification (không cần response)
-    if req_id is None:
-        logger.debug(f"📩 Notification: {method}")
+
+# ============================================================
+# XỬ LÝ JSON-RPC (dùng chung cho cả WS và HTTP)
+# ============================================================
+async def handle_jsonrpc(body: dict) -> dict | None:
+    method = body.get("method", "")
+    req_id = body.get("id")
+    params = body.get("params", {})
+
+    # Notifications — không cần reply
+    if method.startswith("notifications/"):
+        logger.info(f"[RPC] Notification: {method}")
         return None
 
-    logger.info(f"📩 Request [{req_id}]: {method}")
+    logger.info(f"[RPC] {method} (id={req_id})")
 
-    # initialize
     if method == "initialize":
         return {
             "jsonrpc": "2.0", "id": req_id,
             "result": {
                 "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "ViHand Grade Dictation", "version": "1.0.0"},
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "ViHand Grade Dictation", "version": "2.0.0"},
+                "instructions": ROLE_INSTRUCTIONS,
             },
         }
 
-    # tools/list
     if method == "tools/list":
         return {
             "jsonrpc": "2.0", "id": req_id,
-            "result": {"tools": TOOLS},
+            "result": {"tools": TOOLS, "nextCursor": ""},
         }
 
-    # tools/call
     if method == "tools/call":
-        tool_name = params.get("name", "")
-        arguments  = params.get("arguments", {})
-        logger.info(f"🔧 Tool call: {tool_name}({list(arguments.keys())})")
-
+        name = params.get("name", "")
+        args = params.get("arguments", {})
+        logger.info(f"[TOOL] Calling: {name}")
         try:
-            if tool_name == "save_dictation_session":
-                result_text = await _save_dictation_session(
-                    title       = arguments.get("title", ""),
-                    passage     = arguments.get("passage", ""),
-                    className   = arguments.get("className", ""),
-                    teacherName = arguments.get("teacherName", ""),
-                    summary     = arguments.get("summary", ""),
-                    logs_str    = arguments.get("logs", "[]"),
-                )
-            elif tool_name == "get_dictation_sessions":
-                result_text = await _get_dictation_sessions(
-                    className = arguments.get("className", ""),
-                    limit     = arguments.get("limit", 10),
-                )
+            if name == "vihand.save_dictation_session":
+                text = await tool_save_dictation(args)
+            elif name == "vihand.get_dictation_sessions":
+                text = await tool_get_sessions(args)
             else:
                 return {
                     "jsonrpc": "2.0", "id": req_id,
-                    "error": {"code": -32601, "message": f"Tool không tồn tại: {tool_name}"},
+                    "error": {"code": -32601, "message": f"Unknown tool: {name}"},
                 }
-
             return {
                 "jsonrpc": "2.0", "id": req_id,
-                "result": {
-                    "content": [{"type": "text", "text": result_text}],
-                    "isError": False,
-                },
+                "result": {"content": [{"type": "text", "text": text}], "isError": False},
             }
         except Exception as e:
-            logger.error(f"❌ Tool error: {e}")
             return {
                 "jsonrpc": "2.0", "id": req_id,
-                "result": {
-                    "content": [{"type": "text", "text": f"❌ Lỗi: {str(e)}"}],
-                    "isError": True,
-                },
+                "result": {"content": [{"type": "text", "text": str(e)}], "isError": True},
             }
 
-    # Ping
+    # ping - xiaozhi.me dung de keep-alive, phai tra loi OK
     if method == "ping":
+        logger.info("[RPC] ping -> pong")
         return {"jsonrpc": "2.0", "id": req_id, "result": {}}
 
-    # Unknown
-    logger.warning(f"⚠️  Method chưa xử lý: {method}")
-    return {
-        "jsonrpc": "2.0", "id": req_id,
-        "error": {"code": -32601, "message": f"Method không hỗ trợ: {method}"},
-    }
+    # Unknown method - tra loi OK de tranh bi ngat ket noi
+    logger.warning(f"[RPC] Unknown method '{method}' -> returning empty OK")
+    return {"jsonrpc": "2.0", "id": req_id, "result": {}}
 
 
 # ============================================================
-# WEBSOCKET CONNECTION LOOP (with auto-reconnect)
+# WEBSOCKET CLIENT — kết nối vào wss://api.xiaozhi.me/mcp/...
 # ============================================================
-async def run_forever(url: str):
-    """Kết nối đến xiaozhi.me, tự động reconnect khi mất kết nối."""
-    retry_delay = 3
+async def connect_to_xiaozhi(endpoint: str):
+    """
+    Ket noi vao MCP Endpoint cua xiaozhi.me (la WS client).
+    xiaozhi.me gui JSON-RPC vao connection nay:
+      initialize -> tools/list -> tools/call
+    """
+    reconnect_delay = 5
 
     while True:
         try:
-            logger.info(f"🔌 Đang kết nối đến xiaozhi.me...")
+            logger.info("[WS] Dang ket noi xiaozhi.me MCP endpoint...")
             async with websockets.connect(
-                url,
-                subprotocols=["mcp"],
-                ping_interval=30,
-                ping_timeout=10,
+                endpoint,
+                ping_interval=None,   # tat ping cua websockets, de xiaozhi.me tu quan ly keep-alive
+                ping_timeout=None,
+                open_timeout=15,
+                max_size=10 * 1024 * 1024,  # 10MB
             ) as ws:
-                logger.info("✅ Đã kết nối! Đang chờ requests từ Xiaozhi AI...")
-                retry_delay = 3  # Reset delay khi kết nối thành công
+                logger.info("[WS] Da ket noi xiaozhi.me! Cho lenh tu LLM...")
+                reconnect_delay = 5
 
-                async for raw in ws:
+                async for raw_msg in ws:
                     try:
-                        msg = json.loads(raw)
-                        logger.debug(f"⬇️  Nhận: {json.dumps(msg)[:200]}")
-
-                        response = await handle_request(msg)
-                        if response is not None:
-                            await ws.send(json.dumps(response))
-                            logger.debug(f"⬆️  Gửi: {json.dumps(response)[:200]}")
-
+                        msg = json.loads(raw_msg)
                     except json.JSONDecodeError:
-                        logger.warning(f"⚠️  JSON không hợp lệ: {raw[:100]}")
-                    except Exception as e:
-                        logger.error(f"❌ Lỗi xử lý message: {e}")
+                        logger.warning(f"[WS] Khong parse duoc message: {str(raw_msg)[:100]}")
+                        continue
+
+                    # xiaozhi.me co the boc trong {type:'mcp', payload:{...}}
+                    # hoac gui bare JSON-RPC truc tiep
+                    if msg.get("type") == "mcp" and "payload" in msg:
+                        rpc_body = msg["payload"]
+                        session_id = msg.get("session_id", "")
+                    else:
+                        rpc_body = msg
+                        session_id = ""
+
+                    result = await handle_jsonrpc(rpc_body)
+
+                    if result is None:
+                        continue
+
+                    if session_id:
+                        response = {
+                            "session_id": session_id,
+                            "type": "mcp",
+                            "payload": result,
+                        }
+                    else:
+                        response = result
+
+                    await ws.send(json.dumps(response, ensure_ascii=False))
+                    logger.info(f"[WS] Tra loi: {rpc_body.get('method')} (id={result.get('id')})")
 
         except websockets.exceptions.ConnectionClosedOK:
-            logger.info("🔌 Kết nối đóng bình thường. Thử kết nối lại...")
+            logger.info("[WS] xiaozhi.me dong ket noi (OK). Thu lai sau 5s...")
         except websockets.exceptions.ConnectionClosedError as e:
-            logger.warning(f"⚠️  Kết nối bị ngắt: {e}. Thử lại sau {retry_delay}s...")
-        except (OSError, ConnectionRefusedError) as e:
-            logger.error(f"❌ Lỗi kết nối mạng: {e}. Thử lại sau {retry_delay}s...")
+            logger.warning(f"[WS] Ket noi bi ngat: {e}. Thu lai sau {reconnect_delay}s...")
+        except OSError as e:
+            logger.warning(f"[WS] Loi mang: {e}. Thu lai sau {reconnect_delay}s...")
         except Exception as e:
-            logger.error(f"❌ Lỗi không xác định: {e}. Thử lại sau {retry_delay}s...")
+            logger.error(f"[WS] Loi: {e}. Thu lai sau {reconnect_delay}s...")
 
-        await asyncio.sleep(retry_delay)
-        retry_delay = min(retry_delay * 2, 60)  # Exponential backoff, tối đa 60s
+        await asyncio.sleep(reconnect_delay)
+        reconnect_delay = min(reconnect_delay * 2, 60)
 
 
 # ============================================================
-# ENTRY POINT
+# FASTAPI — HTTP endpoint để test cục bộ + health check
 # ============================================================
-async def main():
-    logger.info("=" * 55)
-    logger.info("🤖 ViHand Grade — Xiaozhi MCP Dictation Service")
-    logger.info(f"🔗 ViHand Grade API: {VIHAND_API_URL}")
-    logger.info("=" * 55)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("=" * 60)
+    logger.info("[MCP] ViHand Grade - MCP Server cho Xiaozhi")
+    logger.info(f"[MCP] ViHand API: {VIHAND_API_URL}")
 
-    if not XIAOZHI_WSS_URL or "YOUR_TOKEN" in XIAOZHI_WSS_URL:
-        logger.error("❌ Chưa cấu hình XIAOZHI_WSS_URL!")
-        logger.error("")
-        logger.error("   Cách cấu hình:")
-        logger.error("   1. Vào xiaozhi.me → Agent → MCP Endpoint")
-        logger.error("   2. Copy URL (wss://api.xiaozhi.me/mcp/?token=...)")
-        logger.error("   3. Tạo file mcp_service/.env với nội dung:")
-        logger.error("      XIAOZHI_WSS_URL=wss://api.xiaozhi.me/mcp/?token=...")
-        logger.error("")
-        sys.exit(1)
+    if MCP_ENDPOINT:
+        short = MCP_ENDPOINT[:55] + "..."
+        logger.info(f"[MCP] Xiaozhi endpoint: {short}")
+        task = asyncio.create_task(connect_to_xiaozhi(MCP_ENDPOINT))
+    else:
+        logger.warning("[MCP] CANH BAO: MCP_ENDPOINT chua duoc cau hinh!")
+        logger.info("[MCP] Buoc 1: Vao xiaozhi.me > Thiet bi > MCP Settings > MCP Endpoint > Copy URL")
+        logger.info("[MCP] Buoc 2: Tao file mcp_service/.env:")
+        logger.info("[MCP]         MCP_ENDPOINT=wss://api.xiaozhi.me/mcp/?token=...")
+        task = None
 
-    logger.info(f"📡 Kết nối đến: {XIAOZHI_WSS_URL[:70]}...")
-    logger.info(f"🛠️  Tools: save_dictation_session, get_dictation_sessions")
-    logger.info("")
+    logger.info("[MCP] HTTP test endpoint: http://localhost:8200/mcp")
+    logger.info("=" * 60)
+    yield
+    if task:
+        task.cancel()
 
-    try:
-        await run_forever(XIAOZHI_WSS_URL)
-    except KeyboardInterrupt:
-        logger.info("⏹  Đã dừng MCP service.")
+
+app = FastAPI(title="ViHand Grade MCP", version="1.0.0", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "xiaozhi_configured": bool(MCP_ENDPOINT),
+        "vihand_api": VIHAND_API_URL,
+        "tools": [t["name"] for t in TOOLS],
+    }
+
+
+@app.post("/mcp")
+async def http_mcp(request_data: dict):
+    """HTTP endpoint để test cục bộ (không cần xiaozhi.me)"""
+    result = await handle_jsonrpc(request_data)
+    if result is None:
+        return JSONResponse({}, status_code=204)
+    return JSONResponse(result)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8200, log_level="warning")

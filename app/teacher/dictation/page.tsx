@@ -1,17 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Mic, Bot, User, Clock, BookOpen, MessageSquare, Loader2, Trash2,
-  ChevronRight, GraduationCap,
+  Mic, Bot, Clock, BookOpen, Loader2, Trash2,
+  ChevronRight, GraduationCap, Search, Filter, X, SlidersHorizontal,
 } from "lucide-react"
 
 interface DictationLog {
@@ -32,6 +40,8 @@ interface DictationSession {
   createdAt: string
   logs: DictationLog[]
 }
+
+type TimeFilter = "all" | "today" | "yesterday" | "week" | "month"
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr)
@@ -56,31 +66,37 @@ function formatRelativeDate(dateStr: string) {
   return date.toLocaleDateString("vi-VN")
 }
 
-function SpeakerIcon({ speaker }: { speaker: string }) {
-  switch (speaker) {
-    case "xiaozhi":
-      return <Bot className="w-4 h-4 text-primary" />
-    case "teacher":
-      return <GraduationCap className="w-4 h-4 text-amber-500" />
-    case "student":
-      return <User className="w-4 h-4 text-emerald-500" />
+function isWithinTimeFilter(dateStr: string, filter: TimeFilter): boolean {
+  if (filter === "all") return true
+  const date = new Date(dateStr)
+  const now = new Date()
+
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+  switch (filter) {
+    case "today":
+      return date >= startOfDay(now)
+    case "yesterday": {
+      const yest = new Date(now)
+      yest.setDate(now.getDate() - 1)
+      return date >= startOfDay(yest) && date < startOfDay(now)
+    }
+    case "week": {
+      const weekAgo = new Date(now)
+      weekAgo.setDate(now.getDate() - 7)
+      return date >= weekAgo
+    }
+    case "month": {
+      const monthAgo = new Date(now)
+      monthAgo.setMonth(now.getMonth() - 1)
+      return date >= monthAgo
+    }
     default:
-      return <MessageSquare className="w-4 h-4 text-muted-foreground" />
+      return true
   }
 }
 
-function SpeakerLabel({ speaker }: { speaker: string }) {
-  switch (speaker) {
-    case "xiaozhi":
-      return <span className="text-xs font-semibold text-primary">Xiaozhi AI</span>
-    case "teacher":
-      return <span className="text-xs font-semibold text-amber-600">Giáo viên</span>
-    case "student":
-      return <span className="text-xs font-semibold text-emerald-600">Học sinh</span>
-    default:
-      return <span className="text-xs font-semibold text-muted-foreground">{speaker}</span>
-  }
-}
+
 
 export default function DictationPage() {
   const [sessions, setSessions] = useState<DictationSession[]>([])
@@ -88,6 +104,11 @@ export default function DictationPage() {
   const [error, setError] = useState("")
   const [selectedSession, setSelectedSession] = useState<DictationSession | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [classFilter, setClassFilter] = useState("all")
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all")
 
   const fetchSessions = async () => {
     try {
@@ -106,6 +127,46 @@ export default function DictationPage() {
   useEffect(() => {
     fetchSessions()
   }, [])
+
+  // Extract unique class names for filter dropdown
+  const uniqueClasses = useMemo(() => {
+    const classes = sessions
+      .map((s) => s.className)
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort()
+    return classes
+  }, [sessions])
+
+  // Apply all filters
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((session) => {
+      // Search filter
+      const q = searchQuery.trim().toLowerCase()
+      if (q) {
+        const matchTitle = session.title?.toLowerCase().includes(q)
+        const matchPassage = session.passage?.toLowerCase().includes(q)
+        const matchClass = session.className?.toLowerCase().includes(q)
+        if (!matchTitle && !matchPassage && !matchClass) return false
+      }
+
+      // Class filter
+      if (classFilter !== "all" && session.className !== classFilter) return false
+
+      // Time filter
+      if (!isWithinTimeFilter(session.createdAt, timeFilter)) return false
+
+      return true
+    })
+  }, [sessions, searchQuery, classFilter, timeFilter])
+
+  const hasActiveFilters = searchQuery.trim() !== "" || classFilter !== "all" || timeFilter !== "all"
+
+  const clearFilters = () => {
+    setSearchQuery("")
+    setClassFilter("all")
+    setTimeFilter("all")
+  }
 
   const handleDelete = async (sessionId: string) => {
     if (!confirm("Bạn có chắc muốn xoá phiên đọc chính tả này?")) return
@@ -127,6 +188,14 @@ export default function DictationPage() {
     setSelectedSession(session)
     setDialogOpen(true)
   }
+
+  const timeFilterOptions: { value: TimeFilter; label: string }[] = [
+    { value: "all", label: "Tất cả thời gian" },
+    { value: "today", label: "Hôm nay" },
+    { value: "yesterday", label: "Hôm qua" },
+    { value: "week", label: "7 ngày qua" },
+    { value: "month", label: "Tháng này" },
+  ]
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -158,22 +227,6 @@ export default function DictationPage() {
                 <div>
                   <p className="text-2xl font-bold">{sessions.length}</p>
                   <p className="text-xs text-muted-foreground">Tổng phiên</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10">
-                  <MessageSquare className="w-5 h-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {sessions.reduce((sum, s) => sum + (s.logs?.length || 0), 0)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Tổng lượt chat</p>
                 </div>
               </div>
             </CardContent>
@@ -223,7 +276,90 @@ export default function DictationPage() {
               Mỗi phiên được Xiaozhi AI tự động lưu khi hoàn thành đọc bài cho học sinh
             </CardDescription>
           </CardHeader>
-          <CardContent>
+
+          <CardContent className="space-y-4">
+            {/* ── Search & Filter Bar ── */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search input */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="dictation-search"
+                  placeholder="Tìm kiếm theo tên bài, nội dung, lớp..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Xoá tìm kiếm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Class filter */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Select value={classFilter} onValueChange={setClassFilter}>
+                  <SelectTrigger id="class-filter" className="w-[140px]">
+                    <SelectValue placeholder="Chọn lớp" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả lớp</SelectItem>
+                    {uniqueClasses.map((cls) => (
+                      <SelectItem key={cls} value={cls}>
+                        {cls}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Time filter */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <SlidersHorizontal className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+                  <SelectTrigger id="time-filter" className="w-[160px]">
+                    <SelectValue placeholder="Thời gian" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeFilterOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Active filter summary + clear */}
+            {hasActiveFilters && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground bg-accent/40 rounded-lg px-3 py-2">
+                <span>
+                  Đang lọc: hiển thị{" "}
+                  <span className="font-semibold text-foreground">{filteredSessions.length}</span>{" "}
+                  / {sessions.length} phiên
+                  {classFilter !== "all" && (
+                    <> · Lớp <Badge variant="secondary" className="text-xs mx-1">{classFilter}</Badge></>
+                  )}
+                  {timeFilter !== "all" && (
+                    <> · {timeFilterOptions.find((o) => o.value === timeFilter)?.label}</>
+                  )}
+                  {searchQuery && <> · &quot;{searchQuery}&quot;</>}
+                </span>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={clearFilters}>
+                  <X className="w-3 h-3 mr-1" />
+                  Xoá bộ lọc
+                </Button>
+              </div>
+            )}
+
+            {/* List */}
             {loading ? (
               <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -241,9 +377,20 @@ export default function DictationPage() {
                   Nói với Xiaozhi: &quot;Đọc bài chính tả Ai có lỗi cho lớp 3A1&quot;
                 </p>
               </div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="text-center py-16 space-y-3">
+                <Search className="w-12 h-12 text-muted-foreground/30 mx-auto" />
+                <p className="text-muted-foreground text-sm">
+                  Không tìm thấy phiên nào phù hợp với bộ lọc hiện tại.
+                </p>
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <X className="w-3 h-3 mr-2" />
+                  Xoá bộ lọc
+                </Button>
+              </div>
             ) : (
               <div className="space-y-2">
-                {sessions.map((session) => (
+                {filteredSessions.map((session) => (
                   <div
                     key={session.id}
                     className="flex items-center gap-4 p-4 rounded-lg border border-border/50 hover:bg-accent/50 cursor-pointer transition-colors group"
@@ -256,7 +403,7 @@ export default function DictationPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-sm truncate">{session.title}</p>
                         {session.className && (
                           <Badge variant="secondary" className="text-xs shrink-0">
@@ -273,9 +420,6 @@ export default function DictationPage() {
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right hidden md:block">
                         <p className="text-xs text-muted-foreground">{formatRelativeDate(session.createdAt)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {session.logs?.length || 0} lượt chat
-                        </p>
                       </div>
                       <Button
                         variant="ghost"
@@ -338,70 +482,7 @@ export default function DictationPage() {
                   </CardContent>
                 </Card>
 
-                {/* Summary */}
-                {selectedSession.summary && (
-                  <Card className="border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20">
-                    <CardContent className="p-4">
-                      <p className="text-sm text-amber-800 dark:text-amber-200">
-                        📝 {selectedSession.summary}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
 
-                {/* Chat Logs */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    Nhật ký hội thoại ({selectedSession.logs?.length || 0} lượt)
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedSession.logs?.length > 0 ? (
-                      selectedSession.logs.map((log) => (
-                        <div
-                          key={log.id}
-                          className={`flex gap-3 ${
-                            log.speaker === "xiaozhi" ? "" : "flex-row-reverse"
-                          }`}
-                        >
-                          <div
-                            className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${
-                              log.speaker === "xiaozhi"
-                                ? "bg-primary/10"
-                                : log.speaker === "teacher"
-                                ? "bg-amber-500/10"
-                                : "bg-emerald-500/10"
-                            }`}
-                          >
-                            <SpeakerIcon speaker={log.speaker} />
-                          </div>
-                          <div
-                            className={`flex-1 max-w-[80%] ${
-                              log.speaker === "xiaozhi" ? "" : "text-right"
-                            }`}
-                          >
-                            <SpeakerLabel speaker={log.speaker} />
-                            <div
-                              className={`mt-1 p-3 rounded-xl text-sm leading-relaxed ${
-                                log.speaker === "xiaozhi"
-                                  ? "bg-muted rounded-tl-sm"
-                                  : log.speaker === "teacher"
-                                  ? "bg-amber-500/10 rounded-tr-sm ml-auto"
-                                  : "bg-emerald-500/10 rounded-tr-sm ml-auto"
-                              }`}
-                            >
-                              {log.content}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Không có log hội thoại cho phiên này
-                      </p>
-                    )}
-                  </div>
-                </div>
               </div>
             </>
           )}
