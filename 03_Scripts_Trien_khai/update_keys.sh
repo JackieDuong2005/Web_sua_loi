@@ -25,7 +25,7 @@ step "BƯỚC 1/3: Cập nhật API Keys vào .env.local"
 # ═══════════════════════════════════════════════════════════════════════
 
 # Danh sách API keys (thêm/xóa key tại đây khi cần)
-GEMINI_API_KEYS="AIzaSyDCA8xG8ec1JSGPKjV4s22UvrKvzIi6gf0,AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o,AIzaSyC9BFOtMw5s3DFFl_mKisJVheUD2UYFqds,AIzaSyBTgcBDlHlvW-6RG2NlRyFMwxvS5EdxpmI"
+GEMINI_API_KEYS="YOUR_GEMINI_API_KEY_1,YOUR_GEMINI_API_KEY_2,YOUR_GEMINI_API_KEY_3"
 
 # Đọc DATABASE_URL hiện tại để giữ nguyên
 CURRENT_DB_URL=$(grep "DATABASE_URL" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- || echo "file:/home/$(whoami)/vihand-grade/prisma/vihand.db")
