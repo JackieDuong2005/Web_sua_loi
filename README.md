@@ -136,13 +136,6 @@ Bao gồm:
 - 📊 [Báo cáo nghiên cứu](./01_Bao_cao_Nghien_cuu/) — Slide thuyết trình, báo cáo NCKH
 - 🚀 [Scripts triển khai](./03_Scripts_Trien_khai/) — Hướng dẫn deploy Raspberry Pi
 
----
-
-## 📜 License
-
-Dự án được phát hành dưới [MIT License](LICENSE).
-
----
 
 <div align="center">
 
