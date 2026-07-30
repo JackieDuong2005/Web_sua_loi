@@ -85,3 +85,10 @@ xiaozhi-esp32-main/
 
 # TypeScript build cache
 tsconfig.tsbuildinfo
+
+# Runtime output and temp directories
+output/
+tmp/
+
+# Empty placeholder directories (future projects)
+android-app/

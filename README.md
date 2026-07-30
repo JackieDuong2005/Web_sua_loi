@@ -129,7 +129,7 @@ Bao gồm:
 
 ## 📄 Tài liệu kỹ thuật
 
-- 📋 [Đặc tả kỹ thuật hệ thống](./ViHand_Grade_Dac_Ta_Ky_Thuat.md) — Kiến trúc chi tiết, API spec, mô hình dữ liệu
+- 📋 [Đặc tả kỹ thuật hệ thống](./01_Bao_cao_Nghien_cuu/ViHand_Grade_Dac_Ta_Ky_Thuat.md) — Kiến trúc chi tiết, API spec, mô hình dữ liệu
 - 🧪 [Kịch bản thực nghiệm & Benchmark](./02_Kich_ban_Thuc_nghiem/) — Dataset, test cases, notebook đánh giá
 - 📊 [Báo cáo nghiên cứu](./01_Bao_cao_Nghien_cuu/) — Slide thuyết trình, báo cáo NCKH
 - 🚀 [Scripts triển khai](./03_Scripts_Trien_khai/) — Hướng dẫn deploy Raspberry Pi

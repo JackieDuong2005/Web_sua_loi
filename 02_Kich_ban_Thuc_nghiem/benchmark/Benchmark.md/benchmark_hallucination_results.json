@@ -1,0 +1,1042 @@
+{
+  "gemini-3.5-flash-lite": [
+    {
+      "image": "2015528193537.jpg",
+      "success": true,
+      "latencyMs": 4670,
+      "tokens": 1710,
+      "rawOutput": "{\n  \"original_text\": \"Sơn Tinh, Thủy Tinh\\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\\nMột hôm, có hai chàng trai đến cầu hôn công chúa.\\nMột người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.\",\n  \"fixed_text\": \"Sơn Tinh, Thủy Tinh\\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.\"\n}",
+      "parsedOriginal": "Sơn Tinh, Thủy Tinh\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\nMột hôm, có hai chàng trai đến cầu hôn công chúa.\nMột người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.",
+      "parsedFixed": "Sơn Tinh, Thủy Tinh\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 62,
+        "wordCountFixed": 62
+      },
+      "error": null
+    },
+    {
+      "image": "30.PNG",
+      "success": false,
+      "latencyMs": 8364,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "success": false,
+      "latencyMs": 578,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "success": false,
+      "latencyMs": 720,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "success": true,
+      "latencyMs": 8071,
+      "tokens": 1981,
+      "rawOutput": "{\n  \"original_text\": \"Thứ hai 3/12/2025\\nĐề bài Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em ( Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh ngày 3 tháng 12\\nBà 9 kính mến lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn tro thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt cháu đang rất cố gắn để lấy điểm cao.\",\n  \"fixed_text\": \"Thứ hai, ngày 3 tháng 12 năm 2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập trang 78)\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12\\nBà kính mến!\\nLâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, công việc của ba mẹ cháu đang rất tốt, hai anh của cháu cũng mới có việc làm. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\"\n}",
+      "parsedOriginal": "Thứ hai 3/12/2025\nĐề bài Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em ( Vở bài tập tr 78)\nBài làm\nThành phố Hồ Chí Minh ngày 3 tháng 12\nBà 9 kính mến lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn tro thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt cháu đang rất cố gắn để lấy điểm cao.",
+      "parsedFixed": "Thứ hai, ngày 3 tháng 12 năm 2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập trang 78)\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12\nBà kính mến!\nLâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, công việc của ba mẹ cháu đang rất tốt, hai anh của cháu cũng mới có việc làm. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 176,
+        "wordCountFixed": 179
+      },
+      "error": null
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_53 (1).jpg",
+      "success": false,
+      "latencyMs": 2958,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "success": false,
+      "latencyMs": 12301,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "chuviettay1.jpg",
+      "success": false,
+      "latencyMs": 280,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "chuviettay2.jpg",
+      "success": true,
+      "latencyMs": 2429,
+      "tokens": 1635,
+      "rawOutput": "{\n  \"original_text\": \"Quạ và công\\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen\",\n  \"fixed_text\": \"Quạ và công.\\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.\"\n}",
+      "parsedOriginal": "Quạ và công\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen",
+      "parsedFixed": "Quạ và công.\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 46,
+        "wordCountFixed": 46
+      },
+      "error": null
+    },
+    {
+      "image": "image.png",
+      "success": false,
+      "latencyMs": 6890,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "img_01.png",
+      "success": false,
+      "latencyMs": 1886,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_02.jpg",
+      "success": false,
+      "latencyMs": 480,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_03.png",
+      "success": true,
+      "latencyMs": 5829,
+      "tokens": 1661,
+      "rawOutput": "{\n  \"original_text\": \"Đôi que dan\\nMũ đỏ cho bé\\nKhăn đen cho bà\\nÁo đẹp cho mẹ\\nÁo ấm cho cha\\nCừ đôi que nhỏ\\nCừ tay chị nữa\\nDần dần hiện ra...\\n\\nÔi đôi que dan\\nSao mà chăm chỉ\\nSao mà giản dị\\nSao mà dẻo dai...\",\n  \"fixed_text\": \"Đôi que đan\\nMũ đỏ cho bé\\nKhăn đen cho bà\\nÁo đẹp cho mẹ\\nÁo ấm cho cha\\nTừ đôi que nhỏ\\nTừ tay chị nữa\\nDần dần hiện ra...\\n\\nÔi đôi que đan\\nSao mà chăm chỉ\\nSao mà giản dị\\nSao mà dẻo dai...\"\n}",
+      "parsedOriginal": "Đôi que dan\nMũ đỏ cho bé\nKhăn đen cho bà\nÁo đẹp cho mẹ\nÁo ấm cho cha\nCừ đôi que nhỏ\nCừ tay chị nữa\nDần dần hiện ra...\n\nÔi đôi que dan\nSao mà chăm chỉ\nSao mà giản dị\nSao mà dẻo dai...",
+      "parsedFixed": "Đôi que đan\nMũ đỏ cho bé\nKhăn đen cho bà\nÁo đẹp cho mẹ\nÁo ấm cho cha\nTừ đôi que nhỏ\nTừ tay chị nữa\nDần dần hiện ra...\n\nÔi đôi que đan\nSao mà chăm chỉ\nSao mà giản dị\nSao mà dẻo dai...",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 47,
+        "wordCountFixed": 47
+      },
+      "error": null
+    },
+    {
+      "image": "img_04.jpg",
+      "success": false,
+      "latencyMs": 470,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "img_05.jpg",
+      "success": false,
+      "latencyMs": 4479,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_07.jpg",
+      "success": false,
+      "latencyMs": 1469,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_2.jpg",
+      "success": true,
+      "latencyMs": 3153,
+      "tokens": 1910,
+      "rawOutput": "{\n  \"original_text\": \"Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hương\\n4A1\\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm linh hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem\",\n  \"fixed_text\": \"Thứ tư, ngày 12 tháng 11 năm 2014 - Phạm Hương\\n4A1\\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo 502 hay keo con voi đâu nhé! Và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem\"\n}",
+      "parsedOriginal": "Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hương\n4A1\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm linh hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem",
+      "parsedFixed": "Thứ tư, ngày 12 tháng 11 năm 2014 - Phạm Hương\n4A1\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo 502 hay keo con voi đâu nhé! Và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 156,
+        "wordCountFixed": 154
+      },
+      "error": null
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_3.jpg",
+      "success": false,
+      "latencyMs": 375,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_4.jpg",
+      "success": false,
+      "latencyMs": 880,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    }
+  ],
+  "gemini-3.1-flash-lite": [
+    {
+      "image": "2015528193537.jpg",
+      "success": false,
+      "latencyMs": 734,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "30.PNG",
+      "success": true,
+      "latencyMs": 6005,
+      "tokens": 1765,
+      "rawOutput": "{\n  \"original_text\": \"Viết về Bố\\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi hiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bố và rọn rồi xuống chát Za lô với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôxin nữa. Em rất yêu việc chứ không yêu làm.\",\n  \"fixed_text\": \"Viết về Bố\\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi kiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc, còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên, còn bảo: \\\"Đợi tao tí\\\". Lúc ăn cơm xong, cả gia đình cùng dọn, bố và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố, từ nay em không làm ô-sin nữa. Em rất yêu việc chứ không yêu làm.\"\n}",
+      "parsedOriginal": "Viết về Bố\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi hiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bố và rọn rồi xuống chát Za lô với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôxin nữa. Em rất yêu việc chứ không yêu làm.",
+      "parsedFixed": "Viết về Bố\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi kiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc, còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên, còn bảo: \"Đợi tao tí\". Lúc ăn cơm xong, cả gia đình cùng dọn, bố và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố, từ nay em không làm ô-sin nữa. Em rất yêu việc chứ không yêu làm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 102,
+        "wordCountFixed": 101
+      },
+      "error": null
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "success": false,
+      "latencyMs": 622,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "success": false,
+      "latencyMs": 629,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "success": false,
+      "latencyMs": 827,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_53 (1).jpg",
+      "success": true,
+      "latencyMs": 4611,
+      "tokens": 2089,
+      "rawOutput": "{\n  \"original_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt, ... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hế năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\",\n  \"fixed_text\": \"Tên: Nguyễn Mậu Thiên Kim, lớp 4^2\\nThứ Tư, ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr. 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh, đồng thời kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\"\n}",
+      "parsedOriginal": "Tên: Nguyễn Mậu Thiên Kim lớp 4^2\nThứ Tư ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt, ... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hế năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parsedFixed": "Tên: Nguyễn Mậu Thiên Kim, lớp 4^2\nThứ Tư, ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr. 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh, đồng thời kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parseError": null,
+      "hallucination": {
+        "score": 10,
+        "riskLevel": "RUI_RO_THAP",
+        "flags": [
+          "CONTENT_LONG: original_text co 223 tu (kha dai)"
+        ],
+        "wordCountOriginal": 223,
+        "wordCountFixed": 223
+      },
+      "error": null
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "success": false,
+      "latencyMs": 553,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "chuviettay1.jpg",
+      "success": false,
+      "latencyMs": 298,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "chuviettay2.jpg",
+      "success": false,
+      "latencyMs": 332,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "image.png",
+      "success": true,
+      "latencyMs": 3604,
+      "tokens": 1645,
+      "rawOutput": "{\n  \"original_text\": \"Việt Nam thân yêu\\nViệt Nam đất nước ta ơi !\\nMênh mông biển lúa đâu trời đẹp hơn\\nCánh cò bay lả dập dờn\\nMây mờ che đỉnh Trường Sơn sớm chiều\\nQuê hương biết mấy thân yêu\\nBao nhiêu đời đã chịu nhiều đau thương\\nMặt người vất vả in sâu\",\n  \"fixed_text\": \"Việt Nam thân yêu\\nViệt Nam đất nước ta ơi!\\nMênh mông biển lúa đâu trời đẹp hơn\\nCánh cò bay lả dập dờn\\nMây mờ che đỉnh Trường Sơn sớm chiều\\nQuê hương biết mấy thân yêu\\nBao nhiêu đời đã chịu nhiều đau thương\\nMặt người vất vả in sâu\"\n}",
+      "parsedOriginal": "Việt Nam thân yêu\nViệt Nam đất nước ta ơi !\nMênh mông biển lúa đâu trời đẹp hơn\nCánh cò bay lả dập dờn\nMây mờ che đỉnh Trường Sơn sớm chiều\nQuê hương biết mấy thân yêu\nBao nhiêu đời đã chịu nhiều đau thương\nMặt người vất vả in sâu",
+      "parsedFixed": "Việt Nam thân yêu\nViệt Nam đất nước ta ơi!\nMênh mông biển lúa đâu trời đẹp hơn\nCánh cò bay lả dập dờn\nMây mờ che đỉnh Trường Sơn sớm chiều\nQuê hương biết mấy thân yêu\nBao nhiêu đời đã chịu nhiều đau thương\nMặt người vất vả in sâu",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 53,
+        "wordCountFixed": 52
+      },
+      "error": null
+    },
+    {
+      "image": "img_01.png",
+      "success": false,
+      "latencyMs": 954,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "img_02.jpg",
+      "success": false,
+      "latencyMs": 412,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_03.png",
+      "success": false,
+      "latencyMs": 2879,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_04.jpg",
+      "success": true,
+      "latencyMs": 1902,
+      "tokens": 1587,
+      "rawOutput": "{\n  \"original_text\": \"Hạt gieo tới tấp\\nRải khắp ruộng đồng\\nNhưng chẳng nảy mầm\\nĐể bao hạt khác\\nMừng thầm mọc xanh\",\n  \"fixed_text\": \"Hạt gieo tới tấp\\nRải khắp ruộng đồng\\nNhưng chẳng nảy mầm\\nĐể bao hạt khác\\nMừng thầm mọc xanh.\"\n}",
+      "parsedOriginal": "Hạt gieo tới tấp\nRải khắp ruộng đồng\nNhưng chẳng nảy mầm\nĐể bao hạt khác\nMừng thầm mọc xanh",
+      "parsedFixed": "Hạt gieo tới tấp\nRải khắp ruộng đồng\nNhưng chẳng nảy mầm\nĐể bao hạt khác\nMừng thầm mọc xanh.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 20,
+        "wordCountFixed": 20
+      },
+      "error": null
+    },
+    {
+      "image": "img_05.jpg",
+      "success": false,
+      "latencyMs": 1089,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "img_07.jpg",
+      "success": false,
+      "latencyMs": 1237,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_2.jpg",
+      "success": false,
+      "latencyMs": 1109,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_3.jpg",
+      "success": true,
+      "latencyMs": 1838,
+      "tokens": 1681,
+      "rawOutput": "{\n  \"original_text\": \"gia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngòi sân bay tân sơn Nhất, mẹ con làm việc bán hàng xách tay chêng mạng inh tơ nét, anh hai của con tên trung ánh học lớn năm.\",\n  \"fixed_text\": \"Gia đình con có năm người. Ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi. Ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay trên mạng internet, anh hai của con tên Trung Anh học lớp năm.\"\n}",
+      "parsedOriginal": "gia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngòi sân bay tân sơn Nhất, mẹ con làm việc bán hàng xách tay chêng mạng inh tơ nét, anh hai của con tên trung ánh học lớn năm.",
+      "parsedFixed": "Gia đình con có năm người. Ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi. Ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay trên mạng internet, anh hai của con tên Trung Anh học lớp năm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 63,
+        "wordCountFixed": 61
+      },
+      "error": null
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_4.jpg",
+      "success": false,
+      "latencyMs": 310,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    }
+  ],
+  "gemini-3.5-flash": [
+    {
+      "image": "2015528193537.jpg",
+      "success": false,
+      "latencyMs": 359,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "30.PNG",
+      "success": false,
+      "latencyMs": 1486,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "success": true,
+      "latencyMs": 23054,
+      "tokens": 3342,
+      "rawOutput": "{\n  \"original_text\": \"Đề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh ngày 3 tháng 12 năm 2025\\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em Xu giờ đã lớn rồi hai tuổi đúng không ạ, bà còn thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt. Cháu đang rất cố gắng để lấy điểm cao.\",\n  \"fixed_text\": \"Đề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập trang 78)\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nBà ơi kính mến, lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Xu giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\\nBa mẹ cháu đã ít tăng ca hơn. Còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt. Cháu đang rất cố gắng để lấy điểm cao.\"\n}",
+      "parsedOriginal": "Đề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\nBài làm\nThành phố Hồ Chí Minh ngày 3 tháng 12 năm 2025\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em Xu giờ đã lớn rồi hai tuổi đúng không ạ, bà còn thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt. Cháu đang rất cố gắng để lấy điểm cao.",
+      "parsedFixed": "Đề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập trang 78)\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nBà ơi kính mến, lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Xu giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\nBa mẹ cháu đã ít tăng ca hơn. Còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt. Cháu đang rất cố gắng để lấy điểm cao.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 172,
+        "wordCountFixed": 172
+      },
+      "error": null
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "success": false,
+      "latencyMs": 4435,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "success": false,
+      "latencyMs": 3313,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_53 (1).jpg",
+      "success": false,
+      "latencyMs": 2405,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "success": true,
+      "latencyMs": 29646,
+      "tokens": 4238,
+      "rawOutput": "{\n  \"original_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của Mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt,... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hè năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\",\n  \"fixed_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4/2\\nThứ Tư, ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập, tr. 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh, nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hè năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\"",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": "Expected ',' or '}' after property value in JSON at position 2040 (line 3 column 1022)",
+      "hallucination": {
+        "score": 30,
+        "riskLevel": "RUI_RO_TRUNG_BINH",
+        "flags": [
+          "JSON_INVALID: Model khong tra ve JSON hop le"
+        ],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": null
+    },
+    {
+      "image": "chuviettay1.jpg",
+      "success": false,
+      "latencyMs": 328,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "chuviettay2.jpg",
+      "success": false,
+      "latencyMs": 8515,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "image.png",
+      "success": false,
+      "latencyMs": 3094,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_01.png",
+      "success": true,
+      "latencyMs": 39100,
+      "tokens": 3127,
+      "rawOutput": "{\n  \"original_text\": \"Chiều trên quê hương\\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.\",\n  \"fixed_text\": \"Chiều trên quê hương\\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.\"\n}",
+      "parsedOriginal": "Chiều trên quê hương\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.",
+      "parsedFixed": "Chiều trên quê hương\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 76,
+        "wordCountFixed": 76
+      },
+      "error": null
+    },
+    {
+      "image": "img_02.jpg",
+      "success": false,
+      "latencyMs": 450,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "img_03.png",
+      "success": false,
+      "latencyMs": 6539,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_04.jpg",
+      "success": false,
+      "latencyMs": 340,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "img_05.jpg",
+      "success": true,
+      "latencyMs": 24529,
+      "tokens": 3439,
+      "rawOutput": "{\n  \"original_text\": \"Dòng sông mặc áo\\n\\nDòng sông mới điệu làm sao\\nNắng lên mặc áo lụa đào thướt tha\\nTrưa về trời rộng bao la\\nÁo xanh sông mặc như là mới may\\nChiều trôi thơ thẩn áng mây\\nCài lên màu áo hây hây ráng vàng\\nĐêm thêu trước ngực vầng trăng\\nTrên nền nhung tím trăm ngàn sao lên\\nKhuya rồi, sông mặc áo đen\\nNép trong rừng bưởi lặng yên đôi bờ.\\nNguyễn Trọng Tạo\",\n  \"fixed_text\": \"Dòng sông mặc áo\\n\\nDòng sông mới điệu làm sao\\nNắng lên mặc áo lụa đào thướt tha\\nTrưa về trời rộng bao la\\nÁo xanh sông mặc như là mới may\\nChiều trôi thơ thẩn áng mây\\nCài lên màu áo hây hây ráng vàng\\nĐêm thêu trước ngực vầng trăng\\nTrên nền nhung tím trăm ngàn sao lên\\nKhuya rồi, sông mặc áo đen\\nNép trong rừng bưởi lặng yên đôi bờ.\\nNguyễn Trọng Tạo\"",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": "Expected ',' or '}' after property value in JSON at position 757 (line 3 column 376)",
+      "hallucination": {
+        "score": 30,
+        "riskLevel": "RUI_RO_TRUNG_BINH",
+        "flags": [
+          "JSON_INVALID: Model khong tra ve JSON hop le"
+        ],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": null
+    },
+    {
+      "image": "img_07.jpg",
+      "success": false,
+      "latencyMs": 1937,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[403] {\"error\":{\"code\":403,\"message\":\"Permission denied: Consumer 'api_key:AIzaSyB1xE0KPSohRiqCLukft3Ph-xIxBPLYv9o' has been suspended.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com"
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_2.jpg",
+      "success": false,
+      "latencyMs": 519,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_3.jpg",
+      "success": false,
+      "latencyMs": 616,
+      "tokens": 0,
+      "rawOutput": "",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "—",
+        "flags": [],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": "[400] {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\""
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_4.jpg",
+      "success": true,
+      "latencyMs": 25836,
+      "tokens": 3828,
+      "rawOutput": "{\n  \"original_text\": \"Bài làm\\nBố em tên là Trần Mạnh Toàn. Năm nay bố 36 tuổi Bố có hình dáng còi và cao Bố em hay đánh giấm. cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần. Vào các ngày nghỉ bố thường em sang thăm bà nội Bố em làm nghề kinh doanh Bố rất yêu em. Em cũng rất yêu bố.\",\n  \"fixed_text\": \"Bài làm\\nBố em tên là Trần Mạnh Toàn. Năm nay bố 36 tuổi. Bố có dáng người gầy và cao. Bố em hay đánh rắm. Cứ mỗi khi em xem phim lại thấy bố lại đánh rắm hai ba lần. Vào các ngày nghỉ, bố thường đưa em sang thăm bà nội. Bố em làm nghề kinh doanh. Bố rất yêu em. Em cũng rất yêu bố.\"",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": "Expected ',' or '}' after property value in JSON at position 599 (line 3 column 301)",
+      "hallucination": {
+        "score": 30,
+        "riskLevel": "RUI_RO_TRUNG_BINH",
+        "flags": [
+          "JSON_INVALID: Model khong tra ve JSON hop le"
+        ],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0
+      },
+      "error": null
+    }
+  ]
+}

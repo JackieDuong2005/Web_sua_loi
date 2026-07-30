@@ -1,0 +1,738 @@
+{
+  "gemini-3.5-flash-lite": [
+    {
+      "image": "2015528193537.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3422,
+      "tokens": 1702,
+      "rawOutput": "{\n  \"original_text\": \"Sơn Tinh, Thủy Tinh\\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.\",\n  \"fixed_text\": \"Sơn Tinh, Thủy Tinh\\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.\"\n}",
+      "parsedOriginal": "Sơn Tinh, Thủy Tinh\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.",
+      "parsedFixed": "Sơn Tinh, Thủy Tinh\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 62,
+        "wordCountFixed": 62,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "30.PNG",
+      "success": true,
+      "error": null,
+      "latencyMs": 5581,
+      "tokens": 1751,
+      "rawOutput": "{\n  \"original_text\": \"Viết về Bố\\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hàng ngày bố chỉ đi hiêm tiến rồi về nằm vớn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả dadinh cùng dọn bỏ và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôsin nữa. Em rái yêu viu chứ không yêu làm.\",\n  \"fixed_text\": \"Viết về Bố\\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hàng ngày bố chỉ đi hiểm tiến rồi về nằm vớn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bộ và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôsin nữa. Em ráy yêu viu chứ không yêu làm.\"\n}",
+      "parsedOriginal": "Viết về Bố\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hàng ngày bố chỉ đi hiêm tiến rồi về nằm vớn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả dadinh cùng dọn bỏ và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôsin nữa. Em rái yêu viu chứ không yêu làm.",
+      "parsedFixed": "Viết về Bố\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hàng ngày bố chỉ đi hiểm tiến rồi về nằm vớn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bộ và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôsin nữa. Em ráy yêu viu chứ không yêu làm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 100,
+        "wordCountFixed": 101,
+        "sim_orig_fixed": 98.07
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 6342,
+      "tokens": 1982,
+      "rawOutput": "{\n  \"original_text\": \"Thứ hai 3/12/2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh ngày 3 tháng 12\\nBà 9 kính mến lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn tro thích trồng cây không ạ, ông có còn lại đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắn để lấy điểm cao.\",\n  \"fixed_text\": \"Thứ hai, ngày 3 tháng 12 năm 2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập trang 78)\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12\\nBà kính mến,\\nLâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em du [ý học sinh là \"Du\"] giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn ưa thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\"\n}",
+      "parsedOriginal": null,
+      "parsedFixed": null,
+      "parseError": "Expected ',' or '}' after property value in JSON at position 1176 (line 3 column 414)",
+      "hallucination": {
+        "score": 30,
+        "riskLevel": "JSON_LOI",
+        "flags": [
+          "JSON_INVALID: Model khong tra ve JSON hop le"
+        ],
+        "wordCountOriginal": 0,
+        "wordCountFixed": 0,
+        "sim_orig_fixed": 0
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3306,
+      "tokens": 1837,
+      "rawOutput": "{\n  \"original_text\": \"Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vở bài tập\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nÔng bà kính mến!\\nHôm nay cháu rất nhớ và chợt ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? anh Quốc anh thì được mấy điểm dạ? những chú gà con được mấy tuổi rồi? những chú heo con được bao nhiêu kí? với lại con chó mẹ đẻ được bao nhiêu chó con?\\nHôm qua cháu vừa lên lớp 4. Cũng vừa\",\n  \"fixed_text\": \"Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vở bài tập.\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà kính mến!\\nHôm nay cháu rất nhớ và chợt nhớ ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? Anh Quốc Anh thì được mấy điểm ạ? Những chú gà con được mấy tuổi rồi? Những chú heo con được bao nhiêu kí? Với lại con chó mẹ đẻ được bao nhiêu chó con?\\nHôm qua cháu vừa lên lớp 4. Cũng vừa\"\n}",
+      "parsedOriginal": "Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vở bài tập\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nÔng bà kính mến!\nHôm nay cháu rất nhớ và chợt ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? anh Quốc anh thì được mấy điểm dạ? những chú gà con được mấy tuổi rồi? những chú heo con được bao nhiêu kí? với lại con chó mẹ đẻ được bao nhiêu chó con?\nHôm qua cháu vừa lên lớp 4. Cũng vừa",
+      "parsedFixed": "Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vở bài tập.\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà kính mến!\nHôm nay cháu rất nhớ và chợt nhớ ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? Anh Quốc Anh thì được mấy điểm ạ? Những chú gà con được mấy tuổi rồi? Những chú heo con được bao nhiêu kí? Với lại con chó mẹ đẻ được bao nhiêu chó con?\nHôm qua cháu vừa lên lớp 4. Cũng vừa",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 130,
+        "wordCountFixed": 131,
+        "sim_orig_fixed": 97.81
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 4759,
+      "tokens": 1974,
+      "rawOutput": "{\n  \"original_text\": \"Thứ hai 3/12/2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh ngày 3 tháng 12\\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn tro thích trồng cây không ạ, ông có còn lại đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắn để lấy điểm cao.\",\n  \"fixed_text\": \"Thứ hai, ngày 3 tháng 12 năm 2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12\\nBà ơi kính mến! Lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\"\n}",
+      "parsedOriginal": "Thứ hai 3/12/2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\nBài làm\nThành phố Hồ Chí Minh ngày 3 tháng 12\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn tro thích trồng cây không ạ, ông có còn lại đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắn để lấy điểm cao.",
+      "parsedFixed": "Thứ hai, ngày 3 tháng 12 năm 2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12\nBà ơi kính mến! Lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 175,
+        "wordCountFixed": 179,
+        "sim_orig_fixed": 93.85
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_53 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 4909,
+      "tokens": 2004,
+      "rawOutput": "{\n  \"original_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78).\\nBài làm 2025.\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lữ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không ? Ông ngoại đỡ đau chân hơn chưa hay còn đau ? Bà ngoại đỡ đau lưng hơn chưa ? Nhà ông bà ngoại có ngập không ? Nhà của mọi người xung quanh không ngập chứ ? Ông bà ngoại còn nuôi gà vịt không ? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không ? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ ?\",\n  \"fixed_text\": \"Thành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài gốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\"\n}",
+      "parsedOriginal": "Tên: Nguyễn Mậu Thiên Kim lớp 4^2\nThứ Tư ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78).\nBài làm 2025.\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lữ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không ? Ông ngoại đỡ đau chân hơn chưa hay còn đau ? Bà ngoại đỡ đau lưng hơn chưa ? Nhà ông bà ngoại có ngập không ? Nhà của mọi người xung quanh không ngập chứ ? Ông bà ngoại còn nuôi gà vịt không ? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không ? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ ?",
+      "parsedFixed": "Thành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài gốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parseError": null,
+      "hallucination": {
+        "score": 10,
+        "riskLevel": "🟡 RUI_RO_THAP",
+        "flags": [
+          "CONTENT_LONG: 231 tu (kha dai, can kiem tra)"
+        ],
+        "wordCountOriginal": 231,
+        "wordCountFixed": 181,
+        "sim_orig_fixed": 78.91
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3532,
+      "tokens": 2072,
+      "rawOutput": "{\n  \"original_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\\nBài làm 2025.\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt không? Chú mèo mà hồi năm ngoại cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\",\n  \"fixed_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư, ngày 3 tháng 12 năm 2025\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài gốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\"\n}",
+      "parsedOriginal": "Tên: Nguyễn Mậu Thiên Kim lớp 4^2\nThứ Tư ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\nBài làm 2025.\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt không? Chú mèo mà hồi năm ngoại cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parsedFixed": "Tên: Nguyễn Mậu Thiên Kim lớp 4^2\nThứ Tư, ngày 3 tháng 12 năm 2025\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài gốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parseError": null,
+      "hallucination": {
+        "score": 10,
+        "riskLevel": "🟡 RUI_RO_THAP",
+        "flags": [
+          "CONTENT_LONG: 222 tu (kha dai, can kiem tra)"
+        ],
+        "wordCountOriginal": 222,
+        "wordCountFixed": 223,
+        "sim_orig_fixed": 97.37
+      }
+    },
+    {
+      "image": "chuviettay1.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 2335,
+      "tokens": 1573,
+      "rawOutput": "{\n  \"original_text\": \"Gó từ tay me\\nsu bé ngủ xay\\nthay cho sá xời\\nGiữa chưa oi ải\",\n  \"fixed_text\": \"Gió từ tay mẹ\\nru bé ngủ say\\nthay cho gió thổi\\nGiữa trưa oi ả\"\n}",
+      "parsedOriginal": "Gó từ tay me\nsu bé ngủ xay\nthay cho sá xời\nGiữa chưa oi ải",
+      "parsedFixed": "Gió từ tay mẹ\nru bé ngủ say\nthay cho gió thổi\nGiữa trưa oi ả",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 16,
+        "wordCountFixed": 16,
+        "sim_orig_fixed": 78.33
+      }
+    },
+    {
+      "image": "chuviettay2.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 1515,
+      "tokens": 1628,
+      "rawOutput": "{\n  \"original_text\": \"Quạ và công\\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.\",\n  \"fixed_text\": \"Quạ và công\\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.\"\n}",
+      "parsedOriginal": "Quạ và công\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.",
+      "parsedFixed": "Quạ và công\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 46,
+        "wordCountFixed": 46,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "image.png",
+      "success": true,
+      "error": null,
+      "latencyMs": 3280,
+      "tokens": 1653,
+      "rawOutput": "{\n  \"original_text\": \"Nết chữ Nết người\\nViệt Nam thân yêu\\nViệt Nam đất nước ta ơi !\\nMênh mông biển lúa đâu trời đẹp hơn\\nCánh cò bay là dập dờn\\nMây mờ che đỉnh Trường Sơn sớm chiều\\nQuê hương biết mấy thân yêu\\nBao nhiêu đời đã chịu nhiều đau thương\\nMặt người vất vả in sâu\",\n  \"fixed_text\": \"Nết chữ Nết người\\nViệt Nam thân yêu\\nViệt Nam đất nước ta ơi!\\nMênh mông biển lúa đâu trời đẹp hơn\\nCánh cò bay lả dập dờn\\nMây mờ che đỉnh Trường Sơn sớm chiều\\nQuê hương biết mấy thân yêu\\nBao nhiêu đời đã chịu nhiều đau thương\\nMặt người vất vả in sâu\"\n}",
+      "parsedOriginal": "Nết chữ Nết người\nViệt Nam thân yêu\nViệt Nam đất nước ta ơi !\nMênh mông biển lúa đâu trời đẹp hơn\nCánh cò bay là dập dờn\nMây mờ che đỉnh Trường Sơn sớm chiều\nQuê hương biết mấy thân yêu\nBao nhiêu đời đã chịu nhiều đau thương\nMặt người vất vả in sâu",
+      "parsedFixed": "Nết chữ Nết người\nViệt Nam thân yêu\nViệt Nam đất nước ta ơi!\nMênh mông biển lúa đâu trời đẹp hơn\nCánh cò bay lả dập dờn\nMây mờ che đỉnh Trường Sơn sớm chiều\nQuê hương biết mấy thân yêu\nBao nhiêu đời đã chịu nhiều đau thương\nMặt người vất vả in sâu",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 57,
+        "wordCountFixed": 56,
+        "sim_orig_fixed": 99.19
+      }
+    },
+    {
+      "image": "img_01.png",
+      "success": true,
+      "error": null,
+      "latencyMs": 7497,
+      "tokens": 1690,
+      "rawOutput": "{\n  \"original_text\": \"Chiều trên quê hương\\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.\",\n  \"fixed_text\": \"Chiều trên quê hương\\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.\"\n}",
+      "parsedOriginal": "Chiều trên quê hương\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.",
+      "parsedFixed": "Chiều trên quê hương\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 76,
+        "wordCountFixed": 76,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_02.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 4643,
+      "tokens": 1805,
+      "rawOutput": "{\n  \"original_text\": \"Em yêu nhà em\\nChẳng đâu bằng chính nhà em\\nCó đàn chim sẻ bên thềm líu lo\\nCó nàng gà mái hoa mơ\\nCục ta cục tác khi vừa đẻ xong\\nCó bà chuối mật lưng ong\\nCó ông ngô bắp râu hồng như tơ\\nCó ao muống với cá cờ\\nEm là chị Tấm đợi chờ bống lên\\nCó đầm ngào ngạt hoa sen\\nẾch con học nhạc, dế mèn làm thơ\\nDù đi xa thật là xa\\nChẳng đâu vui được như nhà của em.\\n(Đoàn Thị Lam Luyến)\",\n  \"fixed_text\": \"Em yêu nhà em\\nChẳng đâu bằng chính nhà em\\nCó đàn chim sẻ bên thềm líu lo\\nCó nàng gà mái hoa mơ\\nCục ta cục tác khi vừa đẻ xong\\nCó buồng chuối mật lưng ong\\nCó ông ngô bắp râu hồng như tơ\\nCó ao muống với cá cờ\\nEm là chị Tấm đợi chờ bống lên\\nCó đầm ngào ngạt hoa sen\\nẾch con học nhạc, dế mèn làm thơ\\nDù đi xa thật là xa\\nChẳng đâu vui được như nhà của em.\\n(Đoàn Thị Lam Luyến)\"\n}",
+      "parsedOriginal": "Em yêu nhà em\nChẳng đâu bằng chính nhà em\nCó đàn chim sẻ bên thềm líu lo\nCó nàng gà mái hoa mơ\nCục ta cục tác khi vừa đẻ xong\nCó bà chuối mật lưng ong\nCó ông ngô bắp râu hồng như tơ\nCó ao muống với cá cờ\nEm là chị Tấm đợi chờ bống lên\nCó đầm ngào ngạt hoa sen\nẾch con học nhạc, dế mèn làm thơ\nDù đi xa thật là xa\nChẳng đâu vui được như nhà của em.\n(Đoàn Thị Lam Luyến)",
+      "parsedFixed": "Em yêu nhà em\nChẳng đâu bằng chính nhà em\nCó đàn chim sẻ bên thềm líu lo\nCó nàng gà mái hoa mơ\nCục ta cục tác khi vừa đẻ xong\nCó buồng chuối mật lưng ong\nCó ông ngô bắp râu hồng như tơ\nCó ao muống với cá cờ\nEm là chị Tấm đợi chờ bống lên\nCó đầm ngào ngạt hoa sen\nẾch con học nhạc, dế mèn làm thơ\nDù đi xa thật là xa\nChẳng đâu vui được như nhà của em.\n(Đoàn Thị Lam Luyến)",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 92,
+        "wordCountFixed": 92,
+        "sim_orig_fixed": 98.92
+      }
+    },
+    {
+      "image": "img_03.png",
+      "success": true,
+      "error": null,
+      "latencyMs": 43131,
+      "tokens": 1656,
+      "rawOutput": "{\n  \"original_text\": \"Đôi que dan\\nMũ đỏ cho bé\\nKhăn den cho bà\\nÁo đẹp cho mẹ\\nÁo ấm cho cha\\nCừ đôi que nhỏ\\nCừ tay chị nữa\\nDần dần hiện ra...\\n\\nÔi đôi que dan\\nSao mà chăm chỉ\\nSao mà giản dị\\nSao mà dẻo dai...\",\n  \"fixed_text\": \"Đôi que đan\\nMũ đỏ cho bé\\nKhăn đen cho bà\\nÁo đẹp cho mẹ\\nÁo ấm cho cha\\nCứ đôi que nhỏ\\nCứ tay chị nữa\\nDần dần hiện ra...\\n\\nÔi đôi que đan\\nSao mà chăm chỉ\\nSao mà giản dị\\nSao mà dẻo dai...\"\n}",
+      "parsedOriginal": "Đôi que dan\nMũ đỏ cho bé\nKhăn den cho bà\nÁo đẹp cho mẹ\nÁo ấm cho cha\nCừ đôi que nhỏ\nCừ tay chị nữa\nDần dần hiện ra...\n\nÔi đôi que dan\nSao mà chăm chỉ\nSao mà giản dị\nSao mà dẻo dai...",
+      "parsedFixed": "Đôi que đan\nMũ đỏ cho bé\nKhăn đen cho bà\nÁo đẹp cho mẹ\nÁo ấm cho cha\nCứ đôi que nhỏ\nCứ tay chị nữa\nDần dần hiện ra...\n\nÔi đôi que đan\nSao mà chăm chỉ\nSao mà giản dị\nSao mà dẻo dai...",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 47,
+        "wordCountFixed": 47,
+        "sim_orig_fixed": 97.24
+      }
+    },
+    {
+      "image": "img_04.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 6366,
+      "tokens": 1580,
+      "rawOutput": "{\n  \"original_text\": \"Hạt gieo tới tấp\\nRải khắp ruộng đồng\\nNhưng chẳng nảy mầm\\nĐể bao hạt khác\\nMừng thầm mọc xanh.\",\n  \"fixed_text\": \"Hạt gieo tới tấp\\nRải khắp ruộng đồng\\nNhưng chẳng nảy mầm\\nĐể bao hạt khác\\nMừng thầm mọc xanh.\"\n}",
+      "parsedOriginal": "Hạt gieo tới tấp\nRải khắp ruộng đồng\nNhưng chẳng nảy mầm\nĐể bao hạt khác\nMừng thầm mọc xanh.",
+      "parsedFixed": "Hạt gieo tới tấp\nRải khắp ruộng đồng\nNhưng chẳng nảy mầm\nĐể bao hạt khác\nMừng thầm mọc xanh.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 20,
+        "wordCountFixed": 20,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_05.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 5102,
+      "tokens": 1766,
+      "rawOutput": "{\n  \"original_text\": \"Dòng sông mặc áo\\nDòng sông mới điệu làm sao\\nNắng lên mặc áo lụa đào thướt tha\\nTrưa về trời rộng bao la\\nÁo xanh sông mặc như là mới may\\nChiều trôi thơ thẩn ánh mây\\nCài lên màu áo hây hây ráng vàng\\nĐêm thêu trước ngực vầng trăng\\nTrên nền nhung tím trăm ngàn sao lên\\nKhuya rồi, sông mặc áo đen\\nNép trong rừng bưởi lặng yên đợi bờ.\\nNguyễn Trọng Tạo\",\n  \"fixed_text\": \"Dòng sông mặc áo\\nDòng sông mới điệu làm sao\\nNắng lên mặc áo lụa đào thướt tha\\nTrưa về trời rộng bao la\\nÁo xanh sông mặc như là mới may\\nChiều trôi thơ thẩn áng mây\\nCài lên màu áo hây hây ráng vàng\\nĐêm thêu trước ngực vầng trăng\\nTrên nền nhung tím trăm ngàn sao lên\\nKhuya rồi, sông mặc áo đen\\nNép trong rừng bưởi lặng yên đợi bờ.\\nNguyễn Trọng Tạo\"\n}",
+      "parsedOriginal": "Dòng sông mặc áo\nDòng sông mới điệu làm sao\nNắng lên mặc áo lụa đào thướt tha\nTrưa về trời rộng bao la\nÁo xanh sông mặc như là mới may\nChiều trôi thơ thẩn ánh mây\nCài lên màu áo hây hây ráng vàng\nĐêm thêu trước ngực vầng trăng\nTrên nền nhung tím trăm ngàn sao lên\nKhuya rồi, sông mặc áo đen\nNép trong rừng bưởi lặng yên đợi bờ.\nNguyễn Trọng Tạo",
+      "parsedFixed": "Dòng sông mặc áo\nDòng sông mới điệu làm sao\nNắng lên mặc áo lụa đào thướt tha\nTrưa về trời rộng bao la\nÁo xanh sông mặc như là mới may\nChiều trôi thơ thẩn áng mây\nCài lên màu áo hây hây ráng vàng\nĐêm thêu trước ngực vầng trăng\nTrên nền nhung tím trăm ngàn sao lên\nKhuya rồi, sông mặc áo đen\nNép trong rừng bưởi lặng yên đợi bờ.\nNguyễn Trọng Tạo",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 77,
+        "wordCountFixed": 77,
+        "sim_orig_fixed": 99.71
+      }
+    },
+    {
+      "image": "img_07.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 8187,
+      "tokens": 1606,
+      "rawOutput": "{\n  \"original_text\": \"Ở sao cho vừa lòng người\\nỞ rộng người cười, ở hẹp người chê\\nCao chê ngổng thấp chê lùn\\nBéo chê béo trục béo tròn\\nGầy chê xương sống xương sườn bày ra.\",\n  \"fixed_text\": \"Ở sao cho vừa lòng người\\nỞ rộng người cười, ở hẹp người chê\\nCao chê ngổng thấp chê lùn\\nBéo chê béo trục béo tròn\\nGầy chê xương sống xương sườn bày ra.\"\n}",
+      "parsedOriginal": "Ở sao cho vừa lòng người\nỞ rộng người cười, ở hẹp người chê\nCao chê ngổng thấp chê lùn\nBéo chê béo trục béo tròn\nGầy chê xương sống xương sườn bày ra.",
+      "parsedFixed": "Ở sao cho vừa lòng người\nỞ rộng người cười, ở hẹp người chê\nCao chê ngổng thấp chê lùn\nBéo chê béo trục béo tròn\nGầy chê xương sống xương sườn bày ra.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 34,
+        "wordCountFixed": 34,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_2.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 8218,
+      "tokens": 1905,
+      "rawOutput": "{\n  \"original_text\": \"Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1\\n\\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm linh hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem\",\n  \"fixed_text\": \"Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1\\n\\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm mươi hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem\"\n}",
+      "parsedOriginal": "Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1\n\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm linh hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem",
+      "parsedFixed": "Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1\n\nBa của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm mươi hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 156,
+        "wordCountFixed": 156,
+        "sim_orig_fixed": 99.36
+      }
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_3.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3816,
+      "tokens": 1727,
+      "rawOutput": "{\n  \"original_text\": \"Đề bài :\\nHãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày\\nLàm bài :\\ngia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay chênh mạng tinh tơ nét, anh hai của con tiên trung ánh học lớn năm.\",\n  \"fixed_text\": \"Đề bài:\\nHãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày.\\nBài làm:\\nGia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay chênh mạng tinh tơ nét, anh hai của con tiên trung ánh học lớn năm.\"\n}",
+      "parsedOriginal": "Đề bài :\nHãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày\nLàm bài :\ngia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay chênh mạng tinh tơ nét, anh hai của con tiên trung ánh học lớn năm.",
+      "parsedFixed": "Đề bài:\nHãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày.\nBài làm:\nGia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay chênh mạng tinh tơ nét, anh hai của con tiên trung ánh học lớn năm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 83,
+        "wordCountFixed": 81,
+        "sim_orig_fixed": 97.77
+      }
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_4.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 21698,
+      "tokens": 1726,
+      "rawOutput": "{\n  \"original_text\": \"Bài làm\\nBố em tên là Trần Mạnh Toàn.\\nNăm nay bố 36 tuổi. Bố có hình dáng còi và cao. Bố em hay đánh giấm, cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần. Vào các ngày nghỉ, bố thường em sang thăm bà nội. (Bố em làm nghề kinh doanh). Bố rất yêu em. Em cũng rất yêu bố.\\nCon nên lựa chọn chi tiết hay để kể.\\nSắp xếp ý lộn xộn\",\n  \"fixed_text\": \"Bài làm\\nBố em tên là Trần Mạnh Toàn.\\nNăm nay bố 36 tuổi. Bố có hình dáng gầy và cao. Bố em hay đánh rắm, cứ mỗi khi em xem phim lại thấy bố lại đánh rắm hai ba lần. Vào các ngày nghỉ, bố thường đưa em sang thăm bà nội. (Bố em làm nghề kinh doanh). Bố rất yêu em. Em cũng rất yêu bố.\\nCon nên lựa chọn chi tiết hay để kể.\\nSắp xếp ý lộn xộn\"\n}",
+      "parsedOriginal": "Bài làm\nBố em tên là Trần Mạnh Toàn.\nNăm nay bố 36 tuổi. Bố có hình dáng còi và cao. Bố em hay đánh giấm, cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần. Vào các ngày nghỉ, bố thường em sang thăm bà nội. (Bố em làm nghề kinh doanh). Bố rất yêu em. Em cũng rất yêu bố.\nCon nên lựa chọn chi tiết hay để kể.\nSắp xếp ý lộn xộn",
+      "parsedFixed": "Bài làm\nBố em tên là Trần Mạnh Toàn.\nNăm nay bố 36 tuổi. Bố có hình dáng gầy và cao. Bố em hay đánh rắm, cứ mỗi khi em xem phim lại thấy bố lại đánh rắm hai ba lần. Vào các ngày nghỉ, bố thường đưa em sang thăm bà nội. (Bố em làm nghề kinh doanh). Bố rất yêu em. Em cũng rất yêu bố.\nCon nên lựa chọn chi tiết hay để kể.\nSắp xếp ý lộn xộn",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 81,
+        "wordCountFixed": 82,
+        "sim_orig_fixed": 96.14
+      }
+    }
+  ],
+  "gemini-3.1-flash-lite": [
+    {
+      "image": "2015528193537.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 2055,
+      "tokens": 1702,
+      "rawOutput": "{\n  \"original_text\": \"Sơn Tinh, Thuỷ Tinh\\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thuỷ Tinh, vua vùng nước thẳm.\",\n  \"fixed_text\": \"Sơn Tinh, Thủy Tinh\\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.\"\n}",
+      "parsedOriginal": "Sơn Tinh, Thuỷ Tinh\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thuỷ Tinh, vua vùng nước thẳm.",
+      "parsedFixed": "Sơn Tinh, Thủy Tinh\nHùng Vương thứ 18 có một người con gái đẹp tuyệt trần, tên là Mị Nương. Nhà vua muốn kén cho công chúa một người chồng tài giỏi.\nMột hôm, có hai chàng trai đến cầu hôn công chúa. Một người là Sơn Tinh, chúa miền non cao, còn người kia là Thủy Tinh, vua vùng nước thẳm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 62,
+        "wordCountFixed": 62,
+        "sim_orig_fixed": 98.61
+      }
+    },
+    {
+      "image": "30.PNG",
+      "success": true,
+      "error": null,
+      "latencyMs": 8282,
+      "tokens": 1751,
+      "rawOutput": "{\n  \"original_text\": \"Viết về Bố\\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi hiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bố và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôsin nữa. Em rất yêu việc chứ không yêu làm.\",\n  \"fixed_text\": \"Viết về Bố\\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi kiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bố và dọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố, từ nay em không làm ô-sin nữa. Em rất yêu việc chứ không yêu làm.\"\n}",
+      "parsedOriginal": "Viết về Bố\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi hiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bố và rọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố từ nay em không làm ôsin nữa. Em rất yêu việc chứ không yêu làm.",
+      "parsedFixed": "Viết về Bố\nNhà em có nuôi một ông bố tên là Đỗ Mạnh Hà. Hằng ngày bố chỉ đi kiếm tiền rồi về nằm ươn ra đấy. Đến bà to nhất vẫn phải làm việc còn bố là người duy nhất không làm việc. Lúc ăn cơm gọi mấy lần cũng chưa lên còn bảo đợi tao tí. Lúc ăn cơm xong cả gia đình cùng dọn bố và dọn rồi xuống chát Zalo với học sinh. Em bé còn phải đút xoài cho bố, từ nay em không làm ô-sin nữa. Em rất yêu việc chứ không yêu làm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 101,
+        "wordCountFixed": 101,
+        "sim_orig_fixed": 99.04
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_50 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 4414,
+      "tokens": 1984,
+      "rawOutput": "{\n  \"original_text\": \"Thứ hai 3/12/2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh ngày 3 tháng 12 năm 2025\\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em Du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn ưa thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\",\n  \"fixed_text\": \"Thứ Hai, ngày 3/12/2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr. 78)\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nBà ơi kính mến, lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn ưa thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\"\n}",
+      "parsedOriginal": "Thứ hai 3/12/2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\nBài làm\nThành phố Hồ Chí Minh ngày 3 tháng 12 năm 2025\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em Du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn ưa thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.",
+      "parsedFixed": "Thứ Hai, ngày 3/12/2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr. 78)\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nBà ơi kính mến, lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn ưa thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 177,
+        "wordCountFixed": 177,
+        "sim_orig_fixed": 95.45
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_51 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3326,
+      "tokens": 1838,
+      "rawOutput": "{\n  \"original_text\": \"Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vào bài tập\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nÔng bà kính mến!\\nHôm nay cháu rất nhớ và chợt ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? Anh Quốc Anh thì được mấy điểm dạ? Những chú gà con được mấy tuổi rồi? Những chú heo con được bao nhiêu kí? Với lại con chó mẹ đẻ được bao nhiêu chó con?\\nHôm qua cháu vừa lên lớp 4. Cũng vừa\",\n  \"fixed_text\": \"Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vào bài tập.\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà kính mến!\\nHôm nay cháu rất nhớ và chợt nghĩ đến ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? Anh Quốc Anh thì được mấy điểm ạ? Những chú gà con được mấy tuổi rồi? Những chú heo con được bao nhiêu kí? Với lại con chó mẹ đẻ được bao nhiêu chó con?\\nHôm qua cháu vừa lên lớp 4. Cũng vừa\"\n}",
+      "parsedOriginal": "Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vào bài tập\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nÔng bà kính mến!\nHôm nay cháu rất nhớ và chợt ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? Anh Quốc Anh thì được mấy điểm dạ? Những chú gà con được mấy tuổi rồi? Những chú heo con được bao nhiêu kí? Với lại con chó mẹ đẻ được bao nhiêu chó con?\nHôm qua cháu vừa lên lớp 4. Cũng vừa",
+      "parsedFixed": "Đề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em vào bài tập.\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà kính mến!\nHôm nay cháu rất nhớ và chợt nghĩ đến ông bà nên cháu liền ngồi vào bàn để viết thư này để hỏi thăm sức khỏe của ông bà.\nÔng bà, dạo này có ra ngoài tập thể dục với mấy ông bà ở ngoài kia không ạ? Anh Quốc Anh thì được mấy điểm ạ? Những chú gà con được mấy tuổi rồi? Những chú heo con được bao nhiêu kí? Với lại con chó mẹ đẻ được bao nhiêu chó con?\nHôm qua cháu vừa lên lớp 4. Cũng vừa",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 130,
+        "wordCountFixed": 132,
+        "sim_orig_fixed": 97.83
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_52 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3288,
+      "tokens": 1984,
+      "rawOutput": "{\n  \"original_text\": \"Thứ hai 3/12/2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\\nBài làm\\nThành phố Hồ Chí Minh ngày 3 tháng 12 năm 2025\\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em Du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn ưa thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\",\n  \"fixed_text\": \"Thứ Hai, ngày 3/12/2025\\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr. 78)\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\\nBà ơi kính mến, lâu rồi cháu chưa về quê để thăm bà.\\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn ưa thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.\"\n}",
+      "parsedOriginal": "Thứ hai 3/12/2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr 78)\nBài làm\nThành phố Hồ Chí Minh ngày 3 tháng 12 năm 2025\nBà ơi kính mến lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khoẻ không, con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà, cây xoài hồi năm trước giờ đã to rồi đúng không bà, còn em Du giờ đã lớn rồi hai tuổi đúng không ạ, bà còn ưa thích trồng cây không ạ, ông có còn bị đau chân không ạ, ông bà có thể đi tập thể dục không ạ.\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn, còn cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc, gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.",
+      "parsedFixed": "Thứ Hai, ngày 3/12/2025\nĐề bài: Viết thư cho người thân ở xa để thăm hỏi và kể tình hình gia đình em (Vở bài tập tr. 78)\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025\nBà ơi kính mến, lâu rồi cháu chưa về quê để thăm bà.\nDạo này bà có khỏe không? Con gà con hồi nghỉ hè giờ đã to lớn rồi đúng không bà? Cây xoài hồi năm trước giờ đã to rồi đúng không bà? Còn em Du giờ đã lớn rồi, hai tuổi đúng không ạ? Bà còn ưa thích trồng cây không ạ? Ông có còn bị đau chân không ạ? Ông bà có thể đi tập thể dục không ạ?\nBa mẹ cháu đã ít tăng ca hơn, còn cháu với chị cháu đang cố gắng để thi được nhiều điểm hơn. Cha mẹ cháu đang làm việc rất tốt, hai anh của cháu cũng mới có việc. Gia đình cháu đang rất tốt, cháu đang rất cố gắng để lấy điểm cao.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 177,
+        "wordCountFixed": 177,
+        "sim_orig_fixed": 95.45
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_53 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3545,
+      "tokens": 2084,
+      "rawOutput": "{\n  \"original_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\",\n  \"fixed_text\": \"Tên: Nguyễn Mậu Thiên Kim, lớp 4^2\\nThứ Tư, ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr. 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh, đồng thời kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\"\n}",
+      "parsedOriginal": "Tên: Nguyễn Mậu Thiên Kim lớp 4^2\nThứ Tư ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parsedFixed": "Tên: Nguyễn Mậu Thiên Kim, lớp 4^2\nThứ Tư, ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr. 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh, đồng thời kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parseError": null,
+      "hallucination": {
+        "score": 10,
+        "riskLevel": "🟡 RUI_RO_THAP",
+        "flags": [
+          "CONTENT_LONG: 222 tu (kha dai, can kiem tra)"
+        ],
+        "wordCountOriginal": 222,
+        "wordCountFixed": 224,
+        "sim_orig_fixed": 97.61
+      }
+    },
+    {
+      "image": "CamScanner 06-12-2025 10.00_54 (1).jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 3063,
+      "tokens": 2084,
+      "rawOutput": "{\n  \"original_text\": \"Tên: Nguyễn Mậu Thiên Kim lớp 4^2\\nThứ Tư ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\",\n  \"fixed_text\": \"Tên: Nguyễn Mậu Thiên Kim, lớp 4^2\\nThứ Tư, ngày 3 tháng 12 năm 2025.\\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr. 78).\\nBài làm\\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\\nÔng bà ngoại kính yêu!\\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh, đồng thời kể lại tình hình gia đình cháu.\\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?\"\n}",
+      "parsedOriginal": "Tên: Nguyễn Mậu Thiên Kim lớp 4^2\nThứ Tư ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khoẻ của ông bà và mọi người xung quanh và kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khoẻ không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parsedFixed": "Tên: Nguyễn Mậu Thiên Kim, lớp 4^2\nThứ Tư, ngày 3 tháng 12 năm 2025.\nĐề bài: Viết thư cho một người thân ở xa để thăm hỏi và kể tình hình gia đình em (vở bài tập tr. 78).\nBài làm\nThành phố Hồ Chí Minh, ngày 3 tháng 12 năm 2025.\nÔng bà ngoại kính yêu!\nĐã lâu lắm rồi, cháu chưa về quê thăm ông bà ngoại và mọi người xung quanh nên hôm nay, cháu muốn viết bức thư này để hỏi thăm sức khỏe của ông bà và mọi người xung quanh, đồng thời kể lại tình hình gia đình cháu.\nDạo này, cháu nghe trên tin tức thì thấy miền Trung mình bị lũ lụt nên cháu muốn hỏi thăm ông bà và mọi người xung quanh. Ông bà có khỏe không? Ông ngoại đỡ đau chân hơn chưa hay còn đau? Bà ngoại đỡ đau lưng hơn chưa? Nhà ông bà ngoại có ngập không? Nhà của mọi người xung quanh không ngập chứ? Ông bà ngoại còn nuôi gà, vịt... không? Chú mèo mà hồi năm ngoái cháu nuôi chắc bây giờ nó cũng lớn rồi nhỉ? Cây xoài hốc năm ngoái cháu trồng chắc bây giờ cây cũng ra trái nhiều rồi đúng không? Ông bà ngoại và mọi người xung quanh vẫn ổn chứ?",
+      "parseError": null,
+      "hallucination": {
+        "score": 10,
+        "riskLevel": "🟡 RUI_RO_THAP",
+        "flags": [
+          "CONTENT_LONG: 222 tu (kha dai, can kiem tra)"
+        ],
+        "wordCountOriginal": 222,
+        "wordCountFixed": 224,
+        "sim_orig_fixed": 97.61
+      }
+    },
+    {
+      "image": "chuviettay1.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 1283,
+      "tokens": 1573,
+      "rawOutput": "{\n  \"original_text\": \"Gó từ tay me\\nsu bé ngủ xay\\nthay cho sá xời\\nGiữa chưa oi ải\",\n  \"fixed_text\": \"Gió từ tay mẹ\\nru bé ngủ say\\nthay cho gió xời\\nTrưa chưa oi ả\"\n}",
+      "parsedOriginal": "Gó từ tay me\nsu bé ngủ xay\nthay cho sá xời\nGiữa chưa oi ải",
+      "parsedFixed": "Gió từ tay mẹ\nru bé ngủ say\nthay cho gió xời\nTrưa chưa oi ả",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 16,
+        "wordCountFixed": 16,
+        "sim_orig_fixed": 81.36
+      }
+    },
+    {
+      "image": "chuviettay2.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 1314,
+      "tokens": 1628,
+      "rawOutput": "{\n  \"original_text\": \"Quạ và công\\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen\",\n  \"fixed_text\": \"Quạ và Công\\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.\"\n}",
+      "parsedOriginal": "Quạ và công\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen",
+      "parsedFixed": "Quạ và Công\nMột hôm, quạ rủ công lấy màu vẽ áo khoác cho đẹp. Quạ cho công chiếc áo rực rỡ. Đến lúc công vẽ cho quạ thì nghe tiếng chim lợn báo có mồi ngon. Quạ vội giục công đổ cả chậu phẩm đen.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 46,
+        "wordCountFixed": 46,
+        "sim_orig_fixed": 98.97
+      }
+    },
+    {
+      "image": "image.png",
+      "success": true,
+      "error": null,
+      "latencyMs": 14201,
+      "tokens": 1658,
+      "rawOutput": "{\n  \"original_text\": \"Nét chữ\\nNét người\\nViệt Nam thân yêu\\nViệt Nam đất nước ta ơi !\\nMênh mông biển lúa đâu trời đẹp hơn\\nCánh cò bay lả dập dờn\\nMây mờ che đỉnh Trường Sơn sớm chiều\\nQuê hương biết mấy thân yêu\\nBao nhiêu đời đã chịu nhiều đau thương\\nMặt người vất vả in sâu\",\n  \"fixed_text\": \"Nét chữ\\nNét người\\nViệt Nam thân yêu\\nViệt Nam đất nước ta ơi!\\nMênh mông biển lúa đâu trời đẹp hơn\\nCánh cò bay lả dập dờn\\nMây mờ che đỉnh Trường Sơn sớm chiều\\nQuê hương biết mấy thân yêu\\nBao nhiêu đời đã chịu nhiều đau thương\\nMặt người vất vả in sâu\"\n}",
+      "parsedOriginal": "Nét chữ\nNét người\nViệt Nam thân yêu\nViệt Nam đất nước ta ơi !\nMênh mông biển lúa đâu trời đẹp hơn\nCánh cò bay lả dập dờn\nMây mờ che đỉnh Trường Sơn sớm chiều\nQuê hương biết mấy thân yêu\nBao nhiêu đời đã chịu nhiều đau thương\nMặt người vất vả in sâu",
+      "parsedFixed": "Nét chữ\nNét người\nViệt Nam thân yêu\nViệt Nam đất nước ta ơi!\nMênh mông biển lúa đâu trời đẹp hơn\nCánh cò bay lả dập dờn\nMây mờ che đỉnh Trường Sơn sớm chiều\nQuê hương biết mấy thân yêu\nBao nhiêu đời đã chịu nhiều đau thương\nMặt người vất vả in sâu",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 57,
+        "wordCountFixed": 56,
+        "sim_orig_fixed": 99.6
+      }
+    },
+    {
+      "image": "img_01.png",
+      "success": true,
+      "error": null,
+      "latencyMs": 3483,
+      "tokens": 1690,
+      "rawOutput": "{\n  \"original_text\": \"Chiều trên quê hương\\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.\",\n  \"fixed_text\": \"Chiều trên quê hương\\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.\"\n}",
+      "parsedOriginal": "Chiều trên quê hương\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.",
+      "parsedFixed": "Chiều trên quê hương\nĐó là một buổi chiều mùa hạ có mây trắng xô đuổi nhau trên cao. Nền trời xanh vời vợi. Con chim sơn ca cất lên tiếng hót tự do, tha thiết đến nỗi khiến người ta phải ao ước giá mà mình có một đôi cánh. Trải khắp cánh đồng là nắng chiều vàng dịu và thơm hơi đất, là gió đưa thoang thoảng hương lúa ngậm đòng và hương sen.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 76,
+        "wordCountFixed": 76,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_02.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 2749,
+      "tokens": 1802,
+      "rawOutput": "{\n  \"original_text\": \"Em yêu nhà em\\nChẳng đâu bằng chính nhà em\\nCó đàn chim sẻ bên thềm líu lo\\nCó nàng gà mái hoa mơ\\nCục ta cục tác khi vừa đẻ xong\\nCó bà chuối mật lưng ong\\nCó ông ngô bắp râu hồng như tơ\\nCó ao muống với cá cờ\\nEm là chị Tấm đợi chờ bóng lên\\nCó đầm ngào ngạt hoa sen\\nẾch con học nhạc, dế mèn làm thơ\\nDù đi xa thật là xa\\nChẳng đâu vui được như nhà của em.\\n(Đoàn Thị Lam Luyến)\",\n  \"fixed_text\": \"Em yêu nhà em\\nChẳng đâu bằng chính nhà em\\nCó đàn chim sẻ bên thềm líu lo\\nCó nàng gà mái hoa mơ\\nCục ta cục tác khi vừa đẻ xong\\nCó bà chuối mật lưng ong\\nCó ông ngô bắp râu hồng như tơ\\nCó ao muống với cá cờ\\nEm là chị Tấm đợi chờ bóng lên\\nCó đầm ngào ngạt hoa sen\\nẾch con học nhạc, dế mèn làm thơ\\nDù đi xa thật là xa\\nChẳng đâu vui được như nhà của em.\\n(Đoàn Thị Lam Luyến)\"\n}",
+      "parsedOriginal": "Em yêu nhà em\nChẳng đâu bằng chính nhà em\nCó đàn chim sẻ bên thềm líu lo\nCó nàng gà mái hoa mơ\nCục ta cục tác khi vừa đẻ xong\nCó bà chuối mật lưng ong\nCó ông ngô bắp râu hồng như tơ\nCó ao muống với cá cờ\nEm là chị Tấm đợi chờ bóng lên\nCó đầm ngào ngạt hoa sen\nẾch con học nhạc, dế mèn làm thơ\nDù đi xa thật là xa\nChẳng đâu vui được như nhà của em.\n(Đoàn Thị Lam Luyến)",
+      "parsedFixed": "Em yêu nhà em\nChẳng đâu bằng chính nhà em\nCó đàn chim sẻ bên thềm líu lo\nCó nàng gà mái hoa mơ\nCục ta cục tác khi vừa đẻ xong\nCó bà chuối mật lưng ong\nCó ông ngô bắp râu hồng như tơ\nCó ao muống với cá cờ\nEm là chị Tấm đợi chờ bóng lên\nCó đầm ngào ngạt hoa sen\nẾch con học nhạc, dế mèn làm thơ\nDù đi xa thật là xa\nChẳng đâu vui được như nhà của em.\n(Đoàn Thị Lam Luyến)",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 92,
+        "wordCountFixed": 92,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_03.png",
+      "success": true,
+      "error": null,
+      "latencyMs": 14249,
+      "tokens": 1654,
+      "rawOutput": "{\n  \"original_text\": \"Đôi que đan\\nMũ đỏ cho bé\\nKhăn đen cho bà\\nÁo đẹp cho mẹ\\nÁo ấm cho cha\\nTừ đôi que nhỏ\\nTừ tay chị nữa\\nDần dần hiện ra...\\n\\nÔi đôi que đan\\nSao mà chăm chỉ\\nSao mà giản dị\\nSao mà dẻo dai...\",\n  \"fixed_text\": \"Đôi que đan\\nMũ đỏ cho bé\\nKhăn đen cho bà\\nÁo đẹp cho mẹ\\nÁo ấm cho cha\\nTừ đôi que nhỏ\\nTừ tay chị nữa\\nDần dần hiện ra...\\n\\nÔi đôi que đan\\nSao mà chăm chỉ\\nSao mà giản dị\\nSao mà dẻo dai...\"\n}",
+      "parsedOriginal": "Đôi que đan\nMũ đỏ cho bé\nKhăn đen cho bà\nÁo đẹp cho mẹ\nÁo ấm cho cha\nTừ đôi que nhỏ\nTừ tay chị nữa\nDần dần hiện ra...\n\nÔi đôi que đan\nSao mà chăm chỉ\nSao mà giản dị\nSao mà dẻo dai...",
+      "parsedFixed": "Đôi que đan\nMũ đỏ cho bé\nKhăn đen cho bà\nÁo đẹp cho mẹ\nÁo ấm cho cha\nTừ đôi que nhỏ\nTừ tay chị nữa\nDần dần hiện ra...\n\nÔi đôi que đan\nSao mà chăm chỉ\nSao mà giản dị\nSao mà dẻo dai...",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 47,
+        "wordCountFixed": 47,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_04.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 2124,
+      "tokens": 1580,
+      "rawOutput": "{\n  \"original_text\": \"Hạt gieo tới tấp\\nRải khắp ruộng đồng\\nNhưng chẳng nảy mầm\\nĐể bao hạt khác\\nMừng thầm mọc xanh\",\n  \"fixed_text\": \"Hạt gieo tới tấp\\nRải khắp ruộng đồng\\nNhưng chẳng nảy mầm\\nĐể bao hạt khác\\nMừng thầm mọc xanh\"\n}",
+      "parsedOriginal": "Hạt gieo tới tấp\nRải khắp ruộng đồng\nNhưng chẳng nảy mầm\nĐể bao hạt khác\nMừng thầm mọc xanh",
+      "parsedFixed": "Hạt gieo tới tấp\nRải khắp ruộng đồng\nNhưng chẳng nảy mầm\nĐể bao hạt khác\nMừng thầm mọc xanh",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 20,
+        "wordCountFixed": 20,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_05.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 2334,
+      "tokens": 1766,
+      "rawOutput": "{\n  \"original_text\": \"Dòng sông mặc áo\\nDòng sông mới điệu làm sao\\nNắng lên mặc áo lụa đào thướt tha\\nTrưa về trời rộng bao la\\nÁo xanh sông mặc như là mới may\\nChiều trôi thơ thẩn áng mây\\nCài lên màu áo hây hây ráng vàng\\nĐêm thêu trước ngực vầng trăng\\nTrên nền nhung tím trăm ngàn sao lên\\nKhuya rồi, sông mặc áo đen\\nNép trong rừng bưởi lặng yên đôi bờ.\\nNguyễn Trọng Tạo\",\n  \"fixed_text\": \"Dòng sông mặc áo\\nDòng sông mới điệu làm sao\\nNắng lên mặc áo lụa đào thướt tha\\nTrưa về trời rộng bao la\\nÁo xanh sông mặc như là mới may\\nChiều trôi thơ thẩn áng mây\\nCài lên màu áo hây hây ráng vàng\\nĐêm thêu trước ngực vầng trăng\\nTrên nền nhung tím trăm ngàn sao lên\\nKhuya rồi, sông mặc áo đen\\nNép trong rừng bưởi lặng yên đôi bờ.\\nNguyễn Trọng Tạo\"\n}",
+      "parsedOriginal": "Dòng sông mặc áo\nDòng sông mới điệu làm sao\nNắng lên mặc áo lụa đào thướt tha\nTrưa về trời rộng bao la\nÁo xanh sông mặc như là mới may\nChiều trôi thơ thẩn áng mây\nCài lên màu áo hây hây ráng vàng\nĐêm thêu trước ngực vầng trăng\nTrên nền nhung tím trăm ngàn sao lên\nKhuya rồi, sông mặc áo đen\nNép trong rừng bưởi lặng yên đôi bờ.\nNguyễn Trọng Tạo",
+      "parsedFixed": "Dòng sông mặc áo\nDòng sông mới điệu làm sao\nNắng lên mặc áo lụa đào thướt tha\nTrưa về trời rộng bao la\nÁo xanh sông mặc như là mới may\nChiều trôi thơ thẩn áng mây\nCài lên màu áo hây hây ráng vàng\nĐêm thêu trước ngực vầng trăng\nTrên nền nhung tím trăm ngàn sao lên\nKhuya rồi, sông mặc áo đen\nNép trong rừng bưởi lặng yên đôi bờ.\nNguyễn Trọng Tạo",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 77,
+        "wordCountFixed": 77,
+        "sim_orig_fixed": 100
+      }
+    },
+    {
+      "image": "img_07.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 1876,
+      "tokens": 1609,
+      "rawOutput": "{\n  \"original_text\": \"Ở sao cho vừa lòng người\\nỞ rộng người cười, ở hẹp người chê\\nCao chê ngổng thấp chê lùn\\nBéo chê béo trục béo tròn\\nGầy chê xương sống xương sườn bày ra.\",\n  \"fixed_text\": \"Ở sao cho vừa lòng người\\nỞ rộng người cười, ở hẹp người chê\\nCao chê ngổng, thấp chê lùn\\nBéo chê béo trục, béo tròn\\nGầy chê xương sống, xương sườn bày ra.\"\n}",
+      "parsedOriginal": "Ở sao cho vừa lòng người\nỞ rộng người cười, ở hẹp người chê\nCao chê ngổng thấp chê lùn\nBéo chê béo trục béo tròn\nGầy chê xương sống xương sườn bày ra.",
+      "parsedFixed": "Ở sao cho vừa lòng người\nỞ rộng người cười, ở hẹp người chê\nCao chê ngổng, thấp chê lùn\nBéo chê béo trục, béo tròn\nGầy chê xương sống, xương sườn bày ra.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 34,
+        "wordCountFixed": 34,
+        "sim_orig_fixed": 98.04
+      }
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_2.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 2410,
+      "tokens": 1900,
+      "rawOutput": "{\n  \"original_text\": \"Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1 Ba của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm linh hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem\",\n  \"fixed_text\": \"Thứ tư, ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1. Ba của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo 502 hay keo con voi đâu nhé! Và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem\"\n}",
+      "parsedOriginal": "Thứ tư ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1 Ba của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo năm linh hai hay keo con voi đâu nhé và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem",
+      "parsedFixed": "Thứ tư, ngày 12 tháng 11 năm 2014 - Phạm Hưng 4A1. Ba của em tên là Phạm Ngọc Sơn. Ba của em năm nay 42 tuổi. Bố em làm nghề kinh doanh. Bố em cao, to và đẹp trai. Bố em hơi già, trông bố em thì khó tính và nghiêm khắc nhưng thật ra thì bố em rất hiền lành và tốt bụng. Tóc bố em dài thế nên là bố em phải dùng keo vuốt lên. Đừng hiểu lầm, keo ở đây có nghĩa là keo vuốt tóc ấy, chứ không phải là keo 502 hay keo con voi đâu nhé! Và tóc dài ở đây có nghĩa là nếu mà so sánh tóc của bố em với tóc của con trai thì tóc của bố em sẽ dài hơn một chút chứ không phải là tóc của bố em dài như con gái đâu nhé! Bố em rất thích xem",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 156,
+        "wordCountFixed": 154,
+        "sim_orig_fixed": 97.46
+      }
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_3.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 1788,
+      "tokens": 1717,
+      "rawOutput": "{\n  \"original_text\": \"Đề bài: Hãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày. Làm bài: gia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngòi sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay chêng mạng inh tơ nét, anh hai của con tên Trung ánh học lớn năm.\",\n  \"fixed_text\": \"Đề bài: Hãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày. Làm bài: Gia đình con có năm người. Ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi. Ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay trên mạng internet, anh hai của con tên Trung đang học lớp năm.\"\n}",
+      "parsedOriginal": "Đề bài: Hãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày. Làm bài: gia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi, ba con làm việc hải quan ở ngòi sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay chêng mạng inh tơ nét, anh hai của con tên Trung ánh học lớn năm.",
+      "parsedFixed": "Đề bài: Hãy tả cảnh sinh hoạt của gia đình em vào một buổi trong ngày. Làm bài: Gia đình con có năm người. Ông nội con năm nay bao nhiêu tuổi con không biết, con chỉ biết ông nội là người về hưu thôi. Ba con làm việc hải quan ở ngoài sân bay Tân Sơn Nhất, mẹ con làm việc bán hàng xách tay trên mạng internet, anh hai của con tên Trung đang học lớp năm.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 81,
+        "wordCountFixed": 79,
+        "sim_orig_fixed": 94.63
+      }
+    },
+    {
+      "image": "nhung-bai-van-ta-thuc-cua-tre-tieu-hoc-khien-giao-vien-can-loi_4.jpg",
+      "success": true,
+      "error": null,
+      "latencyMs": 7180,
+      "tokens": 1706,
+      "rawOutput": "{\n  \"original_text\": \"Bài làm Bố em tên là Trần Mạnh Toàn. Năm nay bố 36 tuổi Bố có hình dáng còi và cao Bố em hay đánh giấm. cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần Vào các ngày nghỉ bố thường em sang thăm bà nội Bố em làm nghề kinh doanh Bố rất yêu em Em cũng rất yêu bố. Con nên lựa chọn chi tiết hay để kể. Sắp xếp ý lộn xộn\",\n  \"fixed_text\": \"Bài làm Bố em tên là Trần Mạnh Toàn. Năm nay bố 36 tuổi. Bố có hình dáng còi và cao. Bố em hay đánh giấm. Cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần. Vào các ngày nghỉ, bố thường đưa em sang thăm bà nội. Bố em làm nghề kinh doanh. Bố rất yêu em. Em cũng rất yêu bố. Con nên lựa chọn chi tiết hay để kể. Sắp xếp ý lộn xộn.\"\n}",
+      "parsedOriginal": "Bài làm Bố em tên là Trần Mạnh Toàn. Năm nay bố 36 tuổi Bố có hình dáng còi và cao Bố em hay đánh giấm. cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần Vào các ngày nghỉ bố thường em sang thăm bà nội Bố em làm nghề kinh doanh Bố rất yêu em Em cũng rất yêu bố. Con nên lựa chọn chi tiết hay để kể. Sắp xếp ý lộn xộn",
+      "parsedFixed": "Bài làm Bố em tên là Trần Mạnh Toàn. Năm nay bố 36 tuổi. Bố có hình dáng còi và cao. Bố em hay đánh giấm. Cứ mỗi khi em xem phim lại thấy bố lại đánh giấm hai ba lần. Vào các ngày nghỉ, bố thường đưa em sang thăm bà nội. Bố em làm nghề kinh doanh. Bố rất yêu em. Em cũng rất yêu bố. Con nên lựa chọn chi tiết hay để kể. Sắp xếp ý lộn xộn.",
+      "parseError": null,
+      "hallucination": {
+        "score": 0,
+        "riskLevel": "✅ BINH_THUONG",
+        "flags": [],
+        "wordCountOriginal": 81,
+        "wordCountFixed": 82,
+        "sim_orig_fixed": 96.15
+      }
+    }
+  ]
+}
