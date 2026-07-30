@@ -5,7 +5,6 @@ colorFrom: blue
 colorTo: purple
 sdk: docker
 pinned: false
-license: mit
 short_description: AI-powered Vietnamese handwriting spelling checker & grader
 ---
 
@@ -20,7 +19,6 @@ short_description: AI-powered Vietnamese handwriting spelling checker & grader
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?style=flat-square&logo=prisma)](https://www.prisma.io/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 <br/>
 
