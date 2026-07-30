@@ -282,18 +282,29 @@
 ---
 
 ## SLIDE 17 – Giải pháp kết nối & Truy cập từ xa
-⏱️ *~1 phút*
+⏱️ *~1 phút 30 giây*
 
 🎙️
-> "Một trong những thách thức thực tiễn quan trọng là **kết nối và truy cập từ xa**. Nhóm em triển khai giải pháp như sau:
+> "Slide này mô tả **kiến trúc kết nối và truy cập từ xa** của toàn hệ thống — một trong những phần kỹ thuật quan trọng nhất đảm bảo tính thực tiễn của sản phẩm.
 >
-> - Raspberry Pi tạo một **mạng Wi-Fi nội bộ** trong lớp học, cho phép giáo viên và học sinh kết nối trực tiếp mà không cần Internet.
+> Luồng hoạt động diễn ra theo 4 lớp từ trên xuống:
 >
-> - Ngoài ra, hệ thống hỗ trợ **truy cập từ xa qua tunneling** — ví dụ: giáo viên có thể xem lại kết quả từ nhà sau giờ học.
+> **Lớp 1 – Người dùng**: Giáo viên và học sinh sử dụng laptop hoặc điện thoại để truy cập hệ thống. Kết nối được mã hóa bằng giao thức HTTPS ngay từ phía thiết bị đầu cuối.
 >
-> - Giao diện Web được thiết kế **responsive**, hoạt động tốt trên cả điện thoại, máy tính bảng và máy tính xách tay.
+> **Lớp 2 – Cloudflare Network (CDN Toàn cầu)**: Thay vì kết nối thẳng vào Raspberry Pi, toàn bộ lưu lượng đi qua **Cloudflare** — một trong những mạng CDN lớn nhất thế giới. Cloudflare cung cấp: mã hóa TLS và HTTPS end-to-end, SSL Certificate tự động gia hạn, và quan trọng hơn là **bảo vệ DDoS**. Điều này giúp hệ thống có địa chỉ tên miền cố định, bảo mật cao mà không cần IP tĩnh hay cấu hình phức tạp.
 >
-> Nhờ thiết kế này, hệ thống có thể hoạt động ngay cả trong môi trường **không có kết nối Internet ổn định** — điều rất phổ biến tại các trường tiểu học vùng nông thôn."
+> **Lớp 3 – Raspberry Pi 4 (Trung tâm xử lý)**: Đây là trái tim của hệ thống, chạy song song ba thành phần:
+> - **Web server vihandgrate.click**: Giao diện web cho giáo viên và học sinh.
+> - **Mô hình sửa lỗi và chấm điểm**: Module AI xử lý bài làm và gọi API.
+> - **Database (SQL)**: Lưu toàn bộ dữ liệu — bài viết, điểm số, lớp học, thông tin người dùng.
+>
+> **Lớp 4 – Dịch vụ AI bên ngoài**: Raspberry Pi kết nối với hai thành phần AI:
+> - **Google Gemini API** qua API Call — xử lý OCR và nhận diện văn bản từ ảnh.
+> - **LLM Agent** qua giao thức **MCP server** — đảm nhận vai trò sửa lỗi chính tả và hỗ trợ nâng cao.
+>
+> Toàn bộ kiến trúc này cho phép giáo viên **truy cập hệ thống từ bất kỳ đâu** — trong lớp học, ở nhà hay trên điện thoại — với bảo mật cao và không yêu cầu cấu hình mạng phức tạp tại trường học."
+
+💡 *Chỉ vào từng phần trong sơ đồ khi trình bày từng lớp để giúp Hội đồng theo dõi dễ hơn.*
 
 ---
 
