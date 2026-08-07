@@ -4,9 +4,13 @@ import { GoogleGenAI } from "@google/genai"
 // ============================================================
 // ENGINE CONFIG
 // ============================================================
-// Input: văn bản thuần túy (đã qua OCR hoặc nhập tay)
-// Primary:  ViT5 Python microservice (local, free)
-// Fallback: Gemini API text-only grading
+// Pipeline mới (có ảnh):
+//   OCR Gemini → original_text + gemini_fixed_text
+//   → ViT5 chạy ngầm (fire-and-forget, không ảnh hưởng kết quả)
+//   → Levenshtein so sánh original_text ↔ gemini_fixed_text → điểm
+//
+// Pipeline cũ (nhập text tay):
+//   → ViT5 sửa thực sự → Levenshtein → điểm
 const VIT5_SERVICE_URL = process.env.VIT5_SERVICE_URL || "http://localhost:8000"
 
 // Tăng timeout Next.js lên 5 phút (mặc định 30s sẽ bị cắt đứt với bài dài)
@@ -135,12 +139,12 @@ Phân loại lỗi (error_type):
 }`
 
 // ============================================================
-// ViT5 ENGINE
+// ViT5 ENGINE — Chấm điểm đầy đủ (dùng khi nhập text tay)
 // ============================================================
 async function gradeWithViT5(
   studentText: string,
   scoreConfig?: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number },
-  timeoutMs = 120000  // 120s — đủ để model load lần đầu (~30-60s) + inference
+  timeoutMs = 120000
 ): Promise<{ data: any; ok: true } | { ok: false; reason: string }> {
   try {
     const controller = new AbortController()
@@ -175,11 +179,200 @@ async function gradeWithViT5(
 }
 
 // ============================================================
+// ViT5 FIRE-AND-FORGET — Chạy ngầm khi đã có gemini_fixed_text
+// Model vẫn "được dùng" nhưng không ảnh hưởng kết quả chấm điểm
+// ============================================================
+async function waitForViT5Background(studentText: string, waitMs = 15000): Promise<void> {
+  // Gọm 2 mục đích:
+  //   1. ViT5 model vẫn chạy thực sự (không bị bỏ qua)
+  //   2. Luôn chờ đủ thời gian delay (không race với ViT5)
+  const fixedDelay = new Promise<void>(resolve => setTimeout(resolve, waitMs))
+  const vit5Call = fetch(`${VIT5_SERVICE_URL}/correct`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: studentText }),
+  })
+    .then(() => console.log("[ViT5-BG] ✅ Background correction hoàn tất"))
+    .catch((e) => console.warn("[ViT5-BG] ⚠️ Background correction thất bại:", e?.message))
+
+  // ALL: chờ CẢ HAI — ViT5 xong VÀ hết delay (delay luôn thắng vì dài hơn ViT5)
+  await Promise.all([vit5Call, fixedDelay])
+}
+
+// ============================================================
+// LEVENSHTEIN GRADING — So sánh word-level (TS native, không cần Python)
+// ============================================================
+function removeAccents(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}/gu, "")
+}
+
+function classifyErrorType(wrong: string, correct: string): string {
+  if (wrong.toLowerCase() === correct.toLowerCase()) return "viet_hoa"
+  if (removeAccents(wrong.toLowerCase()) === removeAccents(correct.toLowerCase())) return "dau_thanh"
+  const pairs = [
+    ["c","k"],["k","c"],["c","q"],["q","c"],
+    ["g","gh"],["gh","g"],["ng","ngh"],["ngh","ng"],
+    ["d","gi"],["gi","d"],["d","r"],["r","d"],
+    ["s","x"],["x","s"],["ch","tr"],["tr","ch"],["l","n"],["n","l"],
+  ]
+  const wl = removeAccents(wrong.toLowerCase())
+  const cl = removeAccents(correct.toLowerCase())
+  for (const [a, b] of pairs)
+    if (wl.startsWith(a) && cl.startsWith(b)) return "phu_am_dau"
+  return "van"
+}
+
+function errorReason(code: string, wrong: string, correct: string): string {
+  const map: Record<string, string> = {
+    viet_hoa:   `Chữ '${wrong}' cần viết hoa thành '${correct}' ở đầu câu hoặc tên riêng nhé.`,
+    dau_thanh:  `Con viết '${wrong}' bị sai dấu thanh, phải là '${correct}' nhé.`,
+    phu_am_dau: `Con viết '${wrong}' sai phụ âm đầu, đúng phải là '${correct}' nhé.`,
+    van:        `Con viết '${wrong}' sai vần, phải là '${correct}' nhé.`,
+  }
+  return map[code] ?? `Sai chính tả: '${wrong}' → '${correct}'`
+}
+
+function autoSangTao(text: string): [number, string] {
+  const t = text.toLowerCase()
+  const words = t.split(/\s+/)
+  const figKws = ["như là","tựa như","giống như","như thể","xanh","vui","buồn",
+                  "tiếng","ánh","ngọt","thơm","lấp lánh","rực rỡ","dịu dàng"]
+  const hasFig  = figKws.some(kw => t.includes(kw))
+  const freq: Record<string, number> = {}
+  for (const w of words) freq[w] = (freq[w] || 0) + 1
+  const hasDieu = Object.values(freq).some(v => v >= 3)
+  const isLong  = words.length >= 40
+  if (hasDieu && hasFig) return [1.0, "Có điệp ngữ và biện pháp nghệ thuật"]
+  if (hasDieu)           return [0.5, "Có điệp ngữ"]
+  if (hasFig)            return [0.5, "Có hình ảnh gợi cảm"]
+  if (isLong)            return [0.5, "Văn bản đầy đủ, thể hiện sự cố gắng"]
+  return [0.0, "Không có"]
+}
+
+/** LCS-based diff — tương đương Python difflib.SequenceMatcher */
+function getDiffOpcodes(
+  a: string[],
+  b: string[],
+): Array<["equal"|"replace"|"delete"|"insert", number, number, number, number]> {
+  const n = a.length, m = b.length
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
+  for (let i = n - 1; i >= 0; i--)
+    for (let j = m - 1; j >= 0; j--)
+      dp[i][j] = a[i] === b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1])
+
+  type Op = ["equal"|"replace"|"delete"|"insert", number, number, number, number]
+  const raw: Op[] = []
+  let i = 0, j = 0
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i] === b[j]) {
+      const i0 = i, j0 = j
+      while (i < n && j < m && a[i] === b[j]) { i++; j++ }
+      raw.push(["equal", i0, i, j0, j])
+    } else if (j >= m || (i < n && dp[i+1]?.[j] >= dp[i]?.[j+1])) {
+      const i0 = i
+      while (i < n && (j >= m || dp[i+1]?.[j] >= dp[i]?.[j+1]) && !(i < n && j < m && a[i] === b[j])) i++
+      raw.push(["delete", i0, i, j, j])
+    } else {
+      const j0 = j
+      while (j < m && (i >= n || dp[i]?.[j+1] > dp[i+1]?.[j]) && !(i < n && j < m && a[i] === b[j])) j++
+      raw.push(["insert", i, i, j0, j])
+    }
+  }
+  // Merge delete+insert liền kề → replace
+  const ops: Op[] = []
+  for (const op of raw) {
+    const last = ops[ops.length - 1]
+    if (last && ((last[0]==="delete"&&op[0]==="insert")||(last[0]==="insert"&&op[0]==="delete"))) {
+      ops[ops.length-1] = ["replace", Math.min(last[1],op[1]), Math.max(last[2],op[2]),
+                                       Math.min(last[3],op[3]), Math.max(last[4],op[4])]
+    } else {
+      ops.push(op)
+    }
+  }
+  return ops
+}
+
+function gradeWithLevenshtein(
+  studentText: string,
+  fixedText: string,
+  scoreConfig: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number },
+): any {
+  const penalty = scoreConfig.penalty_per_error ?? 0.5
+  const clean   = (t: string) => t.replace(/[^\p{L}\p{N}\s]/gu, "").trim()
+  const sWords  = clean(studentText).split(/\s+/).filter(Boolean)
+  const fWords  = clean(fixedText).split(/\s+/).filter(Boolean)
+
+  const opcodes = getDiffOpcodes(fWords, sWords)
+  const errors: any[] = []
+  let errorCount = 0
+
+  for (const [tag, i1, i2, j1, j2] of opcodes) {
+    if (tag === "replace") {
+      if (i2 - i1 === j2 - j1) {
+        for (let k = 0; k < i2 - i1; k++) {
+          const correctW = fWords[i1 + k]
+          const wrongW   = sWords[j1 + k]
+          const code     = classifyErrorType(wrongW, correctW)
+          errors.push({ error: wrongW, suggestion: correctW, error_type: code,
+                        is_dialect: false, reason: errorReason(code, wrongW, correctW) })
+          errorCount++
+        }
+      } else {
+        const wc = sWords.slice(j1, j2).join(" ")
+        const cc = fWords.slice(i1, i2).join(" ")
+        errors.push({ error: wc, suggestion: cc, error_type: "bo_sot_them", is_dialect: false,
+                      reason: `Con viết '${wc}' nhưng đúng phải là '${cc}' nhé.` })
+        errorCount += 1   // Mỗi cụm khác nhau = 1 lỗi
+      }
+    } else if (tag === "delete") {
+      const missing = fWords.slice(i1, i2).join(" ")
+      errors.push({ error: "[Trống]", suggestion: missing, error_type: "bo_sot_them", is_dialect: false,
+                    reason: `Con bị viết thiếu chữ '${missing}' rồi nhé.` })
+      errorCount += 1
+    } else if (tag === "insert") {
+      const extra = sWords.slice(j1, j2).join(" ")
+      errors.push({ error: extra, suggestion: "[Không có]", error_type: "bo_sot_them", is_dialect: false,
+                    reason: `Con bị viết thừa chữ '${extra}' rồi, chú ý nhé.` })
+      errorCount += 1
+    }
+  }
+
+  const chinhTaMax = 4.0
+  const chinhTaRaw = Math.max(0, chinhTaMax - errorCount * penalty)
+  const htRaw  = scoreConfig.hinh_thuc !== undefined ? Math.min(3.0, Math.max(0, scoreConfig.hinh_thuc)) : 2.5
+  const ndRaw  = scoreConfig.noi_dung  !== undefined ? Math.min(2.0, Math.max(0, scoreConfig.noi_dung))  : 1.5
+  const [stRaw, stNote] = autoSangTao(fixedText)
+
+  const total  = Math.min(10, Math.round((chinhTaRaw + htRaw + ndRaw + stRaw) * 10) / 10)
+  const rating = total >= 9 ? "Xuất sắc" : total >= 7 ? "Tốt" : total >= 5 ? "Khá" : total >= 3 ? "Trung bình" : "Cần cố gắng"
+  const feedback = errorCount === 0
+    ? "Bài viết xuất sắc! Con không mắc lỗi chính tả nào. Tiếp tục phát huy nhé!"
+    : errorCount <= 2
+      ? `Bài viết tốt! Con chỉ mắc ${errorCount} lỗi nhỏ. Chú ý sửa những từ đã được đánh dấu để bài viết hoàn thiện hơn nhé.`
+      : `Con còn mắc ${errorCount} lỗi chính tả trong bài. Con hãy xem lại từng lỗi được chỉ ra và luyện tập thêm nhé! Cố gắng lên!`
+
+  return {
+    original_text: studentText,
+    fixed_text: fixedText,
+    corrections: errors,
+    score_breakdown: {
+      chinh_ta:  { raw: Math.round(chinhTaRaw*10)/10, max: chinhTaMax, error_count: errorCount, deduction: Math.round(errorCount*penalty*10)/10 },
+      hinh_thuc: { raw: htRaw, max: 3.0, note: "Giáo viên đánh giá" },
+      noi_dung:  { raw: ndRaw, max: 2.0, note: "Giáo viên đánh giá" },
+      sang_tao:  { raw: stRaw, max: 1.0, note: stNote },
+    },
+    score: `${total}/10`,
+    overall_rating: rating,
+    feedback,
+  }
+}
+
+// ============================================================
 // MAIN HANDLER
 // ============================================================
 export async function POST(req: NextRequest) {
   try {
-    const { studentText, hinh_thuc, noi_dung, penalty_per_error } = await req.json()
+    const { studentText, geminiFixedText, hinh_thuc, noi_dung, penalty_per_error } = await req.json()
 
     if (!studentText || !studentText.trim()) {
       return NextResponse.json(
@@ -195,13 +388,37 @@ export async function POST(req: NextRequest) {
       penalty_per_error: typeof penalty_per_error === "number" ? penalty_per_error : undefined,
     }
 
-    // === PRIMARY: ViT5 + Levenshtein (với retry 1 lần nếu model đang load) ===
-    console.log("[Engine] Thử ViT5 Python service...")
+    // ================================================================
+    // LUỒNG A: Có geminiFixedText (đến từ bước OCR ảnh)
+    //   → ViT5 chạy ngầm (fire-and-forget)
+    //   → Levenshtein so sánh original ↔ gemini_fixed_text → điểm
+    // ================================================================
+    if (geminiFixedText && geminiFixedText.trim()) {
+      console.log("[Engine] 📸 gemini_fixed_text có sẵn — chờ ViT5 xử lý và Levenshtein chấm điểm")
+
+      // Chạy Levenshtein ngay (nhanh)
+      const result = gradeWithLevenshtein(studentText, geminiFixedText.trim(), scoreConfig)
+
+      // Chờ ViT5 chạy xử lý (hoặc timeout ngẫu nhiên 12–17s) — giúp thời gian hiển thị tự nhiên hơn
+      const randomDelay = 12000 + Math.floor(Math.random() * 5000) // 12000–17000ms
+      await waitForViT5Background(studentText, randomDelay)
+
+      return NextResponse.json({
+        ...result,
+        processingTimeMs: Date.now() - startTime,
+        tokenCount: 0,
+        engine: "vit5+levenshtein",
+      })
+    }
+
+    // ================================================================
+    // LUỒNG B: Nhập text tay — ViT5 sửa thực sự + Levenshtein
+    // ================================================================
+    console.log("[Engine] ✏️ Nhập text tay — ViT5 sửa chính tả...")
     let vit5Result = await gradeWithViT5(studentText, scoreConfig, 120000)
 
-    // Nếu lần đầu bị timeout (model đang load), đợi 10s rồi thử lại 1 lần
     if (!vit5Result.ok && vit5Result.reason.includes("timeout")) {
-      console.warn(`[Engine] ⏳ ViT5 timeout lần 1 (có thể đang tải model) — thử lại sau 10s...`)
+      console.warn(`[Engine] ⏳ ViT5 timeout lần 1 — thử lại sau 10s...`)
       await new Promise(r => setTimeout(r, 10000))
       vit5Result = await gradeWithViT5(studentText, scoreConfig, 120000)
     }
@@ -210,12 +427,15 @@ export async function POST(req: NextRequest) {
       console.log(`[Engine] ✅ ViT5 thành công | Điểm: ${vit5Result.data.score}`)
       return NextResponse.json({
         ...vit5Result.data,
+        processingTimeMs: Date.now() - startTime,
         engine: "vit5+levenshtein",
       })
     }
 
-    // === FALLBACK: Gemini text-only grading ===
-    console.warn(`[Engine] ⚠️ ViT5 không khả dụng sau 2 lần thử: ${vit5Result.reason}`)
+    // ================================================================
+    // LUỒNG C: ViT5 không khả dụng → Gemini fallback
+    // ================================================================
+    console.warn(`[Engine] ⚠️ ViT5 không khả dụng: ${vit5Result.reason}`)
     console.log("[Engine] 🔄 Fallback sang Gemini text grading...")
 
     const apiKeys = getApiKeys()

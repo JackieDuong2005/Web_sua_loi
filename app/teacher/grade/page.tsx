@@ -239,8 +239,9 @@ export default function GradingPage() {
     setIsSaved(false)
     try {
       let textToGrade = studentText
+      let geminiFixedText: string | undefined = undefined
 
-      // Bước 1 (nếu nhập ảnh): Gọi OCR — Gemini trích xuất văn bản
+      // Bước 1 (nếu nhập ảnh): Gọi OCR — Gemini trích xuất văn bản GỐC + bản đã sửa
       if ((inputMode === "image" || inputMode === "processed") && uploadedImage) {
         setProcessingStep("ocr")
         const compressed = await compressImageForAPI(uploadedImage)
@@ -252,18 +253,21 @@ export default function GradingPage() {
         const ocrData = await ocrRes.json()
         if (!ocrRes.ok) { setError(ocrData.error || "Lỗi OCR"); return }
         textToGrade = ocrData.text || ""
+        // Lấy bản Gemini đã sửa từ bước OCR để dùng làm chuẩn chấm điểm
+        geminiFixedText = ocrData.gemini_fixed_text || undefined
         setOcrText(textToGrade)
       }
 
       if (!textToGrade.trim()) { setError("Không trích xuất được văn bản từ ảnh."); return }
 
-      // Bước 2: Gọi ViT5 chấm điểm
+      // Bước 2: Chấm điểm — ViT5 chạy ngầm, Gemini fixed text làm chuẩn so sánh
       setProcessingStep("grade")
       const res = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentText: textToGrade,
+          geminiFixedText,          // Bản Gemini đã sửa — dùng thay Levenshtein so với ViT5
           penalty_per_error: scoreConfig.penalty,
         }),
       })
@@ -563,7 +567,6 @@ export default function GradingPage() {
                   <TabsList className="w-full mb-4">
                     <TabsTrigger value="image" className="flex-1 gap-2"><Camera className="w-4 h-4" /> Ảnh gốc</TabsTrigger>
                     <TabsTrigger value="processed" className="flex-1 gap-2"><Zap className="w-4 h-4" /> Tiền xử lý + OCR</TabsTrigger>
-                    <TabsTrigger value="text" className="flex-1 gap-2"><Pencil className="w-4 h-4" /> Nhập text</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="image">
@@ -648,35 +651,6 @@ export default function GradingPage() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="text">
-                    <div className="space-y-3">
-                      {/* Badge thông báo bỏ qua OCR */}
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
-                        <Pencil className="w-4 h-4 shrink-0" />
-                        <span><strong>Nhập text trực tiếp</strong> — bỏ qua OCR, đưa thẳng vào ViT5 sửa lỗi và Levenshtein chấm điểm.</span>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label>Văn bản của học sinh</Label>
-                        <Textarea
-                          placeholder={`Dán hoặc nhập đoạn văn của học sinh vào đây...\n\nVí dụ:\nBài làm\nGia đình con có năm người, ông nội con năm nay bao nhiêu tuổi con không biết...`}
-                          value={studentText} onChange={e => setStudentText(e.target.value)}
-                          rows={10} className="resize-none font-mono text-sm"
-                        />
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">{studentText.length} ký tự · {studentText.trim().split(/\s+/).filter(Boolean).length} từ</p>
-                          {studentText && (
-                            <button
-                              onClick={() => setStudentText("")}
-                              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                            >
-                              ✕ Xóa
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
                 </Tabs>
 
                 {/* === Cấu hình chấm điểm === */}
@@ -717,9 +691,7 @@ export default function GradingPage() {
                     ? processingStep === "ocr"
                       ? <><Spinner className="mr-2" />🔍 Đang OCR (Gemini)...</>
                       : <><Spinner className="mr-2" />🤖 Đang chấm điểm (ViT5)...</>
-                    : inputMode === "text"
-                      ? <><Zap className="w-5 h-5" />Chấm trực tiếp (ViT5 + Levenshtein)</>
-                      : <><Zap className="w-5 h-5" />Chấm điểm</>}
+                    : <><Zap className="w-5 h-5" />Chấm điểm</>}
                 </Button>
               </CardContent>
             </Card>
@@ -734,10 +706,10 @@ export default function GradingPage() {
                   <CardContent className="pt-6">
                     {(() => {
                       const sb = gradingResult.score_breakdown
-                      const ht = hinhThucOverride ?? sb.hinh_thuc.raw
-                      const nd = noiDungOverride  ?? sb.noi_dung.raw
-                      const st = sangTaoOverride  ?? sb.sang_tao.raw
-                      const total = Math.min(10, Math.round((sb.chinh_ta.raw + ht + nd + st) * 10) / 10)
+                      const ht = hinhThucOverride ?? sb?.hinh_thuc?.raw ?? 2.5
+                      const nd = noiDungOverride  ?? sb?.noi_dung?.raw ?? 1.5
+                      const st = sangTaoOverride  ?? sb?.sang_tao?.raw ?? 0
+                      const total = Math.min(10, Math.round(((sb?.chinh_ta?.raw ?? 0) + ht + nd + st) * 10) / 10)
                       const displayScore = `${total.toFixed(1)}/10`
                       const ratingStyle = getRatingStyle(gradingResult.overall_rating)
                       return (

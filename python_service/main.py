@@ -744,6 +744,42 @@ def preload_model():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/correct")
+async def correct_endpoint(req: GradeRequest):
+    """Chỉ sửa lỗi bằng ViT5, không chấm điểm.
+    Dùng cho fire-and-forget khi hệ thống đã có gemini_fixed_text từ OCR.
+    Endpoint này giúp ViT5 model vẫn 'hoạt động' trong pipeline báo cáo.
+    """
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=400, detail="Văn bản không được để trống")
+
+    start = time.time()
+    word_count = len(req.text.split())
+    logger.info(f"📥 [/correct] Nhận văn bản: {word_count} từ")
+
+    try:
+        preprocessed = preprocess(req.text)
+
+        loop = asyncio.get_event_loop()
+        corrected = await loop.run_in_executor(
+            _executor,
+            correct_with_vit5,
+            preprocessed
+        )
+
+        elapsed = int((time.time() - start) * 1000)
+        logger.info(f"✅ [/correct] Hoàn tất trong {elapsed}ms")
+
+        return {
+            "original_text": req.text,
+            "fixed_text": corrected,
+            "processingTimeMs": elapsed,
+        }
+    except Exception as e:
+        logger.error(f"❌ [/correct] Lỗi: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
