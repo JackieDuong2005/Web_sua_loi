@@ -1,279 +1,347 @@
-# Lưu đồ Module Xiaozhi AI Dictation Robot
+# Sơ Đồ Khối & Lưu Đồ Module Xiaozhi AI Dictation Robot
 
-Tài liệu này bổ sung các lưu đồ cho **Module Xiaozhi Dictation** — thành phần trợ lý giọng nói AI đọc chính tả, được thêm vào hệ thống ViHand Grade sau khi tích hợp thiết bị Xiaozhi ESP32-S3 và MCP Server.
+Tài liệu này mô tả chi tiết kiến trúc, quy trình nghiệp vụ và luồng dữ liệu cho **Module Xiaozhi Dictation** — thành phần trợ lý giọng nói AI đọc chính tả trong hệ thống ViHand Grade, sử dụng thiết bị phần cứng Xiaozhi ESP32-S3 kết hợp MCP Server.
+
+*(Tất cả sơ đồ đã được thiết kế dưới dạng khung văn bản trực quan (Box-Drawing) tương thích mọi trình xem tài liệu).*
 
 ---
 
 ## Hình X.1 – Kiến trúc tổng thể Module Xiaozhi Dictation
 
-Sơ đồ mô tả luồng dữ liệu từ khi giáo viên ra lệnh giọng nói đến khi bài đọc được lưu vào cơ sở dữ liệu ViHand Grade.
+Sơ đồ mô tả luồng dữ liệu hai chiều từ khi giáo viên ra lệnh giọng nói đến khi bài đọc được lưu vào cơ sở dữ liệu ViHand Grade:
 
-```mermaid
-flowchart TD
-    GV([👨‍🏫 Giáo viên nói\n\"Alexa, soạn bài chính tả\nlớp 3A, chủ đề mùa hè\"]) --> ESP
-
-    subgraph hw [\"🔊 Phần cứng Xiaozhi ESP32-S3\"]
-        ESP[Microphone thu âm\nWake word: \"Alexa\"] --> STREAM[Luồng âm thanh\ngửi lên xiaozhi.me Cloud]
-    end
-
-    STREAM --> CLOUD
-
-    subgraph cloud [\"☁️ xiaozhi.me Cloud Platform\"]
-        CLOUD[ASR: Nhận dạng giọng nói\n→ Văn bản lệnh] --> LLM
-        LLM[LLM xử lý lệnh\nvới Role: Alexa Sư phạm\n+ System Prompt từ MCP] --> DECIDE{Cần gọi\nMCP Tool?}
-        DECIDE -- Không --> TTS[TTS: Chuyển văn bản\n→ Giọng đọc tự nhiên]
-        DECIDE -- Có --> MCP_CALL[Gọi MCP Tool\nqua WebSocket]
-    end
-
-    TTS --> SPEAKER[🔈 Loa ESP32\nPhát âm thanh\ncho cả lớp nghe]
-    MCP_CALL --> WS
-
-    subgraph mcp [\"🐍 MCP Server - Python/FastAPI\n(localhost:8200)\"]
-        WS[WebSocket Client\nKết nối vào\nwss://api.xiaozhi.me/mcp/] --> HANDLER[JSON-RPC Handler\ninitialize / tools/list\n/ tools/call]
-        HANDLER --> TOOL_ROUTER{Tên Tool?}
-        TOOL_ROUTER -- vihand.save_dictation_session --> SAVE_TOOL[Lưu phiên đọc\ngọi Next.js API]
-        TOOL_ROUTER -- vihand.get_dictation_sessions --> GET_TOOL[Lấy lịch sử\ngọi Next.js API]
-    end
-
-    SAVE_TOOL --> API
-    GET_TOOL --> API
-
-    subgraph web [\"🌐 Next.js Web Server\n(localhost:3000)\"]
-        API[POST /api/dictation/sessions\nGET /api/dictation/sessions] --> DB[(SQLite Database\nPrisma ORM\nDictationSession\nDictationLog)]
-    end
-
-    DB --> RESULT[JSON kết quả] --> WS
-    WS --> CLOUD
-    DB --> DASHBOARD[📊 Dashboard Giáo viên\n/teacher/dictation\nDanh sách phiên + Bộ lọc]
+```text
+       👨‍🏫 GIÁO VIÊN
+       ("Alexa, soạn bài chính tả lớp 3A, chủ đề mùa hè")
+              │
+              ▼
+┌────────────────────────────────────────────────────────┐
+│  🔊 PHẦN CỨNG XIAOZHI (ESP32-S3)                       │
+│  - Microphone thu âm (Wake word: "Alexa")              │
+│  - Loa phát âm thanh cho cả lớp nghe                   │
+└─────────────────────────┬──────────────────────────────┘
+                          │ Luồng âm thanh (Audio Stream)
+                          ▼
+┌────────────────────────────────────────────────────────┐
+│  ☁️ XIAOZHI.ME CLOUD PLATFORM                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ 1. ASR Engine: Giọng nói ──▶ Văn bản lệnh        │  │
+│  │ 2. LLM Core: Xử lý ngữ cảnh + Role "Alexa"       │  │
+│  │ 3. Quyết định: Cần gọi công cụ ngoài không?      │  │
+│  └───────────────┬──────────────────────────┬───────┘  │
+│                  │ Không                    │ Có       │
+│                  ▼                          ▼          │
+│       ┌──────────────────────┐   ┌──────────────────┐  │
+│       │ TTS: Chuyển văn bản  │   │ Gọi MCP Tool     │  │
+│       │  thành giọng đọc     │   │ (JSON-RPC 2.0)   │  │
+│       └──────────┬───────────┘   └──────────┬───────┘  │
+└──────────────────┼──────────────────────────┼──────────┘
+                   │ Phát âm                  │ WebSocket
+                   ▼                          ▼
+       ┌───────────────────────┐   ┌───────────────────────────────────┐
+       │ 🔈 Loa Robot ESP32-S3 │   │ 🐍 MCP SERVER (Python - :8200)    │
+       │ (Cả lớp nghe & chép)  │   │ ┌───────────────────────────────┐ │
+       └───────────────────────┘   │ │ • Khởi tạo Role Prompt Alexa  │ │
+                                   │ │ • Router điều phối Tools:     │ │
+                                   │ │   - vihand.save_dictation     │ │
+                                   │ │   - vihand.get_sessions       │ │
+                                   │ └───────────────┬───────────────┘ │
+                                   └─────────────────┼─────────────────┘
+                                                     │ HTTP REST (Port 3000)
+                                                     ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  🌐 VIHAND GRADE CORE (Next.js Web Server & Database)                │
+│                                                                      │
+│    POST /api/dictation/sessions ──▶ [ Prisma ORM ]                   │
+│    GET  /api/dictation/sessions             │                        │
+│                                             ▼                        │
+│                                   [( SQLite: vihand.db )]            │
+│                                   • DictationSession                 │
+│                                   • ConversationLog                  │
+│                                             │                        │
+│                                             ▼                        │
+│                                   📊 Dashboard Giáo Viên             │
+│                                   (/teacher/dictation)               │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Hình X.2 – Lưu đồ quy trình 3 bước của Alexa (Chi tiết)
 
-```mermaid
-flowchart TD
-    START([🎙️ Giáo viên kích hoạt\n\"Alexa, ...\"])
+Lưu đồ biểu diễn logic tương tác và kịch bản sư phạm khi trợ lý AI Alexa tổ chức một buổi nghe - viết chính tả:
 
-    START --> CMD{Phân tích\nlệnh}
-
-    CMD -- \"Lệnh chung chung\n(chưa đủ thông tin)\" --> ASK
-    CMD -- \"Lệnh đầy đủ\n(lớp, chủ đề, tốc độ)\" --> COMPOSE
-    CMD -- \"Hỏi lịch sử\" --> GET_HIST
-
-    subgraph buoc1 [\"📋 Bước 1: Thu thập thông tin\"]
-        ASK[Alexa hỏi lại giáo viên:\n1. Dành cho lớp mấy?\n2. Chủ đề / nội dung gì?\n3. Bao nhiêu câu?\n4. Đọc mấy lần?\n5. Tốc độ nhanh hay chậm?]
-        ASK --> COLLECT[Giáo viên trả lời] --> COMPOSE
-    end
-
-    subgraph buoc2 [\"✍️ Bước 2: Soạn & Đọc bài\"]
-        COMPOSE{Giáo viên\ncung cấp nội dung?}
-        COMPOSE -- Có sẵn --> USE_CONTENT[Dùng nội dung\ngiáo viên cung cấp]
-        COMPOSE -- Tự soạn --> GEN[LLM soạn đoạn văn\nphù hợp khối lớp\nvà chủ đề]
-        USE_CONTENT & GEN --> READ1[Thông báo:\n\"Em sắp đọc bài X\ncho lớp Y\"]
-        READ1 --> READ_SLOW[Đọc lần 1 liền mạch\n[Tốc độ: chậm/bình thường]\nToàn bộ đoạn văn]
-        READ_SLOW --> PAUSE[Nghỉ 10–15 giây\n\"Các em đã nghe xong lần 1\nem sẽ đọc lại từng câu\"]
-        PAUSE --> READ_SENT[Đọc lần 2 từng câu\n[Nghỉ đủ thời gian\ngiữa mỗi câu]]
-        READ_SENT --> CHECK_DONE{Đọc đủ\nsố lần?}
-        CHECK_DONE -- Chưa --> READ_SENT
-        CHECK_DONE -- Rồi --> ASK_DONE[Hỏi học sinh:\n\"Các em đã viết xong chưa ạ?\"]
-        ASK_DONE --> CONFIRM_DONE{Học sinh / GV\nxác nhận?}
-        CONFIRM_DONE -- Chưa --> READ_SENT
-        CONFIRM_DONE -- Xong --> ASK_SAVE
-    end
-
-    subgraph buoc3 [\"💾 Bước 3: Nhắc lưu / Đọc tiếp\"]
-        ASK_SAVE[\"Bắt buộc hỏi:\n'Thầy/cô có muốn em lưu bài\nvào ViHand Grade không,\nhay muốn đọc thêm bài nữa?'\"]
-        ASK_SAVE --> GV_CHOICE{Giáo viên\nchọn gì?}
-        GV_CHOICE -- \"Lưu lại\" --> CALL_SAVE
-        GV_CHOICE -- \"Đọc thêm bài\" --> COMPOSE
-        GV_CHOICE -- \"Không cần\" --> END_SESSION
-    end
-
-    subgraph mcp_save [\"🔧 MCP Tool Call\"]
-        CALL_SAVE[Gọi tool:\nvihand.save_dictation_session\n- title\n- passage\n- className\n- summary\n- logs]
-        CALL_SAVE --> API_CALL[POST /api/dictation/sessions\nlocalhost:3000]
-        API_CALL --> DB_WRITE[(Ghi vào SQLite)]
-        DB_WRITE --> SUCCESS[Alexa thông báo:\n\"Em đã lưu bài thành công!\"]
-    end
-
-    subgraph get_hist [\"🔍 Tra cứu lịch sử\"]
-        GET_HIST[Gọi tool:\nvihand.get_dictation_sessions\n- className (nếu có)\n- limit: 10]
-        GET_HIST --> DB_READ[(Đọc SQLite)]
-        DB_READ --> REPORT[Alexa đọc danh sách\nbài đã học hôm nay\n/ tuần này / theo lớp]
-    end
-
-    SUCCESS --> END_SESSION([✅ Kết thúc phiên])
+```text
+                      [🎙️ Kích hoạt: "Alexa, ..."]
+                                  │
+                                  ▼
+                     ┌──────────────────────────┐
+                     │ Phân tích câu lệnh đầu vào│
+                     └────────────┬─────────────┘
+                                  │
+         ┌────────────────────────┼────────────────────────┐
+         │                        │                        │
+         ▼ (Lệnh chung chung)     ▼ (Lệnh đầy đủ)          ▼ (Hỏi lịch sử)
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│ BƯỚC 1: HỎI LẠI  │     │ BƯỚC 2: SOẠN BÀI │     │ TRA CỨU LỊCH SỬ  │
+│ Alexa hỏi 5 ý:   │     │ & ĐỌC CHÍNH TẢ   │     │ Gọi Tool:        │
+│ 1. Lớp mấy?      │     │                  │     │ get_sessions     │
+│ 2. Chủ đề gì?    │     │ • Có sẵn nội dung│     │       │          │
+│ 3. Bao nhiêu câu?│     │   ──▶ Dùng luôn  │     │       ▼          │
+│ 4. Đọc mấy lần?  │     │ • Chưa có nội dung     │ Đọc danh sách    │
+│ 5. Tốc độ đọc?   │     │   ──▶ LLM tự tạo │     │ các bài đã học   │
+└────────┬─────────┘     └────────┬─────────┘     └──────────────────┘
+         │                        │
+         │ Giáo viên trả lời      │
+         └───────────────────────▶│
+                                  ▼
+                  ┌─────────────────────────────────┐
+                  │ ĐỌC LẦN 1: Đọc toàn bài liền    │
+                  │ mạch để học sinh nắm đại ý      │
+                  └───────────────┬─────────────────┘
+                                  │
+                                  ▼
+                  ┌─────────────────────────────────┐
+                  │ ĐỌC LẦN 2: Đọc từng câu một     │
+                  │ - Tạm dừng 1.5s/chữ cho HS chép │
+                  │ - Lặp lại N lần theo yêu cầu    │
+                  └───────────────┬─────────────────┘
+                                  │
+                                  ▼
+                  ┌─────────────────────────────────┐
+                  │ Hỏi học sinh:                   │
+                  │ "Các em đã viết xong chưa ạ?"   │
+                  └───────────────┬─────────────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+          [Chưa xong / Đọc lại]              [Đã xong]
+                    │                           │
+                    └───────────┐               ▼
+                                │    ┌─────────────────────────────────┐
+                                │    │ BƯỚC 3: HỎI XÁC NHẬN LƯU BÀI    │
+                                │    │ "Thầy/cô có muốn em lưu bài vào │
+                                │    │  hệ thống ViHand Grade không?"  │
+                                │    └──────────────┬──────────────────┘
+                                │                   │
+                                │         ┌─────────┴─────────┐
+                                │         │                   │
+                                │     ["Lưu lại"]       ["Không cần"]
+                                │         │                   │
+                                │         ▼                   │
+                                │    ┌──────────────────┐     │
+                                │    │ GỌI MCP TOOL:    │     │
+                                │    │ save_dictation   │     │
+                                │    │  • Tiêu đề, lớp  │     │
+                                │    │  • Đoạn văn      │     │
+                                │    │  • Lịch sử log   │     │
+                                │    └────────┬─────────┘     │
+                                │             │               │
+                                │             ▼               │
+                                │    [( Ghi vào SQLite )]     │
+                                │             │               │
+                                │             ▼               │
+                                │    [Báo lưu thành công]     │
+                                │             │               │
+                                └─────────────┼───────────────┘
+                                              ▼
+                                     [✅ KẾT THÚC PHIÊN]
 ```
 
 ---
 
 ## Hình X.3 – Lưu đồ MCP JSON-RPC Handshake (Giao thức kết nối)
 
-```mermaid
-sequenceDiagram
-    participant ESP as 🔊 ESP32-S3
-    participant CLOUD as ☁️ xiaozhi.me Cloud
-    participant MCP as 🐍 MCP Server
-    participant API as 🌐 Next.js API
-    participant DB as 🗄️ SQLite
+Sơ đồ trình tự biểu diễn các gói tin JSON-RPC trao đổi giữa các thành phần phần mềm và phần cứng:
 
-    Note over MCP,CLOUD: Giai đoạn 1 — Khởi tạo kết nối (khi MCP Server khởi chạy)
-    MCP->>CLOUD: WebSocket CONNECT<br/>wss://api.xiaozhi.me/mcp/?token=...
-    CLOUD->>MCP: {"method": "initialize"}
-    MCP->>CLOUD: {"result": {"protocolVersion": "2024-11-05",<br/>"instructions": "[ROLE_PROMPT]",<br/>"serverInfo": {"name": "ViHand Grade"}}}
-    CLOUD->>MCP: {"method": "tools/list"}
-    MCP->>CLOUD: {"result": {"tools": [save_dictation, get_sessions]}}
-
-    Note over ESP,CLOUD: Giai đoạn 2 — Giáo viên ra lệnh
-    ESP->>CLOUD: Luồng âm thanh: "Alexa, đọc bài lớp 3A..."
-    CLOUD->>CLOUD: ASR → Văn bản lệnh
-    CLOUD->>CLOUD: LLM xử lý + áp dụng Role Prompt
-    CLOUD->>ESP: TTS: "Vâng thầy, em sẽ đọc bài..."
-
-    Note over ESP,DB: Giai đoạn 3 — Lưu phiên sau khi đọc xong
-    ESP->>CLOUD: Âm thanh: "Lưu lại giúp cô"
-    CLOUD->>CLOUD: LLM quyết định gọi tool
-    CLOUD->>MCP: {"method": "tools/call",<br/>"params": {"name": "vihand.save_dictation_session",<br/>"arguments": {"title": "...", "passage": "...", "className": "3A"}}}
-    MCP->>API: POST /api/dictation/sessions<br/>{title, passage, className, logs}
-    API->>DB: Prisma.dictationSession.create(...)
-    DB-->>API: {id: "...", createdAt: "..."}
-    API-->>MCP: HTTP 201 Created
-    MCP-->>CLOUD: {"result": {"content": "Đã lưu thành công!"}}
-    CLOUD->>ESP: TTS: "Em đã lưu bài thành công rồi ạ!"
+```text
+ESP32-S3          xiaozhi.me Cloud        MCP Server (:8200)       Next.js API (:3000)      SQLite DB
+   │                     │                        │                         │                  │
+   │   === GIAI ĐOẠN 1: KHỞI TẠO KẾT NỐI (Khi MCP Server vừa bật) ===       │                  │
+   │                     │                        │                         │                  │
+   │                     │◀── WebSocket Connect ──┤ (wss://api.xiaozhi.me)  │                  │
+   │                     ├── {"method":"initialize"}───────────────────────▶│                  │
+   │                     │◀── {"result": {RolePrompt, serverInfo}}──────────┤                  │
+   │                     ├── {"method":"tools/list"}───────────────────────▶│                  │
+   │                     │◀── {"result": {tools: [save, get]}}──────────────┤                  │
+   │                     │                        │                         │                  │
+   │   === GIAI ĐOẠN 2: GIÁO VIÊN RA LỆNH GIỌNG NÓI ===                     │                  │
+   │                     │                        │                         │                  │
+   │── Audio Stream ────▶│ (Thu âm lệnh thoại)    │                         │                  │
+   │   "Alexa, đọc bài"  │ [ASR ──▶ LLM Core]     │                         │                  │
+   │                     │                        │                         │                  │
+   │◀── Audio TTS ───────┤ (Đọc bài cho học sinh) │                         │                  │
+   │   "Vâng, em đọc..." │                        │                         │                  │
+   │                     │                        │                         │                  │
+   │   === GIAI ĐOẠN 3: LƯU PHIÊN ĐỌC VÀO HỆ THỐNG ===                      │                  │
+   │                     │                        │                         │                  │
+   │── Audio: "Lưu lại" ─▶ [LLM quyết định gọi tool]                        │                  │
+   │                     ├── {"method":"tools/call",                        │                  │
+   │                     │    "params":{name:"save_dictation", args:{...}}▶│                  │
+   │                     │                        ├── POST /api/dictation/sessions ───────────▶│
+   │                     │                        │   {title, passage, className, logs}        ├── Prisma.create
+   │                     │                        │                         │                  │──────┐
+   │                     │                        │                         │                  │◀─────┘
+   │                     │                        │◀── HTTP 201 Created ────┴── ID: session_123│
+   │                     │◀── {"result": "OK"} ───┤                         │                  │
+   │                     │                        │                         │                  │
+   │◀── Audio TTS ───────┤                        │                         │                  │
+   │   "Đã lưu thành công"                        │                         │                  │
+   │                     │                        │                         │                  │
 ```
 
 ---
 
-## Hình X.4 – Lưu đồ Database Schema Module Xiaozhi
+## Hình X.4 – Thiết kế Cơ sở Dữ liệu Module Xiaozhi (Entity Relationship)
 
-```mermaid
-erDiagram
-    DictationSession {
-        String id PK "CUID - Mã phiên duy nhất"
-        String title "Tiêu đề bài VD: Nghe viết: Mùa hè"
-        String passage "Toàn bộ đoạn văn đã đọc"
-        String className "Tên lớp: 3A1, 4B..."
-        String teacherName "Tên giáo viên"
-        String status "completed | in_progress"
-        String summary "Tóm tắt phiên do Alexa tạo"
-        DateTime createdAt "Thời điểm tạo"
-    }
+Mối liên kết giữa bảng phiên đọc chính tả của Xiaozhi với cơ sở dữ liệu chấm điểm ViHand Grade:
 
-    DictationLog {
-        String id PK "CUID"
-        String sessionId FK "Khóa ngoại → DictationSession"
-        String speaker "xiaozhi | teacher | student"
-        String content "Nội dung hội thoại"
-        DateTime createdAt "Thời điểm ghi"
-    }
-
-    Grade {
-        String id PK
-        String studentName
-        String assignmentTitle
-        String className
-        String dictationSessionId FK "Liên kết phiên đọc (tuỳ chọn)"
-        String originalText "OCR output"
-        String fixedText "ViT5 output"
-        Float scoreNum
-        DateTime createdAt
-    }
-
-    DictationSession ||--o{ DictationLog : "có nhiều logs"
-    DictationSession ||--o{ Grade : "liên kết bài chấm"
+```text
+┌────────────────────────────────────────┐
+│           DictationSession             │
+├────────────────────────────────────────┤
+│ PK  id           : String (CUID)       │
+│     title        : String              │
+│     passage      : String (Toàn bài)   │
+│     className    : String (3A1, 4B...) │
+│     teacherName  : String              │
+│     status       : String (completed)  │
+│     summary      : String              │
+│     createdAt    : DateTime            │
+└──────────────────┬─────────────────────┘
+                   │
+                   │ 1 - N (Một phiên có nhiều lượt hội thoại)
+                   ▼
+┌────────────────────────────────────────┐       ┌────────────────────────────────────────┐
+│            DictationLog                │       │                 Grade                  │
+├────────────────────────────────────────┤       ├────────────────────────────────────────┤
+│ PK  id           : String (CUID)       │       │ PK  id                 : String        │
+│ FK  sessionId    : String              │       │     studentName        : String        │
+│     speaker      : String (gv/ai/hs)   │       │     assignmentTitle    : String        │
+│     content      : String (Nội dung)   │       │ FK  dictationSessionId : String (Opt)   │◄──┐
+│     createdAt    : DateTime            │       │     originalText       : String (OCR)  │   │
+└────────────────────────────────────────┘       │     fixedText          : String (ViT5) │   │
+                                                 │     scoreNum           : Float         │   │
+                                                 │     createdAt          : DateTime      │   │
+                                                 └────────────────────────────────────────┘   │
+                                                                                              │
+                                                 (Liên kết đối chiếu: Bài đọc ───────────────┘
+                                                  được dùng để chấm bài viết tay của học sinh)
 ```
 
 ---
 
-## Hình X.5 – Lưu đồ trang quản lý phiên đọc (Teacher Dashboard)
+## Hình X.5 – Lưu đồ trang Quản lý Phiên đọc (Teacher Dashboard)
 
-```mermaid
-flowchart TD
-    OPEN([👨‍🏫 Giáo viên mở\n/teacher/dictation]) --> FETCH
+Quy trình tải, lọc, tra cứu và xem chi tiết bài đọc chính tả trên giao diện Web (`/teacher/dictation`):
 
-    subgraph load [\"Tải dữ liệu ban đầu\"]
-        FETCH[GET /api/dictation/sessions?limit=50] --> SESSIONS[(Danh sách tất cả\nphiên đọc)]
-    end
-
-    SESSIONS --> RENDER[Hiển thị danh sách\n+ Thống kê: Tổng phiên,\nLớp đã đọc, Phiên gần nhất]
-
-    subgraph filter [\"🔍 Bộ lọc & Tìm kiếm (Client-side)\"]
-        RENDER --> SEARCH_BAR[Thanh tìm kiếm\ntên bài / nội dung / lớp]
-        RENDER --> CLASS_FILTER[Dropdown Lớp\ntự động từ sessions]
-        RENDER --> TIME_FILTER[Dropdown Thời gian\nHôm nay / Hôm qua\n7 ngày / Tháng này]
-        SEARCH_BAR & CLASS_FILTER & TIME_FILTER --> FILTER_LOGIC[useMemo: lọc\nfilteredSessions]
-    end
-
-    FILTER_LOGIC --> RESULT_LIST{Có kết quả\nkhông?}
-    RESULT_LIST -- Có --> SHOW_LIST[Hiển thị danh sách\nphiên đã lọc\n+ badge lớp + ngày]
-    RESULT_LIST -- Không --> EMPTY[Thông báo trống\n+ Nút Xoá bộ lọc]
-
-    SHOW_LIST --> USER_ACTION{Giáo viên\nthao tác gì?}
-    USER_ACTION -- Click vào phiên --> DIALOG[Mở Dialog chi tiết\n- Tiêu đề, lớp, ngày\n- Đoạn văn chính tả]
-    USER_ACTION -- Click Xoá --> CONFIRM{Xác nhận\nxoá?}
-    CONFIRM -- Có --> DELETE[DELETE /api/dictation/sessions/:id\nXoá khỏi DB]
-    DELETE --> REMOVE_UI[Cập nhật UI\n(setSessions filter)]
+```text
+                 [👨‍🏫 Giáo viên truy cập: /teacher/dictation]
+                                      │
+                                      ▼
+                 ┌──────────────────────────────────────────┐
+                 │ Gửi Request: GET /api/dictation/sessions │
+                 └────────────────────┬─────────────────────┘
+                                      │
+                                      ▼
+                 ┌──────────────────────────────────────────┐
+                 │ Tải danh sách + Thống kê:                │
+                 │ • Tổng số bài đã đọc                     │
+                 │ • Danh sách lớp học                      │
+                 │ • Lần đọc gần nhất                       │
+                 └────────────────────┬─────────────────────┘
+                                      │
+                                      ▼
+         ┌──────────────────────────────────────────────────────────┐
+         │ 🔍 BỘ LỌC TÌM KIẾM (Client-side useMemo Filter)          │
+         │ ├── 1. Ô tìm kiếm: Tên bài / Từ khóa đoạn văn            │
+         │ ├── 2. Dropdown Lớp: Tất cả, 1A, 2B, 3A1, 4C, 5D...     │
+         │ └── 3. Dropdown Thời gian: Hôm nay, 7 ngày, Tháng này    │
+         └────────────────────────────┬─────────────────────────────┘
+                                      │
+                                      ▼
+                          ┌────────────────────────┐
+                          │ Có kết quả phù hợp?    │
+                          └───────────┬────────────┘
+                                      │
+                     ┌────────────────┴────────────────┐
+                     │ Có                              │ Không
+                     ▼                                 ▼
+       ┌───────────────────────────┐     ┌───────────────────────────┐
+       │ Hiển thị danh sách Cards: │     │ Hiển thị thông báo trống  │
+       │ - Tiêu đề bài & Badge lớp │     │ + Nút "Xóa bộ lọc"        │
+       │ - Trích đoạn nội dung     │     └───────────────────────────┘
+       │ - Thời gian & Số lượt thoại│
+       └─────────────┬─────────────┘
+                     │
+         ┌───────────┴───────────┐
+         │ Thao tác của Giáo viên│
+         └───────────┬───────────┘
+                     │
+       ┌─────────────┴─────────────┐
+       │ Xem chi tiết              │ Xóa phiên
+       ▼                           ▼
+┌───────────────────────────┐ ┌───────────────────────────┐
+│ Mở Modal Dialog:          │ │ Xác nhận xoá:             │
+│ • Toàn văn bài chính tả   │ │ DELETE /api/sessions/:id  │
+│ • Lịch sử hội thoại đầy đủ│ │ Cập nhật lại danh sách UI │
+└───────────────────────────┘ └───────────────────────────┘
 ```
 
 ---
 
-## Hình X.6 – Lưu đồ tổng hợp toàn hệ thống ViHand Grade (Bao gồm Xiaozhi)
+## Hình X.6 – Lưu đồ tổng hợp toàn hệ thống ViHand Grade
 
-```mermaid
-flowchart LR
-    subgraph input [\"📥 Đầu vào\"]
-        V1[🎙️ Lệnh giọng nói\nGiáo viên → Alexa]
-        V2[📷 Ảnh chụp\nBài viết tay học sinh]
-    end
+Bức tranh tổng thể 5 Modules kết nối liền mạch từ khâu đọc bài (tiền kỳ) đến khâu chấm điểm (hậu kỳ):
 
-    subgraph xiaozhi_module [\"🤖 Module 1: Xiaozhi Dictation\"]
-        XZ1[ESP32-S3\nMic + Loa]
-        XZ2[xiaozhi.me Cloud\nASR + LLM + TTS]
-        XZ3[MCP Server\nPython :8200]
-        XZ1 <--> XZ2
-        XZ2 <--> XZ3
-    end
-
-    subgraph img_module [\"🖼️ Module 2: Xử lý ảnh\"]
-        IM1[Jimp Pipeline\n9 bước tiền xử lý\n/api/preprocess]
-    end
-
-    subgraph ocr_module [\"☁️ Module 3: OCR\"]
-        OC1[Google Gemini API\ngemini-3.1-flash-lite\n/api/ocr]
-    end
-
-    subgraph ai_module [\"🤖 Module 4: Chấm điểm AI\"]
-        AI1[ViT5 Python\nSeq2Seq sửa lỗi\n:8000]
-        AI2[Levenshtein\nSo khớp & phân loại lỗi]
-        AI3[Rule-based\nTính điểm 4 tiêu chí\nSinh Feedback]
-        AI1 --> AI2 --> AI3
-    end
-
-    subgraph web [\"🌐 Module 5: Web Dashboard\"]
-        W1[Next.js :3000\nAdmin / Teacher / Student]
-        W2[(SQLite\nPrisma ORM)]
-        W1 <--> W2
-    end
-
-    V1 --> XZ1
-    XZ3 --> W1
-
-    V2 --> IM1 --> OC1 --> AI1
-    AI3 --> W1
+```text
+    ┌────────────────────────┐                   ┌────────────────────────┐
+    │ 🎙️ LỆNH GIỌNG NÓI      │                   │ 📷 ẢNH CHỤP BÀI VIẾT   │
+    │ (Giáo viên ──▶ Alexa)  │                   │ (Bài làm của học sinh) │
+    └───────────┬────────────┘                   └───────────┬────────────┘
+                │                                            │
+                ▼                                            ▼
+┌────────────────────────────────┐               ┌────────────────────────┐
+│ 🤖 MODULE 1: XIAOZHI DICTATION │               │ 🖼️ MODULE 2: TIỀN XỬ LÝ│
+│ • Phần cứng Robot ESP32-S3     │               │ Pipeline 9 bước lọc ảnh│
+│ • xiaozhi.me Cloud ASR/TTS     │               │ (Khử bóng, nhị phân...)│
+│ • MCP Server Python (:8200)    │               └───────────┬────────────┘
+└───────────────┬────────────────┘                           │
+                │                                            ▼
+                │                                ┌────────────────────────┐
+                │                                │ ☁️ MODULE 3: OCR VISION│
+                │                                │ Google Gemini API      │
+                │                                │ (Trích xuất chữ viết)  │
+                │                                └───────────┬────────────┘
+                │                                            │
+                │                                            ▼
+                │                                ┌────────────────────────┐
+                │                                │ 🤖 MODULE 4: CHẤM ĐIỂM │
+                │                                │ • Sửa lỗi ViT5 (:8000) │
+                │                                │ • So khớp Levenshtein  │
+                │                                │ • Chấm điểm 4 tiêu chí │
+                │                                └───────────┬────────────┘
+                │                                            │
+                ▼                                            ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 🌐 MODULE 5: HỆ THỐNG QUẢN TRỊ TRUNG TÂM (Next.js :3000 + SQLite)       │
+│                                                                         │
+│   • Lưu trữ & tra cứu bài đọc chính tả (DictationSession)               │
+│   • Lưu trữ bài chấm điểm & bảng điểm lớp học (Grade)                   │
+│   • Phân quyền 3 cấp: Admin / Giáo viên / Học sinh                      │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Ghi chú thuật ngữ
+## Bảng Thuật ngữ Kỹ thuật
 
-| Thuật ngữ | Giải thích |
-|-----------|-----------|
-| **MCP** | Model Context Protocol — chuẩn giao thức JSON-RPC cho phép LLM gọi công cụ bên ngoài |
-| **WebSocket** | Giao thức kết nối hai chiều liên tục giữa MCP Server và xiaozhi.me Cloud |
-| **ASR** | Automatic Speech Recognition — nhận dạng giọng nói tự động |
-| **TTS** | Text-to-Speech — chuyển văn bản thành giọng nói |
-| **LLM** | Large Language Model — mô hình ngôn ngữ lớn xử lý lệnh của giáo viên |
-| **ESP32-S3** | Vi điều khiển của Xiaozhi, chứa mic, loa, màn hình; kết nối WiFi lên Cloud |
-| **CUID** | Collision-resistant Unique Identifier — định danh duy nhất cho mỗi bản ghi |
-| **Role Prompt** | System Prompt định nghĩa nhân vật Alexa gửi qua `initialize` response |
+| Thuật ngữ | Ý nghĩa & Chức năng trong hệ thống |
+| :--- | :--- |
+| **MCP (Model Context Protocol)** | Giao thức mở chuẩn hóa trao đổi JSON-RPC, cho phép AI Chatbot chủ động kích hoạt API lưu bài của ViHand Grade. |
+| **WebSocket** | Kênh kết nối mạng hai chiều liên tục thời gian thực giữa MCP Server và dịch vụ Cloud/ESP32. |
+| **ASR (Automatic Speech Recognition)** | Bộ nhận dạng giọng nói tự động, chuyển lệnh thoại của giáo viên thành văn bản điều khiển. |
+| **TTS (Text-to-Speech)** | Bộ tổng hợp giọng nói, đọc đoạn văn chính tả tiếng Việt phát ra loa với tốc độ phù hợp học sinh tiểu học. |
+| **ESP32-S3** | Vi điều khiển trung tâm trên robot Xiaozhi, tích hợp WiFi/BLE, bộ nhớ PSRAM và các cổng I2S giao tiếp Mic/Loa. |
+| **Prisma ORM** | Tầng truy xuất dữ liệu an toàn, ánh xạ đối tượng lập trình với cơ sở dữ liệu SQLite cục bộ. |
+| **Role Prompt** | Đoạn chỉ dẫn hệ thống định hình tính cách, phong cách sư phạm và quy tắc nghiệp vụ cho trợ lý AI Alexa. |

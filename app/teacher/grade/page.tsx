@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -11,12 +12,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Badge } from "@/components/ui/badge"
 import {
-  Camera, Upload, CheckCircle, AlertCircle, X,
+  Camera, CheckCircle, AlertCircle, X,
   FolderOpen, Clock, Zap, FileText, RefreshCw,
-  Star, MessageSquare, Pencil, Save, User, BookOpen
+  Star, MessageSquare, Save, User, BookOpen, ScrollText, Sparkles,
+  Image as ImageIcon
 } from "lucide-react"
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -66,17 +68,6 @@ function getRatingStyle(rating: string) {
   return { badge: "bg-red-100 text-red-700 border-red-200", emoji: "💪" }
 }
 
-function ScoreDisplay({ score }: { score: string }) {
-  const num = parseFloat(score)
-  const color = num >= 9 ? "text-emerald-600" : num >= 7 ? "text-green-600" : num >= 5 ? "text-blue-600" : num >= 3 ? "text-yellow-600" : "text-red-600"
-  return (
-    <div className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-border bg-card">
-      <span className="text-xs text-muted-foreground mb-1">Điểm số</span>
-      <span className={`text-5xl font-bold ${color}`}>{score}</span>
-    </div>
-  )
-}
-
 function ScoreBar({ label, raw, max, note }: { label: string; raw: number; max: number; note?: string }) {
   const pct = max > 0 ? (raw / max) * 100 : 0
   const barColor = pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-blue-500" : pct >= 30 ? "bg-yellow-500" : "bg-red-500"
@@ -94,6 +85,612 @@ function ScoreBar({ label, raw, max, note }: { label: string; raw: number; max: 
   )
 }
 
+// ─── Popup kết quả chấm điểm ────────────────────────────────────────────────
+interface ResultPopupProps {
+  open: boolean
+  onClose: () => void
+  gradingResult: GradingResult
+  studentName: string
+  originalImage: string | null
+  processedImage: string | null
+  hinhThucOverride: number | null
+  noiDungOverride: number | null
+  sangTaoOverride: number | null
+  setHinhThucOverride: (v: number) => void
+  setNoiDungOverride: (v: number) => void
+  setSangTaoOverride: (v: number) => void
+  teacherComment: string
+  setTeacherComment: (v: string) => void
+  isSaving: boolean
+  isSaved: boolean
+  onSave: () => void
+}
+
+// ── Helper: annotate text with correction highlights + interactive ──
+function annotateText(
+  text: string,
+  corrections: Array<{ error: string; suggestion: string }>,
+  mode: "inline" | "highlight-error" | "highlight-fix",
+  activeIdx: number | null = null,
+  onHover?: (idx: number | null) => void,
+  onClick?: (idx: number) => void
+): React.ReactNode {
+  if (!corrections || corrections.length === 0) return <span className="whitespace-pre-wrap">{text}</span>
+
+  const source = mode === "highlight-fix" ? corrections.map(c => c.suggestion) : corrections.map(c => c.error)
+  const baseText = text
+
+  const spans: { start: number; end: number; idx: number }[] = []
+  for (let i = 0; i < source.length; i++) {
+    const word = source[i]
+    let searchFrom = 0
+    while (searchFrom <= baseText.length - word.length) {
+      const pos = baseText.indexOf(word, searchFrom)
+      if (pos === -1) break
+      const overlaps = spans.some(s => pos < s.end && pos + word.length > s.start)
+      if (!overlaps) { spans.push({ start: pos, end: pos + word.length, idx: i }); break }
+      searchFrom = pos + 1
+    }
+  }
+  spans.sort((a, b) => a.start - b.start)
+
+  const nodes: React.ReactNode[] = []
+  let cursor = 0
+  let key = 0
+
+  const handlers = (idx: number) => ({
+    onMouseEnter: () => onHover?.(idx),
+    onMouseLeave: () => onHover?.(null),
+    onClick: () => onClick?.(idx),
+    "data-error-idx": idx,
+  })
+
+  for (const sp of spans) {
+    if (cursor < sp.start) nodes.push(<span key={key++} className="whitespace-pre-wrap">{baseText.slice(cursor, sp.start)}</span>)
+    const c = corrections[sp.idx]
+    const isActive = activeIdx === sp.idx
+    const ringClass = isActive ? "error-highlight-active" : ""
+
+    if (mode === "inline") {
+      nodes.push(
+        <span
+          key={key++}
+          className={`inline-flex items-baseline gap-0.5 mx-0.5 rounded-sm px-0.5 cursor-pointer transition-all duration-200 ${ringClass} ${isActive ? "bg-amber-100/80 ring-2 ring-amber-400 scale-105" : "hover:bg-amber-50/50"}`}
+          {...handlers(sp.idx)}
+        >
+          <span style={{ color: "#dc2626", textDecoration: "line-through", textDecorationColor: "#fca5a5", textDecorationThickness: "2px" }} className="font-medium">{c.error}</span>
+          <span style={{ color: "#15803d", textDecoration: "underline", textDecorationColor: "#86efac", textDecorationThickness: "2px", textUnderlineOffset: "2px" }} className="font-semibold">{c.suggestion}</span>
+        </span>
+      )
+    } else if (mode === "highlight-error") {
+      nodes.push(
+        <span
+          key={key++}
+          style={{ color: "#b91c1c", borderBottom: "2px solid #fca5a5" }}
+          className={`font-medium not-italic cursor-pointer rounded-sm px-0.5 transition-all duration-200 ${ringClass} ${isActive ? "bg-red-100/80 ring-2 ring-red-400 scale-105" : "hover:bg-red-50/50"}`}
+          {...handlers(sp.idx)}
+        >{c.error}</span>
+      )
+    } else {
+      nodes.push(
+        <span
+          key={key++}
+          style={{ color: "#15803d", textDecoration: "underline", textDecorationColor: "#86efac", textDecorationThickness: "2px", textUnderlineOffset: "2px" }}
+          className={`font-semibold not-italic cursor-pointer rounded-sm px-0.5 transition-all duration-200 ${ringClass} ${isActive ? "bg-green-100/80 ring-2 ring-green-400 scale-105" : "hover:bg-green-50/50"}`}
+          {...handlers(sp.idx)}
+        >{c.suggestion}</span>
+      )
+    }
+    cursor = sp.end
+  }
+  if (cursor < baseText.length) nodes.push(<span key={key++} className="whitespace-pre-wrap">{baseText.slice(cursor)}</span>)
+  return <>{nodes}</>
+}
+
+function ResultPopup({
+  open, onClose, gradingResult, studentName,
+  originalImage, processedImage,
+  hinhThucOverride, noiDungOverride, sangTaoOverride,
+  setHinhThucOverride, setNoiDungOverride, setSangTaoOverride,
+  teacherComment, setTeacherComment,
+  isSaving, isSaved, onSave
+}: ResultPopupProps) {
+  const [viewMode, setViewMode] = useState<"inline" | "sidebyside">("inline")
+  const [activeErrorIdx, setActiveErrorIdx] = useState<number | null>(null)
+  const [imageLayer, setImageLayer] = useState(false)
+  const displayImage = processedImage || originalImage
+
+  const sb = gradingResult.score_breakdown
+  const ht = hinhThucOverride ?? sb?.hinh_thuc?.raw ?? 2.5
+  const nd = noiDungOverride  ?? sb?.noi_dung?.raw ?? 1.5
+  const st = sangTaoOverride  ?? sb?.sang_tao?.raw ?? 0
+  const chinhTaRaw = sb?.chinh_ta?.raw ?? 0
+  const total = Math.min(10, Math.round((chinhTaRaw + ht + nd + st) * 10) / 10)
+  const displayScore = `${total.toFixed(1)}`
+  const scoreNum = total
+  const scoreColor = scoreNum >= 9 ? "text-emerald-600" : scoreNum >= 7 ? "text-green-600" : scoreNum >= 5 ? "text-blue-600" : scoreNum >= 3 ? "text-yellow-600" : "text-red-600"
+  const ratingStyle = getRatingStyle(gradingResult.overall_rating)
+
+  const scoreGradient = scoreNum >= 9
+    ? "from-emerald-600 to-emerald-500"
+    : scoreNum >= 7 ? "from-green-600 to-green-500"
+    : scoreNum >= 5 ? "from-blue-600 to-blue-500"
+    : scoreNum >= 3 ? "from-amber-500 to-orange-400"
+    : "from-red-500 to-rose-500"
+
+  // ── Inline JSX (KHÔNG phải component con) để tránh lỗi unmount/remount khi state thay đổi ──
+  const scorePanelJSX = (
+    <div className="space-y-3">
+      {sb && (
+        <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-muted/50 border-b border-border flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            <span className="font-bold text-sm">Bảng điểm chi tiết</span>
+            <span className="ml-auto text-[11px] text-muted-foreground italic">Kéo thanh điều chỉnh</span>
+          </div>
+          <div className="p-3 space-y-2.5">
+            {/* Chính tả */}
+            <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold flex items-center gap-1.5">
+                  📝 Chính tả &amp; Ngữ pháp
+                  <span className="font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full text-[10px]">
+                    {sb.chinh_ta.error_count} lỗi, −{sb.chinh_ta.deduction}đ
+                  </span>
+                </span>
+                <span className="text-lg font-extrabold tabular-nums">
+                  {sb.chinh_ta.raw}<span className="text-xs font-normal text-muted-foreground"> / {sb.chinh_ta.max}</span>
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-full rounded-full bg-green-500 transition-all duration-700" style={{ width: `${(sb.chinh_ta.raw / sb.chinh_ta.max) * 100}%` }} />
+              </div>
+            </div>
+            {/* Hình thức */}
+            <div className="rounded-lg border border-stone-200 bg-white p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-700">✍️ Hình thức trình bày</span>
+                <span className="text-xl font-extrabold text-blue-600 tabular-nums">{ht.toFixed(1)}<span className="text-xs font-normal text-stone-400"> /3</span></span>
+              </div>
+              <input type="range" min={0} max={3} step={0.5} value={ht} onChange={e => setHinhThucOverride(parseFloat(e.target.value))} className="w-full accent-blue-500 h-2 rounded-full cursor-pointer" />
+              <div className="flex justify-between text-[10px] text-stone-400 font-medium">
+                <span>0 Xấu</span><span>1.5 TB</span><span>3 Đẹp</span>
+              </div>
+            </div>
+            {/* Nội dung */}
+            <div className="rounded-lg border border-stone-200 bg-white p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-700">💡 Nội dung &amp; Ý tưởng</span>
+                <span className="text-xl font-extrabold text-indigo-600 tabular-nums">{nd.toFixed(1)}<span className="text-xs font-normal text-stone-400"> /2</span></span>
+              </div>
+              <input type="range" min={0} max={2} step={0.5} value={nd} onChange={e => setNoiDungOverride(parseFloat(e.target.value))} className="w-full accent-indigo-500 h-2 rounded-full cursor-pointer" />
+              <div className="flex justify-between text-[10px] text-stone-400 font-medium">
+                <span>0 Lạc đề</span><span>1 Đủ ý</span><span>2 Sâu</span>
+              </div>
+            </div>
+            {/* Sáng tạo */}
+            <div className="rounded-lg border border-stone-200 bg-white p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-700">✨ Sáng tạo</span>
+                <span className="text-xl font-extrabold text-amber-600 tabular-nums">{st.toFixed(1)}<span className="text-xs font-normal text-stone-400"> /1</span></span>
+              </div>
+              <input type="range" min={0} max={1} step={0.5} value={st} onChange={e => setSangTaoOverride(parseFloat(e.target.value))} className="w-full accent-amber-500 h-2 rounded-full cursor-pointer" />
+              <div className="flex justify-between text-[10px] text-stone-400 font-medium">
+                <span>0 Không</span><span>0.5 Ít</span><span>1 Nổi bật</span>
+              </div>
+            </div>
+            {/* Tổng */}
+            <div className="flex items-center justify-between rounded-lg bg-stone-50 border-2 border-stone-200 px-4 py-3">
+              <div>
+                <span className="text-xs font-bold text-stone-600">Tổng điểm</span>
+                <p className="text-[10px] text-stone-400 mt-0.5">{chinhTaRaw} + {ht.toFixed(1)} + {nd.toFixed(1)} + {st.toFixed(1)}</p>
+              </div>
+              <span className={`text-3xl font-extrabold ${scoreColor}`}>{displayScore}<span className="text-sm font-normal text-stone-400">/10</span></span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lưu vào Database */}
+      <div className={`rounded-xl border overflow-hidden ${isSaved ? "border-green-300 bg-green-50/40" : "border-stone-200 bg-white"}`}>
+        <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center gap-2">
+          <Save className="w-4 h-4 text-primary" />
+          <span className="font-semibold text-sm">Lưu kết quả vào Database</span>
+        </div>
+        <div className="p-4">
+          {isSaved ? (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-green-100 text-green-700">
+              <CheckCircle className="w-5 h-5 shrink-0" />
+              <div><p className="font-medium">Đã lưu thành công!</p><p className="text-sm opacity-80">Bài của {studentName} đã được lưu vào cơ sở dữ liệu</p></div>
+            </div>
+          ) : (
+            <Button className="w-full gap-2 h-11" onClick={onSave} disabled={isSaving || !studentName.trim()}>
+              {isSaving ? <><Spinner className="mr-2" />Đang lưu...</> : <><Save className="w-4 h-4" />Lưu bài của {studentName || "học sinh"}</>}
+            </Button>
+          )}
+          {!studentName.trim() && <p className="text-xs text-muted-foreground mt-2 text-center">⚠️ Điền tên học sinh ở form bên ngoài để lưu</p>}
+        </div>
+      </div>
+
+      {/* Nhận xét của giáo viên */}
+      <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm">
+        <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-stone-500" />
+          <span className="font-semibold text-sm text-stone-700">Nhận xét của giáo viên</span>
+          <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0 h-5 bg-stone-100 text-stone-500 border-stone-300">Có thể chỉnh sửa</Badge>
+        </div>
+        <div className="p-4 space-y-3">
+          {gradingResult.feedback && (
+            <div className="rounded-lg bg-stone-50 border border-stone-200 p-3 text-xs text-stone-500">
+              <p className="font-semibold text-foreground/70 mb-1.5 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-primary/60" /> Gợi ý từ AI (tham khảo):
+              </p>
+              <p className="leading-relaxed whitespace-pre-wrap">{gradingResult.feedback}</p>
+            </div>
+          )}
+          <Textarea
+            value={teacherComment}
+            onChange={e => setTeacherComment(e.target.value)}
+            placeholder="Nhập nhận xét của giáo viên tại đây..."
+            className="min-h-[140px] resize-y text-sm leading-relaxed"
+            style={{ minHeight: "140px" }}
+          />
+          <p className="text-[11px] text-muted-foreground text-right">
+            {teacherComment.length > 0 ? `${teacherComment.length} ký tự` : "Chưa có nhận xét"}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+
+  const corrections = gradingResult.corrections ?? []
+
+  const errorsTextsJSX = (
+    <div className="space-y-4">
+
+      {/* ── Header với compact toggle ── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <FileText className="w-4 h-4 text-primary" />
+          <span className="font-semibold text-sm text-foreground">Bài viết học sinh</span>
+          {corrections.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">({corrections.length} lỗi được đánh dấu)</span>
+          )}
+        </div>
+        {/* Compact pill toggle */}
+        <div className="flex items-center gap-0.5 bg-muted/60 rounded-lg p-0.5">
+          <button
+            onClick={() => setViewMode("inline")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              viewMode === "inline"
+                ? "bg-white shadow-sm text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            📄 Trực tiếp
+          </button>
+          <button
+            onClick={() => setViewMode("sidebyside")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              viewMode === "sidebyside"
+                ? "bg-white shadow-sm text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            📋 Song song
+          </button>
+        </div>
+      </div>
+
+      {/* ── Cách 1: Bài viết + Danh sách lỗi side-by-side ── */}
+      {viewMode === "inline" && (
+        <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 300px" }}>
+          {/* CỘT TRÁI: Bài viết có annotation */}
+          <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            {/* Panel header: legend + Image/Text toggle */}
+            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
+              <span className="text-[11px] text-slate-500 flex items-center gap-2">
+                <span style={{ color: "#b91c1c", textDecoration: "line-through", textDecorationColor: "#fca5a5", fontSize: "12px" }}>sai</span>
+                <span className="text-slate-400">→</span>
+                <span style={{ color: "#15803d", borderBottom: "2px solid #86efac" }}>đúng</span>
+                &nbsp;·&nbsp; Học sinh đối chiếu trực tiếp
+              </span>
+              {/* Ảnh/Text toggle trong panel */}
+              {displayImage && (
+                <div className="flex items-center gap-0.5 bg-slate-200/60 rounded-md p-0.5">
+                  <button
+                    onClick={() => setImageLayer(false)}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                      !imageLayer ? "bg-white shadow-sm text-slate-700" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    <FileText className="w-3 h-3" /> Text
+                  </button>
+                  <button
+                    onClick={() => setImageLayer(true)}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                      imageLayer ? "bg-white shadow-sm text-slate-700" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    <ImageIcon className="w-3 h-3" /> Ảnh
+                  </button>
+                </div>
+              )}
+            </div>
+            {/* Panel body: Ảnh hoặc văn bản có annotation */}
+            {imageLayer && displayImage ? (
+              <div className="p-3 bg-white">
+                <img
+                  src={displayImage}
+                  alt="Bài viết học sinh"
+                  className="w-full rounded-lg border border-slate-100"
+                  style={{ maxHeight: "60vh", objectFit: "contain" }}
+                />
+                <p className="mt-2 text-[10px] text-slate-400 text-center italic">{processedImage ? "Ảnh đã tiền xử lý (9 bước)" : "Ảnh gốc"}</p>
+              </div>
+            ) : (
+              <div
+                className="px-5 text-sm text-gray-900 font-bold font-tieu-hoc"
+                style={{
+                  backgroundImage: "repeating-linear-gradient(transparent, transparent 39px, #c7d7f0 39px, #c7d7f0 40px)",
+                  backgroundSize: "100% 40px",
+                  backgroundPosition: "0 20px",
+                  lineHeight: "40px",
+                  minHeight: "200px",
+                  backgroundColor: "#fefefe",
+                  paddingTop: "20px",
+                  paddingBottom: "20px",
+                }}
+              >
+                {corrections.length > 0
+                  ? annotateText(gradingResult.original_text, corrections, "inline", activeErrorIdx, setActiveErrorIdx, (idx) => setActiveErrorIdx(idx))
+                  : <span className="whitespace-pre-wrap">{gradingResult.original_text}</span>
+                }
+              </div>
+            )}
+          </div>
+
+          {/* CỘT PHẢI: Danh sách lỗi */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex flex-col">
+            <div className="px-3 py-2.5 bg-muted/50 border-b border-border flex items-center gap-2 shrink-0">
+              <AlertCircle className="w-3.5 h-3.5 text-destructive" />
+              <span className="font-semibold text-xs">Danh sách lỗi</span>
+              {corrections.length > 0 && (
+                <Badge className="ml-auto bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 h-4">{corrections.length} lỗi</Badge>
+              )}
+            </div>
+            <div className="overflow-y-auto flex-1 p-2.5 space-y-2">
+              {corrections.length > 0 ? corrections.map((c, i) => {
+                const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
+                const isActive = activeErrorIdx === i
+                return (
+                  <div
+                    key={i}
+                    className={`flex flex-col gap-1 p-2.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300 shadow-md scale-[1.02]"
+                        : "border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-border"
+                    }`}
+                    onMouseEnter={() => setActiveErrorIdx(i)}
+                    onMouseLeave={() => setActiveErrorIdx(null)}
+                    onClick={() => setActiveErrorIdx(isActive ? null : i)}
+                    data-error-card={i}
+                  >
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground font-mono bg-muted px-1 py-0.5 rounded">#{i + 1}</span>
+                      <span className="text-destructive text-xs font-medium line-through bg-red-50 px-1 rounded">{c.error}</span>
+                      <span className="text-muted-foreground text-xs font-bold">→</span>
+                      <span className="text-green-700 text-xs font-semibold bg-green-50 px-1 rounded">{c.suggestion}</span>
+                      <Badge variant="outline" className={`text-[9px] px-1 py-0 h-4 border ${typeInfo.color}`}>{typeInfo.label}</Badge>
+                      {c.is_dialect && <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border bg-amber-50 text-amber-700 border-amber-200">🗣</Badge>}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{c.reason}</p>
+                  </div>
+                )
+              }) : (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <CheckCircle className="w-8 h-8 mb-2 text-green-400 opacity-60" />
+                  <p className="text-xs font-semibold text-green-600">Không có lỗi!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cách 2: Side-by-Side (giữ nguyên) ── */}
+      {viewMode === "sidebyside" && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Bài gốc */}
+            <div className="rounded-xl border border-red-200 overflow-hidden shadow-sm">
+              <div className="px-3 py-2 bg-red-50/70 border-b border-red-100 flex items-center gap-2">
+                <span className="text-xs font-semibold text-red-600">📝 Bài gốc</span>
+                <span className="ml-auto text-[10px] text-red-400 italic">chỗ sai gạch chân đỏ</span>
+              </div>
+              <div
+                className="p-4 text-sm text-gray-900 font-bold font-tieu-hoc"
+                style={{
+                  backgroundImage: "repeating-linear-gradient(transparent, transparent 39px, #fca5a5 39px, #fca5a5 40px)",
+                  backgroundSize: "100% 40px",
+                  backgroundPosition: "0 16px",
+                  lineHeight: "40px",
+                  minHeight: "160px",
+                  backgroundColor: "#fff9f9",
+                  paddingTop: "16px",
+                }}
+              >
+                {corrections.length > 0
+                  ? annotateText(gradingResult.original_text, corrections, "highlight-error", activeErrorIdx, setActiveErrorIdx, (idx) => setActiveErrorIdx(idx))
+                  : <span className="whitespace-pre-wrap">{gradingResult.original_text}</span>
+                }
+              </div>
+            </div>
+            {/* Bài chuẩn */}
+            <div className="rounded-xl border border-green-200 overflow-hidden shadow-sm">
+              <div className="px-3 py-2 bg-green-50/70 border-b border-green-100 flex items-center gap-2">
+                <span className="text-xs font-semibold text-green-700">✅ Bài chuẩn</span>
+                <span className="ml-auto text-[10px] text-green-500 italic">chỗ sửa gạch chân xanh</span>
+              </div>
+              <div
+                className="p-4 text-sm text-gray-900 font-bold font-tieu-hoc"
+                style={{
+                  backgroundImage: "repeating-linear-gradient(transparent, transparent 39px, #6ee7b7 39px, #6ee7b7 40px)",
+                  backgroundSize: "100% 40px",
+                  backgroundPosition: "0 16px",
+                  lineHeight: "40px",
+                  minHeight: "160px",
+                  backgroundColor: "#f6fffe",
+                  paddingTop: "16px",
+                }}
+              >
+                {corrections.length > 0
+                  ? annotateText(gradingResult.fixed_text, corrections, "highlight-fix", activeErrorIdx, setActiveErrorIdx, (idx) => setActiveErrorIdx(idx))
+                  : <span className="whitespace-pre-wrap">{gradingResult.fixed_text}</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          {/* Danh sách lỗi bên dưới cho Cách 2 */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+            <div className="px-4 py-3 bg-muted/50 border-b border-border flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-destructive" />
+              <span className="font-semibold text-sm">Danh sách lỗi chi tiết</span>
+              {corrections.length > 0 && (
+                <Badge className="ml-auto bg-destructive/10 text-destructive border-destructive/20 text-xs">{corrections.length} lỗi</Badge>
+              )}
+            </div>
+            <div className="p-3">
+              {corrections.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {corrections.map((c, i) => {
+                    const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
+                    const isActive = activeErrorIdx === i
+                    return (
+                      <div
+                        key={i}
+                        className={`flex flex-col gap-1 p-2.5 rounded-lg border text-sm transition-all duration-200 cursor-pointer ${
+                          isActive
+                            ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300 shadow-md scale-[1.02]"
+                            : "border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-border"
+                        }`}
+                        onMouseEnter={() => setActiveErrorIdx(i)}
+                        onMouseLeave={() => setActiveErrorIdx(null)}
+                        onClick={() => setActiveErrorIdx(isActive ? null : i)}
+                        data-error-card={i}
+                      >
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">#{i + 1}</span>
+                          <span className="text-destructive font-medium line-through bg-red-50 px-1 rounded">{c.error}</span>
+                          <span className="text-muted-foreground font-bold">→</span>
+                          <span className="text-green-700 font-semibold bg-green-50 px-1 rounded">{c.suggestion}</span>
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 border ${typeInfo.color}`}>{typeInfo.label}</Badge>
+                          {c.is_dialect && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border bg-amber-50 text-amber-700 border-amber-200">🗣 Phương ngữ</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{c.reason}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <CheckCircle className="w-10 h-10 mb-2 text-green-400 opacity-60" />
+                  <p className="font-semibold text-green-600">Không có lỗi chính tả!</p>
+                  <p className="text-sm mt-1">Bài viết rất tốt 🎉</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+
+  // ── Luôn hiển thị fullscreen qua portal ──
+  if (!open || typeof document === "undefined") return null
+
+  const handleClose = () => { onClose() }
+
+  return createPortal(
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        display: "flex", flexDirection: "column",
+        overflow: "hidden", backgroundColor: "#f9f6f0",
+      }}
+    >
+      {/* ── Header ── */}
+      <div className={`bg-gradient-to-r ${scoreGradient} px-5 py-3 flex items-center gap-4 shrink-0 transition-all duration-700`}>
+
+        {/* TRÁI: Điểm số — 1 hàng ngang */}
+        <div className="flex items-center gap-2 bg-white/20 backdrop-blur rounded-xl px-4 py-2 shrink-0">
+          <span className="text-white/70 text-xs font-medium uppercase tracking-wide">Điểm số</span>
+          <span className="text-2xl font-extrabold text-white leading-none">{displayScore}</span>
+          <span className="text-white/60 text-sm">/10</span>
+        </div>
+
+        {/* GIỮA: Tên + Xếp loại */}
+        <div className="flex-1 flex items-center gap-3 min-w-0">
+          <h2 className="text-white font-bold text-base leading-tight truncate">Kết quả chấm điểm — {studentName || "Học sinh"}</h2>
+          <Badge className={`text-xs px-2.5 py-0.5 border font-semibold shrink-0 ${ratingStyle.badge}`}>
+            {ratingStyle.emoji} {gradingResult.overall_rating}
+          </Badge>
+        </div>
+
+        {/* PHẢI: stats + đóng */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 text-xs text-white/80">
+            <span className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1.5">
+              <Clock className="w-3.5 h-3.5" />{(gradingResult.processingTimeMs / 1000).toFixed(1)}s
+            </span>
+            {gradingResult.corrections?.length > 0 && (
+              <span className="flex items-center gap-1.5 bg-red-500/30 text-red-100 font-semibold rounded-lg px-2.5 py-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />{gradingResult.corrections.length} lỗi
+              </span>
+            )}
+          </div>
+          {/* Nút đóng — chỉ 1 nút duy nhất */}
+          <button
+            onClick={handleClose}
+            title="Đóng"
+            className="flex items-center gap-1.5 bg-white/20 hover:bg-red-500/70 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" /> Đóng
+          </button>
+        </div>
+      </div>
+
+      {/* ── Body: 2 cột ── */}
+      <div className="flex-1 overflow-hidden grid" style={{ gridTemplateColumns: "360px 1fr" }}>
+        {/* Cột trái: Bảng điểm + Lưu + Nhận xét */}
+        <div className="overflow-y-auto border-r border-stone-200 bg-white p-5 space-y-4">
+          {scorePanelJSX}
+        </div>
+        {/* Cột phải: Ảnh hoặc Lỗi + Văn bản */}
+        <div className="overflow-y-auto p-5" style={{ backgroundColor: "#f9f6f0" }}>
+          {errorsTextsJSX}
+        </div>
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-5 py-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">{isSaved ? "✅ Đã lưu vào database" : "⚠️ Chưa lưu — nhấn nút Lưu nhanh hoặc Lưu trong bảng điểm"}</p>
+        <div className="flex gap-2">
+          {!isSaved && (
+            <Button size="sm" onClick={onSave} disabled={isSaving || !studentName.trim()} className="gap-1.5">
+              <Save className="w-3.5 h-3.5" />{isSaving ? "Đang lưu..." : "Lưu nhanh"}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={handleClose}>Đóng</Button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+// ─── Main page ───────────────────────────────────────────────────────────────
 export default function GradingPage() {
   const [inputMode, setInputMode] = useState<"image" | "processed" | "text">("image")
   const [activeTab, setActiveTab] = useState<"image" | "processed" | "text">("image")
@@ -110,6 +707,9 @@ export default function GradingPage() {
   const [gradingResult, setGradingResult] = useState<GradingResult | null>(null)
   const [error, setError] = useState("")
 
+  // Popup kết quả
+  const [showResultPopup, setShowResultPopup] = useState(false)
+
   // Form lưu điểm
   const [studentName, setStudentName] = useState("")
   const [assignmentTitle, setAssignmentTitle] = useState("")
@@ -120,6 +720,9 @@ export default function GradingPage() {
   const [allClasses, setAllClasses] = useState<string[]>([])
   const [classStudents, setClassStudents] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+
+  // Nhận xét giáo viên
+  const [teacherComment, setTeacherComment] = useState("")
 
   // Cấu hình điểm — chỉ giữ penalty (trước khi chấm)
   const [scoreConfig, setScoreConfig] = useState({ penalty: 0.5 })
@@ -208,7 +811,9 @@ export default function GradingPage() {
   }
 
   // Nén ảnh trước khi gửi API — giảm kích thước đáng kể để tăng tốc Gemini
-  const compressImageForAPI = (base64: string, maxDim = 1280, quality = 0.75): Promise<string> => {
+  // Fix Issue #6: Thống nhất ngưỡng 1600px với server-side image-processor.ts
+  // Tăng quality lên 0.85 để bảo toàn nét chữ bút chì và dấu thanh tiếng Việt nhỏ
+  const compressImageForAPI = (base64: string, maxDim = 1600, quality = 0.85): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image()
       img.onload = () => {
@@ -237,6 +842,7 @@ export default function GradingPage() {
     setError("")
     setGradingResult(null)
     setIsSaved(false)
+    setTeacherComment("")
     try {
       let textToGrade = studentText
       let geminiFixedText: string | undefined = undefined
@@ -279,6 +885,8 @@ export default function GradingPage() {
       setHinhThucOverride(sb?.hinh_thuc?.raw ?? 2.5)
       setNoiDungOverride(sb?.noi_dung?.raw ?? 1.5)
       setSangTaoOverride(sb?.sang_tao?.raw ?? 0)
+      // Mở popup kết quả ngay sau khi chấm xong
+      setShowResultPopup(true)
     } catch {
       setError("Không thể kết nối server.")
     } finally {
@@ -307,7 +915,7 @@ export default function GradingPage() {
           corrections: gradingResult.corrections,
           score: gradingResult.score,
           scoreBreakdown: gradingResult.score_breakdown,
-          feedback: gradingResult.feedback,
+          feedback: teacherComment || gradingResult.feedback,
           overallRating: gradingResult.overall_rating,
           processingTimeMs: gradingResult.processingTimeMs,
           tokenCount: gradingResult.tokenCount,
@@ -386,6 +994,7 @@ export default function GradingPage() {
     setOcrText(""); setIsOcring(false)
     setError(""); setIsSaved(false); setStudentName(""); setAssignmentTitle(""); setClassName("")
     setInputMode("image"); setActiveTab("image")
+    setShowResultPopup(false); setTeacherComment("")
   }
 
   const canGrade = (inputMode === "image" || inputMode === "processed") ? !!uploadedImage : !!studentText.trim()
@@ -446,35 +1055,11 @@ export default function GradingPage() {
       </header>
 
       <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
-        {/* Pipeline Banner */}
-        <div className="mb-5 flex items-center gap-1.5 overflow-x-auto pb-1">
-          {[
-            { step: 1, icon: "📷", label: "Chụp/Upload", active: !processedImage },
-            { step: 2, icon: "🔧", label: "Tiền xử lý (9 bước)", active: !!processedImage && !ocrText },
-            { step: 3, icon: "🔍", label: "OCR (Gemini)", active: !!ocrText && !gradingResult },
-            { step: 4, icon: "🤖", label: "ViT5 sửa lỗi", active: isProcessing },
-            { step: 5, icon: "📊", label: "Levenshtein", active: !!gradingResult },
-          ].map(({ step, icon, label, active }, i, arr) => (
-            <>
-              <div key={step} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : (step < (gradingResult ? 5 : ocrText ? 3 : processedImage ? 2 : 1))
-                    ? "bg-green-100 text-green-700"
-                    : "bg-muted text-muted-foreground"
-              }`}>
-                <span>{icon}</span><span>{label}</span>
-              </div>
-              {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
-            </>
-          ))}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] gap-6 items-start">
 
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-
-          {/* LEFT: Input */}
-          <div className="space-y-6">
-            {/* Thông tin học sinh */}
+          {/* LEFT: Form cham diem */}
+          <div className="space-y-5">
+            {/* Thong tin hoc sinh */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -556,11 +1141,7 @@ export default function GradingPage() {
                 <Tabs value={activeTab} onValueChange={(v) => {
                   setActiveTab(v as any)
                   setInputMode(v as any)
-                  // Chỉ clearAll khi chuyển sang tab ảnh (để reset ảnh cũ nếu đang ở text mode)
-                  if (v === "text") {
-                    // Chuyển sang nhập text — GIỮ NGUYÊN ảnh đã upload (không xóa)
-                    // Chỉ reset studentText nếu cần (không làm gì thêm)
-                  } else if (v === "processed" && uploadedImage && !processedImage) {
+                  if (v === "processed" && uploadedImage && !processedImage) {
                     handlePreprocess(uploadedImage)
                   }
                 }}>
@@ -656,10 +1237,9 @@ export default function GradingPage() {
                 {/* === Cấu hình chấm điểm === */}
                 <div className="mt-5 rounded-xl border border-border bg-muted/40 p-4 space-y-4">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    ⚙️ Cấu hình điểm <span className="font-normal normal-case">(tiếp nhận trước khi chấm)</span>
+                    ⚙️ Cấu hình điểm <span className="font-normal normal-case">(thiết lập trước khi chấm)</span>
                   </p>
 
-                  {/* Chỉ giữ: Trừ điểm mỗi lỗi chính tả */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm">✖️ Trừ điểm mỗi lỗi chính tả</Label>
@@ -693,244 +1273,133 @@ export default function GradingPage() {
                       : <><Spinner className="mr-2" />🤖 Đang chấm điểm (ViT5)...</>
                     : <><Zap className="w-5 h-5" />Chấm điểm</>}
                 </Button>
+
+                {/* Nút mở lại popup nếu đã có kết quả */}
+                {gradingResult && !showResultPopup && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2 gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                    onClick={() => setShowResultPopup(true)}
+                  >
+                    <ScrollText className="w-4 h-4" />
+                    Xem lại kết quả chấm điểm
+                    {isSaved && <Badge className="ml-1 bg-green-100 text-green-700 border-green-200 text-[10px]">Đã lưu</Badge>}
+                  </Button>
+                )}
               </CardContent>
             </Card>
+        </div>
+
+          {/* RIGHT: Huong dan su dung */}
+          <div className="hidden lg:block sticky top-6 space-y-4">
+
+            {/* Pipeline trang thai */}
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">🔄 Quy trình AI</p>
+              <div className="space-y-2">
+                {[
+                  { step: 1, icon: "📷", label: "Chụp/Upload ảnh", active: !processedImage, done: !!processedImage },
+                  { step: 2, icon: "🔧", label: "Tiền xử lý (9 bước)", active: !!processedImage && !ocrText, done: !!ocrText },
+                  { step: 3, icon: "🔍", label: "OCR (Gemini)", active: !!ocrText && !gradingResult, done: !!gradingResult },
+                  { step: 4, icon: "🤖", label: "ViT5 sửa lỗi", active: isProcessing, done: !!gradingResult },
+                  { step: 5, icon: "📊", label: "Chấm điểm Levenshtein", active: !!gradingResult, done: false },
+                ].map(({ step, icon, label, active, done }) => (
+                  <div key={step} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    done ? "bg-green-50 text-green-700"
+                    : active ? "bg-primary/10 text-primary font-semibold"
+                    : "text-muted-foreground"
+                  }`}>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                      done ? "bg-green-200 text-green-700"
+                      : active ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                    }`}>
+                      {done ? "✓" : step}
+                    </span>
+                    <span>{icon} {label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Huong dan su dung */}
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">📖 Hướng dẫn nhanh</p>
+              <div className="space-y-3">
+                {[
+                  { num: "1", color: "bg-blue-500", title: "Nhập thông tin học sinh", desc: "Điền tên, lớp và tên bài viết" },
+                  { num: "2", color: "bg-purple-500", title: "Chụp hoặc tải ảnh bài viết", desc: "Camera hoặc chọn ảnh từ máy tính" },
+                  { num: "3", color: "bg-orange-500", title: "Cấu hình mức trừ điểm", desc: "Điều chỉnh điểm trừ mỗi lỗi (0.1 – 1.0)" },
+                  { num: "4", color: "bg-primary", title: 'Nhấn "Chấm điểm"', desc: "AI nhận dạng → sửa lỗi → tính điểm" },
+                  { num: "5", color: "bg-green-500", title: "Xem kết quả & lưu", desc: "Điều chỉnh điểm + nhận xét rồi lưu" },
+                ].map(({ num, color, title, desc }) => (
+                  <div key={num} className="flex gap-3">
+                    <span className={`${color} text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5`}>{num}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Meo hay */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">💡 Mẹo để đạt kết quả tốt</p>
+              <ul className="space-y-1.5 text-xs text-amber-700">
+                <li className="flex gap-2"><span>•</span><span>Chụp ảnh thẳng góc, đủ sáng, chữ gọn trong khung</span></li>
+                <li className="flex gap-2"><span>•</span><span>Tránh ảnh mờ, nhòe hoặc bị che khuất</span></li>
+                <li className="flex gap-2"><span>•</span><span>Có thể điều chỉnh điểm từng tiêu chí sau khi chấm</span></li>
+                <li className="flex gap-2"><span>•</span><span>Nhận xét giáo viên sẽ lưu thay thế gợi ý AI</span></li>
+              </ul>
+            </div>
+
+            {/* Thang diem */}
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">🏆 Thang điểm</p>
+              <div className="space-y-1.5">
+                {[
+                  { range: "9–10", label: "Xuất sắc", color: "bg-emerald-100 text-emerald-700" },
+                  { range: "7–8", label: "Tốt", color: "bg-green-100 text-green-700" },
+                  { range: "5–6", label: "Khá", color: "bg-blue-100 text-blue-700" },
+                  { range: "3–4", label: "Trung bình", color: "bg-yellow-100 text-yellow-700" },
+                  { range: "0–2", label: "Cần cố gắng", color: "bg-red-100 text-red-700" },
+                ].map(({ range, label, color }) => (
+                  <div key={range} className="flex items-center justify-between">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>{label}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{range} điểm</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT: Results */}
-          <div className="space-y-6">
-            {gradingResult ? (
-              <>
-                {/* Score + Rating */}
-                <Card className="border-border/50">
-                  <CardContent className="pt-6">
-                    {(() => {
-                      const sb = gradingResult.score_breakdown
-                      const ht = hinhThucOverride ?? sb?.hinh_thuc?.raw ?? 2.5
-                      const nd = noiDungOverride  ?? sb?.noi_dung?.raw ?? 1.5
-                      const st = sangTaoOverride  ?? sb?.sang_tao?.raw ?? 0
-                      const total = Math.min(10, Math.round(((sb?.chinh_ta?.raw ?? 0) + ht + nd + st) * 10) / 10)
-                      const displayScore = `${total.toFixed(1)}/10`
-                      const ratingStyle = getRatingStyle(gradingResult.overall_rating)
-                      return (
-                        <div className="flex items-center gap-4">
-                          <ScoreDisplay score={displayScore} />
-                          <div className="flex-1 space-y-2">
-                            <Badge className={`text-sm px-3 py-1 border ${ratingStyle.badge}`}>{ratingStyle.emoji} {gradingResult.overall_rating}</Badge>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(gradingResult.processingTimeMs / 1000).toFixed(1)}s</span>
-                              <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{gradingResult.tokenCount} tokens</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })()}
-                  </CardContent>
-                </Card>
-
-                {/* Score Breakdown */}
-                {gradingResult.score_breakdown && (
-                  <Card className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-primary" /> Bảng điểm chi tiết
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <ScoreBar
-                          label="📝 Chính tả & Ngữ pháp"
-                          raw={gradingResult.score_breakdown.chinh_ta.raw}
-                          max={gradingResult.score_breakdown.chinh_ta.max}
-                          note={`${gradingResult.score_breakdown.chinh_ta.error_count} lỗi, trừ ${gradingResult.score_breakdown.chinh_ta.deduction}đ`}
-                        />
-
-                        {/* Hình thức — editable */}
-                        {hinhThucOverride !== null ? (
-                          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-blue-700">✍️ Hình thức trình bày</span>
-                              <span className="text-sm font-bold text-blue-700 tabular-nums">
-                                {hinhThucOverride.toFixed(1)} <span className="font-normal text-muted-foreground">/ 3</span>
-                              </span>
-                            </div>
-                            <input type="range" min={0} max={3} step={0.5}
-                              value={hinhThucOverride}
-                              onChange={e => setHinhThucOverride(parseFloat(e.target.value))}
-                              className="w-full accent-blue-500 h-2 rounded-full cursor-pointer"
-                            />
-                            <div className="flex justify-between text-[10px] text-blue-500">
-                              <span>0 — Chữ xấu</span><span>1.5 — TB</span><span>3 — Rất đẹp</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <ScoreBar label="✍️ Hình thức trình bày"
-                            raw={gradingResult.score_breakdown.hinh_thuc.raw}
-                            max={gradingResult.score_breakdown.hinh_thuc.max}
-                            note={gradingResult.score_breakdown.hinh_thuc.note}
-                          />
-                        )}
-
-                        {/* Nội dung — editable */}
-                        {noiDungOverride !== null ? (
-                          <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-indigo-700">💡 Nội dung & Ý tưởng</span>
-                              <span className="text-sm font-bold text-indigo-700 tabular-nums">
-                                {noiDungOverride.toFixed(1)} <span className="font-normal text-muted-foreground">/ 2</span>
-                              </span>
-                            </div>
-                            <input type="range" min={0} max={2} step={0.5}
-                              value={noiDungOverride}
-                              onChange={e => setNoiDungOverride(parseFloat(e.target.value))}
-                              className="w-full accent-indigo-500 h-2 rounded-full cursor-pointer"
-                            />
-                            <div className="flex justify-between text-[10px] text-indigo-500">
-                              <span>0 — Lạc đề</span><span>1 — Đủ ý</span><span>2 — Sâu sắc</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <ScoreBar label="💡 Nội dung & Ý tưởng"
-                            raw={gradingResult.score_breakdown.noi_dung.raw}
-                            max={gradingResult.score_breakdown.noi_dung.max}
-                            note={gradingResult.score_breakdown.noi_dung.note}
-                          />
-                        )}
-
-                        {/* Sáng tạo — chỉ slider, không có ScoreBar thần */}
-                        {sangTaoOverride !== null && (
-                          <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-amber-700">✨ Điều chỉnh Sáng tạo</span>
-                              <span className="text-sm font-bold text-amber-700 tabular-nums">
-                                {sangTaoOverride.toFixed(1)} <span className="font-normal text-muted-foreground">/ 1</span>
-                              </span>
-                            </div>
-                            <input type="range" min={0} max={1} step={0.5}
-                              value={sangTaoOverride}
-                              onChange={e => setSangTaoOverride(parseFloat(e.target.value))}
-                              className="w-full accent-amber-500 h-2 rounded-full cursor-pointer"
-                            />
-                            <div className="flex justify-between text-[10px] text-amber-600">
-                              <span>0 — Không có</span><span>0.5 — Có ít</span><span>1 — Nổi bật</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Save Form */}
-                <Card className={`border-2 ${isSaved ? "border-green-300 bg-green-50/30" : "border-primary/20"}`}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Save className="w-4 h-4 text-primary" /> Lưu kết quả vào Database
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isSaved ? (
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-green-100 text-green-700">
-                        <CheckCircle className="w-5 h-5 shrink-0" />
-                        <div>
-                          <p className="font-medium">Đã lưu thành công!</p>
-                          <p className="text-sm opacity-80">Bài của {studentName} đã được lưu vào cơ sở dữ liệu</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button className="w-full gap-2" onClick={handleSave} disabled={isSaving || !studentName.trim()}>
-                        {isSaving ? <><Spinner className="mr-2" />Đang lưu...</> : <><Save className="w-4 h-4" />Lưu bài của {studentName || "học sinh"}</>}
-                      </Button>
-                    )}
-                    {!studentName.trim() && (
-                      <p className="text-xs text-muted-foreground mt-2 text-center">Điền tên học sinh ở cột bên trái để lưu</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Feedback */}
-                <Card className="border-border/50">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-primary" /> Nhận xét của AI
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{gradingResult.feedback}</p>
-                  </CardContent>
-                </Card>
-
-                {/* Corrections */}
-                {gradingResult.corrections?.length > 0 && (
-                  <Card className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-destructive" />
-                        Lỗi chính tả ({gradingResult.corrections.length} lỗi)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {gradingResult.corrections.map((c, i) => {
-                          const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
-                          return (
-                            <div key={i} className="flex flex-col gap-1.5 p-3 rounded-lg border border-border/60 bg-muted/30 text-sm">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-destructive font-medium line-through">{c.error}</span>
-                                <span className="text-muted-foreground">→</span>
-                                <span className="text-green-600 font-semibold">{c.suggestion}</span>
-                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 border ${typeInfo.color}`}>{typeInfo.label}</Badge>
-                                {c.is_dialect && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border bg-amber-50 text-amber-700 border-amber-200">🗣 Phương ngữ</Badge>}
-                              </div>
-                              <p className="text-xs text-muted-foreground">{c.reason}</p>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Fixed text */}
-                <Card className="border-green-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-green-600" /> Văn bản đã sửa
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="p-3 rounded-lg bg-green-50 border border-green-100">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{gradingResult.fixed_text}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Original text */}
-                <Card className="border-border/50">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2 text-muted-foreground">
-                      <FileText className="w-4 h-4" /> Văn bản gốc (AI nhận dạng)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{gradingResult.original_text}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <Card className="border-border/50 border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <Star className="w-14 h-14 mb-4 opacity-20" />
-                  <p className="font-medium">Chưa có kết quả</p>
-                  <p className="text-sm mt-1">Nhập bài viết và nhấn "Chấm điểm" để bắt đầu</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
         </div>
       </main>
+
+      {/* ── Popup kết quả ── */}
+      {gradingResult && (
+        <ResultPopup
+          open={showResultPopup}
+          onClose={() => setShowResultPopup(false)}
+          gradingResult={gradingResult}
+          studentName={studentName}
+          originalImage={uploadedImage}
+          processedImage={processedImage}
+          hinhThucOverride={hinhThucOverride}
+          noiDungOverride={noiDungOverride}
+          sangTaoOverride={sangTaoOverride}
+          setHinhThucOverride={setHinhThucOverride}
+          setNoiDungOverride={setNoiDungOverride}
+          setSangTaoOverride={setSangTaoOverride}
+          teacherComment={teacherComment}
+          setTeacherComment={setTeacherComment}
+          isSaving={isSaving}
+          isSaved={isSaved}
+          onSave={handleSave}
+        />
+      )}
 
       {/* Camera Dialog */}
       <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>

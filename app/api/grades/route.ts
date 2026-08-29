@@ -1,5 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { promises as fs } from "fs"
+import path from "path"
+
+// ============================================================
+// LƯU TRỮ ẢNH TRÊN ĐĨA (Issue #11 — SQLite Image Bloat Fix)
+// Lưu ảnh vật lý vào public/uploads/grades/ và chỉ lưu đường dẫn tương đối trong DB
+// ============================================================
+async function saveImageToDisk(imageBase64: string): Promise<string> {
+  if (!imageBase64 || typeof imageBase64 !== "string") return ""
+  try {
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "")
+    if (!base64Data || base64Data.length < 50) return ""
+
+    const buffer = Buffer.from(base64Data, "base64")
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "grades")
+    await fs.mkdir(uploadsDir, { recursive: true })
+
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.jpg`
+    const filepath = path.join(uploadsDir, filename)
+    await fs.writeFile(filepath, buffer)
+
+    return `/uploads/grades/${filename}`
+  } catch (err) {
+    console.error("[Grade] Lỗi khi lưu ảnh ra đĩa:", err)
+    return ""
+  }
+}
 
 // GET /api/grades - lấy danh sách điểm
 export async function GET(req: NextRequest) {
@@ -62,8 +89,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Parse điểm số (ví dụ "7.5/10" → 7.5)
+    // ============================================================
+    // SINGLE SOURCE OF TRUTH — Issue #5
+    // scoreNum luôn được server tự tính từ chuỗi score (VD: "7.5/10" → 7.5).
+    // Client KHÔNG gửi scoreNum và server KHÔNG đọc scoreNum từ request body.
+    // Điều này đảm bảo score (String) và scoreNum (Float) KHÔNG BAO GIỜ bị lệch nhau.
+    // ============================================================
     const scoreNum = parseFloat(score.split("/")[0]) || 0
+
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10) {
+      return NextResponse.json(
+        { error: `Định dạng điểm không hợp lệ: '${score}'. Dự kiến dạng 'X.X/10'.` },
+        { status: 400 }
+      )
+    }
+
+    // ============================================================
+    // LƯU ẢNH RA ĐĨA — Issue #11
+    // ============================================================
+    let imagePath = ""
+    if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 50) {
+      imagePath = await saveImageToDisk(imageBase64)
+    }
 
     const grade = await prisma.grade.create({
       data: {
@@ -81,6 +128,7 @@ export async function POST(req: NextRequest) {
         processingTimeMs: processingTimeMs || 0,
         tokenCount: tokenCount || 0,
         imageBase64: imageBase64 || "",
+        imagePath: imagePath || "",
       },
     })
 
@@ -90,3 +138,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

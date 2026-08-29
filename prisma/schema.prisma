@@ -16,13 +16,18 @@ model User {
   className String   @default("")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+  // Fix Issue #7: Quan hệ ngược lại — giáo viên phụ trách các lớp
+  classes   Class[]  @relation("TeacherClasses")
 }
 
 model Class {
   id        String   @id @default(cuid())
   name      String   @unique
   grade     Int      @default(3)
-  teacherId String   @default("")
+  // Fix Issue #7: teacherId → Optional String? + @relation chính thức Prisma
+  // onDelete: SetNull — khi xóa giáo viên, lớp học giữ nguyên, chỉ về trạng thái chưa phân công
+  teacherId String?  // nullable để hỗ trợ SetNull khi giáo viên bị xóa
+  teacher   User?    @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 }
 
@@ -42,23 +47,28 @@ model Grade {
   processingTimeMs     Int      @default(0)
   tokenCount           Int      @default(0)
   imageBase64          String   @default("")
+  imagePath            String   @default("")  // Đường dẫn tệp ảnh lưu trên đĩa (VD: /uploads/grades/xyz.jpg)
   dictationSessionId   String   @default("")  // Liên kết với phiên đọc chính tả Xiaozhi (tuỳ chọn)
   createdAt            DateTime @default(now())
 }
 
 // ============================================================
-// Module Xiaozhi Dictation — Lưu phiên đọc chính tả AI Chatbot
+// Module Xiaozhi Dictation — Bảng phiên đọc chính tả HỢP NHẤT
+// Dùng chung cho cả Robot ESP32 (cục bộ) và Trợ lý MCP (đám mây)
 // ============================================================
 
-// Phiên đọc chính tả: mỗi lần giáo viên nhờ Xiaozhi đọc bài cho học sinh
+// Phiên đọc chính tả: nguồn chân lý duy nhất (Single Source of Truth)
+// cho tất cả bài văn mẫu dùng đối chiếu khi chấm điểm tự động
 model DictationSession {
   id            String   @id @default(cuid())
   title         String                             // Tiêu đề bài đọc (VD: "Nghe viết: Ai có lỗi")
-  passage       String                             // Đoạn văn chính tả đầy đủ mà Xiaozhi đã đọc
-  className     String   @default("")              // Lớp học
-  teacherName   String   @default("")              // Tên giáo viên yêu cầu
-  status        String   @default("completed")     // "completed" | "in_progress"
-  summary       String   @default("")              // Tóm tắt phiên (Xiaozhi tự tạo)
+  passage       String                             // Văn bản bài đọc chuẩn (Ground Truth để đối chiếu chấm bài)
+  className     String   @default("")              // Lớp học (VD: "3A", "4B")
+  teacherName   String   @default("")              // Tên giáo viên phụ trách
+  source        String   @default("robot")         // Nguồn tạo phiên: "robot" | "mcp" | "manual"
+  deviceId      String   @default("")              // MAC Address hoặc ID của Robot ESP32 đã đọc bài (nếu source="robot")
+  status        String   @default("completed")     // "completed" | "in_progress" | "cancelled"
+  summary       String   @default("")              // Tóm tắt phiên
   createdAt     DateTime @default(now())
   logs          DictationLog[]
 }
@@ -68,7 +78,38 @@ model DictationLog {
   id           String   @id @default(cuid())
   sessionId    String                              // Liên kết DictationSession
   session      DictationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  speaker      String                              // "xiaozhi" | "teacher" | "student"
-  content      String                              // Nội dung chat (đã được Xiaozhi ghi lại)
+  speaker      String                              // "robot" | "xiaozhi" | "teacher" | "student"
+  content      String                              // Nội dung chat / lệnh điều khiển
   createdAt    DateTime @default(now())
+}
+
+// ============================================================
+// Module Xiaozhi Local Server — Robot ESP32-S3 tự host
+// ============================================================
+
+// Quản lý mạch ESP32-S3 đang kết nối tới Voice Core Server
+model RobotDevice {
+  id          String   @id @default(cuid())
+  macAddress  String   @unique                         // Địa chỉ MAC phần cứng của mạch ESP32 (định danh duy nhất)
+  name        String   @default("Robot Trợ Giảng")     // Tên hiển thị (VD: "Robot Lớp 3A")
+  ipAddress   String   @default("")                    // IP nội bộ mạng LAN (cập nhật qua heartbeat)
+  className   String   @default("")                    // Gắn với lớp học cụ thể (VD: "3A", "4B")
+  isOnline    Boolean  @default(false)                 // Trạng thái kết nối hiện tại
+  volume      Int      @default(80)                    // Âm lượng loa: 0 – 100 (%)
+  voiceName   String   @default("vi-VN-HoaiMyNeural")  // Giọng đọc Edge-TTS đang dùng
+  speedRate   String   @default("-15%")                // Tốc độ đọc TTS (chuẩn chính tả tiểu học)
+  lastSeen    DateTime @default(now())                 // Lần cuối gửi heartbeat
+  createdAt   DateTime @default(now())
+}
+
+// Kho ngữ liệu Sách Giáo Khoa Tiếng Việt Tiểu học để Robot tra cứu đọc chuẩn
+model TextbookPassage {
+  id             String   @id @default(cuid())
+  gradeLevel     Int      @default(3)           // Khối lớp: 1 | 2 | 3 | 4 | 5
+  bookSet        String   @default("KetNoi")    // Bộ sách: "KetNoi" | "CanhDieu" | "ChanTroi"
+  unit           String   @default("Tuần 1")    // Tuần/Bài học (VD: "Tuần 3", "Bài 12")
+  title          String                          // Tiêu đề bài đọc (VD: "Ai có lỗi")
+  content        String                          // Đoạn văn chính tả đầy đủ
+  difficultWords String   @default("")           // Danh sách từ khó dễ viết sai (phân cách bằng dấu phẩy)
+  createdAt      DateTime @default(now())
 }

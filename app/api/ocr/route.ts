@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
+import { guardAiRoute } from "@/lib/api-guard"
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite"
 
-function getApiKeys(): string[] {
-  const multi = process.env.GEMINI_API_KEYS || ""
-  return multi.split(",").map(k => k.trim()).filter(k => k.length > 10)
+function getApiKey(): string {
+  const key = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(",")[0] || ""
+  return key.trim()
 }
 
 // Prompt OCR kết hợp: nhận diện chính xác VÀ trả về bản đã sửa dưới dạng JSON
@@ -40,90 +41,76 @@ interface OcrResult {
 }
 
 async function callGeminiOCR(
-  keys: string[],
+  apiKey: string,
   imageBase64: string,
   mimeType: string
 ): Promise<OcrResult> {
-  const shuffled = [...keys].sort(() => Math.random() - 0.5)
+  if (!apiKey) throw new Error("Chưa cấu hình GEMINI_API_KEY")
 
-  for (let i = 0; i < shuffled.length; i++) {
-    const key = shuffled[i]
-    const client = new GoogleGenAI({ apiKey: key })
+  const client = new GoogleGenAI({ apiKey })
+
+  try {
+    const response = await client.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: [
+        { inlineData: { mimeType, data: imageBase64 } },
+        OCR_PROMPT,
+      ],
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.05,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 4096,
+      },
+    })
+
+    const text = response.text ?? ""
+    const tokenCount = response.usageMetadata?.totalTokenCount || 0
+
+    let original_text = ""
+    let gemini_fixed_text = ""
 
     try {
-      const response = await client.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: [
-          { inlineData: { mimeType, data: imageBase64 } },
-          OCR_PROMPT,
-        ],
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.05,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 4096,
-        },
-      })
-
-      const rawText = response.text ?? ""
-      const tokenCount = response.usageMetadata?.totalTokenCount || 0
-
-      if (!rawText.trim()) {
-        console.warn(`[OCR] Key #${i + 1} trả về rỗng → thử key tiếp`)
-        continue
-      }
-
-      // Parse JSON từ Gemini
-      let parsed: { original_text?: string; fixed_text?: string }
-      try {
-        const cleaned = rawText
-          .replace(/^```json\s*/i, "")
-          .replace(/^```\s*/i, "")
-          .replace(/```\s*$/i, "")
-          .trim()
-        parsed = JSON.parse(cleaned)
-      } catch (parseErr) {
-        console.warn(`[OCR] Key #${i + 1} JSON parse lỗi → thử key tiếp`, rawText.substring(0, 200))
-        continue
-      }
-
-      const original_text = (parsed.original_text ?? "").trim()
-      const gemini_fixed_text = (parsed.fixed_text ?? "").trim()
-
-      if (!original_text) {
-        console.warn(`[OCR] Key #${i + 1} original_text rỗng → thử key tiếp`)
-        continue
-      }
-
-      console.log(
-        `[OCR] ✓ Key #${i + 1} thành công (${tokenCount} tokens)` +
-        ` | original: ${original_text.length} chars | fixed: ${gemini_fixed_text.length} chars`
-      )
-      return { original_text, gemini_fixed_text, tokenCount, keyIndex: i + 1 }
-
-    } catch (err: any) {
-      const status = err?.status || 0
-      const msg = err?.message || ""
-
-      if (status === 429 || msg.includes("RESOURCE_EXHAUSTED")) {
-        console.warn(`[OCR] Key #${i + 1} hết quota → thử tiếp`)
-        continue
-      }
-      console.warn(`[OCR] Key #${i + 1} lỗi:`, JSON.stringify({ code: status, message: msg }))
-      continue
+      const cleaned = text
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim()
+      const parsed = JSON.parse(cleaned)
+      original_text = (parsed.original_text || "").trim()
+      gemini_fixed_text = (parsed.fixed_text || "").trim()
+    } catch {
+      original_text = text.trim()
+      gemini_fixed_text = text.trim()
     }
-  }
 
-  throw new Error("Tất cả API key đều lỗi hoặc hết quota. Vui lòng thử lại sau.")
+    if (!original_text) {
+      throw new Error("Không nhận diện được nội dung từ ảnh")
+    }
+
+    console.log(
+      `[OCR] ✓ Gemini OCR thành công (${tokenCount} tokens)` +
+      ` | original: ${original_text.length} chars | fixed: ${gemini_fixed_text.length} chars`
+    )
+    return { original_text, gemini_fixed_text, tokenCount, keyIndex: 1 }
+
+  } catch (err: any) {
+    console.error("[OCR] Gemini error:", err?.message)
+    throw err
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const keys = getApiKeys()
+  // Rate limiting & DoS guard (Issue #12)
+  const blocked = guardAiRoute(req, 30)
+  if (blocked) return blocked
 
-  if (keys.length === 0) {
+  const apiKey = getApiKey()
+
+  if (!apiKey) {
     return NextResponse.json(
-      { error: "Chưa cấu hình GEMINI_API_KEYS trong .env.local" },
+      { error: "Chưa cấu hình GEMINI_API_KEY trong file môi trường (.env / .env.local)" },
       { status: 500 }
     )
   }
@@ -143,7 +130,7 @@ export async function POST(req: NextRequest) {
 
     let result: OcrResult
     try {
-      result = await callGeminiOCR(keys, base64Data, mimeType || "image/jpeg")
+      result = await callGeminiOCR(apiKey, base64Data, mimeType || "image/jpeg")
     } catch (err: any) {
       return NextResponse.json(
         { error: err?.message || "Gemini OCR thất bại, vui lòng thử lại." },

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { promises as fs } from "fs"
+import path from "path"
 
 // DELETE /api/grades/[id]
 export async function DELETE(
@@ -8,6 +10,11 @@ export async function DELETE(
 ) {
   const { id } = await params
   try {
+    const existing = await prisma.grade.findUnique({ where: { id } })
+    if (existing?.imagePath) {
+      const diskPath = path.join(process.cwd(), "public", existing.imagePath.replace(/^\//, ""))
+      await fs.unlink(diskPath).catch(() => {})
+    }
     await prisma.grade.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error: any) {

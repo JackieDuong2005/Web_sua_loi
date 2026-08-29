@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma"
 // GET /api/classes - lấy danh sách lớp
 export async function GET() {
   try {
+    // Fix Issue #7: Dùng include teacher để lấy tên GV trong 1 query, tránh N+1 queries
     const classes = await prisma.class.findMany({
       orderBy: { createdAt: "desc" },
+      include: { teacher: { select: { id: true, name: true } } },
     })
 
     // Enrich mỗi lớp với số học sinh, giáo viên, điểm TB
@@ -15,14 +17,8 @@ export async function GET() {
           where: { className: cls.name, role: "student" },
         })
 
-        // Lấy tên giáo viên từ teacherId
-        let teacherName = ""
-        if (cls.teacherId) {
-          const teacher = await prisma.user.findUnique({
-            where: { id: cls.teacherId },
-          })
-          teacherName = teacher?.name || ""
-        }
+        // Fix Issue #7: Lấy trực tiếp từ quan hệ @relation thay vì query thủ công
+        const teacherName = cls.teacher?.name || ""
 
         // Điểm TB từ bảng Grade theo className
         const gradeAgg = await prisma.grade.aggregate({
@@ -76,7 +72,8 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         grade: grade || 3,
-        teacherId: teacherId || "",
+        // Fix Issue #7: teacherId là nullable — truyền null thay vì chuỗi rỗng khi không có GV
+        teacherId: teacherId || null,
       },
     })
 

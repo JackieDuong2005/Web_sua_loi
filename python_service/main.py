@@ -14,11 +14,24 @@ import time
 import logging
 import hashlib
 import asyncio
+import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
-# ThreadPool dùng riêng cho ViT5 inference (không block event loop FastAPI)
-_executor = ThreadPoolExecutor(max_workers=1)
+# ============================================================
+# ThreadPool cho ViT5 inference — không block FastAPI event loop
+#
+# Lý do max_workers mặc định = 1 là TỐI ƯU cho CPU:
+#   PyTorch đã áp dụng Intra-op Parallelism qua torch.set_num_threads(n_cores)
+#   → 1 lần suy luận tận dụng TOÀN BỘ nhân CPU đồng thời.
+#   Nếu tăng workers > 1 trên CPU, các worker sẽ tranh chấp nhân CPU với nhau
+#   (CPU Thrashing), kéo dài thời gian mỗi bài gấp đôi và tăng nguy cơ tràn RAM.
+#
+# Có thể điều chỉnh qua biến môi trường VIT5_WORKERS nếu triển khai
+# trên máy chủ GPU hoặc khi cần thực nghiệm hiệu năng.
+# ============================================================
+_VIT5_WORKERS = int(os.getenv("VIT5_WORKERS", "1"))
+_executor = ThreadPoolExecutor(max_workers=_VIT5_WORKERS)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vit5_service")
@@ -169,14 +182,48 @@ def detect_text_type(text: str) -> str:
 
 
 # ============================================================
-# CACHE KẾT QUẢ ViT5 — Tránh xử lý lại cùng một văn bản
+# CACHE KẾT QUẢ ViT5
 # ============================================================
-_correction_cache: dict[str, str] = {}   # MD5 hash → corrected text
-_failed_cache:     set[str]        = set() # Hash của các lần fallback — không cache, thử lại lần sau
+# Chính sách:
+#   - Khóa cache (Cache Key): MD5 hash của văn bản đầu vào (chuẩn hóa lowercase + strip)
+#   - Dung lượng tối đa: MAX_CACHE_SIZE mục
+#   - Đào thải (Eviction): FIFO theo thứ tự chèn — khi đầy, mục cũ nhất bị xóa trước
+#     (Python dict từ v3.7+ duy trì insertion order, nên `next(iter(cache))` = mục cũ nhất)
+#   - TTL (Time-to-Live): 3600 giây (1 giờ) — mục hết hạn sẽ bị tải lại khi truy cập
+#   - Fallback: Các văn bản ViT5 trả về nguyên gốc (không sửa được) không được cache,
+#     để service tự động thử lại lần sau khi model có thể xử lý tốt hơn.
+# ============================================================
+_correction_cache: dict[str, str] = {}         # MD5 hash → corrected text
+_cache_timestamps: dict[str, float] = {}        # MD5 hash → Unix timestamp khi cache
+_failed_cache:     set[str]         = set()     # Hash của lần fallback — thử lại lần sau
 MAX_CACHE_SIZE = 200
+CACHE_TTL_SECONDS = 3600                        # 1 giờ
 
 def _cache_key(text: str) -> str:
+    """Sinh khóa cache bằng MD5 của văn bản đã chuẩn hóa."""
     return hashlib.md5(text.strip().lower().encode()).hexdigest()
+
+def _cache_get(key: str) -> Optional[str]:
+    """Lấy giá trị từ cache, trả None nếu không có hoặc đã hết hạn TTL."""
+    if key not in _correction_cache:
+        return None
+    age = time.time() - _cache_timestamps.get(key, 0)
+    if age > CACHE_TTL_SECONDS:
+        # Mục đã hết hạn — xóa và bỏ qua
+        _correction_cache.pop(key, None)
+        _cache_timestamps.pop(key, None)
+        logger.debug(f"⏰ Cache TTL hết hạn sau {age:.0f}s — tải lại từ ViT5")
+        return None
+    return _correction_cache[key]
+
+def _cache_set(key: str, value: str) -> None:
+    """Lưu vào cache với FIFO eviction khi đầy."""
+    if len(_correction_cache) >= MAX_CACHE_SIZE:
+        oldest = next(iter(_correction_cache))
+        del _correction_cache[oldest]
+        _cache_timestamps.pop(oldest, None)
+    _correction_cache[key] = value
+    _cache_timestamps[key] = time.time()
 
 
 # ============================================================
@@ -324,9 +371,10 @@ def _split_prose_to_chunks(paragraph: str, max_chunk: int = 160) -> list[str]:
 def correct_with_vit5(text: str) -> str:
     """Sửa lỗi chính tả bằng ViT5, giữ nguyên cấu trúc \\n của OCR output."""
     ck = _cache_key(text)
-    if ck in _correction_cache:
+    cached = _cache_get(ck)
+    if cached is not None:
         logger.info("⚡ Cache hit — bỏ qua ViT5 inference")
-        return _correction_cache[ck]
+        return cached
 
     tokenizer, model = get_model()
 
@@ -402,13 +450,9 @@ def correct_with_vit5(text: str) -> str:
     result = '\n'.join(result_lines_dedup)
 
     # Lưu cache — chỉ cache khi kết quả không phải fallback hoàn toàn
-    ck_result = _cache_key(result)
     is_full_fallback = result.strip() == text.strip()
     if not is_full_fallback:
-        if len(_correction_cache) >= MAX_CACHE_SIZE:
-            oldest = next(iter(_correction_cache))
-            del _correction_cache[oldest]
-        _correction_cache[ck] = result
+        _cache_set(ck, result)
     else:
         _failed_cache.add(ck)
         logger.warning("⚠️ ViT5 trả về nguyên văn gốc — không cache, sẽ thử lại lần sau")

@@ -249,6 +249,8 @@ async def tool_save_dictation(args: dict) -> str:
                 json={
                     "title": title, "passage": passage,
                     "className": className, "teacherName": teacherName,
+                    "source": "mcp",       # Phiên đọc từ Trợ lý MCP Cloud
+                    "deviceId": "",        # MCP không có thiết bị vật lý
                     "status": "completed", "summary": summary,
                     "logs": parsed_logs,
                 },

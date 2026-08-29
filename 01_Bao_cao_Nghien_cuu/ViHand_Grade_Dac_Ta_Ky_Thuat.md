@@ -378,7 +378,7 @@ Response điển hình:
 
 ### 6.1. Tiền xử lý ảnh
 
-`lib/image-processor.ts` dùng Jimp và thao tác pixel để tạo ảnh phù hợp hơn cho OCR.
+Module `lib/image-processor.ts` sử dụng Jimp và giải thuật mức pixel thuần TypeScript ($O(1)/\text{pixel}$ qua Integral Image) để chuẩn hóa ảnh trước khi đưa vào OCR. Xem tài liệu đặc tả chi tiết tại: [Dac_Ta_Ky_Thuat_Tien_Xu_Ly_Anh.md](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/01_Bao_cao_Nghien_cuu/Ti%E1%BB%81n%20x%E1%BB%AD%20l%C3%BD/Dac_Ta_Ky_Thuat_Tien_Xu_Ly_Anh.md).
 
 | Bước | Kỹ thuật | Mục đích |
 | --- | --- | --- |
@@ -387,13 +387,14 @@ Response điển hình:
 | 1 | Resize | Giới hạn chiều rộng để giảm chi phí xử lý. |
 | 2 | White balance | Cân bằng màu do môi trường chụp. |
 | 3 | Grayscale | Chuẩn hóa ảnh một kênh. |
-| 4 | Shadow removal | Hạn chế bóng nền giấy. |
-| 5 | CLAHE | Tăng tương phản cục bộ. |
-| 6 | Sharpen | Làm rõ nét chữ. |
+| 4 | Shadow removal | Hạn chế bóng nền giấy qua Box Blur $51 \times 51$. |
+| 5 | CLAHE | Tăng tương phản cục bộ lưới $8 \times 8$. |
+| 6 | Sharpen | Làm rõ nét chữ qua Unsharp Mask. |
 | 7 | Quality assessment | Đánh giá blur, độ sáng, resolution, nét chữ. |
-| 8 | Threshold | Nhị phân hóa trước khi xuất JPEG. |
+| 8 | Threshold | Nhị phân hóa Adaptive Gaussian trước khi xuất JPEG. |
 
 `QualityReport` gồm `is_good`, `warnings`, `blur_score`, `brightness`, `resolution`, `dark_pixel_ratio`, `text_area_ratio`.
+
 
 ### 6.2. OCR Gemini
 

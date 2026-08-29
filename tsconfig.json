@@ -36,6 +36,14 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "xiaozhi-esp32-server-main",
+    "xiaozhi-esp32-main",
+    "android-app",
+    "He_thong_iots_Do_an_nhung",
+    "01_Bao_cao_Nghien_cuu",
+    "02_Kich_ban_Thuc_nghiem",
+    "03_Scripts_Trien_khai",
+    "prisma.config.ts"
   ]
 }

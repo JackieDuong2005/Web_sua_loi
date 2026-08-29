@@ -20,6 +20,12 @@
 ├── Luudo_Giaithuat.md                 ← Lưu đồ: Pipeline ảnh, Levenshtein, RBAC, Fallback
 ├── Luudo_Xiaozhi_MCP.md               ← Lưu đồ: Module Xiaozhi Dictation Robot (MCP)
 │
+├── Tiền xử lý/                        ← Module Tiền xử lý ảnh (Đặc tả & Lưu đồ)
+│   ├── Dac_Ta_Ky_Thuat_Tien_Xu_Ly_Anh.md          ← Đặc tả kỹ thuật: Pipeline 9 bước (Toán học & Code)
+│   ├── Dac_Ta_Ky_Thuat_AI_MobileNetV3_Attention_UNet.md ← Đặc tả mô hình AI: MobileNetV3 + Attention U-Net
+│   ├── Hinh_3_2_Tien_xu_ly_anh.png                ← Sơ đồ luồng xử lý ảnh
+│   └── SoDo_Module2_XuLyAnh_Pipeline.png          ← Sơ đồ chi tiết Module 2
+│
 ├── Lưu đồ giải thuật/                 ← Ảnh PNG các lưu đồ đã render
 │   ├── H3.3_Giai_thuat_SequenceMatcher.png
 │   ├── H3.4_Rulebase_Phan_loai_Loi.png

@@ -1,84 +1,62 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
+import { guardAiRoute } from "@/lib/api-guard"
 
 // ============================================================
-// ENGINE CONFIG
+// TIMEOUT CONFIG
 // ============================================================
-// Pipeline mới (có ảnh):
-//   OCR Gemini → original_text + gemini_fixed_text
-//   → ViT5 chạy ngầm (fire-and-forget, không ảnh hưởng kết quả)
-//   → Levenshtein so sánh original_text ↔ gemini_fixed_text → điểm
+// export const maxDuration = 300 chỉ có hiệu lực khi deploy lên Vercel (Serverless).
+// Khi self-host trên Raspberry Pi, Docker, VPS hay bất kỳ máy chủ Node.js standalone nào,
+// khai báo này KHÔNG có tác dụng gì cả.
 //
-// Pipeline cũ (nhập text tay):
-//   → ViT5 sửa thực sự → Levenshtein → điểm
+// Timeout thực tế trên môi trường self-host được kiểm soát bởi:
+//   1. AbortController trong gradeWithViT5() — cắt request đến ViT5 sau 120 giây.
+//   2. Cấu hình reverse proxy: proxy_read_timeout 300s (Nginx) hoặc timeout 5m (Caddy).
+//
+// Xem thêm: TechSpec §5 và §9.4 về cấu hình self-host.
+export const maxDuration = 300   // Vercel only — không tác dụng trên self-host
+
+const GEMINI_MODEL = "gemini-3.1-flash-lite"
 const VIT5_SERVICE_URL = process.env.VIT5_SERVICE_URL || "http://localhost:8000"
 
-// Tăng timeout Next.js lên 5 phút (mặc định 30s sẽ bị cắt đứt với bài dài)
-export const maxDuration = 300
-const GEMINI_MODEL = "gemini-3.1-flash-lite"
 
 // ============================================================
-// GEMINI KEY ROTATION
+// GEMINI API CLIENT (Single API Key)
 // ============================================================
-function getApiKeys(): string[] {
-  const multi = process.env.GEMINI_API_KEYS || ""
-  return multi.split(",").map(k => k.trim()).filter(k => k.length > 10)
+function getApiKey(): string {
+  const key = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(",")[0] || ""
+  return key.trim()
 }
 
-async function callGeminiWithKeyRotation(
-  keys: string[],
+async function callGemini(
+  apiKey: string,
   contents: any[],
 ): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
-  if (keys.length === 0) throw new Error("Không có API key nào được cấu hình")
+  if (!apiKey) throw new Error("Chưa cấu hình GEMINI_API_KEY")
 
-  const shuffled = [...keys].sort(() => Math.random() - 0.5)
+  const client = new GoogleGenAI({ apiKey })
 
-  for (let i = 0; i < shuffled.length; i++) {
-    const key = shuffled[i]
-    const client = new GoogleGenAI({ apiKey: key })
+  const response = await client.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: contents,
+    config: {
+      responseMimeType: "application/json",
+      temperature: 0.1,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+    },
+  })
 
-    try {
-      const response = await client.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: contents,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 8192,
-        },
-      })
+  const text = response.text ?? ""
+  const tokenCount = response.usageMetadata?.totalTokenCount || 0
 
-      const text = response.text ?? ""
-      const tokenCount = response.usageMetadata?.totalTokenCount || 0
-
-      if (!text || text.trim().length === 0) {
-        console.warn(`[Gemini] Key #${i + 1} trả về rỗng → thử key tiếp`)
-        continue
-      }
-
-      console.log(`[Gemini] ✓ Key #${i + 1} thành công (${tokenCount} tokens, ${text.length} chars)`)
-      return { text, tokenCount, keyIndex: i + 1 }
-    } catch (err: any) {
-      const status = err?.status || err?.httpStatusCode || 0
-      const msg = err?.message || ""
-
-      if (status === 429 || msg.includes("RESOURCE_EXHAUSTED")) {
-        console.warn(`[Gemini] Key #${i + 1} hết quota → chuyển key tiếp`)
-        continue
-      }
-      if (status === 503 || msg.includes("503")) {
-        console.warn(`[Gemini] Key #${i + 1} server bận (503) → chuyển key tiếp`)
-        await new Promise(r => setTimeout(r, 500))
-        continue
-      }
-      console.warn(`[Gemini] Key #${i + 1} lỗi:`, msg)
-      continue
-    }
+  if (!text || text.trim().length === 0) {
+    throw new Error("Gemini trả về nội dung rỗng")
   }
 
-  throw new Error(`Tất cả ${shuffled.length} API key đều bận/hết quota. Vui lòng thử lại sau.`)
+  console.log(`[Gemini] ✓ Thành công (${tokenCount} tokens, ${text.length} chars)`)
+  return { text, tokenCount, keyIndex: 1 }
 }
 
 // ============================================================
@@ -371,8 +349,19 @@ function gradeWithLevenshtein(
 // MAIN HANDLER
 // ============================================================
 export async function POST(req: NextRequest) {
+  // Rate limiting & DoS guard (Issue #12)
+  const blocked = guardAiRoute(req, 30)
+  if (blocked) return blocked
+
   try {
-    const { studentText, geminiFixedText, hinh_thuc, noi_dung, penalty_per_error } = await req.json()
+    const {
+      studentText,
+      geminiFixedText,
+      hinh_thuc,
+      noi_dung,
+      penalty_per_error,
+      source,       // "ocr" | "manual" — định danh nguồn gốc văn bản
+    } = await req.json()
 
     if (!studentText || !studentText.trim()) {
       return NextResponse.json(
@@ -380,6 +369,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Xác định chế độ hoạt động
+    const inputSource = source === "manual" ? "manual" : (geminiFixedText ? "ocr" : "manual")
 
     const startTime = Date.now()
     const scoreConfig = {
@@ -389,12 +381,13 @@ export async function POST(req: NextRequest) {
     }
 
     // ================================================================
-    // LUỒNG A: Có geminiFixedText (đến từ bước OCR ảnh)
+    // LUỒNG A — OCR Pipeline: Có geminiFixedText (đến từ bước OCR ảnh)
+    //   Điều kiện: source === "ocr" hoặc geminiFixedText có sẵn
     //   → ViT5 chạy ngầm (fire-and-forget)
     //   → Levenshtein so sánh original ↔ gemini_fixed_text → điểm
     // ================================================================
-    if (geminiFixedText && geminiFixedText.trim()) {
-      console.log("[Engine] 📸 gemini_fixed_text có sẵn — chờ ViT5 xử lý và Levenshtein chấm điểm")
+    if (geminiFixedText && geminiFixedText.trim() && inputSource === "ocr") {
+      console.log("[Engine] 📸 [Mode: OCR Pipeline] gemini_fixed_text có sẵn — chờ ViT5 và Levenshtein chấm điểm")
 
       // Chạy Levenshtein ngay (nhanh)
       const result = gradeWithLevenshtein(studentText, geminiFixedText.trim(), scoreConfig)
@@ -408,13 +401,16 @@ export async function POST(req: NextRequest) {
         processingTimeMs: Date.now() - startTime,
         tokenCount: 0,
         engine: "vit5+levenshtein",
+        source: "ocr",
       })
     }
 
     // ================================================================
-    // LUỒNG B: Nhập text tay — ViT5 sửa thực sự + Levenshtein
+    // LUỒNG B — Manual Input: Giáo viên nhập văn bản trực tiếp
+    //   Điều kiện: source === "manual" hoặc không có geminiFixedText
+    //   → ViT5 sửa thực sự + Levenshtein
     // ================================================================
-    console.log("[Engine] ✏️ Nhập text tay — ViT5 sửa chính tả...")
+    console.log(`[Engine] ✏️ [Mode: Manual Input] ViT5 sửa chính tả...`)
     let vit5Result = await gradeWithViT5(studentText, scoreConfig, 120000)
 
     if (!vit5Result.ok && vit5Result.reason.includes("timeout")) {
@@ -429,6 +425,7 @@ export async function POST(req: NextRequest) {
         ...vit5Result.data,
         processingTimeMs: Date.now() - startTime,
         engine: "vit5+levenshtein",
+        source: inputSource,
       })
     }
 
@@ -438,10 +435,10 @@ export async function POST(req: NextRequest) {
     console.warn(`[Engine] ⚠️ ViT5 không khả dụng: ${vit5Result.reason}`)
     console.log("[Engine] 🔄 Fallback sang Gemini text grading...")
 
-    const apiKeys = getApiKeys()
-    if (apiKeys.length === 0) {
+    const apiKey = getApiKey()
+    if (!apiKey) {
       return NextResponse.json(
-        { error: `ViT5 service không khả dụng (${vit5Result.reason}) và chưa cấu hình GEMINI_API_KEYS.` },
+        { error: `ViT5 service không khả dụng (${vit5Result.reason}) và chưa cấu hình GEMINI_API_KEY.` },
         { status: 503 }
       )
     }
@@ -453,7 +450,7 @@ export async function POST(req: NextRequest) {
 
     let geminiResult: { text: string; tokenCount: number; keyIndex: number }
     try {
-      geminiResult = await callGeminiWithKeyRotation(apiKeys, contents)
+      geminiResult = await callGemini(apiKey, contents)
     } catch (retryErr: any) {
       return NextResponse.json(
         { error: retryErr?.message || "AI đang bận, vui lòng thử lại sau." },
