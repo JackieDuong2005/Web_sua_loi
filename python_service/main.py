@@ -14,9 +14,29 @@ import time
 import logging
 import hashlib
 import asyncio
+import threading
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
+
+# ============================================================
+# Issue #20 Fix: Vô hiệu hóa QuickEdit trên Windows Console cục bộ
+# Ngăn chặn click chuột làm đóng băng tiến trình mà KHÔNG can thiệp Registry
+# ============================================================
+if sys.platform == "win32":
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        h_stdin = kernel32.GetStdHandle(-10)  # STD_INPUT_HANDLE = -10
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(h_stdin, ctypes.byref(mode)):
+            ENABLE_QUICK_EDIT_MODE = 0x0040
+            ENABLE_EXTENDED_FLAGS = 0x0080
+            new_mode = (mode.value & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS
+            kernel32.SetConsoleMode(h_stdin, new_mode)
+    except Exception:
+        pass
 
 # ============================================================
 # ThreadPool cho ViT5 inference — không block FastAPI event loop
@@ -136,32 +156,73 @@ def preprocess(text: str) -> str:
     return '\n'.join(cleaned_lines)
 
 
-def remove_adjacent_duplicates(text: str) -> str:
+# Các HƯ TỪ / TỪ CHỨC NĂNG không bao giờ lặp đôi trong ngữ pháp tiếng Việt chuẩn
+# Nếu xuất hiện liền kề (VD: "là là", "và và", "của của"), chắc chắn là do học sinh gõ nhầm
+ACCIDENTAL_REPEAT_WORDS = {
+    'là', 'thì', 'mà', 'và', 'của', 'trong', 'ở', 'với', 'những', 'các',
+    'để', 'bị', 'được', 'cho', 'từ', 'do', 'nếu', 'nhưng', 'bởi', 'vì',
+    'sẽ', 'đã', 'đang', 'cũng', 'vẫn', 'rất', 'quá', 'lắm', 'một', 'cái',
+    'con', 'này', 'kia', 'đó', 'nọ', 'ấy', 'thế', 'vậy'
+}
+
+# Các từ tượng thanh âm thanh có thể lặp 3 lần hợp lệ (tiếng cười, tiếng trống, tiếng chim...)
+VALID_TRIPLE_REPEATS = {
+    'ha', 'hô', 'he', 'hì', 'tùng', 'cắc', 'chát', 'cốc', 'reng', 'tíc', 'tắc', 'oa'
+}
+
+
+def remove_adjacent_duplicates(text: str, is_poetry: bool = False) -> str:
     """Xóa từ lặp liền kề do học sinh viết nhầm: 'đồng đồng' → 'đồng', 'là là' → 'là'.
-    Chỉ áp dụng cho từ đơn (không phải cụm nghĩa).
-    Bảo toàn ngữ pháp: không xóa khi từ là danh từ rưới (cháu cháu, mãi mãi, xa xa...).
+    Bảo toàn các từ láy và điệp từ nghệ thuật tiếng Việt ('đêm đêm', 'ngày ngày', 'xanh xanh'...).
+    Trong thơ ca: ưu tiên tối đa bảo tồn nhịp điệu bài thơ của học sinh.
     """
-    # Giữ nguyên các từ lặp có chủ ý (có nghĩa văn học)
-    INTENTIONAL_REPEATS = {
-        'xa xa', 'mãi mãi', 'chạy chạy', 'hót hót', 'vui vui',
-        'buồn buồn', 'chậm chậm', 'nhanh nhanh', 'lín lín', 'năm năm'
-    }
     words = text.split()
+    if len(words) < 2:
+        return text
+
     result = []
     i = 0
     while i < len(words):
-        if (
-            i + 1 < len(words)
-            and words[i].lower() == words[i+1].lower()
-            and (words[i].lower() + ' ' + words[i+1].lower()) not in INTENTIONAL_REPEATS
-            and len(words[i]) > 1  # Giữ các từ 1 ký tự (a, b, c...)
-        ):
-            result.append(words[i])
-            logger.info(f"🔧 Bỏ từ lặp liền kề: '{words[i]} {words[i+1]}' → '{words[i]}'")
-            i += 2  # Bỏ qua từ thứ 2
-        else:
+        w_current = words[i].lower()
+
+        # Đếm số lượng từ lặp liên tiếp giống hệt nhau
+        repeat_count = 1
+        while i + repeat_count < len(words) and words[i + repeat_count].lower() == w_current:
+            repeat_count += 1
+
+        if repeat_count == 1:
             result.append(words[i])
             i += 1
+        elif repeat_count == 2:
+            # 2 từ lặp đôi:
+            # Nếu là hư từ/từ chức năng viết nhầm -> chỉ giữ 1 từ
+            if w_current in ACCIDENTAL_REPEAT_WORDS:
+                result.append(words[i])
+                logger.info(f"🔧 Bỏ hư từ lặp nhầm: '{words[i]} {words[i+1]}' → '{words[i]}'")
+            else:
+                # Từ láy / điệp từ tiếng Việt (danh từ, tính từ, từ tượng thanh: ngày ngày, xanh xanh, ào ào...)
+                # GIỮ NGUYÊN cả 2 từ
+                result.append(words[i])
+                result.append(words[i+1])
+            i += 2
+        else:
+            # Lặp ≥ 3 từ liên tiếp:
+            if w_current in VALID_TRIPLE_REPEATS:
+                # Tiếng tượng thanh hợp lệ (ha ha ha, tùng tùng tùng...)
+                for k in range(repeat_count):
+                    result.append(words[i + k])
+            elif is_poetry and w_current not in ACCIDENTAL_REPEAT_WORDS:
+                # Trong thơ, cho phép điệp từ lặp 3 (trừ hư từ)
+                for k in range(min(repeat_count, 3)):
+                    result.append(words[i + k])
+            else:
+                # Viết nhầm lặp nhiều lần: thu gọn về 1 từ (nếu là hư từ) hoặc 2 từ (nếu là thực từ)
+                keep_count = 1 if w_current in ACCIDENTAL_REPEAT_WORDS else 2
+                for k in range(keep_count):
+                    result.append(words[i + k])
+                logger.info(f"🔧 Rút gọn từ lặp bất thường: '{w_current}' x{repeat_count} → x{keep_count}")
+            i += repeat_count
+
     return ' '.join(result)
 
 
@@ -268,7 +329,14 @@ def _remove_repetition(text: str, original: str) -> str:
                 else:
                     break
             if count >= 3:
-                logger.warning(f"⚠️ ViT5 repetition loop: '{' '.join(phrase)}' x{count} — fallback")
+                phrase_str = ' '.join(phrase)
+                # Kiểm tra đối chiếu với bản gốc: nếu bản gốc cũng có cụm này lặp lại (điệp khúc bài thơ/vè)
+                # thì bảo tồn kết quả của học sinh, không coi là ảo giác lặp của ViT5
+                orig_count = original.lower().count(phrase_str.lower())
+                if orig_count >= 2:
+                    logger.info(f"🌿 Điệp khúc nghệ thuật trong bài gốc ('{phrase_str}' x{orig_count}) — Bảo toàn kết quả.")
+                    continue
+                logger.warning(f"⚠️ ViT5 repetition loop: '{phrase_str}' x{count} — fallback")
                 return None
 
     # 2. Kiểm tra hallucination: output dài hơn input 1.5x
@@ -440,11 +508,12 @@ def correct_with_vit5(text: str) -> str:
 
     # === Post-processing: xóa từ lặp liền kề mà ViT5 không xử lý được ===
     # (VD: "đồng đồng", "là là" do học sinh viết nhầm)
+    is_poetry = (text_type == 'tho')
     result_lines = result.split('\n')
     result_lines_dedup = []
     for line in result_lines:
         if line.strip() and not _is_header_line(line):
-            result_lines_dedup.append(remove_adjacent_duplicates(line))
+            result_lines_dedup.append(remove_adjacent_duplicates(line, is_poetry=is_poetry))
         else:
             result_lines_dedup.append(line)
     result = '\n'.join(result_lines_dedup)
@@ -461,81 +530,507 @@ def correct_with_vit5(text: str) -> str:
 
 
 # ============================================================
-# THUẬT TOÁN CHẤM ĐIỂM LEVENSHTEIN / SEQUENCEMATCHER
+# THUẬT TOÁN CHẤM ĐIỂM LEVENSHTEIN / PHÂN TÍCH ÂM TIẾT TIẾNG VIỆT (Issue #23 Fix)
 # ============================================================
+TONE_COMBINING = {
+    '\u0300': 'huyen',
+    '\u0301': 'sac',
+    '\u0303': 'nga',
+    '\u0309': 'hoi',
+    '\u0323': 'nang'
+}
+
+TONE_NAMES_VI = {
+    'ngang': 'thanh ngang (không dấu)',
+    'huyen': 'thanh huyền',
+    'sac': 'thanh sắc',
+    'hoi': 'thanh hỏi',
+    'nga': 'thanh ngã',
+    'nang': 'thanh nặng'
+}
+
+VIETNAMESE_INITIALS = [
+    'ngh', 'ng', 'nh', 'ch', 'th', 'tr', 'ph', 'kh', 'gh', 'gi', 'qu',
+    'b', 'c', 'd', 'đ', 'g', 'h', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'x', 'z'
+]
+
+VIETNAMESE_FINALS = ['ng', 'nh', 'ch', 'c', 'm', 'n', 'p', 't', 'i', 'y', 'o', 'u']
+
+
 def remove_accents(s: str) -> str:
     nfd = unicodedata.normalize('NFD', s)
     return "".join(c for c in nfd if unicodedata.category(c) != 'Mn')
 
 
+def extract_tone(s: str) -> tuple[str, str]:
+    """Tách thanh điệu tiếng Việt: trả về (chuỗi_bỏ_dấu_thanh, tên_thanh)"""
+    nfd = unicodedata.normalize('NFD', s.lower())
+    tone = 'ngang'
+    clean = []
+    for c in nfd:
+        if c in TONE_COMBINING:
+            tone = TONE_COMBINING[c]
+        else:
+            clean.append(c)
+    return unicodedata.normalize('NFC', ''.join(clean)), tone
+
+
+def parse_vietnamese_syllable(word: str) -> dict:
+    """Bóc tách cấu trúc âm tiết tiếng Việt 5 thành phần:
+    Âm tiết = Âm đầu + Âm chính + Âm cuối + Thanh điệu
+    """
+    w = word.strip().lower()
+    base, tone = extract_tone(w)
+
+    init = ''
+    rest = base
+
+    # Xử lý đặc biệt phụ âm 'gi'
+    if base == 'gi':
+        init = 'gi'
+        rest = 'i'
+    elif base.startswith('gi') and len(base) > 2 and base[2] in 'êeaơu':
+        init = 'gi'
+        rest = base[2:]
+    elif base.startswith('gi') and len(base) > 2 and base[2] == 'i':
+        init = 'gi'
+        rest = base[2:]
+    else:
+        for p in VIETNAMESE_INITIALS:
+            if base.startswith(p):
+                init = p
+                rest = base[len(p):]
+                break
+
+    fin = ''
+    nucleus = rest
+    for f in VIETNAMESE_FINALS:
+        if rest.endswith(f) and len(rest) > len(f):
+            fin = f
+            nucleus = rest[:-len(f)]
+            break
+
+    return {
+        'word': word,
+        'base': base,
+        'tone': tone,
+        'initial': init,
+        'rhyme': rest,
+        'nucleus': nucleus,
+        'final': fin
+    }
+
+
 def classify_error_type(wrong: str, correct: str) -> tuple[str, str]:
-    """Trả về (error_type_code, error_type_label)"""
+    """Phân loại lỗi chính tả tiếng Việt dựa trên âm tiết học chuẩn (Issue #23 Fix).
+    Trả về (error_type_code, error_type_label)
+    """
     if wrong.lower() == correct.lower():
         return ("viet_hoa", "viet_hoa")
 
-    if remove_accents(wrong.lower()) == remove_accents(correct.lower()):
+    pw = parse_vietnamese_syllable(wrong)
+    pc = parse_vietnamese_syllable(correct)
+
+    # 1. Sai dấu thanh: base (âm đầu + vần) giống hệt nhau
+    if pw['base'] == pc['base'] and pw['tone'] != pc['tone']:
         return ("dau_thanh", "dau_thanh")
 
-    # Kiểm tra các phụ âm đầu phổ biến
-    phu_am_pairs = [
-        ('c', 'k'), ('k', 'c'), ('c', 'q'), ('q', 'c'),
-        ('g', 'gh'), ('gh', 'g'), ('ng', 'ngh'), ('ngh', 'ng'),
-        ('d', 'gi'), ('gi', 'd'), ('d', 'r'), ('r', 'd'),
-        ('s', 'x'), ('x', 's'), ('ch', 'tr'), ('tr', 'ch'),
-        ('l', 'n'), ('n', 'l'), ('z', 'd'),
-    ]
-    w_lower = remove_accents(wrong.lower())
-    c_lower = remove_accents(correct.lower())
-    for (a, b) in phu_am_pairs:
-        if w_lower.startswith(a) and c_lower.startswith(b):
-            return ("phu_am_dau", "phu_am_dau")
+    # 2. Sai phụ âm đầu: Vần giống hệt nhau, chỉ khác âm đầu
+    if pw['rhyme'] == pc['rhyme'] and pw['initial'] != pc['initial']:
+        return ("phu_am_dau", "phu_am_dau")
 
-    return ("van", "van")
+    # 3. Sai phụ âm cuối: Âm đầu giống, âm chính giống, khác âm cuối
+    if pw['initial'] == pc['initial'] and pw['nucleus'] == pc['nucleus'] and pw['final'] != pc['final']:
+        return ("phu_am_cuoi", "phu_am_cuoi")
+
+    # 4. Sai âm chính / nguyên âm: Âm đầu giống, âm cuối giống, khác âm chính
+    if pw['initial'] == pc['initial'] and pw['final'] == pc['final'] and pw['nucleus'] != pc['nucleus']:
+        return ("am_chinh", "am_chinh")
+
+    # 5. Sai vần hỗn hợp: Âm đầu giống nhưng vần khác
+    if pw['initial'] == pc['initial'] and pw['rhyme'] != pc['rhyme']:
+        return ("van", "van")
+
+    # 6. Thay thế từ / Khác biệt từ vựng hoàn toàn
+    return ("thay_the_tu", "thay_the_tu")
 
 
 ERROR_TYPE_LABELS = {
     "viet_hoa":    "Viết hoa",
     "dau_thanh":   "Sai dấu thanh",
     "phu_am_dau":  "Sai phụ âm đầu",
+    "phu_am_cuoi": "Sai âm cuối",
+    "am_chinh":    "Sai nguyên âm",
     "van":         "Sai vần",
+    "thay_the_tu": "Khác biệt từ",
     "bo_sot_them": "Bỏ sót/Thêm chữ",
     "dau_cau":     "Dấu câu",
 }
 
 
-def auto_sang_tao(text: str) -> tuple[float, str]:
-    """Tự động chấm điểm Sáng tạo dựa trên phân tích văn bản.
-    - 1.0: có biện pháp nghệ thuật rõ (điệp ngữ + hình ảnh gợi cảm)
-    - 0.5: có một trong hai yếu tố trên
-    - 0.0: câu văn bình thường
-    """
-    t = text.lower()
-    words = t.split()
+# ==============================================================================
+# B. MODULE BIỂU CẢM & SÁNG TẠO (ISSUE #25 FIX)
+# Thay thế triệt để heuristic đếm lặp từ và từ khóa 'vui/buồn/xanh' cũ
+# ==============================================================================
 
-    # Biện pháp so sánh / hình ảnh gợi cảm
-    fig_keywords = ["như là", "tựa như", "giống như", "như thể", "xanh", "vui", "buồn",
-                    "tiếng", "ánh", "ngọt", "thơm", "lấp lánh", "rực rỡ", "dịu dàng"]
-    has_fig = any(kw in t for kw in fig_keywords)
+REDUPLICATIONS_TUONG_THANH = {
+    "róc rách", "râm ran", "véo von", "tí tách", "thì thào", "thì thầm", "rì rào",
+    "xôn xao", "ào ào", "leng keng", "líu lo", "vi vu", "lộp độp", "lao xao",
+    "khúc khích", "rầm rĩ", "thao thiết", "lách cách", "lục cục", "văng vẳng",
+    "ríu rít", "ngân nga", "oang oang", "loảng xoảng", "rập rình", "vi vu",
+    "thập thình", "ình ịch", "lập bập", "thủ thỉ", "thầm thì", "rè rè"
+}
 
-    # Điệp ngữ: từ xuất hiện >= 3 lần
-    word_freq: dict = {}
-    for w in words:
-        word_freq[w] = word_freq.get(w, 0) + 1
-    has_dieu_ngu = any(v >= 3 for v in word_freq.values())
+REDUPLICATIONS_TUONG_HINH = {
+    "long lanh", "lấp lánh", "lung linh", "rực rỡ", "thoang thoảng", "dịu dàng",
+    "thướt tha", "mơn mởn", "chập chùng", "nhấp nhô", "quanh co", "ngút ngát",
+    "mê mê", "mênh mông", "bát ngát", "bập bùng", "trắng xóa", "xanh ngắt",
+    "đỏ rực", "vàng óng", "chói chang", "nhung nhúc", "chênh vênh", "lom khom",
+    "thoắt ẩn", "lặc lè", "dập dềnh", "thênh thang", "hùng vĩ", "nghiêng nghiêng",
+    "nhè nhẹ", "êm ả", "lung linh", "chập chờn", "ngào ngạt", "ngọt ngào",
+    "bâng khuâng", "xao xuyến", "bồi hồi", "tha thiết", "triều mến", "tươi tắn"
+}
 
-    # Văn bản dài (cố gắng diễn đạt nhiều)
-    is_long = len(words) >= 40
+NEGATIVE_SIMILE_PHRASES = [
+    "ví dụ như", "chẳng hạn như", "như vậy", "như thế", "như sau",
+    "như đã nói", "cũng như", "như thế này", "như trên"
+]
 
-    if has_dieu_ngu and has_fig:
-        return 1.0, "Có điệp ngữ và biện pháp nghệ thuật"
-    elif has_dieu_ngu:
-        return 0.5, "Có điệp ngữ"
-    elif has_fig:
-        return 0.5, "Có hình ảnh gợi cảm"
-    elif is_long:
-        return 0.5, "Văn bản đầy đủ, thể hiện sự cố gắng"
+SIMILE_REGEX = re.compile(
+    r'([^.!?\n,]{2,25})\s+(như là|tựa như|giống như|hệt như|như thể|tựa hồ|chẳng khác nào|như in|như)\s+([^.!?\n,]{2,30})',
+    re.IGNORECASE | re.UNICODE
+)
+
+PERSONIFICATION_TITLES = ["ông", "bà", "chú", "bác", "cô", "dì", "chị", "anh"]
+PERSONIFICATION_OBJECTS = [
+    "mặt trời", "trăng", "gió", "mây", "bàng", "phượng", "chim", "sông",
+    "suối", "núi", "cây", "hoa", "đồng hồ", "gà trống", "mưa", "nắng"
+]
+PERSONIFICATION_ACTIONS = [
+    "thức dậy", "mỉm cười", "thì thầm", "nhảy múa", "ca hát", "chăm chỉ",
+    "giận dữ", "chạy trốn", "kể chuyện", "vẫy tay", "khoác áo", "đứng nhìn"
+]
+
+def detect_reduplications(text: str) -> tuple[list[str], list[str]]:
+    low = text.lower()
+    found_sound = [w for w in REDUPLICATIONS_TUONG_THANH if w in low]
+    found_vivid = [w for w in REDUPLICATIONS_TUONG_HINH if w in low]
+    return found_sound, found_vivid
+
+def detect_similes(text: str) -> list[str]:
+    low = text.lower()
+    for neg in NEGATIVE_SIMILE_PHRASES:
+        low = low.replace(neg, "---")
+    matches = []
+    for match in SIMILE_REGEX.finditer(low):
+        sub_a, marker, sub_b = match.group(1).strip(), match.group(2).strip(), match.group(3).strip()
+        phrase = f"{sub_a} {marker} {sub_b}".strip()
+        if len(sub_a.split()) >= 1 and len(sub_b.split()) >= 1:
+            matches.append(phrase)
+    return matches[:2]
+
+def detect_personifications(text: str) -> list[str]:
+    low = text.lower()
+    found = []
+    for title in PERSONIFICATION_TITLES:
+        for obj in PERSONIFICATION_OBJECTS:
+            pattern = f"{title} {obj}"
+            if pattern in low and pattern not in found:
+                found.append(pattern)
+    for obj in PERSONIFICATION_OBJECTS:
+        for act in PERSONIFICATION_ACTIONS:
+            pattern = f"{obj} {act}"
+            if pattern in low and pattern not in found:
+                found.append(pattern)
+    return found[:2]
+
+def analyze_creativity_tier1(text: str) -> dict:
+    """Chấm điểm sáng tạo (Barem 1.0đ) theo chuẩn Bộ GD&ĐT và trích xuất dẫn chứng."""
+    sound_reds, vivid_reds = detect_reduplications(text)
+    similes = detect_similes(text)
+    personifications = detect_personifications(text)
+
+    devices = []
+    evidence = []
+
+    all_reds = sound_reds + vivid_reds
+    if all_reds:
+        devices.append("tu_lay")
+        evidence.append(f"Từ láy: {', '.join(all_reds[:3])}")
+    if similes:
+        devices.append("so_sanh")
+        evidence.append(f"So sánh: '{similes[0]}'")
+    if personifications:
+        devices.append("nhan_hoa")
+        evidence.append(f"Nhân hóa: '{personifications[0]}'")
+
+    # Barem Bộ GD&ĐT: Tối đa 1.0đ
+    if len(devices) >= 2 or (len(similes) >= 1 and len(all_reds) >= 2):
+        score = 1.0
+        note = "Bài viết giàu cảm xúc, sử dụng sáng tạo các biện pháp nghệ thuật."
+    elif len(devices) == 1:
+        score = 0.5
+        note = f"Có ý thức sáng tạo, sử dụng {devices[0].replace('_', ' ')}."
     else:
-        return 0.0, "Không có"
+        score = 0.0
+        note = "Văn phong trần thuật đơn giản, chưa có biện pháp biểu cảm nổi bật."
+
+    return {
+        "score": score,
+        "devices": devices,
+        "evidence": evidence,
+        "note": note
+    }
+
+# ==============================================================================
+# TỪ ĐIỂN NHÃN LỖI CHÍNH TẢ SƯ PHẠM TIẾNG VIỆT
+# ==============================================================================
+ERROR_TYPE_VI_LABELS = {
+    "phu_am_dau": "phụ âm đầu",
+    "phu_am_cuoi": "âm cuối",
+    "am_chinh": "nguyên âm",
+    "van": "vần",
+    "dau_thanh": "dấu thanh",
+    "viet_hoa": "chữ viết hoa",
+    "thay_the_tu": "dùng sai từ",
+    "bo_sot_them": "bỏ sót hoặc viết thừa chữ",
+    "dau_cau": "dấu câu",
+}
+
+# Ngân hàng nhận xét sư phạm đa dạng chuẩn Bộ GD&ĐT
+DIVERSE_PEDAGOGICAL_TEMPLATES = {
+    "high_creativity_clean": [
+        "Cô rất khen ngợi con! Bài viết tràn đầy cảm xúc, biết vận dụng hình ảnh nghệ thuật rất sinh động và chữ viết sạch đẹp. Tiếp tục phát huy nhé!",
+        "Bài văn của con thật giàu trí tưởng tượng và diễn đạt tự nhiên! Con viết đúng chính tả, câu từ trôi chảy, cô rất tự hào về con.",
+        "Tuyệt vời lắm! Con có năng khiếu quan sát tinh tế và vốn từ phong phú. Toàn bài không mắc lỗi chính tả nào, cố gắng giữ vững phong độ nhé!",
+        "Một bài viết xuất sắc! Cách con chọn lọc từ ngữ và dùng hình ảnh gợi cảm rất có duyên. Chúc mừng con đã hoàn thành bài viết thật ấn tượng!"
+    ],
+    "high_creativity_has_errors": [
+        "Cô khen con biết dùng hình ảnh so sánh và từ láy rất sinh động! Con chỉ cần chú ý viết đúng {errors} để bài văn đạt điểm tuyệt đối nhé.",
+        "Bài viết của con rất giàu cảm xúc và sáng tạo! Con nhớ rèn luyện thêm về {errors} để câu văn của mình hoàn thiện và chỉn chu hơn nhé.",
+        "Ý văn của con rất hay và độc đáo! Lần sau con chú ý kiểm tra lại {errors} trước khi nộp bài để đạt kết quả cao nhất nhé. Cố gắng lên con!",
+        "Cô rất thích cách con diễn đạt, giàu hình ảnh và tự nhiên! Con lưu ý rèn thêm {errors} để nét chữ và câu văn đều thật đẹp nhé."
+    ],
+    "medium_creativity_clean": [
+        "Bài viết tốt, con diễn đạt tự nhiên và câu văn có hình ảnh gợi cảm. Chữ viết rõ ràng, sạch sẽ, hãy tiếp tục phát huy nhé con!",
+        "Cô khen con viết đúng chủ đề, câu từ mạch lạc và không mắc lỗi chính tả. Con hãy thử thêm một vài hình ảnh so sánh để bài hay hơn nữa nhé!",
+        "Bài làm rất chỉn chu và cẩn thận! Con giữ vở sạch, viết đúng chính tả. Tiếp tục rèn luyện để bài văn ngày càng truyền cảm hơn nhé."
+    ],
+    "medium_creativity_has_errors": [
+        "Bài viết của con khá tốt, ý tứ rõ ràng và chân thành. Con chú ý rèn thêm về {errors} để bài viết được điểm cao hơn nhé!",
+        "Câu văn của con diễn đạt tự nhiên, dễ hiểu. Con nhớ để ý phân biệt {errors} khi viết bài để không bị trừ điểm đáng tiếc nhé con.",
+        "Cô thấy con có nhiều tiến bộ trong cách dùng từ! Con chỉ cần cẩn thận hơn ở {errors} là bài viết sẽ rất tuyệt vời đấy."
+    ],
+    "basic_clean": [
+        "Bài viết của con đầy đủ ý, bám sát yêu cầu đề bài. Con viết đúng chính tả và nề nếp tốt, cô khen con nhé!",
+        "Con đã hoàn thành bài viết rất cẩn thận, không mắc lỗi chính tả. Con hãy đọc thêm sách để vốn từ ngữ phong phú và sinh động hơn nhé!",
+        "Bài làm sạch sẽ, đúng quy cách đoạn văn. Con tiếp tục rèn chữ và mở rộng ý văn để bài viết cuốn hút hơn nhé."
+    ],
+    "basic_has_errors": [
+        "Bài viết của con bám sát đề bài và đủ ý. Con chú ý rèn thêm lỗi {errors} để bài văn của mình chỉn chu và tiến bộ hơn nhé!",
+        "Con đã cố gắng hoàn thành bài viết. Lần sau con nhớ đọc lại bài để phát hiện và sửa các lỗi {errors} trước khi nộp bài nhé con!",
+        "Ý văn của con mộc mạc và chân thật. Con cần rèn luyện thêm cách viết đúng {errors} để bài viết đạt kết quả tốt hơn nhé. Cố lên con!"
+    ]
+}
+
+def build_fallback_pedagogical_comment(creativity_info: dict, errors: list[dict]) -> str:
+    """Tạo lời nhận xét sư phạm mẫu đa dạng từ ngân hàng sư phạm chuẩn Bộ GD&ĐT."""
+    import random
+    st_raw = creativity_info.get("score", 0.0)
+    has_errors = bool(errors and len(errors) > 0)
+
+    err_labels = []
+    for e in (errors or [])[:2]:
+        lbl = e.get("error_label") or ERROR_TYPE_VI_LABELS.get(e.get("error_type", ""), e.get("error_type", "chính tả"))
+        if lbl and lbl not in err_labels:
+            err_labels.append(lbl)
+    errors_str = " và ".join(err_labels) if err_labels else "chính tả"
+
+    if st_raw >= 1.0:
+        cat = "high_creativity_has_errors" if has_errors else "high_creativity_clean"
+    elif st_raw >= 0.5:
+        cat = "medium_creativity_has_errors" if has_errors else "medium_creativity_clean"
+    else:
+        cat = "basic_has_errors" if has_errors else "basic_clean"
+
+    tpl_list = DIVERSE_PEDAGOGICAL_TEMPLATES.get(cat, DIVERSE_PEDAGOGICAL_TEMPLATES["basic_has_errors"])
+    selected = random.choice(tpl_list)
+    return selected.format(errors=errors_str)
+
+
+# ==============================================================================
+# C. TẦNG 2: SLM ENHANCER (QWEN2.5-0.5B-INSTRUCT)
+# Sinh lời nhận xét sư phạm phong phú, tự động Fallback về Tầng 1
+# ==============================================================================
+
+_qwen_model = None
+_qwen_tokenizer = None
+_qwen_lock = threading.Lock()
+ENABLE_QWEN_SLM = os.getenv("ENABLE_QWEN_SLM", "1").lower() in ("1", "true", "yes")
+QWEN_MODEL_ID = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
+
+
+def get_qwen_model():
+    """Tải Lazy load mô hình Qwen2.5-0.5B-Instruct vào bộ nhớ."""
+    global _qwen_model, _qwen_tokenizer
+    if _qwen_model is not None:
+        return _qwen_model, _qwen_tokenizer
+
+    with _qwen_lock:
+        if _qwen_model is not None:
+            return _qwen_model, _qwen_tokenizer
+
+        logger.info(f"⏳ [Tầng 2] Đang tải mô hình SLM: {QWEN_MODEL_ID}...")
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        tokenizer = AutoTokenizer.from_pretrained(QWEN_MODEL_ID)
+        if device == "cuda":
+            model = AutoModelForCausalLM.from_pretrained(
+                QWEN_MODEL_ID,
+                torch_dtype=torch.float16,
+                device_map="auto"
+            )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                QWEN_MODEL_ID,
+                torch_dtype=torch.float32
+            )
+        model.eval()
+        _qwen_tokenizer = tokenizer
+        _qwen_model = model
+        logger.info(f"✅ [Tầng 2] Đã tải thành công SLM {QWEN_MODEL_ID} trên thiết bị {device}")
+        return _qwen_model, _qwen_tokenizer
+
+
+def clean_qwen_text(text: str) -> str:
+    text = text.strip().strip('"\'”’')
+    prefixes = [
+        "lời nhận xét sư phạm cho học sinh:",
+        "lời nhận xét sư phạm:",
+        "lời phê sư phạm:",
+        "lời phê:",
+        "nhận xét của cô:",
+        "cô giáo nhận xét:",
+        "nhận xét:",
+    ]
+    lower = text.lower()
+    for p in prefixes:
+        if lower.startswith(p):
+            text = text[len(p):].strip().strip(':').strip()
+            lower = text.lower()
+    last_punct = max(text.rfind('.'), text.rfind('!'))
+    if last_punct != -1 and last_punct < len(text) - 1:
+        text = text[:last_punct + 1]
+    return text.strip()
+
+
+def generate_pedagogical_comment_tier2(
+    creativity_info: dict,
+    errors: list[dict],
+) -> dict:
+    """Sinh lời nhận xét sư phạm bằng Qwen2.5-0.5B.
+    Tự động Fallback về Tầng 1 nếu tắt SLM, timeout hoặc gặp ngoại lệ."""
+    fallback_text = build_fallback_pedagogical_comment(creativity_info, errors)
+
+    if not ENABLE_QWEN_SLM:
+        return {
+            "text": fallback_text,
+            "source": "tang1_deterministic",
+            "latency_ms": 0.0
+        }
+
+    t0 = time.time()
+    try:
+        model, tokenizer = get_qwen_model()
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        st_raw = creativity_info.get("score", 0.0)
+        evidence = creativity_info.get("evidence", [])
+        evidence_str = "; ".join(evidence) if evidence else "Không có"
+
+        err_labels = []
+        for e in (errors or [])[:2]:
+            lbl = e.get("error_label") or ERROR_TYPE_VI_LABELS.get(e.get("error_type", ""), e.get("error_type", "chính tả"))
+            if lbl and lbl not in err_labels:
+                err_labels.append(lbl)
+        errors_str = " và ".join(err_labels) if err_labels else "Không mắc lỗi chính tả"
+
+        system_prompt = (
+            "Bạn là một cô giáo tiểu học Việt Nam dịu dàng, ân cần và giàu tình thương.\n"
+            "Nhiệm vụ của bạn là viết đúng 1-2 câu lời nhận xét sư phạm ngắn gọn (dưới 40 từ) khích lệ con dựa trên kết quả bài làm.\n"
+            "Nguyên tắc nhận xét:\n"
+            "1. Xưng hô: xưng 'Cô' và gọi học sinh là 'con' (hoặc 'em').\n"
+            "2. Nếu bài có sáng tạo: Hãy khen ngợi sự sáng tạo hoặc từ ngữ gợi cảm trước.\n"
+            "3. Nếu bài có lỗi chính tả: Hãy nhẹ nhàng nhắc con chú ý rèn thêm lỗi đó.\n"
+            "4. Giọng văn ấm áp, động viên, tuyệt đối không viết tiêu đề, không chê bai, chỉ viết trực tiếp câu nhận xét."
+        )
+
+        if evidence:
+            creativity_desc = f"Có {evidence_str} sinh động"
+        else:
+            creativity_desc = "Bài viết rõ ràng, bám sát yêu cầu đề bài"
+
+        user_content = (
+            f"Thông tin bài viết của học sinh:\n"
+            f"- Điểm nổi bật: {creativity_desc}\n"
+            f"- Lỗi chính tả cần rèn thêm: {errors_str}\n"
+            f"Viết 1-2 câu nhận xét của cô gửi cho con (khen ngợi sự cố gắng trước, nhắc nhở lỗi chính tả sau):"
+        )
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ]
+
+        prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = tokenizer([prompt_text], return_tensors="pt").to(device)
+
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=60,
+                do_sample=True,
+                temperature=0.75,
+                top_p=0.9,
+                repetition_penalty=1.15,
+                pad_token_id=tokenizer.eos_token_id
+            )
+
+        generated_ids = outputs[0][inputs.input_ids.shape[1]:]
+        raw_comment = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+        comment = clean_qwen_text(raw_comment)
+
+        # Kiểm tra chất lượng và chuẩn sư phạm của câu sinh bởi Qwen
+        invalid_words = [
+            "toán", "dự thi", "thực tế cuộc sống", "bài thi", "tiếng anh", "bạn đã",
+            "rất thấp", "điểm thấp", "vị trí", "kém", "yếu kém", "hỗ trợ mẹ"
+        ]
+        is_invalid = any(w in comment.lower() for w in invalid_words)
+        has_teacher_tone = any(w in comment.lower() for w in ["cô", "con", "em", "khen", "chú ý", "bài viết", "cố gắng"])
+
+        if not comment or len(comment.split()) < 4 or is_invalid or not has_teacher_tone:
+            logger.info(f"🔄 [Tầng 2] Câu Qwen chưa chuẩn ({raw_comment}) -> Sử dụng nhận xét sư phạm chuẩn.")
+            comment = fallback_text
+            source = "tang1_diverse_pedagogy"
+        else:
+            source = "qwen2.5_0.5b"
+
+        latency = round((time.time() - t0) * 1000, 2)
+        return {
+            "text": comment,
+            "source": source,
+            "latency_ms": latency
+        }
+    except Exception as e:
+        logger.warning(f"⚠️ [Tầng 2] Qwen SLM không khả dụng ({e}) -> Fallback Tầng 1.")
+        return {
+            "text": fallback_text,
+            "source": "tang1_deterministic_fallback",
+            "latency_ms": round((time.time() - t0) * 1000, 2)
+        }
 
 
 def grade_with_levenshtein(
@@ -546,6 +1041,25 @@ def grade_with_levenshtein(
     noi_dung_raw: Optional[float] = None,
 ) -> dict:
     """So khớp word-level giữa văn bản gốc và ViT5 đã sửa."""
+
+    # Chốt chặn bài viết rỗng
+    if not student_text or not student_text.strip():
+        return {
+            "original_text": "",
+            "fixed_text": "",
+            "corrections": [],
+            "score_breakdown": {
+                "chinh_ta":  {"raw": 0.0, "max": 4.0, "error_count": 0, "deduction": 4.0},
+                "hinh_thuc": {"raw": 0.0, "max": 3.0, "note": "Chưa có bài viết"},
+                "noi_dung":  {"raw": 0.0, "max": 2.0, "note": "Chưa có nội dung"},
+                "sang_tao":  {"raw": 0.0, "max": 1.0, "note": "Chưa có nội dung", "devices": [], "evidence": []},
+            },
+            "score": "0.0/10",
+            "overall_rating": "Cần cố gắng",
+            "feedback": "Chưa có bài viết để chấm điểm.",
+            "pedagogical_comment": "Học sinh chưa hoàn thành bài viết.",
+            "engine": "vit5+levenshtein",
+        }
 
     def _is_title_line(line: str, all_lines: list[str]) -> bool:
         """Kiểm tra dòng có phải tiêu đề thực sự không.
@@ -598,6 +1112,7 @@ def grade_with_levenshtein(
                         "error":      wrong_w,
                         "suggestion": correct_w,
                         "error_type": err_code,
+                        "error_label": err_label,
                         "is_dialect": False,
                         "reason":     _error_reason(err_code, wrong_w, correct_w)
                     })
@@ -609,6 +1124,7 @@ def grade_with_levenshtein(
                     "error": wrong_chunk,
                     "suggestion": correct_chunk,
                     "error_type": "bo_sot_them",
+                    "error_label": "Bỏ sót/Thêm chữ",
                     "is_dialect": False,
                     "reason": f"Con viết '{wrong_chunk}' nhưng đúng phải là '{correct_chunk}' nhé."
                 })
@@ -620,6 +1136,7 @@ def grade_with_levenshtein(
                 "error": "[Trống]",
                 "suggestion": missing,
                 "error_type": "bo_sot_them",
+                "error_label": "Viết thiếu chữ",
                 "is_dialect": False,
                 "reason": f"Con bị viết thiếu chữ '{missing}' rồi nhé."
             })
@@ -631,6 +1148,7 @@ def grade_with_levenshtein(
                 "error": extra,
                 "suggestion": "[Không có]",
                 "error_type": "bo_sot_them",
+                "error_label": "Viết thừa chữ",
                 "is_dialect": False,
                 "reason": f"Con bị viết thừa chữ '{extra}' rồi, chú ý nhé."
             })
@@ -641,11 +1159,12 @@ def grade_with_levenshtein(
     chinh_ta_raw  = max(0.0, chinh_ta_max - (error_count * penalty_per_error))
 
     # Dùng giá trị giáo viên set, nếu không có thì dùng mặc định
-    ht_raw  = round(min(3.0, max(0.0, hinh_thuc_raw)), 1) if hinh_thuc_raw is not None else 2.5
-    nd_raw  = round(min(2.0, max(0.0, noi_dung_raw)),  1) if noi_dung_raw  is not None else 1.5
+    ht_raw  = round(min(3.0, max(0.0, hinh_thuc_raw)), 1) if hinh_thuc_raw is not None else 3.0
+    nd_raw  = round(min(2.0, max(0.0, noi_dung_raw)),  1) if noi_dung_raw  is not None else 2.0
 
-    # Sáng tạo — Tự động phân tích
-    sang_tao_raw, sang_tao_note = auto_sang_tao(corrected_text)
+    # Sáng tạo — Tự động phân tích Tầng 1 (Issue #25 Fix)
+    creativity_info = analyze_creativity_tier1(corrected_text)
+    sang_tao_raw = creativity_info["score"]
 
     total_score = chinh_ta_raw + ht_raw + nd_raw + sang_tao_raw
     total_score = round(min(10.0, total_score), 1)
@@ -662,7 +1181,12 @@ def grade_with_levenshtein(
     else:
         rating = "Cần cố gắng"
 
-    # Nhận xét
+    # Lời nhận xét sư phạm tổng hợp (Tầng 2 Qwen + Tầng 1 Fallback)
+    comment_info = generate_pedagogical_comment_tier2(creativity_info, errors)
+    pedagogical_comment = comment_info["text"]
+    pedagogical_comment_source = comment_info["source"]
+
+    # Nhận xét ngắn phản hồi nhanh
     if error_count == 0:
         feedback = "Bài viết xuất sắc! Con không mắc lỗi chính tả nào. Tiếp tục phát huy nhé!"
     elif error_count <= 2:
@@ -676,25 +1200,52 @@ def grade_with_levenshtein(
         "corrections": errors,
         "score_breakdown": {
             "chinh_ta":  {"raw": chinh_ta_raw,  "max": chinh_ta_max, "error_count": error_count, "deduction": round(error_count * penalty_per_error, 1)},
-            "hinh_thuc": {"raw": ht_raw,        "max": 3.0, "note": "Giáo viên đánh giá"},
-            "noi_dung":  {"raw": nd_raw,         "max": 2.0, "note": "Giáo viên đánh giá"},
-            "sang_tao":  {"raw": sang_tao_raw,   "max": 1.0, "note": sang_tao_note},
+            "hinh_thuc": {"raw": ht_raw,        "max": 3.0, "note": "Trình bày chữ viết sạch đẹp"},
+            "noi_dung":  {"raw": nd_raw,         "max": 2.0, "note": "Đúng chủ đề, đủ ý"},
+            "sang_tao":  {
+                "raw": sang_tao_raw,
+                "max": 1.0,
+                "note": creativity_info["note"],
+                "devices": creativity_info["devices"],
+                "evidence": creativity_info["evidence"]
+            },
         },
         "score": f"{total_score}/10",
         "overall_rating": rating,
         "feedback": feedback,
+        "pedagogical_comment": pedagogical_comment,
+        "pedagogical_comment_source": pedagogical_comment_source,
         "engine": "vit5+levenshtein",
     }
 
 
 def _error_reason(err_code: str, wrong: str, correct: str) -> str:
-    reasons = {
-        "viet_hoa":   f"Chữ '{wrong}' cần viết hoa thành '{correct}' ở đầu câu hoặc tên riêng nhé.",
-        "dau_thanh":  f"Con viết '{wrong}' bị sai dấu thanh, phải là '{correct}' nhé.",
-        "phu_am_dau": f"Con viết '{wrong}' sai phụ âm đầu, đúng phải là '{correct}' nhé.",
-        "van":        f"Con viết '{wrong}' sai vần, phải là '{correct}' nhé.",
-    }
-    return reasons.get(err_code, f"Sai chính tả: '{wrong}' → '{correct}'")
+    pw = parse_vietnamese_syllable(wrong)
+    pc = parse_vietnamese_syllable(correct)
+
+    if err_code == "viet_hoa":
+        return f"Chữ '{wrong}' cần viết hoa thành '{correct}' ở đầu câu hoặc tên riêng nhé."
+    elif err_code == "dau_thanh":
+        tw = TONE_NAMES_VI.get(pw['tone'], pw['tone'])
+        tc = TONE_NAMES_VI.get(pc['tone'], pc['tone'])
+        return f"Con viết '{wrong}' bị sai dấu thanh ({tw} thành {tc}), đúng phải là '{correct}' nhé."
+    elif err_code == "phu_am_dau":
+        iw = f"'{pw['initial']}'" if pw['initial'] else "không có âm đầu"
+        ic = f"'{pc['initial']}'" if pc['initial'] else "không có âm đầu"
+        return f"Con viết '{wrong}' sai phụ âm đầu ({iw} thành {ic}), đúng phải là '{correct}' nhé."
+    elif err_code == "phu_am_cuoi":
+        fw = f"'{pw['final']}'" if pw['final'] else "không có âm cuối"
+        fc = f"'{pc['final']}'" if pc['final'] else "không có âm cuối"
+        return f"Con viết '{wrong}' sai âm cuối ({fw} thành {fc}), đúng phải là '{correct}' nhé."
+    elif err_code == "am_chinh":
+        nw = f"'{pw['nucleus']}'"
+        nc = f"'{pc['nucleus']}'"
+        return f"Con viết '{wrong}' sai nguyên âm ({nw} thành {nc}), đúng phải là '{correct}' nhé."
+    elif err_code == "van":
+        return f"Con viết '{wrong}' sai vần '{pw['rhyme']}', đúng phải là vần '{pc['rhyme']}' trong '{correct}' nhé."
+    elif err_code == "thay_the_tu":
+        return f"Con viết chữ '{wrong}' khác với từ mẫu '{correct}'."
+    return f"Sai chính tả: '{wrong}' → '{correct}'"
 
 
 # ============================================================
@@ -823,6 +1374,85 @@ async def correct_endpoint(req: GradeRequest):
     except Exception as e:
         logger.error(f"❌ [/correct] Lỗi: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tts")
+async def tts_endpoint(text: str, voice: str = "vi-VN-HoaiMyNeural", rate: str = "-15%"):
+    """Tạo âm thanh phát âm tiếng Việt chuẩn bằng Microsoft Edge-TTS
+    (vi-VN-HoaiMyNeural giọng Nữ Bắc hoặc vi-VN-NamMinhNeural giọng Nam Bắc).
+    """
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Văn bản không được để trống")
+    try:
+        import edge_tts
+        from fastapi.responses import Response
+
+        # Chuẩn hóa tham số rate (tránh lỗi double-encoding như "-15%25" làm sập Edge-TTS)
+        clean_rate = rate.replace("%25", "%").strip()
+        if not clean_rate.endswith("%"):
+            if clean_rate.startswith("+") or clean_rate.startswith("-"):
+                clean_rate = f"{clean_rate}%"
+            elif clean_rate.isdigit():
+                clean_rate = f"+{clean_rate}%"
+            else:
+                clean_rate = "-15%"
+
+        # Đảm bảo voice hợp lệ
+        clean_voice = voice.strip()
+        if clean_voice not in ["vi-VN-HoaiMyNeural", "vi-VN-NamMinhNeural"]:
+            clean_voice = "vi-VN-HoaiMyNeural"
+
+        communicate = edge_tts.Communicate(text.strip(), clean_voice, rate=clean_rate)
+        audio_data = bytearray()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data.extend(chunk["data"])
+
+        if len(audio_data) == 0:
+            raise HTTPException(status_code=500, detail="Không nhận được dữ liệu âm thanh từ Edge-TTS")
+
+        return Response(
+            content=bytes(audio_data),
+            media_type="audio/mpeg",
+            headers={
+                "Content-Type": "audio/mpeg",
+                "Cache-Control": "public, max-age=86400, s-maxage=86400",
+            },
+        )
+    except HTTPException:
+        raise
+@app.get("/qwen/status")
+async def qwen_status_endpoint():
+    """Kiểm tra trạng thái cấu hình và tải của Qwen2.5-0.5B-Instruct."""
+    is_loaded = _qwen_model is not None
+    import torch
+    has_cuda = torch.cuda.is_available()
+    return {
+        "enabled": ENABLE_QWEN_SLM,
+        "model_id": QWEN_MODEL_ID,
+        "is_loaded": is_loaded,
+        "device": "cuda" if has_cuda else "cpu",
+        "description": "Tầng 2: SLM Pedagogical Paraphraser (Qwen2.5-0.5B-Instruct)"
+    }
+
+
+class QwenTestRequest(BaseModel):
+    creativity_score: float = 1.0
+    evidence: list[str] = ["Từ láy: róc rách, thoang thoảng", "So sánh: 'dòng suối như dải lụa'"]
+    errors: list[dict] = []
+
+
+@app.post("/qwen/generate")
+async def qwen_generate_endpoint(req: QwenTestRequest):
+    """Endpoint thử nghiệm sinh lời nhận xét sư phạm trực tiếp bằng Qwen."""
+    creativity_info = {
+        "score": req.creativity_score,
+        "evidence": req.evidence,
+        "devices": ["tu_lay", "so_sanh"]
+    }
+    result = generate_pedagogical_comment_tier2(creativity_info, req.errors)
+    return result
+
 
 if __name__ == "__main__":
     import uvicorn

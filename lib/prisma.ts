@@ -12,7 +12,7 @@ async function createPrismaWithWAL(): Promise<PrismaClient> {
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   })
   try {
-    await client.$executeRawUnsafe("PRAGMA journal_mode = WAL;")
+    await client.$queryRawUnsafe("PRAGMA journal_mode = WAL;")
     await client.$executeRawUnsafe("PRAGMA busy_timeout = 5000;")
     await client.$executeRawUnsafe("PRAGMA synchronous = NORMAL;")
   } catch {

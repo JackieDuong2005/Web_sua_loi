@@ -27,9 +27,17 @@ prisma/*.db-shm
 prisma/*.db-wal
 prisma/prisma/
 
-# Python cache
+# Python cache and environment
 __pycache__/
 *.py[cod]
+python_service/__pycache__/
+python_service/*.pyc
+python_service/venv/
+venv/
+.venv/
+
+# Temporary scan reports
+scan_report*.json
 
 # Logs
 *.log

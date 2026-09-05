@@ -1,69 +1,102 @@
 @echo off
+setlocal enabledelayedexpansion
 chcp 65001 >nul
+title ViHand Grade - System Launcher
+
+REM ------------------------------------------------------------------
+REM Chuyen ve dung thu muc chua script (tranh loi khi Run as Admin)
+REM ------------------------------------------------------------------
+cd /d "%~dp0"
+
 echo ================================================================
-echo     KHOI DONG HE THONG VIHAND GRADE + XIAOZHI VOICE CORE
+echo     KHOI DONG HE THONG VIHAND GRADE (WEB + AI + DICTATION)
 echo ================================================================
 echo.
-
-:: === FIX QUAN TRONG: Tat Quick Edit Mode ===
-:: Quick Edit Mode lam DONG BANG Python khi click vao cua so terminal
-reg add "HKCU\Console" /v QuickEdit /t REG_DWORD /d 0 /f >nul 2>&1
-echo [OK] Da tat Quick Edit Mode.
+echo Thu muc lam viec: %~dp0
 echo.
 
-:: ── Kiem tra GEMINI_API_KEY ──────────────────────────────────────────
-if "%GEMINI_API_KEY%"=="" (
-    echo [!] CANH BAO: Chua thiet lap GEMINI_API_KEY
-    echo     Chay setup_api_key.bat truoc khi dung start_all.bat
+REM ------------------------------------------------------------------
+REM 1. Kiem tra Node.js va npm
+REM ------------------------------------------------------------------
+where node >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [LOI] Khong tim thay Node.js trong PATH!
+    echo       Vui long cai dat Node.js tu https://nodejs.org
     echo.
+    pause
+    exit /b 1
 )
 
-echo [1/3] Dang khoi dong Web Frontend ^& REST API (Next.js - Port 3000)...
-start "ViHand Grade Web" cmd /c "npm run dev"
-echo     [OK] Next.js dang khoi dong tai http://localhost:3000
+where npm >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [LOI] Khong tim thay npm trong PATH!
+    echo.
+    pause
+    exit /b 1
+)
+
+REM ------------------------------------------------------------------
+REM 2. Kiem tra Python
+REM ------------------------------------------------------------------
+where python >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [LOI] Khong tim thay Python trong PATH!
+    echo       Vui long cai dat Python 3.10+ va tick chon "Add Python to PATH".
+    echo.
+    pause
+    exit /b 1
+)
+
+REM ------------------------------------------------------------------
+REM 3. Kiem tra cau hinh GEMINI API KEY
+REM ------------------------------------------------------------------
+if exist ".env.local" (
+    echo [OK] Da tim thay file cau hinh .env.local
+) else if not "%GEMINI_API_KEY%"=="" (
+    echo [OK] Da nhan dien GEMINI_API_KEY tu bien moi truong he thong.
+) else (
+    echo [!] CANH BAO: Chua tim thay file .env.local hoac bien GEMINI_API_KEY.
+    echo     He thong van khoi dong, nhung tinh nang OCR Gemini co the bi han che.
+    echo     Ban co the chay setup_api_key.bat de bo sung key bat cu luc nao.
+)
 echo.
 
-echo [2/3] Dang khoi dong AI Grading Service (ViT5 Python - Port 8000)...
-start "ViT5 AI Service" cmd /k "cd python_service && python main.py"
-echo     [OK] ViT5 Grader dang khoi dong tai http://localhost:8000
+REM ------------------------------------------------------------------
+REM 4. Khoi dong Web Frontend va REST API (Next.js - Port 3000)
+REM ------------------------------------------------------------------
+echo [1/2] Dang khoi dong Web Frontend va REST API (Next.js - Port 3000)...
+start "ViHand Grade Web (Port 3000)" cmd /k "cd /d ""%~dp0"" && echo Dang khoi dong Next.js dev server... && npm run dev"
+echo     [OK] Cua so Next.js da duoc mo. Vui long doi san sang tai http://localhost:3000
 echo.
 
-echo [3/3] Dang khoi dong Xiaozhi Voice Core cho ESP32 (Port 8100)...
-echo     Robot ESP32 se ket noi qua: ws://[IP_MAY]:8100/xiaozhi/v1/
-:: Chay voi HIGH priority de asyncio khong bi Windows throttle
-start /HIGH "Xiaozhi Voice Core" cmd /k "cd xiaozhi-esp32-server-main\main\xiaozhi-server && python -u app.py"
-echo     [OK] Xiaozhi Voice Core dang khoi dong tai port 8100
+REM ------------------------------------------------------------------
+REM 5. Khoi dong AI Service: ViT5 Grader + Qwen SLM + Edge-TTS (Python - Port 8000)
+REM ------------------------------------------------------------------
+echo [2/2] Dang khoi dong AI Service: ViT5 + Qwen SLM + Edge-TTS (Python - Port 8000)...
+start "ViHand AI Service (Port 8000)" cmd /k "cd /d ""%~dp0python_service"" && set ENABLE_QWEN_SLM=1 && echo Dang khoi dong Python AI Service (ViT5 + Qwen2.5 SLM)... && python main.py"
+echo     [OK] Cua so AI Service da duoc mo. Vui long doi tai model tai http://localhost:8000
 echo.
 
+REM ------------------------------------------------------------------
+REM 6. Thong tin dieu huong
+REM ------------------------------------------------------------------
 echo ================================================================
 echo  TAT CA CAC DICH VU DANG DUOC KHOI DONG!
 echo ================================================================
 echo.
-echo  DICH VU          CONG DUNG                  PORT
-echo  -------          ---------                  ----
-echo  Next.js Web      Giao dien + REST API        3000
-echo  ViT5 Grader      AI Cham bai OCR             8000
-echo  Xiaozhi Voice    WebSocket cho ESP32-S3      8100
+echo  DICH VU             CONG DUNG                        PORT
+echo  -------             ---------                        ----
+echo  Next.js Web         Giao dien + Cham diem + Doc bai  3000
+echo  ViHand AI Service   ViT5 + Qwen2.5 SLM + Edge-TTS    8000
 echo.
-echo  TRUY CAP WEB:   http://localhost:3000
-echo  XIAOZHI HUB:    http://localhost:3000/teacher/xiaozhi
-echo  ESP32 CONNECT:  ws://[IP_MAY]:8100/xiaozhi/v1/
+echo  DIA CHI TRUY CAP:
+echo  - Trang chu Web:        http://localhost:3000
+echo  - Cham diem AI:         http://localhost:3000/teacher/grade
+echo  - Doc chinh ta Web:     http://localhost:3000/teacher/dictation
+echo  - API Docs (Swagger):   http://localhost:8000/docs
 echo.
-echo  QUAN TRONG:
-echo  - KHONG CLICK vao cua so "Xiaozhi Voice Core"!
-echo    Neu lo click, nhan ENTER ngay de giai phong asyncio.
-echo  - Cho 20-30 giay de Xiaozhi Voice Core load Silero-VAD.
-echo  - Xem log Robot tai cua so "Xiaozhi Voice Core".
-echo.
-echo  CAU HINH TUY CHINH:
-echo  - Giong doc / toc do: xiaozhi-esp32-server-main\main\xiaozhi-server\data\.config.yaml
-echo  - Nguon dien: Raspberry Pi 4 hoac may tinh Windows
-echo.
-echo  ROBOT ESP32:
-echo  1. Cai firmware xiaozhi-esp32-main len mach ESP32-S3
-echo  2. Dung app BluFi cau hinh Wi-Fi phong hoc
-echo  3. Thanh cong: LED xanh + Alexa noi "Em da san sang!"
-echo.
-echo  Vui long cho 30 giay de tat ca dich vu san sang...
+echo  LUU Y:
+echo  - Giu nguyen 2 cua so Command Prompt vua mo de he thong hoat dong.
+echo  - Muon tat he thong, chi can dong 2 cua so terminal do.
 echo ================================================================
 pause

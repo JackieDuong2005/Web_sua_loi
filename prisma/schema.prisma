@@ -33,6 +33,7 @@ model Class {
 
 model Grade {
   id                   String   @id @default(cuid())
+  gradingMode          String   @default("dictation") // "dictation" (Chính tả Nghe - Viết) | "essay" (Tập làm văn tự do)
   studentName          String
   assignmentTitle      String
   className            String   @default("")
@@ -43,12 +44,13 @@ model Grade {
   scoreNum             Float
   scoreBreakdown       String   @default("")
   feedback             String
+  pedagogicalComment   String   @default("") // Lời nhận xét sư phạm toàn diện
   overallRating        String
   processingTimeMs     Int      @default(0)
   tokenCount           Int      @default(0)
   imageBase64          String   @default("")
   imagePath            String   @default("")  // Đường dẫn tệp ảnh lưu trên đĩa (VD: /uploads/grades/xyz.jpg)
-  dictationSessionId   String   @default("")  // Liên kết với phiên đọc chính tả Xiaozhi (tuỳ chọn)
+  dictationSessionId   String   @default("")  // Liên kết với bài đọc mẫu Ground Truth (tuỳ chọn)
   createdAt            DateTime @default(now())
 }
 

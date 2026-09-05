@@ -30,6 +30,10 @@ export interface PreprocessConfig {
   minTextAreaRatio: number;
   enableDeskew: boolean;      // Tự động phát hiện và chỉnh góc nghiêng
   deskewMaxAngle: number;     // Góc tối đa tìm kiếm (độ), mặc định 15
+  // Issue #21 Fix: Cấu hình thích ứng theo khối lớp (Lớp 1-2 viết chì nét to vs Lớp 3-5 viết mực)
+  gradeLevel?: number;
+  darkPixelThreshold?: number;
+  minDarkRatio?: number;
 }
 
 export interface QualityReport {
@@ -40,6 +44,12 @@ export interface QualityReport {
   resolution: number;
   dark_pixel_ratio: number;
   text_area_ratio: number;
+  gradeLevel?: number;
+  details?: {
+    blur_status: "good" | "warning";
+    brightness_status: "good" | "dark" | "bright";
+    contrast_status: "good" | "warning";
+  };
 }
 
 const DEFAULT_CONFIG: PreprocessConfig = {
@@ -275,12 +285,20 @@ function applyThreshold(
 
 // ═══════════════════════ QUALITY ASSESSMENT ═══════════════════════
 
-/** Đánh giá chất lượng ảnh trước khi OCR */
+/** Đánh giá chất lượng ảnh trước khi OCR — Thích ứng thông minh theo khối lớp tiểu học (Issue #21 Fix) */
 function assessQuality(gray: Uint8Array, w: number, h: number, cfg: PreprocessConfig): QualityReport {
   const warnings: string[] = [];
   const n = gray.length;
+  const gradeLevel = cfg.gradeLevel && cfg.gradeLevel >= 1 && cfg.gradeLevel <= 5 ? cfg.gradeLevel : 3;
 
-  // Blur score — Laplacian variance (kernel 3×3 xấp xỉ)
+  // Ngưỡng thích ứng: Lớp 1-2 viết bút chì nét to, bài ngắn; Lớp 3-5 viết mực, bài văn dài
+  const isLowerGrade = gradeLevel <= 2;
+  const effectiveBlurThreshold = isLowerGrade ? 65 : (cfg.blurThreshold ?? 80);
+  const effectiveMinTextAreaRatio = isLowerGrade ? 0.002 : (cfg.minTextAreaRatio ?? 0.005);
+  const darkThresh = cfg.darkPixelThreshold ?? (isLowerGrade ? 135 : 115); // Nét chì xám ~110-130 vẫn tính là nét chữ
+  const minDarkRatio = cfg.minDarkRatio ?? (isLowerGrade ? 0.008 : 0.018);
+
+  // 1. Blur score — Laplacian variance (kernel 3×3 xấp xỉ)
   let lapSum = 0, lapSqSum = 0, lapCount = 0;
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
@@ -291,31 +309,48 @@ function assessQuality(gray: Uint8Array, w: number, h: number, cfg: PreprocessCo
   }
   const lapMean = lapSum / lapCount;
   const blur_score = Math.round((lapSqSum / lapCount - lapMean * lapMean) * 100) / 100;
-  if (blur_score < cfg.blurThreshold) warnings.push("Ảnh bị mờ (blur score thấp)");
+  let blur_status: "good" | "warning" = "good";
+  if (blur_score < effectiveBlurThreshold) {
+    warnings.push("Ảnh hơi mờ (có thể do rung tay khi chụp)");
+    blur_status = "warning";
+  }
 
-  // Brightness
+  // 2. Brightness
   let brightSum = 0;
   for (let i = 0; i < n; i++) brightSum += gray[i];
   const brightness = Math.round((brightSum / n) * 100) / 100;
-  if (brightness < cfg.brightnessLow) warnings.push("Ảnh quá tối");
-  else if (brightness > cfg.brightnessHigh) warnings.push("Ảnh bị cháy sáng");
+  let brightness_status: "good" | "dark" | "bright" = "good";
+  if (brightness < cfg.brightnessLow) {
+    warnings.push("Ảnh hơi tối, nên chụp ở nơi đủ sáng");
+    brightness_status = "dark";
+  } else if (brightness > cfg.brightnessHigh) {
+    warnings.push("Ảnh bị lóa sáng, nên tránh ánh đèn phản chiếu");
+    brightness_status = "bright";
+  }
 
-  // Resolution
+  // 3. Resolution
   const resolution = Math.min(w, h);
-  if (resolution < cfg.minResolution) warnings.push("Độ phân giải quá thấp");
+  if (resolution < cfg.minResolution) warnings.push("Độ phân giải ảnh thấp");
 
-  // Nét chữ nhạt
+  // 4. Nét chữ nhạt — Kiểm tra thông minh theo độ tương phản giữa chữ và nền giấy
   let darkCount = 0;
-  for (let i = 0; i < n; i++) if (gray[i] < 100) darkCount++;
+  for (let i = 0; i < n; i++) if (gray[i] < darkThresh) darkCount++;
   const dark_pixel_ratio = Math.round((darkCount / n) * 10000) / 10000;
-  if (dark_pixel_ratio < 0.02) warnings.push("Nét chữ quá nhạt, khó nhận dạng");
 
-  // Chữ quá nhỏ (dùng Otsu để tìm vùng chữ)
+  let contrast_status: "good" | "warning" = "good";
+  if (dark_pixel_ratio < minDarkRatio) {
+    warnings.push("Nét chữ viết hơi nhạt hoặc ảnh chụp quá xa");
+    contrast_status = "warning";
+  }
+
+  // 5. Chữ quá nhỏ (dùng Otsu để tìm vùng chữ)
   const t = otsuThreshold(gray);
   let textPixels = 0;
   for (let i = 0; i < n; i++) if (gray[i] < t) textPixels++;
   const text_area_ratio = Math.round((textPixels / n) * 10000) / 10000;
-  if (text_area_ratio < cfg.minTextAreaRatio) warnings.push("Chữ viết quá nhỏ hoặc ảnh chụp quá xa");
+  if (text_area_ratio < effectiveMinTextAreaRatio) {
+    warnings.push("Vùng chữ viết nhỏ so với toàn bộ khung hình");
+  }
 
   return {
     is_good: warnings.length === 0,
@@ -325,6 +360,12 @@ function assessQuality(gray: Uint8Array, w: number, h: number, cfg: PreprocessCo
     resolution,
     dark_pixel_ratio,
     text_area_ratio,
+    gradeLevel,
+    details: {
+      blur_status,
+      brightness_status,
+      contrast_status,
+    },
   };
 }
 

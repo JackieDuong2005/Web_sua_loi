@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
+      gradingMode,
       studentName,
       assignmentTitle,
       className,
@@ -75,10 +76,12 @@ export async function POST(req: NextRequest) {
       score,
       scoreBreakdown,
       feedback,
+      pedagogicalComment,
       overallRating,
       processingTimeMs,
       tokenCount,
       imageBase64,
+      dictationSessionId,
     } = body
 
     // Validate bắt buộc
@@ -114,6 +117,7 @@ export async function POST(req: NextRequest) {
 
     const grade = await prisma.grade.create({
       data: {
+        gradingMode: gradingMode || "dictation",
         studentName: studentName || "Học sinh",
         assignmentTitle: assignmentTitle || "Bài viết",
         className: className || "",
@@ -124,11 +128,13 @@ export async function POST(req: NextRequest) {
         scoreNum,
         scoreBreakdown: scoreBreakdown ? JSON.stringify(scoreBreakdown) : "",
         feedback: feedback || "",
+        pedagogicalComment: pedagogicalComment || "",
         overallRating: overallRating || "",
         processingTimeMs: processingTimeMs || 0,
         tokenCount: tokenCount || 0,
         imageBase64: imageBase64 || "",
         imagePath: imagePath || "",
+        dictationSessionId: dictationSessionId || "",
       },
     })
 
