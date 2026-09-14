@@ -51,6 +51,10 @@ model Grade {
   imageBase64          String   @default("")
   imagePath            String   @default("")  // Đường dẫn tệp ảnh lưu trên đĩa (VD: /uploads/grades/xyz.jpg)
   dictationSessionId   String   @default("")  // Liên kết với bài đọc mẫu Ground Truth (tuỳ chọn)
+  // Chính sách lưu trữ & bảo vệ dữ liệu học sinh (Issue #26)
+  expiresAt            DateTime? // Hạn lưu trữ (mặc định createdAt + 365 ngày)
+  isAnonymized         Boolean   @default(false) // Đã ẩn danh hóa & xóa ảnh bài làm hay chưa
+  anonymizedAt         DateTime? // Thời điểm thực hiện ẩn danh hóa
   createdAt            DateTime @default(now())
 }
 

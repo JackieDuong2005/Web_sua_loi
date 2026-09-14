@@ -1,0 +1,14 @@
+path: '/content/drive/My Drive/Test train 29/12/data_yolov8'
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 1
+names: ['Word']
+
+roboflow:
+  workspace: smartcheck-error-grading
+  project: vietnamese-handwriting-detection-10gfi
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/smartcheck-error-grading/vietnamese-handwriting-detection-10gfi/dataset/1

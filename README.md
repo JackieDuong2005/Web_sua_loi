@@ -57,15 +57,17 @@ short_description: AI-powered Vietnamese handwriting spelling checker & grader
 
 ## 🏗️ Kiến trúc hệ thống
 
-![Kiến trúc hệ thống ViHand Grade](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/vihand_kien_truc_he_thong.png)
+![Kiến trúc hệ thống ViHand Grade](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/SoDo_TongQuat_HeThong.png)
 
 ### Luồng xử lý bài chấm
 
-![Hybrid AI Pipeline – Luồng xử lý bài chấm](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/Hinh31_Hybrid_AI_Pipeline_New.png)
+![Hybrid AI Pipeline – Luồng xử lý bài chấm](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/Hinh_3_1_Hybrid_AI_Pipeline.png)
 
 ---
 
 ## 🛠️ Tech Stack
+
+![Bản đồ công nghệ ViHand Grade](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/Hinh_4_1_Tech_Stack.png)
 
 | Layer | Công nghệ |
 |-------|-----------|
@@ -75,7 +77,7 @@ short_description: AI-powered Vietnamese handwriting spelling checker & grader
 | **Image Processing** | Jimp (server-side, 9-step pipeline) |
 | **AI – OCR** | Google Gemini Flash Lite (Vision) |
 | **AI – Spelling** | ViT5 (`chamdentimem/ViT5_Vietnamese_Correction`) via FastAPI |
-| **AI – Dictation** | MCP (Model Context Protocol) + Xiaozhi Agent |
+| **AI – Dictation** | Edge-TTS Web Streaming + Kho SGK Lớp 1-5 |
 | **Deployment** | Docker · Raspberry Pi 4 · Cloudflare Tunnel |
 | **Charts** | Recharts |
 
@@ -83,7 +85,7 @@ short_description: AI-powered Vietnamese handwriting spelling checker & grader
 
 ## 📁 Cấu trúc thư mục
 
-![Kiến trúc tổng thể hệ thống ViHand Grade](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/HinhX1_Kien_truc_He_thong.png)
+![Kiến trúc tổng thể hệ thống ViHand Grade](./01_Bao_cao_Nghien_cuu/Lưu%20đồ%20giải%20thuật/SoDo_TongQuat_HeThong.png)
 
 ---
 

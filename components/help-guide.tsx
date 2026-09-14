@@ -7,79 +7,125 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   HelpCircle, Camera, Zap, Save, FileText, History,
-  ChevronLeft, ChevronRight, X, Star, BookOpen
+  ChevronLeft, ChevronRight, X, Star, BookOpen, Sliders
 } from "lucide-react"
 
 // Inline SVG illustrations — no external files needed
-const StepIllustration = ({ stepId }: { stepId: string }) => {
-  const illustrations: Record<string, JSX.Element> = {
+const StepIllustration = ({ stepId }: { stepId: string }) => {  const illustrations: Record<string, JSX.Element> = {
+    mode: (
+      <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <rect width="400" height="200" fill="#f5f3ff" rx="12"/>
+        <rect x="25" y="30" width="165" height="135" rx="8" fill="white" stroke="#c4b5fd" strokeWidth="2"/>
+        <rect x="40" y="45" width="60" height="20" rx="4" fill="#ede9fe"/>
+        <text x="70" y="59" textAnchor="middle" fontSize="10" fill="#7c3aed" fontWeight="bold" fontFamily="sans-serif">🎯 CHÍNH TẢ</text>
+        <text x="40" y="85" fontSize="11" fontWeight="bold" fill="#1e293b" fontFamily="sans-serif">Chấm theo bài đọc mẫu</text>
+        <text x="40" y="103" fontSize="10" fill="#64748b" fontFamily="sans-serif">• Có sẵn bài đọc SGK</text>
+        <text x="40" y="119" fontSize="10" fill="#64748b" fontFamily="sans-serif">• Đối chiếu chuẩn xác từng từ</text>
+        <rect x="40" y="132" width="135" height="22" rx="5" fill="#7c3aed"/>
+        <text x="107" y="147" textAnchor="middle" fontSize="10" fill="white" fontWeight="bold" fontFamily="sans-serif">Kho SGK Tuần 1–35</text>
+
+        <rect x="210" y="30" width="165" height="135" rx="8" fill="white" stroke="#e9d5ff" strokeWidth="1.5"/>
+        <rect x="225" y="45" width="80" height="20" rx="4" fill="#fdf4ff"/>
+        <text x="265" y="59" textAnchor="middle" fontSize="10" fill="#c026d3" fontWeight="bold" fontFamily="sans-serif">✍️ TẬP LÀM VĂN</text>
+        <text x="225" y="85" fontSize="11" fontWeight="bold" fill="#1e293b" fontFamily="sans-serif">Chấm bài viết tự do</text>
+        <text x="225" y="103" fontSize="10" fill="#64748b" fontFamily="sans-serif">• Không cần bài mẫu</text>
+        <text x="225" y="119" fontSize="10" fill="#64748b" fontFamily="sans-serif">• Gợi ý lời nhận xét sư phạm</text>
+        <rect x="225" y="132" width="135" height="22" rx="5" fill="#f3e8ff" stroke="#d8b4fe" strokeWidth="1"/>
+        <text x="292" y="147" textAnchor="middle" fontSize="10" fill="#9333ea" fontWeight="bold" fontFamily="sans-serif">Gợi ý lời nhận xét</text>
+        <text x="200" y="186" textAnchor="middle" fontSize="11" fill="#6d28d9" fontFamily="sans-serif">Hỗ trợ đầy đủ Chính tả &amp; Tập làm văn tiểu học</text>
+      </svg>
+    ),
     capture: (
       <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="200" fill="#f0f9ff" rx="12"/>
-        <rect x="120" y="30" width="160" height="120" rx="8" fill="#e0f2fe" stroke="#0ea5e9" strokeWidth="2"/>
-        <rect x="135" y="45" width="130" height="90" rx="4" fill="white" stroke="#bae6fd" strokeWidth="1"/>
-        <line x1="145" y1="65" x2="255" y2="65" stroke="#94a3b8" strokeWidth="1.5"/>
-        <line x1="145" y1="78" x2="235" y2="78" stroke="#94a3b8" strokeWidth="1.5"/>
-        <line x1="145" y1="91" x2="245" y2="91" stroke="#94a3b8" strokeWidth="1.5"/>
-        <line x1="145" y1="104" x2="220" y2="104" stroke="#94a3b8" strokeWidth="1.5"/>
-        <circle cx="200" cy="160" r="18" fill="#0ea5e9"/>
-        <circle cx="200" cy="160" r="12" fill="white" opacity="0.3"/>
-        <text x="200" y="165" textAnchor="middle" fontSize="14" fill="white">📷</text>
-        <text x="200" y="192" textAnchor="middle" fontSize="11" fill="#0369a1" fontFamily="sans-serif">Chụp ảnh bài viết</text>
+        <rect width="400" height="200" fill="#f0fdf4" rx="12"/>
+        <rect x="25" y="35" width="150" height="110" rx="8" fill="white" stroke="#94a3b8" strokeWidth="1.5"/>
+        <line x1="40" y1="58" x2="150" y2="58" stroke="#cbd5e1" strokeWidth="2"/>
+        <line x1="40" y1="73" x2="130" y2="73" stroke="#cbd5e1" strokeWidth="2"/>
+        <line x1="40" y1="88" x2="145" y2="88" stroke="#cbd5e1" strokeWidth="2"/>
+        <line x1="40" y1="103" x2="120" y2="103" stroke="#cbd5e1" strokeWidth="2"/>
+        <text x="100" y="130" textAnchor="middle" fontSize="9" fill="#64748b" fontFamily="sans-serif">Ảnh chụp ban đầu</text>
+
+        <path d="M190 90 L212 90" stroke="#10b981" strokeWidth="2" strokeDasharray="3 2"/>
+        <circle cx="201" cy="90" r="13" fill="#ecfdf5" stroke="#10b981" strokeWidth="1.5"/>
+        <text x="201" y="94" textAnchor="middle" fontSize="11">✨</text>
+
+        <rect x="225" y="35" width="150" height="110" rx="8" fill="white" stroke="#10b981" strokeWidth="2"/>
+        <line x1="240" y1="58" x2="350" y2="58" stroke="#334155" strokeWidth="2"/>
+        <line x1="240" y1="73" x2="330" y2="73" stroke="#334155" strokeWidth="2"/>
+        <line x1="240" y1="88" x2="345" y2="88" stroke="#334155" strokeWidth="2"/>
+        <line x1="240" y1="103" x2="320" y2="103" stroke="#334155" strokeWidth="2"/>
+        <rect x="235" y="122" width="130" height="18" rx="4" fill="#d1fae5"/>
+        <text x="300" y="135" textAnchor="middle" fontSize="8.5" fill="#065f46" fontWeight="bold" fontFamily="sans-serif">✓ Tự động xoay thẳng &amp; làm rõ nét</text>
+        <text x="200" y="185" textAnchor="middle" fontSize="11" fill="#047857" fontFamily="sans-serif">Hệ thống tự động làm rõ nét chữ viết tay của học sinh</text>
       </svg>
     ),
     ai: (
       <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="200" fill="#f0fdf4" rx="12"/>
-        <rect x="30" y="50" width="130" height="100" rx="8" fill="white" stroke="#86efac" strokeWidth="2"/>
-        <line x1="45" y1="75" x2="145" y2="75" stroke="#fca5a5" strokeWidth="2"/>
-        <line x1="45" y1="90" x2="120" y2="90" stroke="#94a3b8" strokeWidth="1.5"/>
-        <line x1="45" y1="105" x2="135" y2="105" stroke="#fca5a5" strokeWidth="2"/>
-        <line x1="45" y1="120" x2="110" y2="120" stroke="#94a3b8" strokeWidth="1.5"/>
-        <circle cx="200" cy="100" r="28" fill="#22c55e" opacity="0.15"/>
-        <text x="200" y="107" textAnchor="middle" fontSize="26">⚡</text>
-        <path d="M170 100 L228 100" stroke="#22c55e" strokeWidth="2" strokeDasharray="4 2" markerEnd="url(#arr)"/>
-        <rect x="240" y="50" width="130" height="100" rx="8" fill="white" stroke="#86efac" strokeWidth="2"/>
-        <rect x="255" y="68" width="100" height="16" rx="4" fill="#dcfce7"/>
-        <text x="305" y="80" textAnchor="middle" fontSize="10" fill="#16a34a" fontFamily="sans-serif">8.5/10 ✓</text>
-        <line x1="255" y1="97" x2="345" y2="97" stroke="#86efac" strokeWidth="1.5"/>
-        <line x1="255" y1="110" x2="330" y2="110" stroke="#86efac" strokeWidth="1.5"/>
-        <line x1="255" y1="123" x2="340" y2="123" stroke="#86efac" strokeWidth="1.5"/>
-        <text x="200" y="185" textAnchor="middle" fontSize="11" fill="#15803d" fontFamily="sans-serif">AI phân tích &amp; chấm điểm tự động</text>
+        <rect width="400" height="200" fill="#f0f9ff" rx="12"/>
+        <rect x="25" y="40" width="105" height="100" rx="8" fill="white" stroke="#38bdf8" strokeWidth="1.5"/>
+        <text x="77" y="65" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#0284c7" fontFamily="sans-serif">1. Đọc chữ</text>
+        <text x="77" y="85" textAnchor="middle" fontSize="8.5" fill="#64748b" fontFamily="sans-serif">Nhận diện chữ viết</text>
+        <text x="77" y="100" textAnchor="middle" fontSize="8.5" fill="#64748b" fontFamily="sans-serif">trên trang vở ô ly</text>
+        <rect x="35" y="112" width="85" height="16" rx="3" fill="#e0f2fe"/>
+        <text x="77" y="124" textAnchor="middle" fontSize="8" fill="#0369a1" fontWeight="bold" fontFamily="sans-serif">Nhanh &amp; chính xác</text>
+
+        <path d="M135 90 L152 90" stroke="#0ea5e9" strokeWidth="2"/>
+        <rect x="155" y="40" width="105" height="100" rx="8" fill="white" stroke="#6366f1" strokeWidth="1.5"/>
+        <text x="207" y="65" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#4f46e5" fontFamily="sans-serif">2. Tìm lỗi sai</text>
+        <text x="207" y="85" textAnchor="middle" fontSize="8.5" fill="#64748b" fontFamily="sans-serif">Phụ âm, vần,</text>
+        <text x="207" y="100" textAnchor="middle" fontSize="8.5" fill="#64748b" fontFamily="sans-serif">dấu thanh, viết hoa</text>
+        <rect x="165" y="112" width="85" height="16" rx="3" fill="#ede9fe"/>
+        <text x="207" y="124" textAnchor="middle" fontSize="8" fill="#4338ca" fontWeight="bold" fontFamily="sans-serif">Chuẩn tiếng Việt</text>
+
+        <path d="M265 90 L282 90" stroke="#6366f1" strokeWidth="2"/>
+        <rect x="285" y="40" width="95" height="100" rx="8" fill="white" stroke="#10b981" strokeWidth="1.5"/>
+        <text x="332" y="65" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#059669" fontFamily="sans-serif">3. Gợi ý lời phê</text>
+        <text x="332" y="85" textAnchor="middle" fontSize="8.5" fill="#64748b" fontFamily="sans-serif">Nhận xét mẫu</text>
+        <text x="332" y="100" textAnchor="middle" fontSize="8.5" fill="#64748b" fontFamily="sans-serif">ấm áp, khích lệ</text>
+        <rect x="293" y="112" width="80" height="16" rx="3" fill="#d1fae5"/>
+        <text x="333" y="124" textAnchor="middle" fontSize="8" fill="#047857" fontWeight="bold" fontFamily="sans-serif">Động viên các con</text>
+
+        <text x="200" y="185" textAnchor="middle" fontSize="11" fill="#0369a1" fontFamily="sans-serif">Hệ thống tự động đọc bài, tìm lỗi và gợi ý nhận xét</text>
       </svg>
     ),
     result: (
       <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <rect width="400" height="200" fill="#fefce8" rx="12"/>
-        <rect x="20" y="30" width="170" height="140" rx="8" fill="white" stroke="#fde68a" strokeWidth="2"/>
-        <circle cx="75" cy="75" r="35" fill="#fef9c3" stroke="#fbbf24" strokeWidth="2"/>
-        <text x="75" y="83" textAnchor="middle" fontSize="28" fontWeight="bold" fill="#d97706" fontFamily="sans-serif">8.5</text>
-        <rect x="35" y="120" width="140" height="8" rx="4" fill="#fde68a"/>
-        <rect x="35" y="120" width="119" height="8" rx="4" fill="#f59e0b"/>
-        <text x="105" y="145" textAnchor="middle" fontSize="10" fill="#92400e" fontFamily="sans-serif">Tốt 🌟</text>
-        <rect x="210" y="30" width="170" height="140" rx="8" fill="white" stroke="#fde68a" strokeWidth="2"/>
-        <text x="295" y="55" textAnchor="middle" fontSize="10" fill="#6b7280" fontFamily="sans-serif">Lỗi chính tả</text>
-        <rect x="225" y="62" width="140" height="22" rx="4" fill="#fee2e2"/>
-        <text x="285" y="77" textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily="sans-serif">sai → đúng ✓</text>
-        <rect x="225" y="90" width="140" height="22" rx="4" fill="#fee2e2"/>
-        <text x="285" y="105" textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily="sans-serif">lổi → lỗi ✓</text>
-        <rect x="225" y="118" width="140" height="32" rx="4" fill="#dcfce7"/>
-        <text x="295" y="132" textAnchor="middle" fontSize="9" fill="#16a34a" fontFamily="sans-serif">Nhận xét: Bài viết tốt,</text>
-        <text x="295" y="144" textAnchor="middle" fontSize="9" fill="#16a34a" fontFamily="sans-serif">cần luyện thêm dấu!</text>
-        <text x="200" y="185" textAnchor="middle" fontSize="11" fill="#92400e" fontFamily="sans-serif">Kết quả chi tiết theo 4 tiêu chí</text>
+        <rect x="20" y="25" width="170" height="145" rx="8" fill="white" stroke="#fde68a" strokeWidth="2"/>
+        <circle cx="65" cy="65" r="28" fill="#fef9c3" stroke="#fbbf24" strokeWidth="2"/>
+        <text x="65" y="73" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#d97706" fontFamily="sans-serif">8.5</text>
+        <text x="135" y="58" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#15803d" fontFamily="sans-serif">Tốt 🌟</text>
+        <text x="135" y="75" textAnchor="middle" fontSize="9" fill="#6b7280" fontFamily="sans-serif">Thang điểm 10</text>
+        <line x1="35" y1="105" x2="175" y2="105" stroke="#e2e8f0" strokeWidth="1"/>
+        <text x="35" y="122" fontSize="9" fill="#475569" fontFamily="sans-serif">✍️ Chữ viết &amp; Trình bày:</text>
+        <circle cx="150" cy="120" r="4" fill="#3b82f6"/>
+        <line x1="100" y1="120" x2="165" y2="120" stroke="#93c5fd" strokeWidth="3" strokeLinecap="round"/>
+        <text x="35" y="144" fontSize="9" fill="#2563eb" fontWeight="bold" fontFamily="sans-serif">💡 Kéo thanh trượt để chỉnh điểm</text>
+
+        <rect x="205" y="25" width="175" height="145" rx="8" fill="white" stroke="#fde68a" strokeWidth="2"/>
+        <rect x="215" y="38" width="155" height="34" rx="4" fill="#fee2e2"/>
+        <text x="292" y="52" textAnchor="middle" fontSize="9" fill="#dc2626" fontWeight="bold" fontFamily="sans-serif">sai → đúng · lổi → lỗi</text>
+        <text x="292" y="64" textAnchor="middle" fontSize="8" fill="#991b1b" fontFamily="sans-serif">Chỗ sai gạch đỏ, chữ đúng màu xanh</text>
+
+        <rect x="215" y="78" width="155" height="52" rx="4" fill="#ecfdf5" stroke="#a7f3d0" strokeWidth="1"/>
+        <text x="225" y="93" fontSize="8.5" fill="#047857" fontWeight="bold" fontFamily="sans-serif">Lời nhận xét gợi ý:</text>
+        <text x="225" y="107" fontSize="8" fill="#065f46" fontFamily="sans-serif">"Bài viết tốt, con chú ý dấu hỏi ngã nhé!"</text>
+        <rect x="225" y="136" width="85" height="16" rx="3" fill="#d1fae5"/>
+        <text x="267" y="148" textAnchor="middle" fontSize="8" fill="#065f46" fontFamily="sans-serif">Gợi ý mẫu</text>
+        <text x="200" y="188" textAnchor="middle" fontSize="11" fill="#92400e" fontFamily="sans-serif">Cô có thể chỉnh lại điểm và lời nhận xét theo ý mình</text>
       </svg>
     ),
     save: (
       <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <rect width="400" height="200" fill="#f0fdf4" rx="12"/>
-        <rect x="80" y="40" width="240" height="100" rx="8" fill="white" stroke="#86efac" strokeWidth="2"/>
-        <text x="200" y="75" textAnchor="middle" fontSize="13" fill="#374151" fontFamily="sans-serif">Nguyễn Văn A — Lớp 3A</text>
-        <text x="200" y="95" textAnchor="middle" fontSize="12" fill="#6b7280" fontFamily="sans-serif">Bài viết số 1 — 8.5/10</text>
-        <rect x="130" y="108" width="140" height="24" rx="6" fill="#22c55e"/>
-        <text x="200" y="124" textAnchor="middle" fontSize="12" fill="white" fontFamily="sans-serif">💾 Lưu vào Database</text>
-        <circle cx="200" cy="160" r="16" fill="#dcfce7" stroke="#22c55e" strokeWidth="2"/>
-        <text x="200" y="165" textAnchor="middle" fontSize="16">✓</text>
-        <text x="200" y="190" textAnchor="middle" fontSize="11" fill="#15803d" fontFamily="sans-serif">Lưu thành công!</text>
+        <rect x="80" y="35" width="240" height="105" rx="8" fill="white" stroke="#86efac" strokeWidth="2"/>
+        <text x="200" y="65" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#374151" fontFamily="sans-serif">Nguyễn Văn A — Lớp 3A</text>
+        <text x="200" y="85" textAnchor="middle" fontSize="11" fill="#6b7280" fontFamily="sans-serif">Chính tả: Ai có lỗi — 8.5/10</text>
+        <rect x="120" y="98" width="160" height="26" rx="6" fill="#16a34a"/>
+        <text x="200" y="115" textAnchor="middle" fontSize="11" fill="white" fontWeight="bold" fontFamily="sans-serif">💾 Lưu vào sổ điểm</text>
+        <circle cx="200" cy="158" r="14" fill="#dcfce7" stroke="#16a34a" strokeWidth="2"/>
+        <text x="200" y="163" textAnchor="middle" fontSize="14">✓</text>
+        <text x="200" y="188" textAnchor="middle" fontSize="11" fill="#15803d" fontFamily="sans-serif">Lưu điểm vào sổ lớp để tiện theo dõi kết quả</text>
       </svg>
     ),
     report: (
@@ -102,7 +148,7 @@ const StepIllustration = ({ stepId }: { stepId: string }) => {
       <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <rect width="400" height="200" fill="#fdf4ff" rx="12"/>
         <circle cx="200" cy="70" r="45" fill="#f3e8ff" stroke="#a855f7" strokeWidth="2"/>
-        <text x="200" y="60" textAnchor="middle" fontSize="28" fontWeight="bold" fill="#7c3aed" fontFamily="sans-serif">8</text>
+        <text x="200" y="60" textAnchor="middle" fontSize="28" fontWeight="bold" fill="#7c3aed" fontFamily="sans-serif">8.5</text>
         <text x="200" y="78" textAnchor="middle" fontSize="11" fill="#9333ea" fontFamily="sans-serif">Tốt 🌟</text>
         <text x="200" y="95" textAnchor="middle" fontSize="10" fill="#a855f7" fontFamily="sans-serif">Bài viết gần nhất</text>
         <rect x="60" y="128" width="85" height="42" rx="8" fill="white" stroke="#e9d5ff" strokeWidth="1.5"/>
@@ -113,21 +159,21 @@ const StepIllustration = ({ stepId }: { stepId: string }) => {
         <text x="200" y="164" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#7c3aed" fontFamily="sans-serif">5</text>
         <rect x="254" y="128" width="85" height="42" rx="8" fill="white" stroke="#e9d5ff" strokeWidth="1.5"/>
         <text x="297" y="148" textAnchor="middle" fontSize="9" fill="#6b7280" fontFamily="sans-serif">Cao nhất</text>
-        <text x="297" y="164" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#22c55e" fontFamily="sans-serif">9</text>
+        <text x="297" y="164" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#22c55e" fontFamily="sans-serif">9.0</text>
         <text x="200" y="192" textAnchor="middle" fontSize="11" fill="#7c3aed" fontFamily="sans-serif">Dashboard học sinh</text>
       </svg>
     ),
     history: (
       <svg viewBox="0 0 400 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <rect width="400" height="200" fill="#f0f9ff" rx="12"/>
-        {[{s:8.5,t:"Bài viết số 3",d:"17/5",c:"#22c55e"},{s:7,t:"Bài viết số 2",d:"14/5",c:"#3b82f6"},{s:6,t:"Bài viết số 1",d:"10/5",c:"#f59e0b"}].map((g, i) => (
+        {[{s:8.5,t:"Chính tả: Ai có lỗi",d:"17/5",c:"#22c55e"},{s:7.5,t:"Tập làm văn: Cây phượng",d:"14/5",c:"#3b82f6"},{s:6.5,t:"Chính tả: Mùa thu",d:"10/5",c:"#f59e0b"}].map((g, i) => (
           <g key={i}>
             <rect x="20" y={20 + i * 58} width="360" height="48" rx="8" fill="white" stroke="#e0f2fe" strokeWidth="1.5"/>
             <circle cx="52" cy={44 + i * 58} r="16" fill={g.c} opacity="0.15"/>
-            <text x="52" y={49 + i * 58} textAnchor="middle" fontSize="13" fontWeight="bold" fill={g.c} fontFamily="sans-serif">{g.s}</text>
-            <text x="80" y={39 + i * 58} fontSize="11" fontWeight="bold" fill="#374151" fontFamily="sans-serif">{g.t}</text>
-            <text x="80" y={55 + i * 58} fontSize="10" fill="#6b7280" fontFamily="sans-serif">Ngày: {g.d}/2026</text>
-            <text x="350" y={49 + i * 58} textAnchor="end" fontSize="10" fill="#3b82f6" fontFamily="sans-serif">Xem →</text>
+            <text x="52" y="49 + i * 58" textAnchor="middle" fontSize="13" fontWeight="bold" fill={g.c} fontFamily="sans-serif">{g.s}</text>
+            <text x="80" y="39 + i * 58" fontSize="11" fontWeight="bold" fill="#374151" fontFamily="sans-serif">{g.t}</text>
+            <text x="80" y="55 + i * 58" fontSize="10" fill="#6b7280" fontFamily="sans-serif">Ngày: {g.d}/2026</text>
+            <text x="350" y="49 + i * 58" textAnchor="end" fontSize="10" fill="#3b82f6" fontFamily="sans-serif">Xem →</text>
           </g>
         ))}
         <text x="200" y="196" textAnchor="middle" fontSize="11" fill="#0369a1" fontFamily="sans-serif">Lịch sử tất cả bài đã chấm</text>
@@ -151,63 +197,63 @@ interface GuideStep {
 
 const teacherGuideSteps: GuideStep[] = [
   {
-    title: "Chụp ảnh hoặc tải bài viết",
-    description: "Chụp ảnh bài viết tay của học sinh bằng camera hoặc tải ảnh từ thiết bị. Đảm bảo ảnh rõ nét, đủ ánh sáng và chữ viết nằm gọn trong khung hình.",
+    title: "1. Chọn môn học",
+    description: "Chọn 'Chính tả' (chấm theo bài đọc mẫu trong sách) hoặc 'Tập làm văn' (chấm bài viết tự do của học sinh).",
+    illustrationId: "mode",
+    icon: <BookOpen className="w-5 h-5" />,
+    tip: "💡 Với bài chính tả, cô chỉ cần bấm 'Chọn bài trong SGK' để hệ thống so sánh từng chữ với bài mẫu.",
+  },
+  {
+    title: "2. Chụp hoặc tải ảnh trang vở",
+    description: "Chụp ảnh trang vở của học sinh hoặc chọn ảnh có sẵn. Hệ thống sẽ tự động xoay thẳng và làm rõ nét chữ để đọc bài chuẩn xác nhất.",
     illustrationId: "capture",
     icon: <Camera className="w-5 h-5" />,
-    tip: "💡 Chụp từ trên xuống, vuông góc với giấy để AI nhận dạng chính xác hơn.",
+    tip: "💡 Nên chụp đủ sáng, chụp thẳng góc để trang vở rõ ràng nhất.",
   },
   {
-    title: "AI phân tích và chấm điểm",
-    description: "Nhấn nút \"Chấm điểm với Gemini AI\". Hệ thống tự động nhận dạng chữ viết, phát hiện lỗi chính tả và chấm điểm theo 4 tiêu chí: Chính tả, Hình thức, Nội dung và Sáng tạo.",
+    title: "3. Bấm Chấm bài ngay",
+    description: "Chỉ cần bấm nút 'Chấm bài ngay', hệ thống sẽ tự động đọc chữ viết tay, gạch chân các từ viết sai và soạn sẵn lời nhận xét khích lệ học sinh.",
     illustrationId: "ai",
     icon: <Zap className="w-5 h-5" />,
-    tip: "💡 Bạn cũng có thể nhập văn bản trực tiếp ở tab \"Nhập text\" nếu không có ảnh.",
+    tip: "💡 Hệ thống chỉ mất vài giây để chấm xong toàn bộ bài viết.",
   },
   {
-    title: "Xem kết quả chi tiết",
-    description: "Kết quả hiển thị điểm tổng, bảng điểm chi tiết từng tiêu chí, danh sách lỗi (gạch đỏ → sửa xanh), nhận xét của AI và văn bản đã sửa hoàn chỉnh.",
+    title: "4. Xem lỗi & Điều chỉnh điểm",
+    description: "Màn hình hiển thị rõ từ viết sai (gạch đỏ) và từ đúng (màu xanh). Cô có thể kéo thanh trượt để chỉnh lại điểm chữ viết hay sửa lời nhận xét theo ý mình.",
     illustrationId: "result",
-    icon: <BookOpen className="w-5 h-5" />,
-    tip: "💡 Mỗi lỗi được phân loại: Phụ âm đầu, Vần, Dấu thanh, Viết hoa, Dấu câu...",
+    icon: <Sliders className="w-5 h-5" />,
+    tip: "💡 Cô luôn là người quyết định điểm số và lời phê cuối cùng cho học sinh.",
   },
   {
-    title: "Lưu kết quả vào hệ thống",
-    description: "Điền tên học sinh, chọn lớp và tên bài, sau đó nhấn \"Lưu\" để lưu vào cơ sở dữ liệu. Điểm sẽ hiển thị trong Báo cáo lớp và tài khoản học sinh.",
+    title: "5. Lưu vào sổ điểm",
+    description: "Nhập tên học sinh rồi bấm 'Lưu bài'. Điểm số sẽ được ghi vào sổ điểm của lớp để cô và phụ huynh cùng theo dõi sự tiến bộ của con.",
     illustrationId: "save",
     icon: <Save className="w-5 h-5" />,
-    tip: "💡 Hệ thống gợi ý tên học sinh từ danh sách lớp bạn quản lý.",
-  },
-  {
-    title: "Theo dõi báo cáo lớp",
-    description: "Vào mục \"Báo cáo lớp\" để xem thống kê điểm số theo lớp, theo học sinh và theo thời gian. Nắm bắt tình hình học tập tổng thể của cả lớp.",
-    illustrationId: "report",
-    icon: <FileText className="w-5 h-5" />,
-    tip: "💡 Báo cáo giúp giáo viên phát hiện học sinh cần hỗ trợ thêm.",
+    tip: "💡 Có thể bấm vào mục 'Lịch sử chấm' hoặc 'Báo cáo lớp' để xem lại bài của tất cả học sinh.",
   },
 ]
 
 const studentGuideSteps: GuideStep[] = [
   {
-    title: "Xem điểm số của con",
-    description: "Sau khi đăng nhập, con sẽ thấy điểm bài viết gần nhất, điểm trung bình và số bài đã nộp. Hệ thống cho con biết mức: Xuất sắc, Tốt, Khá hay Cần cố gắng.",
+    title: "Xem điểm số & xếp loại bài viết",
+    description: "Sau khi đăng nhập, con sẽ thấy điểm bài viết gần nhất, điểm trung bình và biểu đồ tiến bộ. Hệ thống xếp loại rõ ràng: Xuất sắc, Tốt, Hoàn thành hay Cần cố gắng.",
     illustrationId: "student_view",
     icon: <Star className="w-5 h-5" />,
-    tip: "🌟 Mỗi bài viết được cô giáo chấm xong sẽ tự động hiện ở đây!",
+    tip: "🌟 Mỗi bài viết được cô giáo chấm xong sẽ tự động cập nhật ngay trên trang của con!",
   },
   {
-    title: "Xem nhận xét của AI",
-    description: "Ở mỗi bài, con xem được nhận xét chi tiết: lỗi cần sửa, điểm mạnh và lời khuyên để viết tốt hơn. Hãy đọc kỹ nhận xét để cải thiện nhé!",
-    illustrationId: "ai",
+    title: "Xem lỗi chính tả & Lời phê của cô",
+    description: "Ở từng bài làm, con có thể đối chiếu chữ viết sai và chữ viết đúng (được sửa chi tiết theo quy tắc chính tả) cùng lời nhận xét sư phạm ấm áp, khích lệ từ thầy cô và AI.",
+    illustrationId: "result",
     icon: <BookOpen className="w-5 h-5" />,
-    tip: "📝 Đọc nhận xét kỹ sẽ giúp con không mắc lại lỗi cũ!",
+    tip: "📝 Đọc kỹ lời phê và luyện viết lại các từ khó để bài sau viết đẹp và đúng hơn nhé!",
   },
   {
-    title: "Xem lịch sử điểm",
-    description: "Vào mục \"Lịch sử điểm\" trên menu bên trái để xem tất cả bài viết đã được chấm. Con có thể theo dõi sự tiến bộ của mình qua từng bài.",
+    title: "Theo dõi hành trình tiến bộ",
+    description: "Vào mục 'Lịch sử điểm' để xem lại toàn bộ các bài viết đã nộp theo thời gian, theo dõi số lỗi chính tả giảm dần qua từng tuần học.",
     illustrationId: "history",
     icon: <History className="w-5 h-5" />,
-    tip: "🎯 Cố gắng mỗi bài sau đạt điểm cao hơn bài trước nhé!",
+    tip: "🎯 Cố gắng rèn chữ và giữ gìn vở sạch chữ đẹp qua từng bài viết con nhé!",
   },
 ]
 

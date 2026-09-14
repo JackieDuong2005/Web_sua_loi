@@ -803,40 +803,71 @@ DIVERSE_PEDAGOGICAL_TEMPLATES = {
         "Cô rất khen ngợi con! Bài viết tràn đầy cảm xúc, biết vận dụng hình ảnh nghệ thuật rất sinh động và chữ viết sạch đẹp. Tiếp tục phát huy nhé!",
         "Bài văn của con thật giàu trí tưởng tượng và diễn đạt tự nhiên! Con viết đúng chính tả, câu từ trôi chảy, cô rất tự hào về con.",
         "Tuyệt vời lắm! Con có năng khiếu quan sát tinh tế và vốn từ phong phú. Toàn bài không mắc lỗi chính tả nào, cố gắng giữ vững phong độ nhé!",
-        "Một bài viết xuất sắc! Cách con chọn lọc từ ngữ và dùng hình ảnh gợi cảm rất có duyên. Chúc mừng con đã hoàn thành bài viết thật ấn tượng!"
+        "Một bài viết xuất sắc! Cách con chọn lọc từ ngữ và dùng hình ảnh gợi cảm rất có duyên. Chúc mừng con đã hoàn thành bài viết thật ấn tượng!",
+        "Văn phong của con rất trong sáng và cuốn hút. Con biết chọn chi tiết đắt giá và viết hoa đúng quy tắc. Hãy tiếp tục nuôi dưỡng tình yêu văn học nhé!",
+        "Cô rất ấn tượng với lối hành văn sinh động của con! Bài làm hoàn hảo từ chính tả đến cảm xúc, xứng đáng là bài văn mẫu của lớp."
     ],
     "high_creativity_has_errors": [
         "Cô khen con biết dùng hình ảnh so sánh và từ láy rất sinh động! Con chỉ cần chú ý viết đúng {errors} để bài văn đạt điểm tuyệt đối nhé.",
         "Bài viết của con rất giàu cảm xúc và sáng tạo! Con nhớ rèn luyện thêm về {errors} để câu văn của mình hoàn thiện và chỉn chu hơn nhé.",
         "Ý văn của con rất hay và độc đáo! Lần sau con chú ý kiểm tra lại {errors} trước khi nộp bài để đạt kết quả cao nhất nhé. Cố gắng lên con!",
-        "Cô rất thích cách con diễn đạt, giàu hình ảnh và tự nhiên! Con lưu ý rèn thêm {errors} để nét chữ và câu văn đều thật đẹp nhé."
+        "Cô rất thích cách con diễn đạt, giàu hình ảnh và tự nhiên! Con lưu ý rèn thêm {errors} để nét chữ và câu văn đều thật đẹp nhé.",
+        "Con có năng khiếu viết văn rất tốt, giàu trí tưởng tượng. Nhớ đọc lại bài cẩn thận hơn để phát hiện và sửa các lỗi {errors} nhé con.",
+        "Từng câu văn của con đều gợi hình gợi cảm. Chỉ tiếc một chút ở lỗi {errors}, con chú ý luyện tập thêm để bài viết điểm 10 trọn vẹn nhé!"
     ],
     "medium_creativity_clean": [
         "Bài viết tốt, con diễn đạt tự nhiên và câu văn có hình ảnh gợi cảm. Chữ viết rõ ràng, sạch sẽ, hãy tiếp tục phát huy nhé con!",
         "Cô khen con viết đúng chủ đề, câu từ mạch lạc và không mắc lỗi chính tả. Con hãy thử thêm một vài hình ảnh so sánh để bài hay hơn nữa nhé!",
-        "Bài làm rất chỉn chu và cẩn thận! Con giữ vở sạch, viết đúng chính tả. Tiếp tục rèn luyện để bài văn ngày càng truyền cảm hơn nhé."
+        "Bài làm rất chỉn chu và cẩn thận! Con giữ vở sạch, viết đúng chính tả. Tiếp tục rèn luyện để bài văn ngày càng truyền cảm hơn nhé.",
+        "Con nắm chắc cấu trúc bài văn, câu văn gãy gọn và rõ ràng. Con thử dùng thêm từ gợi tả âm thanh hoặc màu sắc để bài sinh động hơn nhé!",
+        "Cô đánh giá cao sự nghiêm túc và nề nếp viết bài của con. Bài viết không lỗi chính tả, hãy tiếp tục phát huy phong độ này nhé!"
     ],
     "medium_creativity_has_errors": [
         "Bài viết của con khá tốt, ý tứ rõ ràng và chân thành. Con chú ý rèn thêm về {errors} để bài viết được điểm cao hơn nhé!",
         "Câu văn của con diễn đạt tự nhiên, dễ hiểu. Con nhớ để ý phân biệt {errors} khi viết bài để không bị trừ điểm đáng tiếc nhé con.",
-        "Cô thấy con có nhiều tiến bộ trong cách dùng từ! Con chỉ cần cẩn thận hơn ở {errors} là bài viết sẽ rất tuyệt vời đấy."
+        "Cô thấy con có nhiều tiến bộ trong cách dùng từ! Con chỉ cần cẩn thận hơn ở {errors} là bài viết sẽ rất tuyệt vời đấy.",
+        "Con bám sát yêu cầu đề bài và có nhiều ý văn hay. Nhớ rèn thêm kỹ năng nhận diện {errors} khi viết chính tả nhé con.",
+        "Cách hành văn của con khá trôi chảy. Con hãy dành thêm thời gian luyện viết những từ chứa {errors} để tự tin hơn trong các bài sau nhé!"
     ],
     "basic_clean": [
         "Bài viết của con đầy đủ ý, bám sát yêu cầu đề bài. Con viết đúng chính tả và nề nếp tốt, cô khen con nhé!",
         "Con đã hoàn thành bài viết rất cẩn thận, không mắc lỗi chính tả. Con hãy đọc thêm sách để vốn từ ngữ phong phú và sinh động hơn nhé!",
-        "Bài làm sạch sẽ, đúng quy cách đoạn văn. Con tiếp tục rèn chữ và mở rộng ý văn để bài viết cuốn hút hơn nhé."
+        "Bài làm sạch sẽ, đúng quy cách đoạn văn. Con tiếp tục rèn chữ và mở rộng ý văn để bài viết cuốn hút hơn nhé.",
+        "Cô khen con viết bài nghiêm túc, đúng ngữ pháp và không sai chính tả. Hãy tự tin mở rộng thêm cảm xúc của bản thân vào bài nhé con!",
+        "Nét chữ và cách trình bày của con rất đáng khen. Con tiếp tục đọc thêm các bài văn hay để học hỏi thêm cách mở đoạn sinh động nhé."
     ],
     "basic_has_errors": [
         "Bài viết của con bám sát đề bài và đủ ý. Con chú ý rèn thêm lỗi {errors} để bài văn của mình chỉn chu và tiến bộ hơn nhé!",
         "Con đã cố gắng hoàn thành bài viết. Lần sau con nhớ đọc lại bài để phát hiện và sửa các lỗi {errors} trước khi nộp bài nhé con!",
-        "Ý văn của con mộc mạc và chân thật. Con cần rèn luyện thêm cách viết đúng {errors} để bài viết đạt kết quả tốt hơn nhé. Cố lên con!"
+        "Ý văn của con mộc mạc và chân thật. Con cần rèn luyện thêm cách viết đúng {errors} để bài viết đạt kết quả tốt hơn nhé. Cố lên con!",
+        "Cô thấy con có nhiều cố gắng trong bài làm hôm nay. Con hãy luyện viết lại các từ có lỗi {errors} vào vở rèn chữ nhé.",
+        "Con đã hiểu đề và viết tương đối trọn vẹn. Chỉ cần tập trung sửa thêm {errors} là bài viết sẽ tiến bộ rõ rệt đấy con!"
+    ],
+    "dictation_clean": [
+        "Bài viết rất cẩn thận, không mắc lỗi chính tả nào. Con viết đúng chuẩn bài đọc mẫu, cô rất khen ngợi!",
+        "Chữ viết sạch sẽ, đều nét và hoàn thành đúng 100% bài đọc. Con tiếp tục giữ vững phong độ nhé!",
+        "Con lắng nghe và chép bài rất tập trung, bài làm chỉn chu không sai một từ nào. Cô rất tự hào về con!",
+        "Rất xuất sắc! Nề nếp bài viết mẫu mực, chữ viết nắn nót và không có lỗi chính tả. Tiếp tục phát huy nhé con!",
+        "Cô khen con nghe viết chuẩn xác, đặt dấu thanh và viết hoa đúng vị trí. Chúc mừng con đạt kết quả rất tốt!"
+    ],
+    "dictation_has_errors": [
+        "Cô khen con đã cố gắng hoàn thành bài viết! Lần sau con chú ý viết cẩn thận hơn các lỗi {errors} nhé.",
+        "Bài viết khá tốt nhưng con còn nhầm lẫn ở {errors}. Con hãy dành thêm thời gian luyện viết lại những từ này nhé con!",
+        "Con có nề nếp viết bài cẩn thận. Nhớ đối chiếu lại từng câu chữ trước khi nộp bài để khắc phục lỗi {errors} nhé con.",
+        "Con lắng nghe bài đọc tốt nhưng cần chú ý rèn thêm cách viết đúng {errors}. Cố gắng luyện tập thêm con nhé!",
+        "Bài viết cơ bản hoàn thành tốt. Con chỉ cần cẩn thận hơn ở các từ có {errors} là sẽ đạt điểm tuyệt đối đấy!"
     ]
 }
 
-def build_fallback_pedagogical_comment(creativity_info: dict, errors: list[dict]) -> str:
-    """Tạo lời nhận xét sư phạm mẫu đa dạng từ ngân hàng sư phạm chuẩn Bộ GD&ĐT."""
+def build_fallback_pedagogical_comments(
+    creativity_info: dict,
+    errors: list[dict],
+    is_dictation: bool = False,
+    exclude_comments: list[str] = None
+) -> list[str]:
+    """Tạo danh sách 3 lời nhận xét sư phạm với 3 định hướng (Khen ngợi, Nhắc lỗi, Rèn luyện), tránh lặp lại."""
     import random
-    st_raw = creativity_info.get("score", 0.0)
+    st_raw = (creativity_info or {}).get("score", 0.0)
     has_errors = bool(errors and len(errors) > 0)
 
     err_labels = []
@@ -846,16 +877,30 @@ def build_fallback_pedagogical_comment(creativity_info: dict, errors: list[dict]
             err_labels.append(lbl)
     errors_str = " và ".join(err_labels) if err_labels else "chính tả"
 
-    if st_raw >= 1.0:
-        cat = "high_creativity_has_errors" if has_errors else "high_creativity_clean"
-    elif st_raw >= 0.5:
-        cat = "medium_creativity_has_errors" if has_errors else "medium_creativity_clean"
+    if is_dictation:
+        cat = "dictation_has_errors" if has_errors else "dictation_clean"
     else:
-        cat = "basic_has_errors" if has_errors else "basic_clean"
+        if st_raw >= 1.0:
+            cat = "high_creativity_has_errors" if has_errors else "high_creativity_clean"
+        elif st_raw >= 0.5:
+            cat = "medium_creativity_has_errors" if has_errors else "medium_creativity_clean"
+        else:
+            cat = "basic_has_errors" if has_errors else "basic_clean"
 
-    tpl_list = DIVERSE_PEDAGOGICAL_TEMPLATES.get(cat, DIVERSE_PEDAGOGICAL_TEMPLATES["basic_has_errors"])
-    selected = random.choice(tpl_list)
-    return selected.format(errors=errors_str)
+    tpl_list = list(DIVERSE_PEDAGOGICAL_TEMPLATES.get(cat, DIVERSE_PEDAGOGICAL_TEMPLATES["basic_has_errors"]))
+    formatted = [tpl.format(errors=errors_str) for tpl in tpl_list]
+
+    exclude_set = set(c.strip().lower() for c in (exclude_comments or []))
+    candidates = [c for c in formatted if c.strip().lower() not in exclude_set]
+    if len(candidates) < 3:
+        candidates = list(formatted)
+    random.shuffle(candidates)
+    return candidates[:3]
+
+
+def build_fallback_pedagogical_comment(creativity_info: dict, errors: list[dict]) -> str:
+    """Tạo lời nhận xét sư phạm mẫu (tương thích ngược)."""
+    return build_fallback_pedagogical_comments(creativity_info, errors)[0]
 
 
 # ==============================================================================
@@ -929,14 +974,19 @@ def clean_qwen_text(text: str) -> str:
 def generate_pedagogical_comment_tier2(
     creativity_info: dict,
     errors: list[dict],
+    current_comments: list[str] = None,
+    is_dictation: bool = False,
 ) -> dict:
-    """Sinh lời nhận xét sư phạm bằng Qwen2.5-0.5B.
+    """Sinh 3 lời nhận xét sư phạm bằng Qwen2.5-0.5B (3 định hướng: Động viên, Sửa lỗi, Bứt phá).
     Tự động Fallback về Tầng 1 nếu tắt SLM, timeout hoặc gặp ngoại lệ."""
-    fallback_text = build_fallback_pedagogical_comment(creativity_info, errors)
+    fallback_list = build_fallback_pedagogical_comments(
+        creativity_info, errors, is_dictation=is_dictation, exclude_comments=current_comments
+    )
 
     if not ENABLE_QWEN_SLM:
         return {
-            "text": fallback_text,
+            "text": fallback_list[0],
+            "suggestions": fallback_list[:3],
             "source": "tang1_deterministic",
             "latency_ms": 0.0
         }
@@ -991,43 +1041,53 @@ def generate_pedagogical_comment_tier2(
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=60,
+                max_new_tokens=65,
                 do_sample=True,
-                temperature=0.75,
-                top_p=0.9,
+                temperature=0.85,
+                top_p=0.92,
                 repetition_penalty=1.15,
+                num_return_sequences=3,
                 pad_token_id=tokenizer.eos_token_id
             )
 
-        generated_ids = outputs[0][inputs.input_ids.shape[1]:]
-        raw_comment = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
-        comment = clean_qwen_text(raw_comment)
-
-        # Kiểm tra chất lượng và chuẩn sư phạm của câu sinh bởi Qwen
         invalid_words = [
             "toán", "dự thi", "thực tế cuộc sống", "bài thi", "tiếng anh", "bạn đã",
             "rất thấp", "điểm thấp", "vị trí", "kém", "yếu kém", "hỗ trợ mẹ"
         ]
-        is_invalid = any(w in comment.lower() for w in invalid_words)
-        has_teacher_tone = any(w in comment.lower() for w in ["cô", "con", "em", "khen", "chú ý", "bài viết", "cố gắng"])
 
-        if not comment or len(comment.split()) < 4 or is_invalid or not has_teacher_tone:
-            logger.info(f"🔄 [Tầng 2] Câu Qwen chưa chuẩn ({raw_comment}) -> Sử dụng nhận xét sư phạm chuẩn.")
-            comment = fallback_text
-            source = "tang1_diverse_pedagogy"
-        else:
-            source = "qwen2.5_0.5b"
+        qwen_comments = []
+        for out_seq in outputs:
+            generated_ids = out_seq[inputs.input_ids.shape[1]:]
+            raw_comment = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+            comment = clean_qwen_text(raw_comment)
+            is_invalid = any(w in comment.lower() for w in invalid_words)
+            has_teacher_tone = any(w in comment.lower() for w in ["cô", "con", "em", "khen", "chú ý", "bài viết", "cố gắng", "rèn", "tiến bộ", "tốt"])
+            if comment and len(comment.split()) >= 4 and not is_invalid and has_teacher_tone and comment not in qwen_comments:
+                qwen_comments.append(comment)
 
+        # Bổ sung từ fallback_list để luôn có đủ 3 lời nhận xét phong phú
+        final_suggestions = list(qwen_comments)
+        for fb in fallback_list:
+            if fb not in final_suggestions:
+                final_suggestions.append(fb)
+            if len(final_suggestions) >= 3:
+                break
+
+        final_suggestions = final_suggestions[:3]
+        source = "qwen2.5_0.5b" if len(qwen_comments) > 0 else "tang1_diverse_pedagogy"
         latency = round((time.time() - t0) * 1000, 2)
+
         return {
-            "text": comment,
+            "text": final_suggestions[0],
+            "suggestions": final_suggestions,
             "source": source,
             "latency_ms": latency
         }
     except Exception as e:
         logger.warning(f"⚠️ [Tầng 2] Qwen SLM không khả dụng ({e}) -> Fallback Tầng 1.")
         return {
-            "text": fallback_text,
+            "text": fallback_list[0],
+            "suggestions": fallback_list[:3],
             "source": "tang1_deterministic_fallback",
             "latency_ms": round((time.time() - t0) * 1000, 2)
         }
@@ -1184,6 +1244,7 @@ def grade_with_levenshtein(
     # Lời nhận xét sư phạm tổng hợp (Tầng 2 Qwen + Tầng 1 Fallback)
     comment_info = generate_pedagogical_comment_tier2(creativity_info, errors)
     pedagogical_comment = comment_info["text"]
+    pedagogical_comments = comment_info.get("suggestions", [pedagogical_comment])
     pedagogical_comment_source = comment_info["source"]
 
     # Nhận xét ngắn phản hồi nhanh
@@ -1214,6 +1275,7 @@ def grade_with_levenshtein(
         "overall_rating": rating,
         "feedback": feedback,
         "pedagogical_comment": pedagogical_comment,
+        "pedagogical_comments": pedagogical_comments,
         "pedagogical_comment_source": pedagogical_comment_source,
         "engine": "vit5+levenshtein",
     }
@@ -1325,9 +1387,21 @@ async def startup_event():
     logger.info("Vui lòng đợi khoảng 10-30 giây...")
     try:
         get_model()
-        logger.info("✅ TẢI MÔ HÌNH THÀNH CÔNG! HỆ THỐNG ĐÃ SẴN SÀNG.")
+        logger.info("✅ TẢI MÔ HÌNH VIT5 THÀNH CÔNG!")
     except Exception as e:
-        logger.error(f"❌ LỖI TẢI MÔ HÌNH: {e}")
+        logger.error(f"❌ LỖI TẢI MÔ HÌNH VIT5: {e}")
+
+    try:
+        import sys
+        sys.path.insert(0, os.path.dirname(__file__))
+        from yolo_detector import load_yolo_model
+        load_yolo_model()
+        logger.info("✅ TẢI MÔ HÌNH YOLOV8 WORD DETECTOR THÀNH CÔNG!")
+    except Exception as e:
+        logger.warning(f"⚠️ Không thể nạp YOLOv8 lúc startup: {e}")
+
+    logger.info("==========================================")
+    logger.info("🚀 HỆ THỐNG AI SERVICE ĐÃ SẴN SÀNG!")
     logger.info("==========================================")
 
 @app.post("/preload")
@@ -1440,6 +1514,8 @@ class QwenTestRequest(BaseModel):
     creativity_score: float = 1.0
     evidence: list[str] = ["Từ láy: róc rách, thoang thoảng", "So sánh: 'dòng suối như dải lụa'"]
     errors: list[dict] = []
+    grading_mode: str = "essay"
+    current_comments: list[str] = []
 
 
 @app.post("/qwen/generate")
@@ -1450,8 +1526,63 @@ async def qwen_generate_endpoint(req: QwenTestRequest):
         "evidence": req.evidence,
         "devices": ["tu_lay", "so_sanh"]
     }
-    result = generate_pedagogical_comment_tier2(creativity_info, req.errors)
+    result = generate_pedagogical_comment_tier2(
+        creativity_info,
+        req.errors,
+        current_comments=req.current_comments,
+        is_dictation=(req.grading_mode != "essay")
+    )
     return result
+
+
+# ============================================================
+# YOLOv8 WORD DETECTION & READING ORDER ALIGNMENT
+# ============================================================
+class DetectWordsRequest(BaseModel):
+    imageBase64: str
+    conf_threshold: Optional[float] = 0.25
+
+
+@app.get("/yolo/status")
+async def yolo_status_endpoint():
+    """Kiểm tra trạng thái nạp của YOLOv8 Word Detector."""
+    import sys
+    sys.path.insert(0, os.path.dirname(__file__))
+    import yolo_detector
+    return {
+        "loaded": yolo_detector._model_loaded,
+        "weights_path": yolo_detector.DEFAULT_WEIGHTS_PATH,
+        "weights_exists": os.path.exists(yolo_detector.DEFAULT_WEIGHTS_PATH)
+    }
+
+
+@app.post("/detect-words")
+async def detect_words_endpoint(req: DetectWordsRequest):
+    """
+    Endpoint nhận diện Bounding Box của từng từ viết tay (YOLOv8)
+    và tự động gom dòng, sắp xếp theo thứ tự đọc tự nhiên.
+    """
+    try:
+        import base64
+        import io
+        from PIL import Image
+        import sys
+        sys.path.insert(0, os.path.dirname(__file__))
+        from yolo_detector import detect_words_from_image
+
+        raw_b64 = req.imageBase64
+        if "," in raw_b64:
+            raw_b64 = raw_b64.split(",", 1)[1]
+
+        img_bytes = base64.b64decode(raw_b64)
+        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+
+        conf = req.conf_threshold if req.conf_threshold is not None else 0.25
+        result = detect_words_from_image(image, conf_threshold=conf)
+        return result
+    except Exception as e:
+        logger.error(f"[YOLO] Lỗi khi xử lý detect-words: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

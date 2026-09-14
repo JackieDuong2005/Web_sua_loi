@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
+import { ensureVietnameseCapitalization } from "@/lib/utils"
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite"
 
@@ -9,28 +10,58 @@ function getApiKey(): string {
   return key.trim()
 }
 
-// Prompt OCR kết hợp: nhận diện chính xác VÀ trả về bản đã sửa dưới dạng JSON
-// Pipeline sẽ chỉ dùng original_text để đưa vào ViT5; fixed_text là tham khảo từ Gemini
-const OCR_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên sửa bài chính tả. Phân tích đoạn văn của học sinh được cung cấp trong ảnh, nhận diện chữ viết và sửa lại cho đúng chính tả. Trả về duy nhất định dạng JSON.
+// Prompt OCR kết hợp: nhận diện chính xác VÀ sửa lỗi toàn diện theo chuẩn Tiếng Việt Tiểu học
+const OCR_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên gia về chấm và sửa bài chính tả tiếng Việt. Phân tích đoạn văn hoặc bài thơ viết tay của học sinh trong ảnh, nhận diện chính xác từng chữ viết và sửa lại toàn diện theo chuẩn chính tả tiếng Việt của Bộ Giáo dục và Đào tạo. Trả về duy nhất định dạng JSON.
 
-=== QUY TẮC NHẬN DIỆN (original_text) ===
-1. Ghi lại CHÍNH XÁC từng chữ viết tay — KHÔNG tự sửa lỗi, KHÔNG bịa thêm nội dung.
-2. Nếu có chữ bị gạch bỏ hoặc lem mực không đọc được, BỎ QUA phần đó, chỉ lấy chữ người viết đã sửa.
-3. Giữ nguyên cấu trúc xuống dòng:
-   - Văn xuôi: nối các dòng thành đoạn văn, chỉ xuống dòng khi người viết thụt lề bắt đầu đoạn mới.
-   - Thơ: giữ nguyên từng câu thơ riêng dòng.
-4. Nếu đầu trang có chữ luyện viết rời rạc (VD: "oac, ngoắc..."), BỎ QUA, chỉ bắt đầu từ tiêu đề bài viết.
+=== 1. QUY TẮC NHẬN DIỆN VĂN BẢN GỐC (original_text) ===
+- Ghi lại CHÍNH XÁC 100% từng nét chữ học sinh viết tay — giữ nguyên mọi lỗi sai (sai âm đầu, vần, dấu thanh, viết thường/hoa, thiếu chữ, thừa chữ).
+- TUYỆT ĐỐI KHÔNG tự ý sửa lỗi, KHÔNG thêm bớt từ trong "original_text".
+- Bỏ qua các vết gạch xóa, chữ lem mực bị viết đè (chỉ lấy chữ học sinh sửa lại sau cùng).
+- Bỏ qua các dòng luyện chữ rời rạc ở đầu trang (nếu có).
+- Giữ đúng cấu trúc xuống dòng:
+  + Thơ: Mỗi câu thơ trên một dòng riêng biệt.
+  + Văn xuôi: Nối các dòng của cùng một câu/đoạn, chỉ xuống dòng khi thụt đầu dòng sang đoạn mới.
 
-=== QUY TẮC SỬA LỖI (fixed_text) ===
-- Sửa đúng chính tả tiếng Việt: dấu thanh, phụ âm đầu (c/k/q, g/gh, d/gi/r, s/x, ch/tr, l/n), vần.
-- Viết hoa đầu câu và tên riêng đúng quy tắc.
-- Giữ nguyên cấu trúc dòng, ý nghĩa và nội dung của học sinh.
+=== 2. QUY TẮC SỬA LỖI TOÀN DIỆN (fixed_text) ===
+Bản "fixed_text" là bài chuẩn mực 100%, phải sửa triệt để tất cả các lỗi sau:
 
-=== ĐỊNH DẠNG OUTPUT (JSON duy nhất, không kèm markdown) ===
+A. QUY TẮC VIẾT HOA ĐẦU CÂU & ĐẦU DÒNG THƠ (BẮT BUỘC):
+- ĐẦU DÒNG THƠ: BẮT BUỘC viết hoa chữ cái đầu tiên của TẤT CẢ các dòng thơ (kể cả khi học sinh viết chữ thường hoặc dòng trước không có dấu chấm).
+  Ví dụ:
+  + Học sinh viết: "su bé ngủ xay" -> Sửa thành: "Ru bé ngủ say" (viết hoa chữ 'Ru')
+  + Học sinh viết: "thay cho só xời" -> Sửa thành: "Thay cho gió trời" (viết hoa chữ 'Thay')
+- ĐẦU CÂU VĂN XUÔI: BẮT BUỘC viết hoa chữ cái đầu đoạn văn và chữ cái đầu tiên ngay sau dấu chấm (.), dấu chấm hỏi (?), dấu chấm than (!), dấu chấm lửng (...).
+- TÊN RIÊNG: BẮT BUỘC viết hoa chữ cái đầu của tất cả các tiếng tạo thành tên người, địa danh (VD: "Việt Nam", "Bác Hồ", "Hà Nội").
+- TIÊU ĐỀ BÀI VIẾT: BẮT BUỘC viết hoa chữ cái đầu tiên của tiêu đề.
+
+B. SỬA LỖI PHỤ ÂM ĐẦU:
+- Phân biệt s/x (sắp xếp, xứ sở, say sưa / xôn xao, xinh xắn).
+- Phân biệt tr/ch (trời, trưa, trong trẻo / chăm chỉ, chân thành).
+- Phân biệt d/gi/r (gió, giáo viên / da thịt, dịu dàng / ra vào, ru ngủ).
+- Phân biệt c/k/q (k đứng trước i/e/ê; q luôn đi với u; c đi với a/o/u/ô/ơ/ă/â).
+- Phân biệt g/gh, ng/ngh (gh, ngh đứng trước i/e/ê).
+- Phân biệt l/n (lúa non, năm tháng, lo lắng).
+
+C. SỬA LỖI VẦN & ÂM CUỐI:
+- Phân biệt an/ang, ăn/ăng, ân/âng, en/eng, in/ing.
+- Phân biệt iên/iêng, iêu/yêu, ươn/ương, uôn/uông.
+- Phân biệt âm cuối t/c (mắt/mắc, quạt/quạc, bột/bộc), n/ng, ch/t.
+- Phân biệt ay/ai, ây/ơi, ươu/ưu.
+
+D. SỬA LỖI DẤU THANH:
+- Phân biệt dấu hỏi (?) và dấu ngã (~) (VD: bẻ/bẽ, vẽ/vẻ, nghĩ/nghỉ, ngã/ngả, oi ả).
+- Phân biệt dấu sắc và dấu nặng, dấu huyền và không dấu.
+- Đặt dấu thanh đúng nguyên âm chính theo quy tắc chính tả hiện hành.
+
+E. GIỮ NGUYÊN NỘI DUNG VÀ Ý NGHĨA:
+- Giữ nguyên cấu trúc dòng, câu chữ và ý thơ/văn của học sinh; chỉ chuẩn hóa lỗi chính tả và chữ viết hoa.
+
+=== 3. ĐỊNH DẠNG OUTPUT (JSON duy nhất, không kèm markdown) ===
 {
   "original_text": "văn bản gốc nhận diện được từ ảnh (chưa sửa)",
-  "fixed_text": "văn bản đã được sửa hết lỗi chính tả và viết hoa đúng quy tắc"
-}`
+  "fixed_text": "văn bản đã được sửa hết toàn bộ lỗi chính tả và chuẩn hóa viết hoa đúng quy tắc 100%"
+}
+`
 
 // Kiểu trả về nội bộ
 interface OcrResult {
@@ -88,6 +119,9 @@ async function callGeminiOCR(
     if (!original_text) {
       throw new Error("Không nhận diện được nội dung từ ảnh")
     }
+
+    // Đảm bảo chữ đầu dòng (thơ) và đầu câu luôn được viết hoa chuẩn mực
+    gemini_fixed_text = ensureVietnameseCapitalization(gemini_fixed_text)
 
     console.log(
       `[OCR] ✓ Gemini OCR thành công (${tokenCount} tokens)` +

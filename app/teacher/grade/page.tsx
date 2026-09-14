@@ -15,7 +15,7 @@ import {
   Camera, CheckCircle, AlertCircle, X,
   FolderOpen, Clock, Zap, FileText, RefreshCw,
   Star, MessageSquare, Save, User, BookOpen, ScrollText, Sparkles,
-  Image as ImageIcon, Target, Pencil, Layers, CheckCircle2,
+  Image as ImageIcon, Target, Pencil, Layers, CheckCircle2, Check, ChevronDown, ChevronRight,
 } from "lucide-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -30,6 +30,16 @@ interface Correction {
   error_type: string
   is_dialect: boolean
   reason: string
+  bbox?: {
+    x1: number
+    y1: number
+    x2: number
+    y2: number
+    rel_x1: number
+    rel_y1: number
+    rel_w: number
+    rel_h: number
+  }
 }
 
 interface ScoreBreakdown {
@@ -48,10 +58,20 @@ interface GradingResult {
   score_breakdown?: ScoreBreakdown
   feedback: string
   pedagogical_comment?: string
+  pedagogical_comments?: string[]
+  pedagogical_comment_source?: string
   overall_rating: string
   processingTimeMs: number
   tokenCount: number
   gradingMode?: string
+  detected_words?: Array<{
+    x1: number; y1: number; x2: number; y2: number;
+    rel_x1: number; rel_y1: number; rel_w: number; rel_h: number;
+    conf?: number;
+    line_idx?: number;
+    word_idx_in_line?: number;
+    global_idx?: number;
+  }>
 }
 
 // Issue #19 Fix: Bộ nhớ đệm kết quả OCR tránh gọi lại Gemini Vision khi chấm lỗi
@@ -60,6 +80,7 @@ export interface OcrCache {
   geminiFixedText?: string
   imageKey: string
   timestamp: number
+  ocrTimeMs?: number
 }
 
 const ERROR_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -212,7 +233,142 @@ function ResultPopup({
 }: ResultPopupProps) {
   const [viewMode, setViewMode] = useState<"inline" | "sidebyside">("inline")
   const [activeErrorIdx, setActiveErrorIdx] = useState<number | null>(null)
-  const [imageLayer, setImageLayer] = useState(false)
+  const [imageLayer, setImageLayer] = useState(!!(processedImage || originalImage))
+  const [showBBoxes, setShowBBoxes] = useState(true)
+  const [mobileTab, setMobileTab] = useState<"review" | "score">("review")
+  const [selectedSuggestionIdx, setSelectedSuggestionIdx] = useState<number>(0)
+  const [showSuggestionsPopup, setShowSuggestionsPopup] = useState(false)
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number; width: number }>({ top: 120, left: 380, width: 460 })
+  const suggestionsPopupRef = useRef<HTMLDivElement>(null)
+  const suggestionsButtonRef = useRef<HTMLButtonElement>(null)
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const updatePopupPosition = useCallback(() => {
+    if (!suggestionsButtonRef.current) return
+    const rect = suggestionsButtonRef.current.getBoundingClientRect()
+    const isWideScreen = typeof window !== "undefined" && window.innerWidth >= 1024
+    if (isWideScreen) {
+      const popupWidth = 460
+      const left = Math.min(rect.right + 14, window.innerWidth - popupWidth - 20)
+      const top = Math.min(Math.max(64, rect.top - 16), window.innerHeight - 520)
+      setPopupPos({ top, left, width: popupWidth })
+    } else {
+      const popupWidth = Math.min((typeof window !== "undefined" ? window.innerWidth : 400) - 32, 420)
+      const left = Math.max(16, ((typeof window !== "undefined" ? window.innerWidth : 400) - popupWidth) / 2)
+      const top = Math.min(Math.max(64, rect.bottom + 8), (typeof window !== "undefined" ? window.innerHeight : 600) - 420)
+      setPopupPos({ top, left, width: popupWidth })
+    }
+  }, [])
+
+  const handleOpenSuggestions = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+    updatePopupPosition()
+    setShowSuggestionsPopup(true)
+  }, [updatePopupPosition])
+
+  const handleCloseSuggestionsWithDelay = useCallback(() => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setShowSuggestionsPopup(false)
+    }, 300)
+  }, [])
+
+  const handleCancelCloseSuggestions = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node
+      if (
+        suggestionsPopupRef.current &&
+        !suggestionsPopupRef.current.contains(target) &&
+        suggestionsButtonRef.current &&
+        !suggestionsButtonRef.current.contains(target)
+      ) {
+        setShowSuggestionsPopup(false)
+      }
+    }
+    if (showSuggestionsPopup) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showSuggestionsPopup])
+
+  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(() => (
+    gradingResult.pedagogical_comments && gradingResult.pedagogical_comments.length > 0
+      ? gradingResult.pedagogical_comments
+      : [gradingResult.pedagogical_comment || gradingResult.feedback || ""]
+  ).filter(Boolean))
+  const [isRegenerating, setIsRegenerating] = useState(false)
+  const [regenerateSuccess, setRegenerateSuccess] = useState(false)
+
+  useEffect(() => {
+    const list = (
+      gradingResult.pedagogical_comments && gradingResult.pedagogical_comments.length > 0
+        ? gradingResult.pedagogical_comments
+        : [gradingResult.pedagogical_comment || gradingResult.feedback || ""]
+    ).filter(Boolean)
+    setCurrentSuggestions(list)
+  }, [gradingResult])
+
+  const suggestions = currentSuggestions
+
+  const handleRegenerateComments = async () => {
+    if (isRegenerating) return
+    setIsRegenerating(true)
+    setRegenerateSuccess(false)
+    try {
+      const res = await fetch("/api/grade/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gradingMode: gradingResult.gradingMode || gradingMode,
+          studentText: gradingResult.original_text,
+          fixedText: gradingResult.fixed_text,
+          creativity_score: sangTaoOverride ?? gradingResult.score_breakdown?.sang_tao?.raw ?? 0.0,
+          evidence: gradingResult.score_breakdown?.sang_tao?.evidence ?? [],
+          errors: gradingResult.corrections ?? [],
+          current_comments: currentSuggestions,
+        }),
+      })
+      if (!res.ok) throw new Error("Lỗi khi tạo nhận xét")
+      const data = await res.json()
+      if (data.pedagogical_comments && Array.isArray(data.pedagogical_comments) && data.pedagogical_comments.length > 0) {
+        setCurrentSuggestions(data.pedagogical_comments)
+        setTeacherComment(data.pedagogical_comments[0])
+        setSelectedSuggestionIdx(0)
+        setRegenerateSuccess(true)
+        setTimeout(() => setRegenerateSuccess(false), 3000)
+      }
+    } catch (err) {
+      console.error("Lỗi khi sinh nhận xét mới bằng Qwen:", err)
+    } finally {
+      setIsRegenerating(false)
+    }
+  }
+
+  const suggestionMeta = [
+    { title: "Động viên & Khen ngợi", icon: "🌟" },
+    { title: "Nhắc nhở lỗi chính tả", icon: "✍️" },
+    { title: "Rèn luyện & Bứt phá", icon: "💡" },
+  ]
+
   const displayImage = processedImage || originalImage
   const isEssay = (gradingResult.gradingMode || gradingMode) === "essay"
   const sb = gradingResult.score_breakdown
@@ -328,7 +484,7 @@ function ResultPopup({
                 <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold flex items-center gap-1.5">
-                      🎯 Điểm Chính tả (So khớp SGK)
+                      🎯 Điểm Chính tả
                       <span className="font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full text-[10px]">
                         {sb.chinh_ta.error_count} lỗi, −{sb.chinh_ta.deduction}đ
                       </span>
@@ -358,7 +514,7 @@ function ResultPopup({
             {/* Tổng */}
             <div className="flex items-center justify-between rounded-lg bg-stone-50 border-2 border-stone-200 px-4 py-3">
               <div>
-                <span className="text-xs font-bold text-stone-600">Tổng điểm Barem</span>
+                <span className="text-xs font-bold text-stone-600">Tổng điểm</span>
                 <p className="text-[10px] text-stone-400 mt-0.5">
                   {gradingResult.gradingMode === "essay"
                     ? `${chinhTaRaw} + ${ht.toFixed(1)} + ${nd.toFixed(1)} + ${st.toFixed(1)}`
@@ -371,20 +527,20 @@ function ResultPopup({
         </div>
       )}
 
-      {/* Lưu vào Database */}
+      {/* Lưu vào sổ điểm */}
       <div className={`rounded-xl border overflow-hidden ${isSaved ? "border-green-300 bg-green-50/40" : "border-stone-200 bg-white"}`}>
         <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center gap-2">
           <Save className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-sm">Lưu kết quả vào Database</span>
+          <span className="font-semibold text-sm">Lưu vào sổ điểm</span>
         </div>
         <div className="p-4">
           {isSaved ? (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-green-100 text-green-700">
               <CheckCircle className="w-5 h-5 shrink-0" />
-              <div><p className="font-medium">Đã lưu thành công!</p><p className="text-sm opacity-80">Bài của {studentName} đã được lưu vào cơ sở dữ liệu</p></div>
+              <div><p className="font-medium">Đã lưu thành công!</p><p className="text-sm opacity-80">Bài viết của {studentName} đã được lưu vào sổ điểm</p></div>
             </div>
           ) : (
-            <Button className="w-full gap-2 h-11" onClick={onSave} disabled={isSaving || !studentName.trim()}>
+            <Button className="w-full gap-2 h-11 cursor-pointer" onClick={onSave} disabled={isSaving || !studentName.trim()}>
               {isSaving ? <><Spinner className="mr-2" />Đang lưu...</> : <><Save className="w-4 h-4" />Lưu bài của {studentName || "học sinh"}</>}
             </Button>
           )}
@@ -393,54 +549,62 @@ function ResultPopup({
       </div>
 
       {/* Nhận xét của giáo viên */}
-      <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm">
-        <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-stone-500" />
-            <span className="font-semibold text-sm text-stone-700">Nhận xét của giáo viên</span>
+      <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-3.5 py-2.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="font-bold text-sm text-stone-800 truncate" title="Nhận xét của giáo viên">
+              Nhận xét của giáo viên
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            {(gradingResult.pedagogical_comment || gradingResult.feedback) && (
-              <button
-                type="button"
-                onClick={() => setTeacherComment(gradingResult.pedagogical_comment || gradingResult.feedback || "")}
-                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded transition-colors flex items-center gap-1"
-                title="Khôi phục nhận xét sư phạm do AI đề xuất"
-              >
-                <Sparkles className="w-3 h-3 text-emerald-600" /> Điền lại mẫu AI
-              </button>
-            )}
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-stone-100 text-stone-500 border-stone-300">Có thể chỉnh sửa</Badge>
-          </div>
-        </div>
-        <div className="p-4 space-y-2">
-          {!teacherComment.trim() && (gradingResult.pedagogical_comment || gradingResult.feedback) && (
-            <div className="rounded-lg bg-emerald-50/90 border border-emerald-200 p-2.5 text-xs text-emerald-800 flex items-center justify-between gap-2">
-              <span className="truncate flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="truncate">{gradingResult.pedagogical_comment || gradingResult.feedback}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setTeacherComment(gradingResult.pedagogical_comment || gradingResult.feedback || "")}
-                className="shrink-0 text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 bg-emerald-200/80 hover:bg-emerald-200 px-2 py-0.5 rounded transition-colors"
-              >
-                Áp dụng
-              </button>
-            </div>
+          {/* 🌟 Nút mở popup 3 nhận xét */}
+          {suggestions.length > 0 && (
+            <button
+              ref={suggestionsButtonRef}
+              type="button"
+              onClick={() => {
+                if (showSuggestionsPopup) {
+                  setShowSuggestionsPopup(false)
+                } else {
+                  handleOpenSuggestions()
+                }
+              }}
+              onMouseEnter={handleOpenSuggestions}
+              onMouseLeave={handleCloseSuggestionsWithDelay}
+              className={`text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap border shrink-0 ${
+                showSuggestionsPopup
+                  ? "bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/40 shadow-sm"
+                  : "text-emerald-800 hover:text-emerald-950 bg-emerald-100/90 hover:bg-emerald-200 border-emerald-300"
+              }`}
+              title="Bấm hoặc di chuột để xem 3 gợi ý nhận xét mẫu bên cạnh"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${showSuggestionsPopup ? "text-yellow-300" : "text-emerald-600"}`} />
+              <span>3 Gợi ý mẫu</span>
+              <ChevronRight className={`w-3 h-3 transition-transform duration-200 hidden lg:inline-block ${showSuggestionsPopup ? "translate-x-0.5" : ""}`} />
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 lg:hidden ${showSuggestionsPopup ? "rotate-180" : ""}`} />
+            </button>
           )}
+        </div>
+
+        <div className="p-3.5 space-y-2">
           <Textarea
             value={teacherComment}
             onChange={e => setTeacherComment(e.target.value)}
-            placeholder="Nhập nhận xét của giáo viên tại đây..."
-            className="min-h-[140px] resize-y text-sm leading-relaxed"
-            style={{ minHeight: "140px" }}
+            placeholder="Nhập nhận xét của cô hoặc bấm nút [3 Gợi ý nhận xét] bên trên để chọn nhanh..."
+            className="min-h-[145px] resize-y text-sm leading-relaxed border-stone-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-lg p-3 text-stone-800"
+            style={{ minHeight: "145px" }}
           />
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1 text-emerald-700 font-medium">
-              <Sparkles className="w-3 h-3 text-emerald-600" /> Đã tự động điền gợi ý sư phạm AI
+
+          <div className="flex items-center justify-between gap-2 text-xs pt-0.5">
+            <span className="flex items-center gap-1.5 text-emerald-700 font-medium truncate">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">
+                {suggestionMeta[selectedSuggestionIdx]
+                  ? `Mẫu: ${suggestionMeta[selectedSuggestionIdx].title}`
+                  : "Cô có thể tự do chỉnh sửa"}
+              </span>
             </span>
-            <span>
+            <span className="shrink-0 text-stone-400 font-normal">
               {teacherComment.length > 0 ? `${teacherComment.length} ký tự` : "Chưa có nhận xét"}
             </span>
           </div>
@@ -490,7 +654,7 @@ function ResultPopup({
 
       {/* ── Cách 1: Bài viết + Danh sách lỗi side-by-side ── */}
       {viewMode === "inline" && (
-        <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 300px" }}>
+        <div className="grid gap-3 grid-cols-1 xl:grid-cols-[1fr_300px]">
           {/* CỘT TRÁI: Bài viết có annotation */}
           <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             {/* Panel header: legend + Image/Text toggle */}
@@ -501,38 +665,108 @@ function ResultPopup({
                 <span style={{ color: "#15803d", borderBottom: "2px solid #86efac" }}>đúng</span>
                 &nbsp;·&nbsp; Học sinh đối chiếu trực tiếp
               </span>
-              {/* Ảnh/Text toggle trong panel */}
+              {/* Ảnh/Text toggle + Toggle khoanh vùng lỗi trong panel */}
               {displayImage && (
-                <div className="flex items-center gap-0.5 bg-slate-200/60 rounded-md p-0.5">
-                  <button
-                    onClick={() => setImageLayer(false)}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
-                      !imageLayer ? "bg-white shadow-sm text-slate-700" : "text-slate-400 hover:text-slate-600"
-                    }`}
-                  >
-                    <FileText className="w-3 h-3" /> Text
-                  </button>
-                  <button
-                    onClick={() => setImageLayer(true)}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
-                      imageLayer ? "bg-white shadow-sm text-slate-700" : "text-slate-400 hover:text-slate-600"
-                    }`}
-                  >
-                    <ImageIcon className="w-3 h-3" /> Ảnh
-                  </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {imageLayer && (
+                    <button
+                      type="button"
+                      onClick={() => setShowBBoxes(!showBBoxes)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer border ${
+                        showBBoxes
+                          ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100 shadow-2xs"
+                          : "bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200"
+                      }`}
+                      title="Bật/tắt khung đỏ phát hiện vị trí chữ sai trên ảnh bài viết"
+                    >
+                      <Target className={`w-3.5 h-3.5 ${showBBoxes ? "text-rose-600" : "text-stone-400"}`} />
+                      <span>{showBBoxes ? "🎯 Khung lỗi: BẬT" : "🎯 Khung lỗi: TẮT"}</span>
+                    </button>
+                  )}
+                  <div className="flex items-center gap-0.5 bg-slate-200/60 rounded-md p-0.5">
+                    <button
+                      onClick={() => setImageLayer(false)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                        !imageLayer ? "bg-white shadow-sm text-slate-700 font-semibold" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <FileText className="w-3 h-3" /> Text
+                    </button>
+                    <button
+                      onClick={() => setImageLayer(true)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                        imageLayer ? "bg-white shadow-sm text-slate-700 font-semibold" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <ImageIcon className="w-3 h-3" /> Ảnh
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-            {/* Panel body: Ảnh hoặc văn bản có annotation */}
+            {/* Panel body: Ảnh có Bounding Box SVG overlay hoặc văn bản ô ly */}
             {imageLayer && displayImage ? (
-              <div className="p-3 bg-white">
-                <img
-                  src={displayImage}
-                  alt="Bài viết học sinh"
-                  className="w-full rounded-lg border border-slate-100"
-                  style={{ maxHeight: "60vh", objectFit: "contain" }}
-                />
-                <p className="mt-2 text-[10px] text-slate-400 text-center italic">{processedImage ? "Ảnh đã tiền xử lý (9 bước)" : "Ảnh gốc"}</p>
+              <div className="p-3 sm:p-4 bg-slate-50 flex flex-col items-center justify-center min-h-[300px] select-none">
+                <div className="relative inline-block mx-auto max-w-full rounded-xl overflow-hidden shadow-md border border-slate-200 bg-white">
+                  <img
+                    src={displayImage}
+                    alt="Bài viết học sinh"
+                    className="block max-h-[62vh] w-auto max-w-full"
+                  />
+                  {showBBoxes && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      {corrections.map((c, i) => {
+                        if (!c.bbox) return null
+                        const isActive = activeErrorIdx === i
+                        const isTopNear = c.bbox.rel_y1 < 0.08
+                        const label = c.suggestion ? `✓ ${c.suggestion}` : `✕ ${c.error}`
+
+                        return (
+                          <div
+                            key={i}
+                            className={`absolute pointer-events-auto cursor-pointer rounded transition-all duration-200 ${
+                              isActive
+                                ? "ring-3 ring-amber-500 bg-amber-400/25 z-30 shadow-md scale-[1.02]"
+                                : "border-2 border-dashed border-rose-500 bg-rose-500/15 hover:bg-rose-500/25 hover:border-solid hover:ring-2 hover:ring-rose-400 z-10"
+                            }`}
+                            style={{
+                              left: `${c.bbox.rel_x1 * 100}%`,
+                              top: `${c.bbox.rel_y1 * 100}%`,
+                              width: `${Math.max(c.bbox.rel_w * 100, 2.0)}%`,
+                              height: `${Math.max(c.bbox.rel_h * 100, 2.0)}%`,
+                            }}
+                            onMouseEnter={() => setActiveErrorIdx(i)}
+                            onMouseLeave={() => setActiveErrorIdx(null)}
+                            onClick={() => setActiveErrorIdx(isActive ? null : i)}
+                          >
+                            {/* Badge nhãn sửa lỗi kèm số thứ tự */}
+                            <div
+                              className={`absolute ${isTopNear ? "top-full mt-1" : "bottom-full mb-1"} left-0 px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-sm transition-all pointer-events-none flex items-center gap-1 ${
+                                isActive
+                                  ? "bg-amber-600 text-white scale-110 z-40 ring-1 ring-amber-400"
+                                  : "bg-rose-600 text-white opacity-95"
+                              }`}
+                            >
+                              <span>#{i + 1}</span>
+                              <span>{label}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center justify-between w-full max-w-lg px-2 gap-2 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shrink-0" />
+                    <span className="font-medium text-slate-700">
+                      Đã khoanh vùng {corrections.filter(c => c.bbox).length}/{corrections.length} từ lỗi chính tả
+                    </span>
+                  </div>
+                  <span className="italic text-slate-400">
+                    {processedImage ? "Ảnh đã qua bộ xử lý làm nét" : "Ảnh gốc chụp từ camera/thiết bị"}
+                  </span>
+                </div>
               </div>
             ) : (
               <div
@@ -607,7 +841,7 @@ function ResultPopup({
       {/* ── Cách 2: Side-by-Side (giữ nguyên) ── */}
       {viewMode === "sidebyside" && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Bài gốc */}
             <div className="rounded-xl border border-red-200 overflow-hidden shadow-sm">
               <div className="px-3 py-2 bg-red-50/70 border-b border-red-100 flex items-center gap-2">
@@ -669,7 +903,7 @@ function ResultPopup({
             </div>
             <div className="p-3">
               {corrections.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {corrections.map((c, i) => {
                     const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
                     const isActive = activeErrorIdx === i
@@ -728,26 +962,34 @@ function ResultPopup({
       }}
     >
       {/* ── Header ── */}
-      <div className={`bg-gradient-to-r ${scoreGradient} px-5 py-3 flex items-center gap-4 shrink-0 transition-all duration-700`}>
+      <div className={`bg-gradient-to-r ${scoreGradient} px-3 sm:px-5 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0 transition-all duration-700`}>
 
-        {/* TRÁI: Điểm số — 1 hàng ngang */}
-        <div className="flex items-center gap-2 bg-white/20 backdrop-blur rounded-xl px-4 py-2 shrink-0">
-          <span className="text-white/70 text-xs font-medium uppercase tracking-wide">Điểm số</span>
-          <span className="text-2xl font-extrabold text-white leading-none">{displayScore}</span>
-          <span className="text-white/60 text-sm">/10</span>
-        </div>
+        {/* TRÁI: Điểm số + Tên học sinh */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur rounded-xl px-2.5 sm:px-4 py-1.5 sm:py-2 shrink-0">
+            <span className="text-white/70 text-[10px] sm:text-xs font-medium uppercase tracking-wide">Điểm</span>
+            <span className="text-xl sm:text-2xl font-extrabold text-white leading-none">{displayScore}</span>
+            <span className="text-white/60 text-xs sm:text-sm">/10</span>
+          </div>
 
-        {/* GIỮA: Tên + Xếp loại */}
-        <div className="flex-1 flex items-center gap-3 min-w-0">
-          <h2 className="text-white font-bold text-base leading-tight truncate">Kết quả chấm điểm — {studentName || "Học sinh"}</h2>
-          <Badge className={`text-xs px-2.5 py-0.5 border font-semibold shrink-0 ${ratingStyle.badge}`}>
-            {ratingStyle.emoji} {gradingResult.overall_rating}
-          </Badge>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-white font-bold text-sm sm:text-base leading-tight truncate">
+              {studentName ? `Kết quả: ${studentName}` : "Kết quả chấm điểm"}
+            </h2>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <Badge className={`text-[10px] sm:text-xs px-2 py-0 border font-semibold shrink-0 ${ratingStyle.badge}`}>
+                {ratingStyle.emoji} {gradingResult.overall_rating}
+              </Badge>
+              <span className="text-[10px] text-white/80 flex items-center gap-1 sm:hidden">
+                <Clock className="w-2.5 h-2.5" />{(gradingResult.processingTimeMs / 1000).toFixed(1)}s
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* PHẢI: stats + đóng */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-white/80">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-white/80">
             <span className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1.5">
               <Clock className="w-3.5 h-3.5" />{(gradingResult.processingTimeMs / 1000).toFixed(1)}s
             </span>
@@ -757,41 +999,178 @@ function ResultPopup({
               </span>
             )}
           </div>
-          {/* Nút đóng — chỉ 1 nút duy nhất */}
+          {/* Nút đóng */}
           <button
             onClick={handleClose}
             title="Đóng"
-            className="flex items-center gap-1.5 bg-white/20 hover:bg-red-500/70 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1 bg-white/20 hover:bg-red-500/70 text-white text-xs sm:text-sm font-medium px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors shrink-0"
           >
-            <X className="w-4 h-4" /> Đóng
+            <X className="w-4 h-4" /> <span className="hidden sm:inline">Đóng</span>
           </button>
         </div>
       </div>
 
-      {/* ── Body: 2 cột ── */}
-      <div className="flex-1 overflow-hidden grid" style={{ gridTemplateColumns: "360px 1fr" }}>
+      {/* ── Mobile Navigation Tabs (chỉ hiện trên màn hình < lg) ── */}
+      <div className="lg:hidden shrink-0 bg-stone-100 border-b border-stone-200 px-3 py-1.5 flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => setMobileTab("review")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+            mobileTab === "review"
+              ? "bg-white text-emerald-800 shadow-sm border border-stone-200"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+          Bài viết &amp; Lỗi {corrections.length > 0 && `(${corrections.length})`}
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("score")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+            mobileTab === "score"
+              ? "bg-white text-blue-800 shadow-sm border border-stone-200"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+          Bảng điểm &amp; Lưu ({displayScore}đ)
+        </button>
+      </div>
+
+      {/* ── Body: Responsive 1 cột trên mobile theo Tab, 2 cột trên Desktop (lg) ── */}
+      <div className="flex-1 overflow-hidden lg:grid lg:grid-cols-[380px_1fr] flex flex-col">
         {/* Cột trái: Bảng điểm + Lưu + Nhận xét */}
-        <div className="overflow-y-auto border-r border-stone-200 bg-white p-5 space-y-4">
+        <div
+          className={`overflow-y-auto border-r border-stone-200 bg-white p-3 sm:p-5 space-y-4 ${
+            mobileTab === "score" ? "flex-1 block" : "hidden lg:block"
+          }`}
+        >
           {scorePanelJSX}
         </div>
         {/* Cột phải: Ảnh hoặc Lỗi + Văn bản */}
-        <div className="overflow-y-auto p-5" style={{ backgroundColor: "#f9f6f0" }}>
+        <div
+          className={`overflow-y-auto p-3 sm:p-5 ${
+            mobileTab === "review" ? "flex-1 block" : "hidden lg:block"
+          }`}
+          style={{ backgroundColor: "#f9f6f0" }}
+        >
           {errorsTextsJSX}
         </div>
       </div>
 
       {/* ── Footer ── */}
-      <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-5 py-3 flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">{isSaved ? "✅ Đã lưu vào database" : "⚠️ Chưa lưu — nhấn nút Lưu nhanh hoặc Lưu trong bảng điểm"}</p>
-        <div className="flex gap-2">
+      <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
+        <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+          {isSaved ? "✅ Đã lưu vào sổ điểm" : "⚠️ Chưa lưu bài"}
+        </p>
+        <div className="flex gap-2 shrink-0">
           {!isSaved && (
-            <Button size="sm" onClick={onSave} disabled={isSaving || !studentName.trim()} className="gap-1.5">
+            <Button size="sm" onClick={onSave} disabled={isSaving || !studentName.trim()} className="gap-1.5 text-xs sm:text-sm h-8 sm:h-9">
               <Save className="w-3.5 h-3.5" />{isSaving ? "Đang lưu..." : "Lưu nhanh"}
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={handleClose}>Đóng</Button>
+          <Button size="sm" variant="outline" onClick={handleClose} className="text-xs sm:text-sm h-8 sm:h-9">Đóng</Button>
         </div>
       </div>
+
+      {/* 🌟 Popup nổi rộng 460px sang bên phải màn hình: Rộng rãi, dễ đọc trọn vẹn, không che ô nhập nhận xét */}
+      {showSuggestionsPopup && suggestions.length > 0 && (
+        <div
+          ref={suggestionsPopupRef}
+          onMouseEnter={handleCancelCloseSuggestions}
+          onMouseLeave={handleCloseSuggestionsWithDelay}
+          style={{
+            position: "fixed",
+            top: `${popupPos.top}px`,
+            left: `${popupPos.left}px`,
+            width: `${popupPos.width || 460}px`,
+            zIndex: 10005,
+          }}
+          className="bg-white/98 dark:bg-stone-900 backdrop-blur-md rounded-2xl border-2 border-emerald-500/80 shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-3 max-h-[85vh] overflow-hidden"
+        >
+          {/* Header của Popup */}
+          <div className="flex items-start justify-between gap-2 border-b border-stone-200 dark:border-stone-800 pb-2.5">
+            <div>
+              <div className="flex items-center gap-1.5 font-bold text-sm text-stone-900 dark:text-stone-100">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>3 Gợi ý nhận xét sư phạm</span>
+                <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full">AI gợi ý</span>
+              </div>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Bấm vào lời phê phù hợp nhất để áp dụng vào bài làm của học sinh:
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Nút bấm Tạo mới nhận xét trên Header */}
+              <button
+                type="button"
+                onClick={handleRegenerateComments}
+                disabled={isRegenerating}
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer disabled:opacity-50 ${
+                  regenerateSuccess
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-400"
+                    : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 shadow-2xs hover:shadow-xs"
+                }`}
+                title="Bảo AI Qwen sinh 3 nhận xét mới khác nếu chưa ưng ý"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? "animate-spin text-emerald-600" : "text-emerald-700"}`} />
+                <span>{isRegenerating ? "Đang tạo..." : regenerateSuccess ? "Đã đổi mới!" : "Tạo mới"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSuggestionsPopup(false)}
+                className="text-stone-400 hover:text-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 p-1 rounded-lg cursor-pointer transition-colors"
+                title="Đóng popup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Danh sách 3 nhận xét rộng rãi, rõ ràng */}
+          <div className={`space-y-2.5 overflow-y-auto pr-1 max-h-[calc(85vh-140px)] transition-opacity duration-200 ${isRegenerating ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+            {suggestions.slice(0, 3).map((sug, idx) => {
+              const meta = suggestionMeta[idx] || { title: `Gợi ý ${idx + 1}`, icon: "📝" }
+              const isCurrent = teacherComment.trim() === sug.trim() || selectedSuggestionIdx === idx
+              return (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setSelectedSuggestionIdx(idx)
+                    setTeacherComment(sug)
+                    setShowSuggestionsPopup(false)
+                  }}
+                  className={`group relative p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    isCurrent
+                      ? "border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/60 ring-2 ring-emerald-500/30 shadow-sm"
+                      : "border-stone-200 hover:border-emerald-300 hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-800/80 bg-stone-50/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-800 dark:text-stone-200">
+                      <span className="text-sm">{meta.icon}</span>
+                      <span>{meta.title}</span>
+                    </span>
+                    {isCurrent ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" /> Đang áp dụng
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-emerald-600 opacity-80 group-hover:opacity-100 group-hover:underline flex items-center gap-1">
+                        Áp dụng mẫu này →
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[13px] text-stone-700 dark:text-stone-300 leading-relaxed font-normal">
+                    {sug}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   )
@@ -825,7 +1204,7 @@ export default function GradingPage() {
   } | null>(null)
 
   // ─── Dual-Mode Grading State ────────────────────────────────────────────────
-  const [gradingMode, setGradingMode] = useState<"dictation" | "essay">("dictation")
+  const [gradingMode, setGradingMode] = useState<"dictation" | "essay">("essay")
   const [groundTruthText, setGroundTruthText] = useState("")
   const [dictationSessionId, setDictationSessionId] = useState("")
   const [pedagogicalComment, setPedagogicalComment] = useState("")
@@ -834,6 +1213,7 @@ export default function GradingPage() {
   const [isSelectSGKOpen, setIsSelectSGKOpen] = useState(false)
   const [sgkPassages, setSgkPassages] = useState<any[]>([])
   const [loadingSgk, setLoadingSgk] = useState(false)
+  const [showManualSgkInput, setShowManualSgkInput] = useState(false)
 
   // Popup kết quả
   const [showResultPopup, setShowResultPopup] = useState(false)
@@ -1061,12 +1441,21 @@ export default function GradingPage() {
   }
 
   // Issue #19 Fix: Tách riêng hàm Chấm điểm để có thể retry trực tiếp khi gặp sự cố mà không cần chạy lại OCR
-  const executeGrading = async (textToGrade: string, fixedText?: string) => {
+  const executeGrading = async (
+    textToGrade: string,
+    fixedText?: string,
+    pipelineStartTime?: number,
+    ocrTimeMs = 0
+  ) => {
+    const startTime = pipelineStartTime || Date.now()
     setProcessingStep("grade")
     setIsProcessing(true)
     setError("")
 
     try {
+      const currentImg = (inputMode === "image" || inputMode === "processed") ? (processedImage || uploadedImage) : undefined
+      const compressedImg = currentImg ? await compressImageForAPI(currentImg) : undefined
+
       const res = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1076,6 +1465,8 @@ export default function GradingPage() {
           geminiFixedText: fixedText,
           gradingMode,
           penalty_per_error: scoreConfig.penalty,
+          ocrTimeMs,
+          imageBase64: compressedImg,
         }),
       })
       const data = await res.json()
@@ -1083,11 +1474,26 @@ export default function GradingPage() {
         setError(data.error || "Lỗi chấm điểm. Bạn có thể nhấn 'Thử lại bước chấm điểm' để chấm lại mà không cần quét ảnh.")
         return
       }
-      setGradingResult(data as GradingResult)
-      const aiComment = data.pedagogical_comment || data.feedback || ""
-      setTeacherComment(aiComment)
-      if (data.pedagogical_comment) {
-        setPedagogicalComment(data.pedagogical_comment)
+
+      // Tính toán thời gian xử lý toàn trình (End-to-End Latency)
+      // Bao gồm cả thời gian OCR + tiền xử lý ảnh + mạng + thuật toán chấm
+      const clientElapsedMs = Date.now() - startTime
+      const serverCalculatedMs = typeof data.processingTimeMs === "number" ? data.processingTimeMs : 0
+      const realTotalTimeMs = Math.max(clientElapsedMs, serverCalculatedMs)
+
+      const finalResult: GradingResult = {
+        ...data,
+        processingTimeMs: realTotalTimeMs,
+      }
+
+      setGradingResult(finalResult)
+      const suggestions = finalResult.pedagogical_comments && finalResult.pedagogical_comments.length > 0
+        ? finalResult.pedagogical_comments
+        : (finalResult.pedagogical_comment ? [finalResult.pedagogical_comment] : [])
+      const initialComment = suggestions[0] || finalResult.feedback || ""
+      setTeacherComment(initialComment)
+      if (initialComment) {
+        setPedagogicalComment(initialComment)
       }
       // Khởi tạo override từ kết quả AI (giáo viên sẽ chỉnh sau)
       const sb = data?.score_breakdown
@@ -1112,6 +1518,7 @@ export default function GradingPage() {
 
   // Issue #19 Fix: Tự động dùng ocrCache nếu ảnh chưa thay đổi, lưu bản nháp vào sessionStorage
   const callGemini = async (forceOcr = false) => {
+    const pipelineStartTime = Date.now()
     setIsProcessing(true)
     setProcessingStep(null)
     setError("")
@@ -1122,6 +1529,7 @@ export default function GradingPage() {
     try {
       let textToGrade = studentText
       let geminiFixedText: string | undefined = undefined
+      let ocrDurationMs = 0
 
       // Bước 1 (nếu nhập ảnh): Kiểm tra cache trước, nếu chưa có mới gọi OCR
       if ((inputMode === "image" || inputMode === "processed") && uploadedImage) {
@@ -1131,9 +1539,11 @@ export default function GradingPage() {
           // ✅ Tái sử dụng kết quả OCR đã có — Tiết kiệm quota và thời gian!
           textToGrade = ocrCache.originalText
           geminiFixedText = ocrCache.geminiFixedText
+          ocrDurationMs = ocrCache.ocrTimeMs || 0
           setOcrText(textToGrade)
         } else {
           setProcessingStep("ocr")
+          const ocrStepStart = Date.now()
           const compressed = await compressImageForAPI(uploadedImage)
           const ocrRes = await fetch("/api/ocr", {
             method: "POST",
@@ -1149,6 +1559,7 @@ export default function GradingPage() {
           }
           textToGrade = ocrData.text || ""
           geminiFixedText = ocrData.gemini_fixed_text || undefined
+          ocrDurationMs = ocrData.processingTimeMs || (Date.now() - ocrStepStart)
 
           // ✅ Lưu vào Cache và đồng bộ sang studentText để chuyển tab không bị mất
           const newCache: OcrCache = {
@@ -1156,6 +1567,7 @@ export default function GradingPage() {
             geminiFixedText,
             imageKey: currentImgKey,
             timestamp: Date.now(),
+            ocrTimeMs: ocrDurationMs,
           }
           setOcrCache(newCache)
           setOcrText(textToGrade)
@@ -1184,8 +1596,8 @@ export default function GradingPage() {
         return
       }
 
-      // Bước 2: Chấm điểm
-      await executeGrading(textToGrade, geminiFixedText)
+      // Bước 2: Chấm điểm — Truyền pipelineStartTime và ocrDurationMs để đo thời gian toàn trình (End-to-End)
+      await executeGrading(textToGrade, geminiFixedText, pipelineStartTime, ocrDurationMs)
     } catch {
       setError("Không thể hoàn tất quy trình chấm điểm.")
       setIsProcessing(false)
@@ -1196,9 +1608,14 @@ export default function GradingPage() {
   // Issue #19 Fix: Thử lại bước chấm điểm trực tiếp
   const retryGradingOnly = () => {
     if (ocrCache && ocrCache.originalText.trim()) {
-      executeGrading(ocrCache.originalText, ocrCache.geminiFixedText)
+      executeGrading(
+        ocrCache.originalText,
+        ocrCache.geminiFixedText,
+        Date.now() - (ocrCache.ocrTimeMs || 0),
+        ocrCache.ocrTimeMs || 0
+      )
     } else if (studentText.trim()) {
-      executeGrading(studentText)
+      executeGrading(studentText, undefined, Date.now(), 0)
     } else {
       callGemini(false)
     }
@@ -1241,8 +1658,8 @@ export default function GradingPage() {
             noi_dung: isEssay ? { ...sb.noi_dung, raw: nd } : undefined,
             sang_tao: isEssay ? { ...sb.sang_tao, raw: st } : undefined,
           } : undefined,
-          feedback: teacherComment || gradingResult.feedback,
-          pedagogicalComment: pedagogicalComment || teacherComment || gradingResult.pedagogical_comment || "",
+          feedback: teacherComment.trim() || gradingResult.feedback,
+          pedagogicalComment: teacherComment.trim() || pedagogicalComment || gradingResult.pedagogical_comment || "",
           overallRating: gradingResult.overall_rating,
           processingTimeMs: gradingResult.processingTimeMs,
           tokenCount: gradingResult.tokenCount,
@@ -1395,11 +1812,46 @@ export default function GradingPage() {
         <SidebarTrigger className="-ml-2" />
         <Separator orientation="vertical" className="h-6" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-semibold text-card-foreground">Chấm điểm AI</h1>
-          <p className="text-sm text-muted-foreground">OCR (Gemini) → Sửa lỗi (ViT5) → Chấm điểm (Levenshtein)</p>
+          <h1 className="text-base sm:text-lg font-semibold text-card-foreground">Chấm điểm bài viết</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {gradingMode === "dictation"
+              ? "Chính tả: So sánh với bài đọc trong sách giáo khoa"
+              : "Tập làm văn: Chấm bài viết tự do & gợi ý lời nhận xét"}
+          </p>
         </div>
         <HelpGuideButton role="teacher" />
       </header>
+
+      {/* 🌟 2 TAB CHÍNH CỦA TRANG: PHÂN MÔN CHÍNH TẢ & TẬP LÀM VĂN */}
+      <div className="bg-card border-b border-border px-4 md:px-6">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setGradingMode("essay")}
+            className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              gradingMode === "essay"
+                ? "border-purple-600 text-purple-700 dark:text-purple-400 dark:border-purple-400"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+            }`}
+          >
+            <Pencil className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>Tập làm văn</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setGradingMode("dictation")}
+            className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              gradingMode === "dictation"
+                ? "border-indigo-600 text-indigo-700 dark:text-indigo-400 dark:border-indigo-400"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+            }`}
+          >
+            <Target className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>Chính tả (Nghe - Viết)</span>
+          </button>
+        </div>
+      </div>
 
       <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] gap-6 items-start">
@@ -1415,11 +1867,11 @@ export default function GradingPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-                      Phát hiện bài làm chưa hoàn tất từ phiên trước
+                      Có bài làm chưa hoàn tất từ phiên trước
                       {draftAvailable.studentName ? ` (Học sinh: ${draftAvailable.studentName})` : ""}
                     </p>
                     <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                      Văn bản đã OCR sẵn có thể được khôi phục ngay để chấm mà không cần quét lại ảnh.
+                      Bài viết đã được đọc sẵn, có thể khôi phục ngay để chấm lại.
                     </p>
                   </div>
                 </div>
@@ -1435,109 +1887,115 @@ export default function GradingPage() {
               </div>
             )}
 
-            {/* 🎯 CHẾ ĐỘ CHẤM ĐIỂM DUAL-MODE */}
-            <Card className="border-indigo-100 dark:border-indigo-950 bg-gradient-to-r from-indigo-50/70 via-white to-purple-50/70 dark:from-indigo-950/40 dark:via-slate-900 dark:to-purple-950/40 shadow-xs overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                        Chế Độ Chấm Điểm AI
-                      </h3>
-                      <Badge variant="outline" className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold dark:bg-indigo-950 dark:text-indigo-300">
-                        Dual-Mode
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
-                      {gradingMode === "dictation"
-                        ? "🎯 Chính tả Nghe - Viết: So khớp 100% với bài đọc chuẩn SGK (Chống ảo giác AI, Barem 10đ)"
-                        : "✍️ Tập Làm Văn: AI ViT5 phân tích ngữ cảnh câu, gợi ý diễn đạt & Lời nhận xét sư phạm"}
-                    </p>
-                  </div>
-
-                  {/* Mode Selector Buttons */}
-                  <div className="flex items-center p-1 bg-slate-200/80 dark:bg-slate-800 rounded-lg shrink-0 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setGradingMode("dictation")}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                        gradingMode === "dictation"
-                          ? "bg-white text-indigo-700 shadow-xs dark:bg-slate-900 dark:text-indigo-300"
-                          : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
-                      }`}
-                    >
-                      <Target className="h-3.5 w-3.5 text-indigo-600" />
-                      Chính Tả SGK
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGradingMode("essay")}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                        gradingMode === "essay"
-                          ? "bg-white text-purple-700 shadow-xs dark:bg-slate-900 dark:text-purple-300"
-                          : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
-                      }`}
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-purple-600" />
-                      Tập Làm Văn
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 📖 VĂN BẢN CHUẨN GROUND TRUTH (HIỂN THỊ KHI Ở CHẾ ĐỘ CHÍNH TẢ) */}
+            {/* 🎯 TAB 1: BÀI ĐỌC SGK (CHO PHÂN MÔN CHÍNH TẢ) */}
             {gradingMode === "dictation" && (
-              <Card className="border-indigo-100 dark:border-indigo-900/50 bg-card">
-                <CardHeader className="pb-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-sm flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
-                      <BookOpen className="w-4 h-4 text-indigo-600" />
-                      Bài Đọc Mẫu Chuẩn (Ground Truth SGK)
-                    </CardTitle>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        fetchSgkPassages()
-                        setIsSelectSGKOpen(true)
-                      }}
-                      className="h-7 text-xs gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300"
-                    >
-                      <FolderOpen className="w-3.5 h-3.5 text-indigo-600" />
-                      Chọn từ Kho SGK
-                    </Button>
-                  </div>
-                  <CardDescription className="text-xs">
-                    Văn bản đối chiếu trực tiếp để phát hiện từ viết sai, thiếu chữ hoặc thừa chữ.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Textarea
-                    value={groundTruthText}
-                    onChange={e => setGroundTruthText(e.target.value)}
-                    placeholder="Nhập hoặc dán văn bản bài đọc chuẩn SGK tại đây (hoặc bấm 'Chọn từ Kho SGK')..."
-                    rows={3}
-                    className="text-xs font-sans resize-none leading-relaxed border-indigo-100 focus-visible:ring-indigo-500"
-                  />
-                  {groundTruthText.trim() && (
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
-                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã sẵn sàng đối soát Ground Truth ({groundTruthText.trim().split(/\s+/).length} từ)
-                      </span>
+              !groundTruthText.trim() ? (
+                <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/20 dark:bg-indigo-950/10 p-3 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetchSgkPassages()
+                      setIsSelectSGKOpen(true)
+                    }}
+                    className="w-full p-3.5 rounded-xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-white/90 hover:bg-indigo-50/70 dark:bg-slate-900 dark:border-indigo-800 transition-all flex items-center justify-between gap-3 group cursor-pointer text-left shadow-2xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <BookOpen className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                          <span>Chọn bài trong SGK (Tuần 1–35)</span>
+                          <span className="text-[10px] font-normal px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 rounded-full">
+                            Có sẵn 35 tuần
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                          Nhấn để chọn nhanh bài đọc mẫu đối chiếu chấm điểm
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-1 text-xs font-semibold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
+                      <span>Chọn bài</span>
+                      <FolderOpen className="w-4 h-4" />
+                    </div>
+                  </button>
+
+                  {/* Tùy chọn dán bài đọc khác (nếu cần) */}
+                  {!showManualSgkInput ? (
+                    <div className="flex justify-end">
                       <button
                         type="button"
-                        onClick={() => setGroundTruthText("")}
-                        className="text-slate-400 hover:text-rose-600 transition-colors"
+                        onClick={() => setShowManualSgkInput(true)}
+                        className="text-[11px] text-stone-400 hover:text-indigo-600 transition-colors cursor-pointer"
                       >
-                        Xóa bài mẫu
+                        Hoặc tự dán bài đọc khác
                       </button>
                     </div>
+                  ) : (
+                    <div className="pt-1 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs text-stone-600">
+                        <span className="font-medium">Dán nội dung bài đọc mẫu:</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowManualSgkInput(false)}
+                          className="text-[11px] text-stone-400 hover:text-stone-600 cursor-pointer"
+                        >
+                          Đóng lại
+                        </button>
+                      </div>
+                      <Textarea
+                        value={groundTruthText}
+                        onChange={e => setGroundTruthText(e.target.value)}
+                        placeholder="Dán nội dung bài đọc vào đây..."
+                        rows={3}
+                        className="text-xs font-sans resize-none leading-relaxed border-indigo-200/80 focus-visible:ring-indigo-400 bg-white dark:bg-slate-900"
+                      />
+                    </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-950/20 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200 truncate">
+                        {assignmentTitle || "Bài đọc SGK đã chọn"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        ({groundTruthText.trim().split(/\s+/).length} từ)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchSgkPassages()
+                          setIsSelectSGKOpen(true)
+                        }}
+                        className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Đổi bài</span>
+                      </button>
+                      <span className="text-stone-300">|</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGroundTruthText("")
+                          setAssignmentTitle("")
+                        }}
+                        className="text-[11px] font-medium text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
+                      >
+                        Bỏ chọn
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-xs text-stone-600 dark:text-stone-300 bg-white dark:bg-slate-800/90 rounded-lg p-2.5 border border-indigo-100 dark:border-indigo-900/50 line-clamp-2 leading-relaxed">
+                    {groundTruthText}
+                  </div>
+                </div>
+              )
             )}
 
             {/* Thong tin hoc sinh */}
@@ -1628,13 +2086,13 @@ export default function GradingPage() {
                 }}>
                   <TabsList className="w-full mb-4">
                     <TabsTrigger value="image" className="flex-1 gap-2"><Camera className="w-4 h-4" /> Ảnh gốc</TabsTrigger>
-                    <TabsTrigger value="processed" className="flex-1 gap-2"><Zap className="w-4 h-4" /> Tiền xử lý + OCR</TabsTrigger>
+                    <TabsTrigger value="processed" className="flex-1 gap-2"><Zap className="w-4 h-4" /> Ảnh đã làm rõ</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="image">
                     {!uploadedImage ? (
                       <div className="space-y-3">
-                        <Button onClick={startCamera} className="w-full h-20 text-base gap-3" size="lg">
+                        <Button onClick={startCamera} className="w-full h-20 text-base gap-3 cursor-pointer" size="lg">
                           <Camera className="w-7 h-7" /> Chụp ảnh bài viết
                         </Button>
                         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
@@ -1650,14 +2108,14 @@ export default function GradingPage() {
                         >
                           <FolderOpen className="w-10 h-10 text-muted-foreground" />
                           <p className="text-sm text-muted-foreground text-center">Kéo thả ảnh hoặc <span className="text-primary font-medium">click để chọn</span></p>
-                          <p className="text-xs text-muted-foreground">JPG, PNG, WebP — tối đa 10MB</p>
+                          <p className="text-xs text-muted-foreground">Ảnh chụp từ điện thoại hoặc máy tính</p>
                           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                         </div>
                       </div>
                     ) : (
                       <div className="relative">
                         <img src={uploadedImage} alt="Bài viết" className="w-full rounded-lg border border-border object-contain max-h-80" />
-                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={clearAll}>
+                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 cursor-pointer" onClick={clearAll}>
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
@@ -1673,13 +2131,13 @@ export default function GradingPage() {
                     ) : isPreprocessing ? (
                       <div className="flex flex-col items-center justify-center py-16 border-2 border-border rounded-lg text-muted-foreground">
                         <Spinner className="w-8 h-8 mb-3" />
-                        <p>Đang xử lý ảnh...</p>
+                        <p>Đang làm rõ ảnh...</p>
                       </div>
                     ) : processedImage ? (
                       <div className="space-y-3">
                         <div className="relative">
                           <img src={processedImage} alt="Ảnh đã xử lý" className="w-full rounded-lg border border-border object-contain max-h-80" />
-                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={clearAll}>
+                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 cursor-pointer" onClick={clearAll}>
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
@@ -1696,23 +2154,16 @@ export default function GradingPage() {
                                 ) : (
                                   <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                                 )}
-                                <span>{qualityReport.is_good ? "Chất lượng ảnh đạt chuẩn" : "Ảnh cần lưu ý nhẹ"}</span>
+                                <span>{qualityReport.is_good ? "Chất lượng ảnh đạt chuẩn" : "Ảnh hơi mờ hoặc tối nhẹ"}</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                {qualityReport.gradeLevel && (
-                                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-background/80 border font-normal">
-                                    {qualityReport.gradeLevel <= 2 ? `Thích ứng Lớp ${qualityReport.gradeLevel} (Bút chì)` : `Lớp ${qualityReport.gradeLevel} (Bút mực)`}
-                                  </span>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => setHideQualityWarning(true)}
-                                  className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded text-muted-foreground"
-                                  title="Đóng thông báo"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setHideQualityWarning(true)}
+                                className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded text-muted-foreground cursor-pointer"
+                                title="Đóng thông báo"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
                             </div>
 
                             {qualityReport.warnings?.length > 0 && (
@@ -1724,23 +2175,10 @@ export default function GradingPage() {
                                   </p>
                                 ))}
                                 <p className="text-[11px] text-muted-foreground pt-0.5 italic">
-                                  💡 AI Gemini vẫn có thể nhận diện tốt bài viết này. Thầy/cô có thể yên tâm bấm Chấm điểm.
+                                  💡 Hệ thống vẫn đọc tốt bài viết này. Thầy/cô có thể yên tâm bấm Chấm bài.
                                 </p>
                               </div>
                             )}
-
-                            {/* Chỉ số sư phạm trực quan */}
-                            <div className="flex flex-wrap gap-2 pt-1 border-t border-current/10 text-[11px]">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-background/60">
-                                Độ nét: <strong>{qualityReport.blur_score > 60 ? "Rõ" : "Hơi mờ"}</strong> ({qualityReport.blur_score})
-                              </span>
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-background/60">
-                                Ánh sáng: <strong>{qualityReport.brightness >= 50 && qualityReport.brightness <= 220 ? "Đủ sáng" : qualityReport.brightness < 50 ? "Hơi tối" : "Lóa"}</strong>
-                              </span>
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-background/60">
-                                Độ phân giải: <strong>{qualityReport.resolution}px</strong>
-                              </span>
-                            </div>
                           </div>
                         )}
 
@@ -1748,35 +2186,29 @@ export default function GradingPage() {
                     ) : (
                       <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-lg text-muted-foreground">
                         <Zap className="w-10 h-10 mb-3 opacity-50" />
-                        <p>Lỗi tiền xử lý ảnh</p>
+                        <p>Không thể làm rõ ảnh</p>
                       </div>
                     )}
                   </TabsContent>
 
                 </Tabs>
 
-                {/* === Cấu hình chấm điểm === */}
-                <div className="mt-5 rounded-xl border border-border bg-muted/40 p-4 space-y-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    ⚙️ Cấu hình điểm <span className="font-normal normal-case">(thiết lập trước khi chấm)</span>
-                  </p>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">✖️ Trừ điểm mỗi lỗi chính tả</Label>
-                      <span className="text-sm font-bold text-destructive tabular-nums">
-                        −{scoreConfig.penalty.toFixed(1)} đ
-                      </span>
-                    </div>
-                    <input
-                      type="range" min={0.1} max={1.0} step={0.1}
-                      value={scoreConfig.penalty}
-                      onChange={e => setScoreConfig(c => ({ ...c, penalty: parseFloat(e.target.value) }))}
-                      className="w-full accent-destructive h-2 rounded-full cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
-                      <span>0.1 — Nhẹ</span><span>0.5 — Chuẩn</span><span>1.0 — Ngặt</span>
-                    </div>
+                {/* === Mức trừ điểm === */}
+                <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs sm:text-sm font-medium">Trừ điểm mỗi lỗi chính tả:</Label>
+                    <span className="text-xs sm:text-sm font-bold text-destructive tabular-nums">
+                      −{scoreConfig.penalty.toFixed(1)} điểm
+                    </span>
+                  </div>
+                  <input
+                    type="range" min={0.1} max={1.0} step={0.1}
+                    value={scoreConfig.penalty}
+                    onChange={e => setScoreConfig(c => ({ ...c, penalty: parseFloat(e.target.value) }))}
+                    className="w-full accent-destructive h-2 rounded-full cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>Trừ nhẹ (0.1đ)</span><span>Chuẩn (0.5đ)</span><span>Nghiêm (1.0đ)</span>
                   </div>
                 </div>
 
@@ -1788,49 +2220,56 @@ export default function GradingPage() {
                         {error}
                       </div>
                     </div>
-                    {/* Issue #19 Fix: Nếu đã có cache OCR, hiển thị nút thử lại bước chấm điểm trực tiếp */}
                     {ocrCache && ocrCache.originalText && (
                       <div className="pt-1 flex flex-wrap gap-2 items-center border-t border-destructive/15">
                         <Button
                           size="sm"
                           type="button"
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs h-8 shadow-xs"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs h-8 shadow-xs cursor-pointer"
                           onClick={retryGradingOnly}
                           disabled={isProcessing}
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${isProcessing ? "animate-spin" : ""}`} />
-                          Thử lại bước chấm điểm (Không OCR lại)
+                          Thử chấm lại bài
                         </Button>
                         <Button
                           size="sm"
                           type="button"
                           variant="outline"
-                          className="text-xs h-8 gap-1.5 border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
+                          className="text-xs h-8 gap-1.5 border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800 cursor-pointer"
                           onClick={() => callGemini(true)}
                           disabled={isProcessing}
                         >
-                          🔍 Quét lại ảnh từ đầu
+                          🔍 Quét lại ảnh
                         </Button>
                       </div>
                     )}
                   </div>
                 )}
 
-                <Button className="w-full mt-4 h-12 text-base gap-2" onClick={() => callGemini(false)} disabled={!canGrade || isProcessing}>
+                <Button
+                  className={`w-full mt-4 h-12 text-base gap-2 font-semibold shadow-xs transition-all cursor-pointer ${
+                    gradingMode === "dictation"
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-purple-600 hover:bg-purple-700 text-white"
+                  }`}
+                  onClick={() => callGemini(false)}
+                  disabled={!canGrade || isProcessing}
+                >
                   {isProcessing
                     ? processingStep === "ocr"
-                      ? <><Spinner className="mr-2" />🔍 Đang OCR (Gemini)...</>
-                      : <><Spinner className="mr-2" />🤖 Đang chấm điểm (ViT5)...</>
+                      ? <><Spinner className="mr-2" />🔍 Đang đọc chữ viết tay...</>
+                      : <><Spinner className="mr-2" />✍️ Đang chấm điểm bài viết...</>
                     : ocrCache && ocrCache.imageKey === getImageKey(uploadedImage)
-                      ? <><Zap className="w-5 h-5 text-amber-300" />Chấm điểm lại (Dùng cache OCR)</>
-                      : <><Zap className="w-5 h-5" />Chấm điểm</>}
+                      ? <><Zap className="w-5 h-5 text-amber-300" />Chấm lại bài này</>
+                      : <><Zap className="w-5 h-5" />Chấm bài ngay</>}
                 </Button>
 
                 {/* Nút mở lại popup nếu đã có kết quả */}
                 {gradingResult && !showResultPopup && (
                   <Button
                     variant="outline"
-                    className="w-full mt-2 gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                    className="w-full mt-2 gap-2 border-primary/30 text-primary hover:bg-primary/5 cursor-pointer"
                     onClick={() => setShowResultPopup(true)}
                   >
                     <ScrollText className="w-4 h-4" />
@@ -1846,23 +2285,35 @@ export default function GradingPage() {
           <div className="hidden lg:block sticky top-6 space-y-4">
 
             {/* Pipeline trang thai */}
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">🔄 Quy trình AI</p>
+            <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">📋 Quy trình chấm bài</p>
               <div className="space-y-2">
                 {[
-                  { step: 1, icon: "📷", label: "Chụp/Upload ảnh", active: !processedImage, done: !!processedImage },
-                  { step: 2, icon: "🔧", label: "Tiền xử lý (9 bước)", active: !!processedImage && !ocrText, done: !!ocrText },
-                  { step: 3, icon: "🔍", label: "OCR (Gemini)", active: !!ocrText && !gradingResult, done: !!gradingResult },
-                  { step: 4, icon: "🤖", label: "ViT5 sửa lỗi", active: isProcessing, done: !!gradingResult },
-                  { step: 5, icon: "📊", label: "Chấm điểm Levenshtein", active: !!gradingResult, done: false },
+                  { step: 1, icon: "📷", label: "Chụp hoặc tải ảnh vở", active: !processedImage, done: !!processedImage },
+                  { step: 2, icon: "🔧", label: "Căn chỉnh & làm rõ ảnh", active: !!processedImage && !ocrText, done: !!ocrText },
+                  { step: 3, icon: "🔍", label: "Đọc chữ viết tay", active: !!ocrText && !gradingResult, done: !!gradingResult },
+                  {
+                    step: 4,
+                    icon: "✍️",
+                    label: gradingMode === "dictation" ? "So sánh với bài đọc SGK" : "Tìm lỗi sai & cách diễn đạt",
+                    active: isProcessing,
+                    done: !!gradingResult,
+                  },
+                  {
+                    step: 5,
+                    icon: "📊",
+                    label: "Cho điểm & nhận xét",
+                    active: !!gradingResult,
+                    done: false,
+                  },
                 ].map(({ step, icon, label, active, done }) => (
                   <div key={step} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    done ? "bg-green-50 text-green-700"
+                    done ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300"
                     : active ? "bg-primary/10 text-primary font-semibold"
                     : "text-muted-foreground"
                   }`}>
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                      done ? "bg-green-200 text-green-700"
+                      done ? "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200"
                       : active ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
                     }`}>
@@ -1875,15 +2326,26 @@ export default function GradingPage() {
             </div>
 
             {/* Huong dan su dung */}
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">📖 Hướng dẫn nhanh</p>
               <div className="space-y-3">
                 {[
-                  { num: "1", color: "bg-blue-500", title: "Nhập thông tin học sinh", desc: "Điền tên, lớp và tên bài viết" },
-                  { num: "2", color: "bg-purple-500", title: "Chụp hoặc tải ảnh bài viết", desc: "Camera hoặc chọn ảnh từ máy tính" },
-                  { num: "3", color: "bg-orange-500", title: "Cấu hình mức trừ điểm", desc: "Điều chỉnh điểm trừ mỗi lỗi (0.1 – 1.0)" },
-                  { num: "4", color: "bg-primary", title: 'Nhấn "Chấm điểm"', desc: "AI nhận dạng → sửa lỗi → tính điểm" },
-                  { num: "5", color: "bg-green-500", title: "Xem kết quả & lưu", desc: "Điều chỉnh điểm + nhận xét rồi lưu" },
+                  {
+                    num: "1",
+                    color: "bg-blue-500",
+                    title: "Chọn môn học",
+                    desc: gradingMode === "dictation"
+                      ? "Chính tả: Chọn bài trong SGK để đối chiếu từng chữ."
+                      : "Tập làm văn: Chấm tự do đoạn văn hoặc bài viết.",
+                  },
+                  { num: "2", color: "bg-purple-500", title: "Nhập tên & Ảnh vở", desc: "Điền tên học sinh và chụp ảnh trang vở rõ nét." },
+                  {
+                    num: "3",
+                    color: gradingMode === "dictation" ? "bg-indigo-600" : "bg-purple-600",
+                    title: "Bấm Chấm bài ngay",
+                    desc: "Hệ thống tự động phát hiện lỗi sai và tính điểm.",
+                  },
+                  { num: "4", color: "bg-green-500", title: "Xem điểm & Lưu bài", desc: "Xem lại các lỗi, chỉnh nhận xét và bấm Lưu bài." },
                 ].map(({ num, color, title, desc }) => (
                   <div key={num} className="flex gap-3">
                     <span className={`${color} text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5`}>{num}</span>
@@ -1898,12 +2360,11 @@ export default function GradingPage() {
 
             {/* Meo hay */}
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">💡 Mẹo để đạt kết quả tốt</p>
+              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">💡 Mẹo nhỏ cho cô</p>
               <ul className="space-y-1.5 text-xs text-amber-700">
-                <li className="flex gap-2"><span>•</span><span>Chụp ảnh thẳng góc, đủ sáng, chữ gọn trong khung</span></li>
-                <li className="flex gap-2"><span>•</span><span>Tránh ảnh mờ, nhòe hoặc bị che khuất</span></li>
-                <li className="flex gap-2"><span>•</span><span>Có thể điều chỉnh điểm từng tiêu chí sau khi chấm</span></li>
-                <li className="flex gap-2"><span>•</span><span>Nhận xét giáo viên sẽ lưu thay thế gợi ý AI</span></li>
+                <li className="flex gap-2"><span>•</span><span>Chụp ảnh thẳng góc, đủ sáng để đọc chữ chuẩn nhất</span></li>
+                <li className="flex gap-2"><span>•</span><span>Cô có thể kéo thanh trượt để chỉnh lại điểm theo ý mình</span></li>
+                <li className="flex gap-2"><span>•</span><span>Cô có thể sửa lời nhận xét trước khi bấm lưu</span></li>
               </ul>
             </div>
 

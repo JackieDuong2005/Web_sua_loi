@@ -87,6 +87,7 @@ extracted_tom_tat.txt
 docx_content.txt
 extract_docx.py
 gemini_ocr.ipynb
+*.ipynb
 
 # Xiaozhi ESP32 firmware (separate project)
 xiaozhi-esp32-main/
@@ -98,6 +99,17 @@ tsconfig.tsbuildinfo
 # Runtime output and temp directories
 output/
 tmp/
+
+# Scratch & temporary artifacts
+scratch/
+tmp_diagrams/
+test_font.png
+Poster nckh/
+Test_train_29_12/data_yolov8/
+Test_train_29_12/detected_objects_test/
+Test_train_29_12/detection_image*/
+Test_train_29_12/fileocr/
+Test_train_29_12/**/last.pt
 
 # Empty placeholder directories (future projects)
 android-app/

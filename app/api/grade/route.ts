@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
+import { ensureVietnameseCapitalization } from "@/lib/utils"
 
 // ============================================================
 // TIMEOUT CONFIG
@@ -62,7 +63,7 @@ async function callGemini(
 // ============================================================
 // GEMINI FALLBACK GRADING PROMPT (text-only)
 // ============================================================
-const FALLBACK_GRADING_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên chấm bài chính tả. Phân tích đoạn văn của học sinh được cung cấp, sửa lỗi chính tả và chấm điểm theo barem chuẩn. Trả về duy nhất định dạng JSON.
+const FALLBACK_GRADING_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên gia về chấm và sửa bài chính tả tiếng Việt. Phân tích đoạn văn hoặc bài thơ của học sinh được cung cấp, phát hiện toàn diện mọi lỗi chính tả và chấm điểm theo barem chuẩn của Bộ Giáo dục và Đào tạo. Trả về duy nhất định dạng JSON.
 
 === THÔNG TIN ĐẦU VÀO ===
 - Khối lớp: 3
@@ -73,13 +74,20 @@ const FALLBACK_GRADING_PROMPT = `Bạn là giáo viên tiểu học Việt Nam c
 [A] CHÍNH TẢ & NGỮ PHÁP — Tối đa 4.0đ
 Điểm khởi đầu: 4.0đ, trừ dần theo lỗi. Điểm sàn: 0đ.
 - Lớp 1–3: trừ 0.5đ / lỗi khác nhau
-Phân loại lỗi (error_type):
-- "phu_am_dau"  : nhầm c/k/q, g/gh, d/gi/r, s/x, ch/tr, l/n
-- "van"         : sai phần vần
-- "dau_thanh"   : sai/thiếu/đặt sai vị trí dấu thanh
-- "viet_hoa"    : không viết hoa đầu câu, tên riêng
-- "bo_sot_them" : viết thiếu hoặc thêm chữ/tiếng
-- "dau_cau"     : sai dấu phẩy, dấu chấm
+
+Phân loại lỗi chi tiết (error_type):
+- "viet_hoa"    : không viết hoa chữ cái đầu câu, không viết hoa chữ cái đầu mỗi dòng thơ, không viết hoa tên riêng (người, địa danh), hoặc viết hoa tùy tiện giữa câu/giữa từ. (Ví dụ: "su bé" -> "Ru bé", "thay cho" -> "Thay cho").
+- "phu_am_dau"  : nhầm c/k/q, g/gh, d/gi/r, s/x, ch/tr, l/n, ng/ngh (VD: só -> gió, xời -> trời, chưa -> trưa, xay -> say).
+- "van"         : sai phần vần hoặc âm cuối (VD: an/ang, iên/iêng, uôn/uông, at/ac, et/ec, ay/ai,...).
+- "dau_thanh"   : sai/thiếu/đặt sai vị trí dấu thanh (đặc biệt nhầm dấu hỏi ? và dấu ngã ~, sắc và nặng).
+- "bo_sot_them" : viết thiếu hoặc thừa chữ/tiếng, bỏ sót từ, lặp từ.
+- "dau_cau"     : sai/thiếu dấu chấm, dấu phẩy, dấu chấm hỏi, dấu chấm than.
+
+=== QUY TẮC VIẾT HOA BẮT BUỘC ===
+1. Viết hoa chữ cái đầu tiên của MỖI DÒNG THƠ (ví dụ thơ 4 chữ, 5 chữ, lục bát: dòng nào cũng phải viết hoa chữ cái đầu dòng).
+2. Viết hoa chữ cái đầu câu (sau dấu chấm, dấu chấm hỏi, dấu chấm than, đầu đoạn văn).
+3. Viết hoa tên riêng (người, địa danh).
+Mọi trường hợp học sinh viết chữ thường ở vị trí bắt buộc trên đều PHẢI phân loại vào lỗi "viet_hoa".
 
 [B] HÌNH THỨC — Tối đa 3.0đ
 [C] NỘI DUNG — Tối đa 2.0đ
@@ -95,14 +103,14 @@ Phân loại lỗi (error_type):
 === ĐỊNH DẠNG OUTPUT (JSON duy nhất) ===
 {
   "original_text": "văn bản gốc chưa sửa",
-  "fixed_text": "văn bản đã sửa hoàn chỉnh",
+  "fixed_text": "văn bản đã sửa hoàn chỉnh 100% đúng chính tả và viết hoa chuẩn mực",
   "corrections": [
     {
       "error": "từ viết sai",
       "suggestion": "từ đúng",
-      "error_type": "phu_am_dau | van | dau_thanh | viet_hoa | bo_sot_them | dau_cau",
+      "error_type": "viet_hoa | phu_am_dau | van | dau_thanh | bo_sot_them | dau_cau",
       "is_dialect": false,
-      "reason": "giải thích ngắn gọn, thân thiện học sinh tiểu học"
+      "reason": "giải thích ngắn gọn, thân thiện học sinh tiểu học (nêu rõ nếu thiếu viết hoa đầu câu/đầu dòng thơ)"
     }
   ],
   "score_breakdown": {
@@ -299,36 +307,38 @@ function classifyErrorType(wrong: string, correct: string): string {
 function errorReason(code: string, wrong: string, correct: string): string {
   const pw = parseVietnameseSyllable(wrong)
   const pc = parseVietnameseSyllable(correct)
+  const needsCap = /^\p{Lu}/u.test(correct) && /^\p{Ll}/u.test(wrong)
+  const capNote = needsCap ? ` Đồng thời con cần viết hoa chữ cái đầu vì đứng ở đầu câu hoặc đầu dòng thơ nhé.` : ""
 
   switch (code) {
     case "viet_hoa":
-      return `Chữ '${wrong}' cần viết hoa thành '${correct}' ở đầu câu hoặc tên riêng nhé.`
+      return `Chữ '${wrong}' cần viết hoa thành '${correct}' ở đầu câu, đầu dòng thơ hoặc tên riêng nhé.`
     case "dau_thanh": {
       const tw = TONE_NAMES_VI[pw.tone] || pw.tone
       const tc = TONE_NAMES_VI[pc.tone] || pc.tone
-      return `Con viết '${wrong}' bị sai dấu thanh (${tw} thành ${tc}), đúng phải là '${correct}' nhé.`
+      return `Con viết '${wrong}' bị sai dấu thanh (${tw} thành ${tc}), đúng phải là '${correct}' nhé.${capNote}`
     }
     case "phu_am_dau": {
       const iw = pw.initial ? `'${pw.initial}'` : "không có âm đầu"
       const ic = pc.initial ? `'${pc.initial}'` : "không có âm đầu"
-      return `Con viết '${wrong}' sai phụ âm đầu (${iw} thành ${ic}), đúng phải là '${correct}' nhé.`
+      return `Con viết '${wrong}' sai phụ âm đầu (${iw} thành ${ic}), đúng phải là '${correct}' nhé.${capNote}`
     }
     case "phu_am_cuoi": {
       const fw = pw.final ? `'${pw.final}'` : "không có âm cuối"
       const fc = pc.final ? `'${pc.final}'` : "không có âm cuối"
-      return `Con viết '${wrong}' sai âm cuối (${fw} thành ${fc}), đúng phải là '${correct}' nhé.`
+      return `Con viết '${wrong}' sai âm cuối (${fw} thành ${fc}), đúng phải là '${correct}' nhé.${capNote}`
     }
     case "am_chinh": {
       const nw = `'${pw.nucleus}'`
       const nc = `'${pc.nucleus}'`
-      return `Con viết '${wrong}' sai nguyên âm (${nw} thành ${nc}), đúng phải là '${correct}' nhé.`
+      return `Con viết '${wrong}' sai nguyên âm (${nw} thành ${nc}), đúng phải là '${correct}' nhé.${capNote}`
     }
     case "van":
-      return `Con viết '${wrong}' sai vần '${pw['rhyme']}', đúng phải là vần '${pc['rhyme']}' trong '${correct}' nhé.`
+      return `Con viết '${wrong}' sai vần '${pw['rhyme']}', đúng phải là vần '${pc['rhyme']}' trong '${correct}' nhé.${capNote}`
     case "thay_the_tu":
-      return `Con viết chữ '${wrong}' khác với từ mẫu '${correct}'.`
+      return `Con viết chữ '${wrong}' khác với từ mẫu '${correct}'.${capNote}`
     default:
-      return `Sai chính tả: '${wrong}' → '${correct}'`
+      return `Sai chính tả: '${wrong}' → '${correct}'${capNote}`
   }
 }
 
@@ -504,10 +514,12 @@ const DIVERSE_PEDAGOGICAL_TEMPLATES = {
   ],
 }
 
-function buildFallbackPedagogicalComment(creativityInfo: any, errors: any[]): string {
-  const stRaw = creativityInfo?.score ?? 0.0
+function buildFallbackPedagogicalComments(
+  creativityInfo: any,
+  errors: any[],
+  isDictation: boolean = false,
+): string[] {
   const hasErrors = Boolean(errors && errors.length > 0)
-
   const errLabels: string[] = []
   for (const e of (errors || []).slice(0, 2)) {
     const rawType = e.error_type || "chinh_ta"
@@ -516,6 +528,23 @@ function buildFallbackPedagogicalComment(creativityInfo: any, errors: any[]): st
   }
   const errorsStr = errLabels.length > 0 ? errLabels.join(" và ") : "chính tả"
 
+  if (isDictation) {
+    if (!hasErrors) {
+      return [
+        "Bài viết rất cẩn thận, không mắc lỗi chính tả nào. Con viết đúng chuẩn bài đọc mẫu, cô rất khen ngợi!",
+        "Chữ viết sạch sẽ, đều nét và hoàn thành đúng 100% bài đọc. Con tiếp tục giữ vững phong độ nhé!",
+        "Con lắng nghe và chép bài rất tập trung, bài làm chỉn chu không sai một từ nào. Cô rất tự hào về con!",
+      ]
+    } else {
+      return [
+        `Cô khen con đã cố gắng hoàn thành bài viết! Lần sau con chú ý viết cẩn thận hơn các lỗi ${errorsStr} nhé.`,
+        `Bài viết khá tốt nhưng con còn nhầm lẫn ở ${errorsStr}. Con hãy dành thêm thời gian luyện viết lại những từ này nhé con!`,
+        `Con có nề nếp viết bài cẩn thận. Nhớ đối chiếu lại từng câu chữ trước khi nộp bài để khắc phục lỗi ${errorsStr} nhé con.`,
+      ]
+    }
+  }
+
+  const stRaw = creativityInfo?.score ?? 0.0
   let cat: keyof typeof DIVERSE_PEDAGOGICAL_TEMPLATES
   if (stRaw >= 1.0) {
     cat = hasErrors ? "high_creativity_has_errors" : "high_creativity_clean"
@@ -526,8 +555,19 @@ function buildFallbackPedagogicalComment(creativityInfo: any, errors: any[]): st
   }
 
   const list = DIVERSE_PEDAGOGICAL_TEMPLATES[cat]
-  const picked = list[Math.floor(Math.random() * list.length)]
-  return picked.replace("{errors}", errorsStr)
+  const formatted = list.map(tpl => tpl.replace("{errors}", errorsStr))
+  while (formatted.length < 3) {
+    if (hasErrors) {
+      formatted.push(`Bài viết đủ ý và diễn đạt mộc mạc. Con cố gắng rèn thêm cách viết đúng ${errorsStr} để bài hoàn thiện hơn nhé!`)
+    } else {
+      formatted.push("Bài làm sạch sẽ, đúng quy cách. Con tiếp tục đọc thêm sách để vốn từ ngày càng sinh động hơn nhé!")
+    }
+  }
+  return formatted.slice(0, 3)
+}
+
+function buildFallbackPedagogicalComment(creativityInfo: any, errors: any[]): string {
+  return buildFallbackPedagogicalComments(creativityInfo, errors, false)[0]
 }
 
 /** LCS-based diff — tương đương Python difflib.SequenceMatcher */
@@ -573,10 +613,198 @@ function getDiffOpcodes(
   return ops
 }
 
+export interface BoundingBox {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  rel_x1: number
+  rel_y1: number
+  rel_w: number
+  rel_h: number
+  conf?: number
+}
+
+interface StudentWordMeta {
+  word: string
+  lineIdx: number
+  wordIdxInLine: number
+  globalWordIdx: number
+}
+
+function buildStudentWordMetas(studentText: string): { words: string[]; metas: StudentWordMeta[] } {
+  const cleanLine = (t: string) => t.replace(/[^\p{L}\p{N}\s]/gu, "").trim()
+  const rawLines = studentText.split("\n")
+  const metas: StudentWordMeta[] = []
+  const words: string[] = []
+  let globalIdx = 0
+  let lineIdx = 0
+
+  for (const rawLine of rawLines) {
+    const lineCleaned = cleanLine(rawLine)
+    if (!lineCleaned) continue
+    const lineWords = lineCleaned.split(/\s+/).filter(Boolean)
+    if (lineWords.length === 0) continue
+
+    for (let q = 0; q < lineWords.length; q++) {
+      words.push(lineWords[q])
+      metas.push({
+        word: lineWords[q],
+        lineIdx,
+        wordIdxInLine: q,
+        globalWordIdx: globalIdx++,
+      })
+    }
+    lineIdx++
+  }
+
+  return { words, metas }
+}
+
+async function detectYoloBoxes(imageBase64?: string): Promise<any | null> {
+  if (!imageBase64 || typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {
+    return null
+  }
+  try {
+    const rawB64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64
+    const serviceUrl = (process.env.VIT5_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1")
+    console.log(`[YOLO] Calling ${serviceUrl}/detect-words (b64 length: ${rawB64.length})...`)
+    const res = await fetch(`${serviceUrl}/detect-words`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.25 }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) {
+      console.warn(`[YOLO] /detect-words returned status ${res.status}`)
+      return null
+    }
+    const data = await res.json()
+    console.log(`[YOLO] ✓ Phát hiện ${data.total_words} từ trên ${data.lines?.length || 0} dòng`)
+    return data
+  } catch (err: any) {
+    console.error(`[YOLO] Không gọi được /detect-words:`, err?.message || err)
+    return null
+  }
+}
+
+function mapWordToBbox(
+  meta: StudentWordMeta | undefined,
+  yoloData: any,
+  totalStudentWords: number,
+  studentLinesCount: number = 1
+): BoundingBox | undefined {
+  if (!meta || !yoloData) return undefined
+  const yoloLines = yoloData.lines || []
+  const yoloBoxes = yoloData.boxes || yoloData.flat_boxes || []
+  if (yoloBoxes.length === 0) return undefined
+
+  // KIỂM TRA ĐIỀU KIỆN SO KHỚP THEO DÒNG:
+  // Chỉ áp dụng so khớp theo dòng khi:
+  // 1. Cả 2 bên đều có ít nhất 3 dòng.
+  // 2. Số dòng của văn bản OCR xấp xỉ số dòng vật lý của YOLO (độ chênh <= 1 dòng).
+  // 3. Số từ trung bình mỗi dòng của 2 bên xấp xỉ nhau (độ chênh <= 2.5 từ).
+  // Ví dụ: Thơ 4 chữ, thơ 5 chữ, thơ lục bát (mỗi câu thơ nằm trên 1 dòng vở).
+  const avgWordsStudent = totalStudentWords / Math.max(studentLinesCount, 1)
+  const avgWordsYolo = yoloBoxes.length / Math.max(yoloLines.length, 1)
+
+  const isStrictLineMatch = (
+    studentLinesCount >= 3 &&
+    yoloLines.length >= 3 &&
+    Math.abs(studentLinesCount - yoloLines.length) <= 1 &&
+    Math.abs(avgWordsStudent - avgWordsYolo) <= 2.5
+  )
+
+  if (isStrictLineMatch && meta.lineIdx < yoloLines.length) {
+    const targetLine = yoloLines[meta.lineIdx]
+    const lineWords = targetLine?.words || targetLine?.boxes || []
+    if (meta.wordIdxInLine < lineWords.length) {
+      return lineWords[meta.wordIdxInLine]
+    }
+  }
+
+  // SO KHỚP PHỔ QUÁT THEO LUỒNG TỰ NHIÊN (Universal Reading-Order Stream Alignment):
+  // Dành cho: Văn xuôi, bài tập làm văn, đoạn văn, hoặc thơ bị dồn dòng/xuống dòng lệch.
+  // Cả OCR và YOLO đều duyệt trang vở từ trên xuống dưới, từ trái sang phải theo thứ tự đọc.
+  const M = yoloBoxes.length
+  const N = Math.max(totalStudentWords, 1)
+
+  // Tính vị trí tương đối trên luồng từ toàn bài
+  const targetIdx = Math.min(
+    Math.max(0, Math.round((meta.globalWordIdx / Math.max(N - 1, 1)) * (M - 1))),
+    M - 1
+  )
+
+  return yoloBoxes[targetIdx]
+}
+
+function mergeBboxes(boxes: (BoundingBox | undefined)[]): BoundingBox | undefined {
+  const valid = boxes.filter(Boolean) as BoundingBox[]
+  if (valid.length === 0) return undefined
+  if (valid.length === 1) return valid[0]
+
+  const x1 = Math.min(...valid.map(b => b.x1))
+  const y1 = Math.min(...valid.map(b => b.y1))
+  const x2 = Math.max(...valid.map(b => b.x2))
+  const y2 = Math.max(...valid.map(b => b.y2))
+
+  const rel_x1 = Math.min(...valid.map(b => b.rel_x1))
+  const rel_y1 = Math.min(...valid.map(b => b.rel_y1))
+  const max_rel_x2 = Math.max(...valid.map(b => b.rel_x1 + b.rel_w))
+  const max_rel_y2 = Math.max(...valid.map(b => b.rel_y1 + b.rel_h))
+
+  return {
+    x1,
+    y1,
+    x2,
+    y2,
+    rel_x1: Math.round(rel_x1 * 10000) / 10000,
+    rel_y1: Math.round(rel_y1 * 10000) / 10000,
+    rel_w: Math.round((max_rel_x2 - rel_x1) * 10000) / 10000,
+    rel_h: Math.round((max_rel_y2 - rel_y1) * 10000) / 10000,
+  }
+}
+
+function attachBboxesToCorrections(corrections: any[], studentText: string, yoloData: any): any[] {
+  if (!corrections || !Array.isArray(corrections) || !yoloData) return corrections
+  const { words: sWords, metas: sMetas } = buildStudentWordMetas(studentText)
+  const studentLinesCount = studentText.split("\n").map(l => l.trim()).filter(Boolean).length
+  const usedIndices = new Set<number>()
+
+  return corrections.map(c => {
+    if (c.bbox) return c
+    const errWord = (c.error || "").trim().toLowerCase()
+    if (!errWord || errWord === "[trống]") return c
+
+    // Tìm vị trí từ lỗi trong danh sách từ học sinh
+    let targetIdx = sMetas.findIndex((m, idx) => !usedIndices.has(idx) && m.word.toLowerCase() === errWord)
+    if (targetIdx === -1) {
+      targetIdx = sMetas.findIndex(m => m.word.toLowerCase() === errWord)
+    }
+
+    if (targetIdx !== -1) {
+      usedIndices.add(targetIdx)
+      const bbox = mapWordToBbox(sMetas[targetIdx], yoloData, sWords.length, studentLinesCount)
+      if (bbox) {
+        return {
+          ...c,
+          bbox: {
+            x1: bbox.x1, y1: bbox.y1, x2: bbox.x2, y2: bbox.y2,
+            rel_x1: bbox.rel_x1, rel_y1: bbox.rel_y1,
+            rel_w: bbox.rel_w, rel_h: bbox.rel_h,
+          }
+        }
+      }
+    }
+    return c
+  })
+}
+
 function gradeWithLevenshtein(
   studentText: string,
   fixedText: string,
   scoreConfig: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number; gradingMode?: string },
+  yoloData?: any,
 ): any {
   if (!studentText || !studentText.trim()) {
     const isDictation = scoreConfig.gradingMode !== "essay"
@@ -601,7 +829,8 @@ function gradeWithLevenshtein(
 
   const penalty = scoreConfig.penalty_per_error ?? 0.5
   const clean   = (t: string) => t.replace(/[^\p{L}\p{N}\s]/gu, "").trim()
-  const sWords  = clean(studentText).split(/\s+/).filter(Boolean)
+  const { words: sWords, metas: sMetas } = buildStudentWordMetas(studentText)
+  const studentLinesCount = studentText.split("\n").map(l => l.trim()).filter(Boolean).length
   const fWords  = clean(fixedText).split(/\s+/).filter(Boolean)
 
   const opcodes = getDiffOpcodes(fWords, sWords)
@@ -615,26 +844,84 @@ function gradeWithLevenshtein(
           const correctW = fWords[i1 + k]
           const wrongW   = sWords[j1 + k]
           const code     = classifyErrorType(wrongW, correctW)
-          errors.push({ error: wrongW, suggestion: correctW, error_type: code,
-                        is_dialect: false, reason: errorReason(code, wrongW, correctW) })
+          const meta     = sMetas[j1 + k]
+          const bbox     = mapWordToBbox(meta, yoloData, sWords.length, studentLinesCount)
+
+          errors.push({
+            error: wrongW,
+            suggestion: correctW,
+            error_type: code,
+            is_dialect: false,
+            reason: errorReason(code, wrongW, correctW),
+            bbox: bbox ? {
+              x1: bbox.x1, y1: bbox.y1, x2: bbox.x2, y2: bbox.y2,
+              rel_x1: bbox.rel_x1, rel_y1: bbox.rel_y1,
+              rel_w: bbox.rel_w, rel_h: bbox.rel_h,
+            } : undefined,
+          })
           errorCount++
         }
       } else {
         const wc = sWords.slice(j1, j2).join(" ")
         const cc = fWords.slice(i1, i2).join(" ")
-        errors.push({ error: wc, suggestion: cc, error_type: "bo_sot_them", is_dialect: false,
-                      reason: `Con viết '${wc}' nhưng đúng phải là '${cc}' nhé.` })
+        const spanBoxes: (BoundingBox | undefined)[] = []
+        for (let idx = j1; idx < j2; idx++) {
+          spanBoxes.push(mapWordToBbox(sMetas[idx], yoloData, sWords.length, studentLinesCount))
+        }
+        const bbox = mergeBboxes(spanBoxes)
+
+        errors.push({
+          error: wc,
+          suggestion: cc,
+          error_type: "bo_sot_them",
+          is_dialect: false,
+          reason: `Con viết '${wc}' nhưng đúng phải là '${cc}' nhé.`,
+          bbox: bbox ? {
+            x1: bbox.x1, y1: bbox.y1, x2: bbox.x2, y2: bbox.y2,
+            rel_x1: bbox.rel_x1, rel_y1: bbox.rel_y1,
+            rel_w: bbox.rel_w, rel_h: bbox.rel_h,
+          } : undefined,
+        })
         errorCount += 1   // Mỗi cụm khác nhau = 1 lỗi
       }
     } else if (tag === "delete") {
       const missing = fWords.slice(i1, i2).join(" ")
-      errors.push({ error: "[Trống]", suggestion: missing, error_type: "bo_sot_them", is_dialect: false,
-                    reason: `Con bị viết thiếu chữ '${missing}' rồi nhé.` })
+      const meta = sMetas[j1] || sMetas[j1 - 1]
+      const bbox = mapWordToBbox(meta, yoloData, sWords.length, studentLinesCount)
+
+      errors.push({
+        error: "[Trống]",
+        suggestion: missing,
+        error_type: "bo_sot_them",
+        is_dialect: false,
+        reason: `Con bị viết thiếu chữ '${missing}' rồi nhé.`,
+        bbox: bbox ? {
+          x1: bbox.x1, y1: bbox.y1, x2: bbox.x2, y2: bbox.y2,
+          rel_x1: bbox.rel_x1, rel_y1: bbox.rel_y1,
+          rel_w: bbox.rel_w, rel_h: bbox.rel_h,
+        } : undefined,
+      })
       errorCount += 1
     } else if (tag === "insert") {
       const extra = sWords.slice(j1, j2).join(" ")
-      errors.push({ error: extra, suggestion: "[Không có]", error_type: "bo_sot_them", is_dialect: false,
-                    reason: `Con bị viết thừa chữ '${extra}' rồi, chú ý nhé.` })
+      const spanBoxes: (BoundingBox | undefined)[] = []
+      for (let idx = j1; idx < j2; idx++) {
+        spanBoxes.push(mapWordToBbox(sMetas[idx], yoloData, sWords.length, studentLinesCount))
+      }
+      const bbox = mergeBboxes(spanBoxes)
+
+      errors.push({
+        error: extra,
+        suggestion: "[Không có]",
+        error_type: "bo_sot_them",
+        is_dialect: false,
+        reason: `Con bị viết thừa chữ '${extra}' rồi, chú ý nhé.`,
+        bbox: bbox ? {
+          x1: bbox.x1, y1: bbox.y1, x2: bbox.x2, y2: bbox.y2,
+          rel_x1: bbox.rel_x1, rel_y1: bbox.rel_y1,
+          rel_w: bbox.rel_w, rel_h: bbox.rel_h,
+        } : undefined,
+      })
       errorCount += 1
     }
   }
@@ -649,6 +936,7 @@ function gradeWithLevenshtein(
   let breakdown: any
   let feedback: string
   let pedagogicalComment = ""
+  let pedagogicalComments: string[] = []
 
   if (isDictation) {
     // Barem Chính tả chuẩn Bộ GD&ĐT (2 phần): 7đ Chính tả + 3đ Trình bày
@@ -662,9 +950,8 @@ function gradeWithLevenshtein(
       : errorCount <= 2
         ? `Bài chính tả tốt! Con chỉ mắc ${errorCount} lỗi nhỏ. Chú ý các từ đã được đánh dấu đỏ để lần sau viết đúng hơn nhé.`
         : `Con mắc ${errorCount} lỗi chính tả so với bài đọc chuẩn. Hãy đối chiếu lại từng từ được sửa màu đỏ để rèn luyện thêm nhé!`
-    pedagogicalComment = errorCount === 0
-      ? "Bài viết rất cẩn thận, không mắc lỗi chính tả nào. Em viết đúng chuẩn bài đọc mẫu."
-      : `Học sinh mắc ${errorCount} lỗi chính tả. Cần chú ý rèn luyện thêm các âm vần/dấu thanh hay nhầm lẫn.`
+    pedagogicalComments = buildFallbackPedagogicalComments(null, errors, true)
+    pedagogicalComment = pedagogicalComments[0]
   } else {
     // Barem Tập làm văn (4 phần): 4đ Chính tả + 3đ Hình thức + 2đ Nội dung + 1đ Sáng tạo = 10đ
     const ndRaw = scoreConfig.noi_dung !== undefined ? Math.min(2.0, Math.max(0, scoreConfig.noi_dung)) : 1.5
@@ -682,7 +969,8 @@ function gradeWithLevenshtein(
       : errorCount <= 2
         ? `Bài viết tốt! Con chỉ mắc ${errorCount} lỗi nhỏ. Chú ý sửa những từ đã được đánh dấu để bài viết hoàn thiện hơn nhé.`
         : `Con còn mắc ${errorCount} lỗi chính tả trong bài. Con hãy xem lại từng lỗi được chỉ ra và luyện tập thêm nhé! Cố gắng lên!`
-    pedagogicalComment = buildFallbackPedagogicalComment(stInfo, errors)
+    pedagogicalComments = buildFallbackPedagogicalComments(stInfo, errors, false)
+    pedagogicalComment = pedagogicalComments[0]
   }
 
   const rating = total >= 9 ? "Xuất sắc" : total >= 7 ? "Tốt" : total >= 5 ? "Khá" : total >= 3 ? "Trung bình" : "Cần cố gắng"
@@ -696,6 +984,7 @@ function gradeWithLevenshtein(
     overall_rating: rating,
     feedback,
     pedagogical_comment: pedagogicalComment,
+    pedagogical_comments: pedagogicalComments,
   }
 }
 
@@ -712,11 +1001,13 @@ export async function POST(req: NextRequest) {
       studentText,
       groundTruthText,
       geminiFixedText,
+      imageBase64,
       hinh_thuc,
       noi_dung,
       penalty_per_error,
       gradingMode,  // "dictation" (Chính tả SGK) | "essay" (Tập làm văn tự do)
       source,       // "ocr" | "manual"
+      ocrTimeMs,    // Thời gian OCR từ client gửi lên (ms)
     } = await req.json()
 
     if (!studentText || !studentText.trim()) {
@@ -729,6 +1020,7 @@ export async function POST(req: NextRequest) {
     const inputSource = source === "manual" ? "manual" : (geminiFixedText ? "ocr" : "manual")
     const mode = gradingMode || (groundTruthText ? "dictation" : "essay")
     const startTime = Date.now()
+    const ocrOffset = typeof ocrTimeMs === "number" && ocrTimeMs > 0 ? Math.round(ocrTimeMs) : 0
     const scoreConfig = {
       hinh_thuc:         typeof hinh_thuc === "number" ? hinh_thuc : undefined,
       noi_dung:          typeof noi_dung  === "number" ? noi_dung  : undefined,
@@ -736,15 +1028,19 @@ export async function POST(req: NextRequest) {
       gradingMode:       mode,
     }
 
+    // Nhận diện Bounding Box các từ viết tay qua YOLOv8 (nếu có ảnh truyền lên)
+    const yoloData = await detectYoloBoxes(imageBase64)
+
     // ================================================================
     // LUỒNG A — Ground Truth / Fixed Text Alignment:
     //   Điều kiện: Có groundTruthText hoặc geminiFixedText
     //   → Chạy Sequence Alignment Levenshtein đối soát trực tiếp 100% không ảo giác
     // ================================================================
-    const referenceText = (groundTruthText || geminiFixedText || "").trim()
+    const rawRef = (groundTruthText || geminiFixedText || "").trim()
+    const referenceText = ensureVietnameseCapitalization(rawRef)
     if (referenceText) {
       console.log(`[Engine] 🎯 [Mode: ${mode}] So khớp bài mẫu Ground Truth trực tiếp`)
-      const result = gradeWithLevenshtein(studentText, referenceText, scoreConfig)
+      const result = gradeWithLevenshtein(studentText, referenceText, scoreConfig, yoloData)
 
       // Nếu là chế độ Tập làm văn: Gọi Qwen SLM sinh lời nhận xét sư phạm phong phú
       if (mode === "essay") {
@@ -762,8 +1058,13 @@ export async function POST(req: NextRequest) {
           })
           if (qwenRes.ok) {
             const qwenData = await qwenRes.json()
-            if (qwenData.text) {
+            if (qwenData.suggestions && Array.isArray(qwenData.suggestions) && qwenData.suggestions.length > 0) {
+              result.pedagogical_comments = qwenData.suggestions.slice(0, 3)
+              result.pedagogical_comment = qwenData.suggestions[0]
+              result.pedagogical_comment_source = qwenData.source
+            } else if (qwenData.text) {
               result.pedagogical_comment = qwenData.text
+              result.pedagogical_comments = [qwenData.text, ...(result.pedagogical_comments || []).slice(1)].slice(0, 3)
               result.pedagogical_comment_source = qwenData.source
             }
           }
@@ -774,11 +1075,13 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         ...result,
-        processingTimeMs: Date.now() - startTime,
+        detected_words: yoloData?.boxes || yoloData?.flat_boxes || [],
+        processingTimeMs: (Date.now() - startTime) + ocrOffset,
         tokenCount: 0,
         engine: "ground_truth_alignment",
         source: inputSource,
         gradingMode: mode,
+        includesOcr: ocrOffset > 0,
       })
     }
 
@@ -798,11 +1101,16 @@ export async function POST(req: NextRequest) {
 
     if (vit5Result.ok) {
       console.log(`[Engine] ✅ ViT5 thành công | Điểm: ${vit5Result.data.score}`)
+      if (yoloData && vit5Result.data?.corrections) {
+        vit5Result.data.corrections = attachBboxesToCorrections(vit5Result.data.corrections, studentText, yoloData)
+      }
       return NextResponse.json({
         ...vit5Result.data,
-        processingTimeMs: Date.now() - startTime,
+        detected_words: yoloData?.boxes || yoloData?.flat_boxes || [],
+        processingTimeMs: (Date.now() - startTime) + ocrOffset,
         engine: "vit5+levenshtein",
         source: inputSource,
+        includesOcr: ocrOffset > 0,
       })
     }
 
@@ -852,11 +1160,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (!parsed.pedagogical_comments || !Array.isArray(parsed.pedagogical_comments) || parsed.pedagogical_comments.length === 0) {
+      const baseComment = parsed.pedagogical_comment || parsed.feedback || "Con có ý thức hoàn thành bài viết tốt."
+      parsed.pedagogical_comments = [
+        baseComment,
+        "Bài viết có sự cố gắng. Con nhớ rèn luyện thêm chữ viết và đọc kĩ lại bài trước khi nộp nhé con!",
+        "Cô khen con đã hoàn thành bài viết. Tiếp tục phát huy nề nếp và mở rộng vốn từ nhé!",
+      ]
+    }
+
+    if (yoloData && parsed.corrections) {
+      parsed.corrections = attachBboxesToCorrections(parsed.corrections, studentText, yoloData)
+    }
+
     return NextResponse.json({
       ...parsed,
-      processingTimeMs: Date.now() - startTime,
+      detected_words: yoloData?.boxes || yoloData?.flat_boxes || [],
+      processingTimeMs: (Date.now() - startTime) + ocrOffset,
       tokenCount: geminiResult.tokenCount,
       engine: "gemini-fallback",
+      includesOcr: ocrOffset > 0,
     })
   } catch (err: any) {
     console.error("Grade API error:", err)

@@ -135,6 +135,9 @@ export async function POST(req: NextRequest) {
         imageBase64: imageBase64 || "",
         imagePath: imagePath || "",
         dictationSessionId: dictationSessionId || "",
+        // Issue #26: Chính sách lưu trữ dữ liệu học sinh (mặc định 365 ngày = 1 niên khóa)
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        isAnonymized: false,
       },
     })
 
