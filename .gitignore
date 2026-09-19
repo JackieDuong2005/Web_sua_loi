@@ -110,6 +110,18 @@ Test_train_29_12/detected_objects_test/
 Test_train_29_12/detection_image*/
 Test_train_29_12/fileocr/
 Test_train_29_12/**/last.pt
+Test_train_29_12/annotated_*
+Test_train_29_12/hybrid_*
+Test_train_29_12/standardized_*
+Test_train_29_12/yolo_*
+public/uploads/
 
-# Empty placeholder directories (future projects)
-android-app/
+# Android app build outputs (Capacitor/Gradle)
+android/
+android_app/
+android-app/**/build/
+android-app/**/.gradle/
+android-app/**/local.properties
+android-app/**/*.apk
+android-app/**/*.aab
+

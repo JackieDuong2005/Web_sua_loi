@@ -1540,7 +1540,8 @@ async def qwen_generate_endpoint(req: QwenTestRequest):
 # ============================================================
 class DetectWordsRequest(BaseModel):
     imageBase64: str
-    conf_threshold: Optional[float] = 0.25
+    conf_threshold: Optional[float] = 0.50
+    iou_threshold: Optional[float] = 0.45
 
 
 @app.get("/yolo/status")
@@ -1559,8 +1560,8 @@ async def yolo_status_endpoint():
 @app.post("/detect-words")
 async def detect_words_endpoint(req: DetectWordsRequest):
     """
-    Endpoint nhận diện Bounding Box của từng từ viết tay (YOLOv8)
-    và tự động gom dòng, sắp xếp theo thứ tự đọc tự nhiên.
+    Endpoint nhận diện Bounding Box của từng từ viết tay (YOLOv8 + Vertical Overlap).
+    Sắp xếp theo thứ tự đọc tự nhiên (trên→dưới, trái→phải).
     """
     try:
         import base64
@@ -1577,8 +1578,9 @@ async def detect_words_endpoint(req: DetectWordsRequest):
         img_bytes = base64.b64decode(raw_b64)
         image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
-        conf = req.conf_threshold if req.conf_threshold is not None else 0.25
-        result = detect_words_from_image(image, conf_threshold=conf)
+        conf = req.conf_threshold if req.conf_threshold is not None else 0.50
+        iou  = req.iou_threshold  if req.iou_threshold  is not None else 0.45
+        result = detect_words_from_image(image, conf_threshold=conf, iou_threshold=iou)
         return result
     except Exception as e:
         logger.error(f"[YOLO] Lỗi khi xử lý detect-words: {e}")

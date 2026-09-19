@@ -10,55 +10,50 @@ function getApiKey(): string {
   return key.trim()
 }
 
-// Prompt OCR kết hợp: nhận diện chính xác VÀ sửa lỗi toàn diện theo chuẩn Tiếng Việt Tiểu học
-const OCR_PROMPT = `Bạn là giáo viên tiểu học Việt Nam chuyên gia về chấm và sửa bài chính tả tiếng Việt. Phân tích đoạn văn hoặc bài thơ viết tay của học sinh trong ảnh, nhận diện chính xác từng chữ viết và sửa lại toàn diện theo chuẩn chính tả tiếng Việt của Bộ Giáo dục và Đào tạo. Trả về duy nhất định dạng JSON.
+// Prompt OCR: Tối ưu cho Gemini 3.1 Flash Lite — phân biệt Thơ/Văn xuôi, chuẩn hóa viết hoa và đối soát từ 1-1
+const OCR_PROMPT = `Bạn là chuyên gia OCR và giám khảo chấm chính tả Tiếng Việt Tiểu học (Bộ GD&ĐT).
+Nhiệm vụ: Phân tích ảnh bài viết tay của học sinh, nhận diện chính xác từng chữ và chuẩn hóa chính tả tiếng Việt. Trả về DUY NHẤT định dạng JSON.
 
-=== 1. QUY TẮC NHẬN DIỆN VĂN BẢN GỐC (original_text) ===
-- Ghi lại CHÍNH XÁC 100% từng nét chữ học sinh viết tay — giữ nguyên mọi lỗi sai (sai âm đầu, vần, dấu thanh, viết thường/hoa, thiếu chữ, thừa chữ).
-- TUYỆT ĐỐI KHÔNG tự ý sửa lỗi, KHÔNG thêm bớt từ trong "original_text".
-- Bỏ qua các vết gạch xóa, chữ lem mực bị viết đè (chỉ lấy chữ học sinh sửa lại sau cùng).
-- Bỏ qua các dòng luyện chữ rời rạc ở đầu trang (nếu có).
-- Giữ đúng cấu trúc xuống dòng:
-  + Thơ: Mỗi câu thơ trên một dòng riêng biệt.
-  + Văn xuôi: Nối các dòng của cùng một câu/đoạn, chỉ xuống dòng khi thụt đầu dòng sang đoạn mới.
+=== BƯỚC 1: XÁC ĐỊNH THỂ LOẠI (the_loai: "tho" | "van_xuoi") ===
+- "tho": Bài thơ (4 chữ, 5 chữ, 7 chữ, lục bát...), các dòng ngắn có vần điệu, căn lề thụt sâu vào trong hoặc giữa trang, mỗi câu thơ là 1 dòng riêng biệt.
+- "van_xuoi": Đoạn văn/bài văn, câu dài viết liên tục tràn hết dòng kẻ vở mới xuống dòng, có dấu chấm câu (. ? !), các dòng vật lý nối tiếp ý của nhau.
 
-=== 2. QUY TẮC SỬA LỖI TOÀN DIỆN (fixed_text) ===
-Bản "fixed_text" là bài chuẩn mực 100%, phải sửa triệt để tất cả các lỗi sau:
+=== BƯỚC 2: NHẬN DIỆN VĂN BẢN GỐC (original_text) ===
+- Ghi lại CHÍNH XÁC 100% từng nét chữ học sinh viết tay — GIỮ NGUYÊN mọi lỗi sai (sai âm đầu, vần, dấu thanh, chữ thường/hoa, thiếu chữ, thừa chữ).
+- TUYỆT ĐỐI KHÔNG tự ý sửa lỗi trong "original_text".
+- Bỏ qua vết gạch xóa, lem mực (chỉ lấy chữ học sinh sửa đè sau cùng); bỏ qua dòng kẻ luyện chữ ở mép đầu trang nếu có.
+- Cấu trúc xuống dòng:
+  + THƠ: Mỗi câu thơ trên một dòng riêng biệt.
+  + VĂN XUÔI: Giữ theo đoạn văn — nối các dòng của cùng một câu/đoạn thành dòng liên tục, chỉ xuống dòng khi thụt đầu dòng sang đoạn mới.
 
-A. QUY TẮC VIẾT HOA ĐẦU CÂU & ĐẦU DÒNG THƠ (BẮT BUỘC):
-- ĐẦU DÒNG THƠ: BẮT BUỘC viết hoa chữ cái đầu tiên của TẤT CẢ các dòng thơ (kể cả khi học sinh viết chữ thường hoặc dòng trước không có dấu chấm).
-  Ví dụ:
-  + Học sinh viết: "su bé ngủ xay" -> Sửa thành: "Ru bé ngủ say" (viết hoa chữ 'Ru')
-  + Học sinh viết: "thay cho só xời" -> Sửa thành: "Thay cho gió trời" (viết hoa chữ 'Thay')
-- ĐẦU CÂU VĂN XUÔI: BẮT BUỘC viết hoa chữ cái đầu đoạn văn và chữ cái đầu tiên ngay sau dấu chấm (.), dấu chấm hỏi (?), dấu chấm than (!), dấu chấm lửng (...).
-- TÊN RIÊNG: BẮT BUỘC viết hoa chữ cái đầu của tất cả các tiếng tạo thành tên người, địa danh (VD: "Việt Nam", "Bác Hồ", "Hà Nội").
-- TIÊU ĐỀ BÀI VIẾT: BẮT BUỘC viết hoa chữ cái đầu tiên của tiêu đề.
+=== BƯỚC 3: CHUẨN HÓA CHÍNH TẢ (fixed_text) ===
+A. QUY TẮC VIẾT HOA THEO THỂ LOẠI:
+| Trường hợp                                    | THƠ ("tho") | VĂN XUÔI ("van_xuoi") |
+|-----------------------------------------------|-------------|-----------------------|
+| Chữ đầu tiên của toàn bài                     | Viết hoa    | Viết hoa              |
+| Chữ đầu mỗi DÒNG thơ                          | Viết hoa    | Không áp dụng         |
+| Chữ sau dấu chấm ngắt câu (. ? ! ...)         | Viết hoa    | Viết hoa              |
+| Chữ đầu dòng vật lý (nối tiếp câu văn xuôi)   | —           | BẮT BUỘC viết thường  |
+| Tên riêng (người, địa danh)                   | Viết hoa    | Viết hoa              |
+| Tiêu đề bài                                   | Viết hoa    | Viết hoa              |
 
-B. SỬA LỖI PHỤ ÂM ĐẦU:
-- Phân biệt s/x (sắp xếp, xứ sở, say sưa / xôn xao, xinh xắn).
-- Phân biệt tr/ch (trời, trưa, trong trẻo / chăm chỉ, chân thành).
-- Phân biệt d/gi/r (gió, giáo viên / da thịt, dịu dàng / ra vào, ru ngủ).
-- Phân biệt c/k/q (k đứng trước i/e/ê; q luôn đi với u; c đi với a/o/u/ô/ơ/ă/â).
-- Phân biệt g/gh, ng/ngh (gh, ngh đứng trước i/e/ê).
-- Phân biệt l/n (lúa non, năm tháng, lo lắng).
+B. CHUẨN HÓA LỖI CHÍNH TẢ PHỔ BIẾN:
+- Phụ âm đầu: s/x, tr/ch, d/gi/r, l/n; c/k/q (k trước i/e/ê; q đi với u; c đi với các nguyên âm còn lại); g/gh, ng/ngh (gh, ngh trước i/e/ê).
+- Vần & âm cuối: an/ang, ăn/ăng, ân/âng, en/eng, iên/iêng, iêu/yêu, ươn/ương, uôn/uông, ay/ai, ây/ơi; âm cuối t/c, n/ng, ch/t.
+- Dấu thanh: Đặt đúng nguyên âm chính; phân biệt chuẩn hỏi/ngã, sắc/nặng, huyền/không dấu theo từ điển.
+- Giữ nguyên nội dung, ý nghĩa — chỉ sửa lỗi chính tả và chuẩn hóa chữ viết hoa.
 
-C. SỬA LỖI VẦN & ÂM CUỐI:
-- Phân biệt an/ang, ăn/ăng, ân/âng, en/eng, in/ing.
-- Phân biệt iên/iêng, iêu/yêu, ươn/ương, uôn/uông.
-- Phân biệt âm cuối t/c (mắt/mắc, quạt/quạc, bột/bộc), n/ng, ch/t.
-- Phân biệt ay/ai, ây/ơi, ươu/ưu.
+=== BƯỚC 4: RÀNG BUỘC ĐỐI SOÁT 1-1 (BẮT BUỘC) ===
+- original_text và fixed_text PHẢI CÓ CÙNG SỐ LƯỢNG TỪ khi tách theo khoảng trắng (split()).
+- Từ thứ N của original_text tương ứng chính xác với từ thứ N của fixed_text ở cùng vị trí index.
+- fixed_text chỉ THAY THẾ từ sai bằng từ đúng — TUYỆT ĐỐI KHÔNG thêm từ mới hoặc xóa bớt từ. Nếu học sinh viết thiếu chữ, giữ nguyên không tự ý chèn thêm.
+- Dấu câu gắn liền với từ đứng trước (ví dụ: "bài,", "học."), KHÔNG tách dấu câu thành từ riêng.
+- original_text và fixed_text PHẢI CÓ CÙNG CẤU TRÚC XUỐNG DÒNG (số dòng bằng nhau 100%).
 
-D. SỬA LỖI DẤU THANH:
-- Phân biệt dấu hỏi (?) và dấu ngã (~) (VD: bẻ/bẽ, vẽ/vẻ, nghĩ/nghỉ, ngã/ngả, oi ả).
-- Phân biệt dấu sắc và dấu nặng, dấu huyền và không dấu.
-- Đặt dấu thanh đúng nguyên âm chính theo quy tắc chính tả hiện hành.
-
-E. GIỮ NGUYÊN NỘI DUNG VÀ Ý NGHĨA:
-- Giữ nguyên cấu trúc dòng, câu chữ và ý thơ/văn của học sinh; chỉ chuẩn hóa lỗi chính tả và chữ viết hoa.
-
-=== 3. ĐỊNH DẠNG OUTPUT (JSON duy nhất, không kèm markdown) ===
+=== BƯỚC 5: ĐỊNH DẠNG OUTPUT (JSON DUY NHẤT) ===
 {
-  "original_text": "văn bản gốc nhận diện được từ ảnh (chưa sửa)",
+  "the_loai": "tho hoặc van_xuoi",
+  "original_text": "văn bản gốc nhận diện được từ ảnh (chưa sửa, giữ nguyên mọi lỗi)",
   "fixed_text": "văn bản đã được sửa hết toàn bộ lỗi chính tả và chuẩn hóa viết hoa đúng quy tắc 100%"
 }
 `
@@ -67,6 +62,7 @@ E. GIỮ NGUYÊN NỘI DUNG VÀ Ý NGHĨA:
 interface OcrResult {
   original_text: string
   gemini_fixed_text: string
+  the_loai?: string
   tokenCount: number
   keyIndex: number
 }
@@ -92,7 +88,7 @@ async function callGeminiOCR(
         temperature: 0.05,
         topP: 0.95,
         topK: 40,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,
       },
     })
 
@@ -101,6 +97,7 @@ async function callGeminiOCR(
 
     let original_text = ""
     let gemini_fixed_text = ""
+    let the_loai = ""
 
     try {
       const cleaned = text
@@ -111,6 +108,7 @@ async function callGeminiOCR(
       const parsed = JSON.parse(cleaned)
       original_text = (parsed.original_text || "").trim()
       gemini_fixed_text = (parsed.fixed_text || "").trim()
+      the_loai = (parsed.the_loai || "").trim().toLowerCase()
     } catch {
       original_text = text.trim()
       gemini_fixed_text = text.trim()
@@ -120,14 +118,18 @@ async function callGeminiOCR(
       throw new Error("Không nhận diện được nội dung từ ảnh")
     }
 
-    // Đảm bảo chữ đầu dòng (thơ) và đầu câu luôn được viết hoa chuẩn mực
-    gemini_fixed_text = ensureVietnameseCapitalization(gemini_fixed_text)
+    // Đảm bảo chữ đầu dòng và đầu câu luôn được viết hoa chuẩn mực:
+    // - Với THƠ: chữ đầu mỗi dòng luôn viết hoa
+    // - Với VĂN XUÔI: không ép viết hoa đầu dòng vật lý để tránh sửa nhầm từ giữa câu
+    if (the_loai === "tho") {
+      gemini_fixed_text = ensureVietnameseCapitalization(gemini_fixed_text)
+    }
 
     console.log(
-      `[OCR] ✓ Gemini OCR thành công (${tokenCount} tokens)` +
+      `[OCR] ✓ Gemini OCR (${the_loai || "tự động"}): ${tokenCount} tokens` +
       ` | original: ${original_text.length} chars | fixed: ${gemini_fixed_text.length} chars`
     )
-    return { original_text, gemini_fixed_text, tokenCount, keyIndex: 1 }
+    return { original_text, gemini_fixed_text, the_loai, tokenCount, keyIndex: 1 }
 
   } catch (err: any) {
     console.error("[OCR] Gemini error:", err?.message)
@@ -177,6 +179,7 @@ export async function POST(req: NextRequest) {
       text: result.original_text,
       // `gemini_fixed_text` — tham khảo, không đưa vào ViT5
       gemini_fixed_text: result.gemini_fixed_text,
+      the_loai: result.the_loai,
       tokenCount: result.tokenCount,
       processingTimeMs: Date.now() - startTime,
     })

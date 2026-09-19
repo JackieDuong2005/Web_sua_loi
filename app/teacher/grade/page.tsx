@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -78,22 +78,160 @@ interface GradingResult {
 export interface OcrCache {
   originalText: string
   geminiFixedText?: string
+  theLoai?: string
   imageKey: string
   timestamp: number
   ocrTimeMs?: number
 }
 
-const ERROR_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  phu_am_dau: { label: "Phụ âm đầu", color: "bg-red-100 text-red-700 border-red-200" },
-  phu_am_cuoi:{ label: "Âm cuối", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  am_chinh:   { label: "Nguyên âm", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  van:        { label: "Vần", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  dau_thanh:  { label: "Dấu thanh", color: "bg-purple-100 text-purple-700 border-purple-200" },
-  viet_hoa:   { label: "Viết hoa", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  thay_the_tu:{ label: "Sai khác từ", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-  bo_sot_them:{ label: "Bỏ sót/Thêm", color: "bg-pink-100 text-pink-700 border-pink-200" },
-  dau_cau:    { label: "Dấu câu", color: "bg-teal-100 text-teal-700 border-teal-200" },
+interface ErrorTheme {
+  label: string
+  badge: string
+  boxBorder: string
+  boxBg: string
+  boxHover: string
+  tagBg: string
+  dot: string
+  cardBorderLeft: string
+  cardBgLight: string
+  badgeText: string
 }
+
+const ERROR_THEMES: Record<string, ErrorTheme> = {
+  phu_am_dau: {
+    label: "Phụ âm đầu",
+    badge: "bg-rose-100 text-rose-700 border-rose-200",
+    boxBorder: "border-rose-500",
+    boxBg: "bg-rose-500/15",
+    boxHover: "hover:bg-rose-500/25 hover:border-solid hover:ring-2 hover:ring-rose-400",
+    tagBg: "bg-rose-600 text-white",
+    dot: "bg-rose-500",
+    cardBorderLeft: "border-l-rose-500",
+    cardBgLight: "bg-rose-50/40",
+    badgeText: "#e11d48",
+  },
+  dau_thanh: {
+    label: "Dấu thanh",
+    badge: "bg-purple-100 text-purple-700 border-purple-200",
+    boxBorder: "border-purple-500",
+    boxBg: "bg-purple-500/15",
+    boxHover: "hover:bg-purple-500/25 hover:border-solid hover:ring-2 hover:ring-purple-400",
+    tagBg: "bg-purple-600 text-white",
+    dot: "bg-purple-500",
+    cardBorderLeft: "border-l-purple-500",
+    cardBgLight: "bg-purple-50/40",
+    badgeText: "#9333ea",
+  },
+  van: {
+    label: "Vần",
+    badge: "bg-orange-100 text-orange-700 border-orange-200",
+    boxBorder: "border-orange-500",
+    boxBg: "bg-orange-500/15",
+    boxHover: "hover:bg-orange-500/25 hover:border-solid hover:ring-2 hover:ring-orange-400",
+    tagBg: "bg-orange-600 text-white",
+    dot: "bg-orange-500",
+    cardBorderLeft: "border-l-orange-500",
+    cardBgLight: "bg-orange-50/40",
+    badgeText: "#ea580c",
+  },
+  am_chinh: {
+    label: "Nguyên âm",
+    badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    boxBorder: "border-emerald-500",
+    boxBg: "bg-emerald-500/15",
+    boxHover: "hover:bg-emerald-500/25 hover:border-solid hover:ring-2 hover:ring-emerald-400",
+    tagBg: "bg-emerald-600 text-white",
+    dot: "bg-emerald-500",
+    cardBorderLeft: "border-l-emerald-500",
+    cardBgLight: "bg-emerald-50/40",
+    badgeText: "#059669",
+  },
+  phu_am_cuoi: {
+    label: "Âm cuối",
+    badge: "bg-sky-100 text-sky-700 border-sky-200",
+    boxBorder: "border-sky-500",
+    boxBg: "bg-sky-500/15",
+    boxHover: "hover:bg-sky-500/25 hover:border-solid hover:ring-2 hover:ring-sky-400",
+    tagBg: "bg-sky-600 text-white",
+    dot: "bg-sky-500",
+    cardBorderLeft: "border-l-sky-500",
+    cardBgLight: "bg-sky-50/40",
+    badgeText: "#0284c7",
+  },
+  viet_hoa: {
+    label: "Viết hoa",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+    boxBorder: "border-blue-500",
+    boxBg: "bg-blue-500/15",
+    boxHover: "hover:bg-blue-500/25 hover:border-solid hover:ring-2 hover:ring-blue-400",
+    tagBg: "bg-blue-600 text-white",
+    dot: "bg-blue-500",
+    cardBorderLeft: "border-l-blue-500",
+    cardBgLight: "bg-blue-50/40",
+    badgeText: "#2563eb",
+  },
+  bo_sot_them: {
+    label: "Bỏ sót/Thêm",
+    badge: "bg-pink-100 text-pink-700 border-pink-200",
+    boxBorder: "border-pink-500",
+    boxBg: "bg-pink-500/15",
+    boxHover: "hover:bg-pink-500/25 hover:border-solid hover:ring-2 hover:ring-pink-400",
+    tagBg: "bg-pink-600 text-white",
+    dot: "bg-pink-500",
+    cardBorderLeft: "border-l-pink-500",
+    cardBgLight: "bg-pink-50/40",
+    badgeText: "#db2777",
+  },
+  thay_the_tu: {
+    label: "Sai khác từ",
+    badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    boxBorder: "border-indigo-500",
+    boxBg: "bg-indigo-500/15",
+    boxHover: "hover:bg-indigo-500/25 hover:border-solid hover:ring-2 hover:ring-indigo-400",
+    tagBg: "bg-indigo-600 text-white",
+    dot: "bg-indigo-500",
+    cardBorderLeft: "border-l-indigo-500",
+    cardBgLight: "bg-indigo-50/40",
+    badgeText: "#4f46e5",
+  },
+  dau_cau: {
+    label: "Dấu câu",
+    badge: "bg-teal-100 text-teal-700 border-teal-200",
+    boxBorder: "border-teal-500",
+    boxBg: "bg-teal-500/15",
+    boxHover: "hover:bg-teal-500/25 hover:border-solid hover:ring-2 hover:ring-teal-400",
+    tagBg: "bg-teal-600 text-white",
+    dot: "bg-teal-500",
+    cardBorderLeft: "border-l-teal-500",
+    cardBgLight: "bg-teal-50/40",
+    badgeText: "#0d9488",
+  },
+}
+
+const DEFAULT_ERROR_THEME: ErrorTheme = {
+  label: "Chính tả",
+  badge: "bg-rose-100 text-rose-700 border-rose-200",
+  boxBorder: "border-rose-500",
+  boxBg: "bg-rose-500/15",
+  boxHover: "hover:bg-rose-500/25 hover:border-solid hover:ring-2 hover:ring-rose-400",
+  tagBg: "bg-rose-600 text-white",
+  dot: "bg-rose-500",
+  cardBorderLeft: "border-l-rose-500",
+  cardBgLight: "bg-rose-50/40",
+  badgeText: "#e11d48",
+}
+
+function getErrorTheme(errorType?: string): ErrorTheme {
+  if (!errorType) return DEFAULT_ERROR_THEME
+  return ERROR_THEMES[errorType] || {
+    ...DEFAULT_ERROR_THEME,
+    label: errorType,
+  }
+}
+
+const ERROR_TYPE_LABELS: Record<string, { label: string; color: string }> = Object.fromEntries(
+  Object.entries(ERROR_THEMES).map(([k, v]) => [k, { label: v.label, color: v.badge }])
+)
 
 function getRatingStyle(rating: string) {
   if (rating.includes("Xuất sắc")) return { badge: "bg-emerald-100 text-emerald-700 border-emerald-200", emoji: "🏆" }
@@ -233,6 +371,7 @@ function ResultPopup({
 }: ResultPopupProps) {
   const [viewMode, setViewMode] = useState<"inline" | "sidebyside">("inline")
   const [activeErrorIdx, setActiveErrorIdx] = useState<number | null>(null)
+  const [filterErrorType, setFilterErrorType] = useState<string | null>(null)
   const [imageLayer, setImageLayer] = useState(!!(processedImage || originalImage))
   const [showBBoxes, setShowBBoxes] = useState(true)
   const [mobileTab, setMobileTab] = useState<"review" | "score">("review")
@@ -369,7 +508,8 @@ function ResultPopup({
     { title: "Rèn luyện & Bứt phá", icon: "💡" },
   ]
 
-  const displayImage = processedImage || originalImage
+  // Luôn ưu tiên ảnh gốc cho bounding box overlay — tránh lệch tọa độ do ảnh đã xử lý bị crop/scale khác
+  const displayImage = originalImage || processedImage
   const isEssay = (gradingResult.gradingMode || gradingMode) === "essay"
   const sb = gradingResult.score_breakdown
   const ht = hinhThucOverride ?? sb?.hinh_thuc?.raw ?? 3.0
@@ -615,6 +755,20 @@ function ResultPopup({
 
   const corrections = gradingResult.corrections ?? []
 
+  // Thống kê các loại lỗi xuất hiện trong bài kèm màu sắc phân loại
+  const errorTypeStats = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const c of corrections) {
+      const t = c.error_type || "chinh_ta"
+      map[t] = (map[t] || 0) + 1
+    }
+    return Object.entries(map).map(([type, count]) => ({
+      type,
+      count,
+      theme: getErrorTheme(type),
+    }))
+  }, [corrections])
+
   const errorsTextsJSX = (
     <div className="space-y-4">
 
@@ -717,7 +871,9 @@ function ResultPopup({
                     <div className="absolute inset-0 pointer-events-none">
                       {corrections.map((c, i) => {
                         if (!c.bbox) return null
+                        const theme = getErrorTheme(c.error_type)
                         const isActive = activeErrorIdx === i
+                        const isFilteredOut = filterErrorType && filterErrorType !== c.error_type
                         const isTopNear = c.bbox.rel_y1 < 0.08
                         const label = c.suggestion ? `✓ ${c.suggestion}` : `✕ ${c.error}`
 
@@ -726,8 +882,10 @@ function ResultPopup({
                             key={i}
                             className={`absolute pointer-events-auto cursor-pointer rounded transition-all duration-200 ${
                               isActive
-                                ? "ring-3 ring-amber-500 bg-amber-400/25 z-30 shadow-md scale-[1.02]"
-                                : "border-2 border-dashed border-rose-500 bg-rose-500/15 hover:bg-rose-500/25 hover:border-solid hover:ring-2 hover:ring-rose-400 z-10"
+                                ? "ring-3 ring-amber-500 bg-amber-400/30 z-30 shadow-lg scale-[1.03]"
+                                : isFilteredOut
+                                ? `opacity-20 border border-dashed ${theme.boxBorder} z-0`
+                                : `border-2 border-dashed ${theme.boxBorder} ${theme.boxBg} ${theme.boxHover} z-10`
                             }`}
                             style={{
                               left: `${c.bbox.rel_x1 * 100}%`,
@@ -743,8 +901,8 @@ function ResultPopup({
                             <div
                               className={`absolute ${isTopNear ? "top-full mt-1" : "bottom-full mb-1"} left-0 px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-sm transition-all pointer-events-none flex items-center gap-1 ${
                                 isActive
-                                  ? "bg-amber-600 text-white scale-110 z-40 ring-1 ring-amber-400"
-                                  : "bg-rose-600 text-white opacity-95"
+                                  ? "bg-amber-600 text-white scale-110 z-40 ring-2 ring-white shadow-md"
+                                  : `${theme.tagBg} opacity-95`
                               }`}
                             >
                               <span>#{i + 1}</span>
@@ -756,16 +914,56 @@ function ResultPopup({
                     </div>
                   )}
                 </div>
-                <div className="mt-2.5 flex flex-wrap items-center justify-between w-full max-w-lg px-2 gap-2 text-[11px] text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shrink-0" />
-                    <span className="font-medium text-slate-700">
-                      Đã khoanh vùng {corrections.filter(c => c.bbox).length}/{corrections.length} từ lỗi chính tả
-                    </span>
+                <div className="mt-3 w-full max-w-2xl px-1 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shrink-0" />
+                        Đã khoanh vùng {corrections.filter(c => c.bbox).length}/{corrections.length} từ lỗi chính tả
+                      </span>
+                    </div>
+                    <span className="italic text-slate-400">Ảnh gốc</span>
                   </div>
-                  <span className="italic text-slate-400">
-                    {processedImage ? "Ảnh đã qua bộ xử lý làm nét" : "Ảnh gốc chụp từ camera/thiết bị"}
-                  </span>
+
+                  {/* Thanh chú thích & lọc loại lỗi theo màu sắc */}
+                  {errorTypeStats.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200">
+                      <span className="text-[11px] text-slate-500 font-semibold mr-1">Phân loại lỗi:</span>
+                      {errorTypeStats.map(({ type, count, theme }) => {
+                        const isSelected = filterErrorType === type
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setFilterErrorType(isSelected ? null : type)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-all cursor-pointer ${
+                              theme.badge
+                            } ${
+                              isSelected
+                                ? "ring-2 ring-slate-800 ring-offset-1 font-bold scale-105 shadow-sm"
+                                : "hover:scale-105 opacity-90 hover:opacity-100"
+                            }`}
+                            title={`Nhấn để ${isSelected ? "bỏ lọc" : "lọc riêng"} lỗi ${theme.label}`}
+                          >
+                            <span className={`w-2 h-2 rounded-full ${theme.dot} inline-block shrink-0`} />
+                            <span>{theme.label}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-white/80 border border-black/5 shadow-2xs">
+                              {count}
+                            </span>
+                          </button>
+                        )
+                      })}
+                      {filterErrorType && (
+                        <button
+                          type="button"
+                          onClick={() => setFilterErrorType(null)}
+                          className="text-[10px] text-slate-500 hover:text-slate-800 underline ml-1 cursor-pointer font-medium"
+                        >
+                          Hiện tất cả
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -801,15 +999,20 @@ function ResultPopup({
             </div>
             <div className="overflow-y-auto flex-1 p-2.5 space-y-2">
               {corrections.length > 0 ? corrections.map((c, i) => {
-                const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
+                const theme = getErrorTheme(c.error_type)
                 const isActive = activeErrorIdx === i
+                const isFilteredOut = filterErrorType && filterErrorType !== c.error_type
                 return (
                   <div
                     key={i}
-                    className={`flex flex-col gap-1 p-2.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                    className={`flex flex-col gap-1 p-2.5 rounded-lg border border-l-4 transition-all duration-200 cursor-pointer ${
+                      theme.cardBorderLeft
+                    } ${
                       isActive
                         ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300 shadow-md scale-[1.02]"
-                        : "border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-border"
+                        : isFilteredOut
+                        ? "opacity-35 border-border/40 bg-muted/10"
+                        : `border-border/60 ${theme.cardBgLight} hover:bg-muted/40 hover:border-border hover:shadow-xs`
                     }`}
                     onMouseEnter={() => setActiveErrorIdx(i)}
                     onMouseLeave={() => setActiveErrorIdx(null)}
@@ -817,11 +1020,11 @@ function ResultPopup({
                     data-error-card={i}
                   >
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] text-muted-foreground font-mono bg-muted px-1 py-0.5 rounded">#{i + 1}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono bg-white/90 border border-slate-200 px-1 py-0.5 rounded shadow-2xs font-semibold">#{i + 1}</span>
                       <span className="text-destructive text-xs font-medium line-through bg-red-50 px-1 rounded">{c.error}</span>
                       <span className="text-muted-foreground text-xs font-bold">→</span>
                       <span className="text-green-700 text-xs font-semibold bg-green-50 px-1 rounded">{c.suggestion}</span>
-                      <Badge variant="outline" className={`text-[9px] px-1 py-0 h-4 border ${typeInfo.color}`}>{typeInfo.label}</Badge>
+                      <Badge variant="outline" className={`text-[9px] px-1.5 py-0.5 h-4 border font-medium ${theme.badge}`}>{theme.label}</Badge>
                       {c.is_dialect && <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border bg-amber-50 text-amber-700 border-amber-200">🗣</Badge>}
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">{c.reason}</p>
@@ -905,15 +1108,20 @@ function ResultPopup({
               {corrections.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {corrections.map((c, i) => {
-                    const typeInfo = ERROR_TYPE_LABELS[c.error_type] || { label: c.error_type, color: "bg-gray-100 text-gray-700 border-gray-200" }
+                    const theme = getErrorTheme(c.error_type)
                     const isActive = activeErrorIdx === i
+                    const isFilteredOut = filterErrorType && filterErrorType !== c.error_type
                     return (
                       <div
                         key={i}
-                        className={`flex flex-col gap-1 p-2.5 rounded-lg border text-sm transition-all duration-200 cursor-pointer ${
+                        className={`flex flex-col gap-1 p-2.5 rounded-lg border border-l-4 text-sm transition-all duration-200 cursor-pointer ${
+                          theme.cardBorderLeft
+                        } ${
                           isActive
                             ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300 shadow-md scale-[1.02]"
-                            : "border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-border"
+                            : isFilteredOut
+                            ? "opacity-35 border-border/40 bg-muted/10"
+                            : `border-border/60 ${theme.cardBgLight} hover:bg-muted/40 hover:border-border`
                         }`}
                         onMouseEnter={() => setActiveErrorIdx(i)}
                         onMouseLeave={() => setActiveErrorIdx(null)}
@@ -921,11 +1129,11 @@ function ResultPopup({
                         data-error-card={i}
                       >
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">#{i + 1}</span>
+                          <span className="text-xs text-muted-foreground font-mono bg-white/90 border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs font-semibold">#{i + 1}</span>
                           <span className="text-destructive font-medium line-through bg-red-50 px-1 rounded">{c.error}</span>
                           <span className="text-muted-foreground font-bold">→</span>
                           <span className="text-green-700 font-semibold bg-green-50 px-1 rounded">{c.suggestion}</span>
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 border ${typeInfo.color}`}>{typeInfo.label}</Badge>
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0.5 h-5 border font-medium ${theme.badge}`}>{theme.label}</Badge>
                           {c.is_dialect && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border bg-amber-50 text-amber-700 border-amber-200">🗣 Phương ngữ</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{c.reason}</p>
@@ -1445,7 +1653,8 @@ export default function GradingPage() {
     textToGrade: string,
     fixedText?: string,
     pipelineStartTime?: number,
-    ocrTimeMs = 0
+    ocrTimeMs = 0,
+    theLoai?: string
   ) => {
     const startTime = pipelineStartTime || Date.now()
     setProcessingStep("grade")
@@ -1463,6 +1672,7 @@ export default function GradingPage() {
           studentText: textToGrade,
           groundTruthText: gradingMode === "dictation" ? (groundTruthText || fixedText) : undefined,
           geminiFixedText: fixedText,
+          the_loai: theLoai,
           gradingMode,
           penalty_per_error: scoreConfig.penalty,
           ocrTimeMs,
@@ -1529,6 +1739,7 @@ export default function GradingPage() {
     try {
       let textToGrade = studentText
       let geminiFixedText: string | undefined = undefined
+      let theLoai: string | undefined = undefined
       let ocrDurationMs = 0
 
       // Bước 1 (nếu nhập ảnh): Kiểm tra cache trước, nếu chưa có mới gọi OCR
@@ -1539,6 +1750,7 @@ export default function GradingPage() {
           // ✅ Tái sử dụng kết quả OCR đã có — Tiết kiệm quota và thời gian!
           textToGrade = ocrCache.originalText
           geminiFixedText = ocrCache.geminiFixedText
+          theLoai = ocrCache.theLoai
           ocrDurationMs = ocrCache.ocrTimeMs || 0
           setOcrText(textToGrade)
         } else {
@@ -1559,12 +1771,14 @@ export default function GradingPage() {
           }
           textToGrade = ocrData.text || ""
           geminiFixedText = ocrData.gemini_fixed_text || undefined
+          theLoai = ocrData.the_loai || undefined
           ocrDurationMs = ocrData.processingTimeMs || (Date.now() - ocrStepStart)
 
           // ✅ Lưu vào Cache và đồng bộ sang studentText để chuyển tab không bị mất
           const newCache: OcrCache = {
             originalText: textToGrade,
             geminiFixedText,
+            theLoai,
             imageKey: currentImgKey,
             timestamp: Date.now(),
             ocrTimeMs: ocrDurationMs,
@@ -1597,7 +1811,7 @@ export default function GradingPage() {
       }
 
       // Bước 2: Chấm điểm — Truyền pipelineStartTime và ocrDurationMs để đo thời gian toàn trình (End-to-End)
-      await executeGrading(textToGrade, geminiFixedText, pipelineStartTime, ocrDurationMs)
+      await executeGrading(textToGrade, geminiFixedText, pipelineStartTime, ocrDurationMs, theLoai)
     } catch {
       setError("Không thể hoàn tất quy trình chấm điểm.")
       setIsProcessing(false)
@@ -1612,7 +1826,8 @@ export default function GradingPage() {
         ocrCache.originalText,
         ocrCache.geminiFixedText,
         Date.now() - (ocrCache.ocrTimeMs || 0),
-        ocrCache.ocrTimeMs || 0
+        ocrCache.ocrTimeMs || 0,
+        ocrCache.theLoai
       )
     } else if (studentText.trim()) {
       executeGrading(studentText, undefined, Date.now(), 0)

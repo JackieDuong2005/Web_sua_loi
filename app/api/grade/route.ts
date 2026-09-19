@@ -672,7 +672,7 @@ async function detectYoloBoxes(imageBase64?: string): Promise<any | null> {
     const res = await fetch(`${serviceUrl}/detect-words`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.25 }),
+      body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.50, iou_threshold: 0.45 }),
       signal: AbortSignal.timeout(15000),
     })
     if (!res.ok) {
@@ -1001,6 +1001,7 @@ export async function POST(req: NextRequest) {
       studentText,
       groundTruthText,
       geminiFixedText,
+      the_loai,         // "tho" | "van_xuoi" — nhận từ OCR pipeline
       imageBase64,
       hinh_thuc,
       noi_dung,
@@ -1037,7 +1038,11 @@ export async function POST(req: NextRequest) {
     //   → Chạy Sequence Alignment Levenshtein đối soát trực tiếp 100% không ảo giác
     // ================================================================
     const rawRef = (groundTruthText || geminiFixedText || "").trim()
-    const referenceText = ensureVietnameseCapitalization(rawRef)
+    // Chỉ ép viết hoa đầu dòng khi là thơ (hoặc không biết thể loại).
+    // Văn xuôi: KHÔNG ép viết hoa đầu dòng vật lý vì dòng nối tiếp câu — tránh báo lỗi ảo.
+    const referenceText = (the_loai === "van_xuoi")
+      ? rawRef
+      : ensureVietnameseCapitalization(rawRef)
     if (referenceText) {
       console.log(`[Engine] 🎯 [Mode: ${mode}] So khớp bài mẫu Ground Truth trực tiếp`)
       const result = gradeWithLevenshtein(studentText, referenceText, scoreConfig, yoloData)

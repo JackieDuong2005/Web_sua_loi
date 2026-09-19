@@ -1,0 +1,383 @@
+import { NextRequest, NextResponse } from "next/server"
+import { GoogleGenAI } from "@google/genai"
+import { guardAiRoute } from "@/lib/api-guard"
+import { ensureVietnameseCapitalization } from "@/lib/utils"
+
+// ============================================================
+// BFF API Gateway cho Android Native App
+// ============================================================
+// Endpoint chuyên dụng nhận ảnh từ thiết bị di động, tự động chạy
+// trọn gói: Gemini OCR → YOLOv8 Bounding Box → ViT5/Levenshtein → Scoring
+// Trả về JSON tương thích 100% với GradeApiResponse của Android Client.
+//
+// Tham khảo: TECHNICAL_SPECIFICATION.md §5.1
+
+export const maxDuration = 300 // Vercel only
+
+const GEMINI_MODEL = "gemini-3.1-flash-lite"
+const VIT5_SERVICE_URL = process.env.VIT5_SERVICE_URL || "http://localhost:8000"
+
+// ============================================================
+// GEMINI API CLIENT
+// ============================================================
+function getApiKey(): string {
+  const key = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(",")[0] || ""
+  return key.trim()
+}
+
+// ============================================================
+// OCR PROMPT — Tái sử dụng từ app/api/ocr/route.ts
+// ============================================================
+const OCR_PROMPT = `Bạn là chuyên gia OCR và giám khảo chấm chính tả Tiếng Việt Tiểu học (Bộ GD&ĐT).
+Nhiệm vụ: Phân tích ảnh bài viết tay của học sinh, nhận diện chính xác từng chữ và chuẩn hóa chính tả tiếng Việt. Trả về DUY NHẤT định dạng JSON.
+
+=== BƯỚC 1: XÁC ĐỊNH THỂ LOẠI (the_loai: "tho" | "van_xuoi") ===
+- "tho": Bài thơ (4 chữ, 5 chữ, 7 chữ, lục bát...), các dòng ngắn có vần điệu.
+- "van_xuoi": Đoạn văn/bài văn, câu dài viết liên tục tràn hết dòng kẻ vở.
+
+=== BƯỚC 2: NHẬN DIỆN VĂN BẢN GỐC (original_text) ===
+- Ghi lại CHÍNH XÁC 100% từng nét chữ học sinh viết tay — GIỮ NGUYÊN mọi lỗi sai.
+- TUYỆT ĐỐI KHÔNG tự ý sửa lỗi trong "original_text".
+- THƠ: Mỗi câu thơ trên một dòng riêng biệt.
+- VĂN XUÔI: Giữ theo đoạn văn, chỉ xuống dòng khi sang đoạn mới.
+
+=== BƯỚC 3: CHUẨN HÓA CHÍNH TẢ (fixed_text) ===
+- Viết hoa đầu câu, đầu dòng thơ, tên riêng.
+- Sửa lỗi phụ âm đầu (s/x, tr/ch, d/gi/r, l/n), vần, dấu thanh theo chuẩn từ điển.
+- Giữ nguyên nội dung — chỉ sửa chính tả và viết hoa.
+
+=== BƯỚC 4: RÀNG BUỘC ĐỐI SOÁT 1-1 ===
+- original_text và fixed_text PHẢI CÓ CÙNG SỐ LƯỢNG TỪ.
+- fixed_text chỉ THAY THẾ từ sai — KHÔNG thêm/xóa từ.
+- CÙNG CẤU TRÚC XUỐNG DÒNG (số dòng bằng nhau 100%).
+
+=== ĐỊNH DẠNG OUTPUT (JSON DUY NHẤT) ===
+{
+  "the_loai": "tho hoặc van_xuoi",
+  "original_text": "văn bản gốc giữ nguyên lỗi",
+  "fixed_text": "văn bản đã sửa 100% chính tả"
+}`
+
+// ============================================================
+// STEP 1: GEMINI VISION OCR
+// ============================================================
+async function runGeminiOCR(
+  apiKey: string,
+  imageBase64: string,
+  mimeType: string
+): Promise<{ original_text: string; fixed_text: string; the_loai: string; tokenCount: number }> {
+  const client = new GoogleGenAI({ apiKey })
+
+  const response = await client.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: [
+      { inlineData: { mimeType, data: imageBase64 } },
+      OCR_PROMPT,
+    ],
+    config: {
+      responseMimeType: "application/json",
+      temperature: 0.05,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+    },
+  })
+
+  const text = response.text ?? ""
+  const tokenCount = response.usageMetadata?.totalTokenCount || 0
+
+  let original_text = ""
+  let fixed_text = ""
+  let the_loai = ""
+
+  try {
+    const cleaned = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim()
+    const parsed = JSON.parse(cleaned)
+    original_text = (parsed.original_text || "").trim()
+    fixed_text = (parsed.fixed_text || "").trim()
+    the_loai = (parsed.the_loai || "").trim().toLowerCase()
+  } catch {
+    original_text = text.trim()
+    fixed_text = text.trim()
+  }
+
+  if (!original_text) {
+    throw new Error("Không nhận diện được nội dung chữ viết tay từ ảnh")
+  }
+
+  // Chuẩn hóa viết hoa theo thể loại
+  if (the_loai === "tho") {
+    fixed_text = ensureVietnameseCapitalization(fixed_text)
+  }
+
+  console.log(`[Mobile OCR] ✓ ${the_loai || "auto"}: ${tokenCount} tokens | ${original_text.length} chars`)
+  return { original_text, fixed_text, the_loai, tokenCount }
+}
+
+// ============================================================
+// STEP 2: YOLO BOUNDING BOX DETECTION (song song với OCR)
+// ============================================================
+async function detectYoloBoxes(imageBase64?: string): Promise<any | null> {
+  if (!imageBase64 || typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {
+    return null
+  }
+  try {
+    const rawB64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64
+    const serviceUrl = (process.env.VIT5_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1")
+    console.log(`[Mobile YOLO] Calling ${serviceUrl}/detect-words...`)
+    const res = await fetch(`${serviceUrl}/detect-words`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.50, iou_threshold: 0.45 }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) {
+      console.warn(`[Mobile YOLO] /detect-words returned status ${res.status}`)
+      return null
+    }
+    const data = await res.json()
+    console.log(`[Mobile YOLO] ✓ Phát hiện ${data.total_words} từ trên ${data.lines?.length || 0} dòng`)
+    return data
+  } catch (err: any) {
+    console.error(`[Mobile YOLO] Không gọi được:`, err?.message || err)
+    return null
+  }
+}
+
+// ============================================================
+// STEP 3: GRADING PIPELINE (gọi nội bộ /api/grade)
+// ============================================================
+async function callGradeEndpoint(
+  req: NextRequest,
+  studentText: string,
+  geminiFixedText: string,
+  the_loai: string,
+  imageBase64: string,
+  ocrTimeMs: number,
+  gradingMode: string,
+  scoreConfig: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number },
+): Promise<any> {
+  // Xây dựng URL tuyệt đối tới /api/grade nội bộ
+  const baseUrl = req.nextUrl.origin
+  const gradeUrl = `${baseUrl}/api/grade`
+
+  const body = {
+    studentText,
+    geminiFixedText,
+    the_loai,
+    imageBase64,
+    hinh_thuc: scoreConfig.hinh_thuc,
+    noi_dung: scoreConfig.noi_dung,
+    penalty_per_error: scoreConfig.penalty_per_error,
+    gradingMode,
+    source: "ocr",
+    ocrTimeMs,
+  }
+
+  const res = await fetch(gradeUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(120000),
+  })
+
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Grade API lỗi ${res.status}: ${errText}`)
+  }
+
+  return res.json()
+}
+
+// ============================================================
+// STEP 4: TRANSFORM RESPONSE CHO ANDROID
+// ============================================================
+function transformForAndroid(
+  gradeResult: any,
+  studentName: string,
+  className: string,
+  processingTimeMs: number,
+): any {
+  // Ánh xạ score_breakdown sang criteria format của Android
+  const sb = gradeResult.score_breakdown || {}
+  const chinhTa = sb.chinh_ta || {}
+  const hinhThuc = sb.hinh_thuc || {}
+  const noiDung = sb.noi_dung || {}
+  const sangTao = sb.sang_tao || {}
+
+  // Tính tổng điểm từ breakdown
+  const spellingScore = chinhTa.raw ?? 0
+  const formatScore = hinhThuc.raw ?? 0
+  const contentScore = noiDung.raw ?? 0
+  const creativityScore = sangTao.raw ?? 0
+  const totalScore = parseFloat(gradeResult.score?.split("/")[0] || "0") ||
+    Math.min(10, spellingScore + formatScore + contentScore + creativityScore)
+
+  // Chuyển đổi corrections → errors format cho Android
+  const errors = (gradeResult.corrections || []).map((c: any, idx: number) => {
+    const bbox = c.bbox || {}
+    return {
+      id: `err_${idx}`,
+      originalWord: c.error || "",
+      correctedWord: c.suggestion || "",
+      errorType: c.error_type || "bo_sot_them",
+      explanation: c.reason || "",
+      penalty: 0.5,
+      lineNumber: 1,
+      // Tọa độ tuyệt đối (pixels) — dùng cho canvas tương tác
+      x1: bbox.x1 ?? 0,
+      y1: bbox.y1 ?? 0,
+      x2: bbox.x2 ?? 0,
+      y2: bbox.y2 ?? 0,
+      // Tọa độ tương đối (0.0–1.0) — dùng cho Bounding Box trên ảnh thật
+      rel_x1: bbox.rel_x1 ?? 0,
+      rel_y1: bbox.rel_y1 ?? 0,
+      rel_w: bbox.rel_w ?? 0,
+      rel_h: bbox.rel_h ?? 0,
+    }
+  })
+
+  return {
+    status: "success",
+    essayTitle: gradeResult.essayTitle || `Bài chính tả — ${studentName}`,
+    studentName,
+    className,
+    criteria: {
+      spellingScore: Math.round(spellingScore * 10) / 10,
+      formatScore: Math.round(formatScore * 10) / 10,
+      contentScore: Math.round(contentScore * 10) / 10,
+      creativityScore: Math.round(creativityScore * 10) / 10,
+      totalScore: Math.round(totalScore * 10) / 10,
+    },
+    pedagogicalComment: gradeResult.pedagogical_comment || gradeResult.feedback || "",
+    pedagogicalComments: gradeResult.pedagogical_comments || [
+      gradeResult.pedagogical_comment || gradeResult.feedback || "",
+    ],
+    extractedText: gradeResult.original_text || "",
+    correctedFullText: gradeResult.fixed_text || "",
+    errors,
+    processingTimeMs,
+    serverSource: `ViHand Grade Server (Mobile BFF • ${gradeResult.engine || "hybrid"})`,
+  }
+}
+
+// ============================================================
+// MAIN HANDLER — POST /api/mobile/grade
+// ============================================================
+export async function POST(req: NextRequest) {
+  // Rate limiting & DoS guard
+  const blocked = guardAiRoute(req, 20)
+  if (blocked) return blocked
+
+  const startTime = Date.now()
+
+  try {
+    const body = await req.json()
+    const {
+      imageBase64,
+      studentGrade = 3,
+      gradingMode = "dictation",
+      studentName = "Học sinh",
+      className = `Lớp ${studentGrade}A`,
+      the_loai: requestedTheLoai,
+      hinh_thuc,
+      noi_dung,
+      penalty_per_error,
+    } = body
+
+    // Validate: bắt buộc có ảnh
+    if (!imageBase64 || typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {
+      return NextResponse.json(
+        { status: "error", error: "Cần cung cấp ảnh (imageBase64)" },
+        { status: 400 }
+      )
+    }
+
+    const apiKey = getApiKey()
+    if (!apiKey) {
+      return NextResponse.json(
+        { status: "error", error: "Chưa cấu hình GEMINI_API_KEY trên máy chủ" },
+        { status: 500 }
+      )
+    }
+
+    // Tách base64 data (bỏ prefix data:image/...)
+    const base64Data = imageBase64.includes(",")
+      ? imageBase64.split(",")[1]
+      : imageBase64
+
+    const mimeType = imageBase64.startsWith("data:image/png") ? "image/png" : "image/jpeg"
+
+    console.log(`[Mobile BFF] ====== BẮT ĐẦU CHẤM BÀI DI ĐỘNG ======`)
+    console.log(`[Mobile BFF] Học sinh: ${studentName} | Lớp: ${className} | Mode: ${gradingMode}`)
+    console.log(`[Mobile BFF] Ảnh: ${base64Data.length} chars base64`)
+
+    // ================================================================
+    // Bước 1+2: Chạy SONG SONG Gemini OCR + YOLOv8
+    // ================================================================
+    console.log(`[Mobile BFF] 1/4. Gemini OCR + YOLOv8 (đồng thời)...`)
+    const [ocrResult, yoloData] = await Promise.all([
+      runGeminiOCR(apiKey, base64Data, mimeType),
+      detectYoloBoxes(base64Data),
+    ])
+    const ocrTimeMs = Date.now() - startTime
+
+    console.log(`[Mobile BFF] 2/4. OCR hoàn tất trong ${ocrTimeMs}ms`)
+    console.log(`[Mobile BFF]   original_text: "${ocrResult.original_text.substring(0, 80)}..."`)
+    console.log(`[Mobile BFF]   the_loai: ${ocrResult.the_loai}`)
+    console.log(`[Mobile BFF]   YOLO: ${yoloData ? `${yoloData.total_words} từ` : "không khả dụng"}`)
+
+    // ================================================================
+    // Bước 3: Gọi /api/grade nội bộ để chấm điểm
+    // ================================================================
+    console.log(`[Mobile BFF] 3/4. Chấm điểm (Levenshtein/ViT5)...`)
+    const the_loai = requestedTheLoai || ocrResult.the_loai
+    const gradeResult = await callGradeEndpoint(
+      req,
+      ocrResult.original_text,
+      ocrResult.fixed_text,
+      the_loai,
+      base64Data,
+      ocrTimeMs,
+      gradingMode,
+      {
+        hinh_thuc: typeof hinh_thuc === "number" ? hinh_thuc : undefined,
+        noi_dung: typeof noi_dung === "number" ? noi_dung : undefined,
+        penalty_per_error: typeof penalty_per_error === "number" ? penalty_per_error : undefined,
+      },
+    )
+
+    // ================================================================
+    // Bước 4: Chuyển đổi sang format Android
+    // ================================================================
+    const totalProcessingMs = Date.now() - startTime
+    console.log(`[Mobile BFF] 4/4. Hoàn tất trong ${totalProcessingMs}ms`)
+
+    const androidResponse = transformForAndroid(
+      gradeResult,
+      studentName,
+      className,
+      totalProcessingMs,
+    )
+
+    console.log(`[Mobile BFF] ====== KẾT QUẢ: ${androidResponse.criteria.totalScore}/10 (${gradeResult.overall_rating}) ======`)
+
+    return NextResponse.json(androidResponse)
+
+  } catch (err: any) {
+    const elapsed = Date.now() - startTime
+    console.error(`[Mobile BFF] ❌ Lỗi sau ${elapsed}ms:`, err?.message || err)
+    return NextResponse.json(
+      {
+        status: "error",
+        error: err?.message || "Lỗi không xác định khi chấm bài di động",
+        processingTimeMs: elapsed,
+      },
+      { status: err?.message?.includes("OCR") ? 503 : 500 }
+    )
+  }
+}

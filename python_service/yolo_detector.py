@@ -1,14 +1,27 @@
 """
-yolo_detector.py — Universal Word Detection & Dynamic Layout Analysis for Handwriting.
-Sử dụng YOLOv8 phát hiện tọa độ từ viết tay và thuật toán Adaptive Line-Clustering
-sắp xếp theo thứ tự đọc tự nhiên cho mọi loại văn bản tiếng Việt.
+yolo_detector.py — Universal Word Detection & Vertical Overlap Line Analysis for Handwriting.
+
+Thuật toán gom dòng: Vertical Overlap (thay thế Adaptive Line Sweeping cũ).
+
+Lý do thay đổi:
+  Thuật toán cũ dùng tâm y (y_mid) để quyết định từ nào thuộc dòng nào.
+  Chữ viết tay tiếng Việt có nhiều ký tự vươn cao (h, b, l, dấu hỏi/ngã) hoặc
+  kéo xuống (g, y, p) làm tâm y bị lệch mạnh → từ bị xếp nhầm dòng → toàn bộ
+  chỉ số từ phía sau bị trượt → khung bounding box khoanh sai vị trí trên giao diện.
+
+Thuật toán Vertical Overlap:
+  Với mỗi box mới, tính độ giao thoa trục Y với đường bao TRUNG BÌNH của từng dòng:
+    line_y1_avg = mean(y1 của các box trong dòng)
+    line_y2_avg = mean(y2 của các box trong dòng)
+    inter_h     = max(0, min(by2, line_y2_avg) - max(by1, line_y1_avg))
+    overlap_ratio = inter_h / min(box_h, line_h)
+  Nếu overlap_ratio >= overlap_threshold → gán vào dòng có overlap cao nhất.
+  Nếu không dòng nào đạt ngưỡng → tạo dòng mới.
 """
 
 import os
-import io
 import logging
 from typing import List, Dict, Any, Optional
-import numpy as np
 from PIL import Image
 
 logger = logging.getLogger("yolo_detector")
@@ -56,112 +69,119 @@ def load_yolo_model(weights_path: Optional[str] = None):
         return None
 
 
-def sort_reading_order_dynamic(
-    boxes: List[Dict[str, Any]], img_width: int, img_height: int
+def sort_reading_order(
+    boxes: List[Dict[str, Any]],
+    img_width: int,
+    img_height: int,
+    overlap_threshold: float = 0.4,
 ) -> Dict[str, Any]:
     """
-    Thuật toán Phân tích Bố cục Không gian Động (Dynamic Layout Analysis):
-    - Tự động tính chiều cao chữ trung vị (Median Height).
-    - Gom cụm thích ứng các từ cùng dòng (Adaptive Line-Clustering).
-    - Sắp xếp dòng từ trên xuống dưới, trong từng dòng từ trái sang phải.
-    - Chuẩn hóa tọa độ theo tỉ lệ tương đối [0..1] để hiển thị responsive trên mọi màn hình.
+    Sắp xếp YOLO boxes theo thứ tự đọc tự nhiên bằng thuật toán Vertical Overlap.
+
+    Thuật toán:
+      1. Sort sơ bộ các box theo y1 tăng dần.
+      2. Với mỗi box, tính độ giao thoa trục Y với đường bao trung bình
+         (mean y1, mean y2) của từng dòng hiện có:
+           inter_h      = max(0, min(by2, line_y2_avg) - max(by1, line_y1_avg))
+           overlap_ratio = inter_h / min(box_h, line_h)
+      3. Nếu overlap_ratio >= overlap_threshold → gán vào dòng có overlap cao nhất.
+         Nếu không dòng nào đạt ngưỡng → tạo dòng mới.
+      4. Sort các dòng từ trên xuống dưới theo avg(y1).
+      5. Trong mỗi dòng, sort từ từ trái sang phải theo x1.
+      6. Chuẩn hóa tọa độ tương đối [0..1] để render responsive trên mọi màn hình.
+
+    Tham số:
+      boxes             : list dict {"x1", "y1", "x2", "y2", "conf"}  (pixel tuyệt đối)
+      img_width         : chiều rộng ảnh (pixel)
+      img_height        : chiều cao ảnh (pixel)
+      overlap_threshold : ngưỡng giao thoa tối thiểu để gán vào dòng (mặc định 0.4)
+
+    Trả về:
+      dict chuẩn {"total_words", "total_lines", "image_dimensions", "lines", "flat_boxes", "boxes"}
     """
     if not boxes:
         return {
             "total_words": 0,
+            "total_lines": 0,
             "image_dimensions": {"width": img_width, "height": img_height},
             "lines": [],
             "flat_boxes": [],
+            "boxes": [],
         }
 
-    # Tính toán thông số hình học từng hộp
-    enriched_boxes = []
-    for b in boxes:
-        x1, y1, x2, y2 = b["x1"], b["y1"], b["x2"], b["y2"]
-        w = max(1.0, x2 - x1)
-        h = max(1.0, y2 - y1)
-        y_mid = (y1 + y2) / 2.0
-        x_mid = (x1 + x2) / 2.0
-        enriched_boxes.append(
-            {
-                "x1": x1,
-                "y1": y1,
-                "x2": x2,
-                "y2": y2,
-                "w": w,
-                "h": h,
-                "x_mid": x_mid,
-                "y_mid": y_mid,
-                "conf": b.get("conf", 1.0),
-            }
-        )
+    # ─── Bước 1: Sort sơ bộ theo y1 ─────────────────────────────────────────
+    raw = sorted(boxes, key=lambda b: b["y1"])
 
-    # 1. Tính chiều cao trung vị (Median Height) để loại bỏ ngoại lai nét kéo dài (g, y, p, b, h)
-    heights = [b["h"] for b in enriched_boxes]
-    median_h = float(np.median(heights)) if heights else 30.0
-    line_threshold = max(15.0, 0.55 * median_h)
+    # ─── Bước 2-3: Gom dòng bằng Vertical Overlap ───────────────────────────
+    lines_raw: List[List[Dict]] = []  # mỗi phần tử là list box cùng dòng
 
-    # 2. Sắp xếp sơ bộ theo trục dọc (y_mid)
-    enriched_boxes.sort(key=lambda b: b["y_mid"])
+    for b in raw:
+        bx1, by1, bx2, by2 = b["x1"], b["y1"], b["x2"], b["y2"]
+        box_h = max(1.0, by2 - by1)
 
-    # 3. Phân cụm dòng thích ứng (Adaptive Line Sweeping)
-    lines_raw: List[List[Dict[str, Any]]] = []
-    current_line: List[Dict[str, Any]] = [enriched_boxes[0]]
-    current_line_y = enriched_boxes[0]["y_mid"]
+        best_line_idx = -1
+        best_overlap = 0.0
 
-    for b in enriched_boxes[1:]:
-        if abs(b["y_mid"] - current_line_y) <= line_threshold:
-            current_line.append(b)
-            # Cập nhật y_mid trung bình của dòng đang xét
-            current_line_y = np.mean([item["y_mid"] for item in current_line])
+        for i, line in enumerate(lines_raw):
+            # Đường bao trung bình cộng (không dùng min/max để tránh trôi biên)
+            line_y1_avg = sum(lb["y1"] for lb in line) / len(line)
+            line_y2_avg = sum(lb["y2"] for lb in line) / len(line)
+            line_h = max(1.0, line_y2_avg - line_y1_avg)
+
+            # Độ giao thoa theo trục Y
+            inter_h = max(0.0, min(by2, line_y2_avg) - max(by1, line_y1_avg))
+            overlap_ratio = inter_h / min(box_h, line_h)
+
+            if overlap_ratio > best_overlap:
+                best_overlap = overlap_ratio
+                best_line_idx = i
+
+        if best_overlap >= overlap_threshold and best_line_idx >= 0:
+            lines_raw[best_line_idx].append(b)
         else:
-            lines_raw.append(current_line)
-            current_line = [b]
-            current_line_y = b["y_mid"]
-    if current_line:
-        lines_raw.append(current_line)
+            lines_raw.append([b])
 
-    # 4. Sắp xếp các dòng từ trên xuống dưới theo y trung bình
-    lines_raw.sort(key=lambda line: np.mean([b["y_mid"] for b in line]))
+    # ─── Bước 4: Sort dòng từ trên xuống dưới theo avg(y1) ──────────────────
+    lines_raw.sort(key=lambda line: sum(lb["y1"] for lb in line) / len(line))
 
-    # 5. Trong mỗi dòng, sắp xếp các từ từ trái sang phải theo x1
+    # ─── Bước 5-6: Sort trong dòng + chuẩn hóa tọa độ ──────────────────────
     structured_lines = []
-    flat_boxes = []
+    flat_boxes: List[Dict] = []
     box_id_counter = 0
 
     for line_idx, line in enumerate(lines_raw):
-        # Sắp xếp từ trái qua phải
+        # Sort từ trái sang phải theo x1
         line_sorted = sorted(line, key=lambda b: b["x1"])
         line_boxes = []
 
         for word_idx_in_line, b in enumerate(line_sorted):
             x1, y1, x2, y2 = b["x1"], b["y1"], b["x2"], b["y2"]
 
-            # Chuẩn hóa tỉ lệ tương đối [0..1]
-            rel_x1 = max(0.0, min(1.0, x1 / img_width)) if img_width > 0 else 0.0
+            # Chuẩn hóa tỉ lệ tương đối [0..1] — an toàn với ảnh kích thước bất kỳ
+            rel_x1 = max(0.0, min(1.0, x1 / img_width))  if img_width  > 0 else 0.0
             rel_y1 = max(0.0, min(1.0, y1 / img_height)) if img_height > 0 else 0.0
-            rel_x2 = max(0.0, min(1.0, x2 / img_width)) if img_width > 0 else 1.0
+            rel_x2 = max(0.0, min(1.0, x2 / img_width))  if img_width  > 0 else 1.0
             rel_y2 = max(0.0, min(1.0, y2 / img_height)) if img_height > 0 else 1.0
-            rel_w = max(0.0, min(1.0, (x2 - x1) / img_width)) if img_width > 0 else 0.0
-            rel_h = max(0.0, min(1.0, (y2 - y1) / img_height)) if img_height > 0 else 0.0
+            rel_w  = max(0.0, min(1.0, (x2 - x1) / img_width))  if img_width  > 0 else 0.0
+            rel_h  = max(0.0, min(1.0, (y2 - y1) / img_height)) if img_height > 0 else 0.0
 
             box_data = {
-                "box_id": box_id_counter,
-                "line_index": line_idx,
+                "box_id":            box_id_counter,
+                "line_index":        line_idx,
                 "word_index_in_line": word_idx_in_line,
-                "x1": round(x1, 1),
-                "y1": round(y1, 1),
-                "x2": round(x2, 1),
-                "y2": round(y2, 1),
-                "width": round(x2 - x1, 1),
+                "x1":    round(x1, 1),
+                "y1":    round(y1, 1),
+                "x2":    round(x2, 1),
+                "y2":    round(y2, 1),
+                "width":  round(x2 - x1, 1),
                 "height": round(y2 - y1, 1),
-                "conf": round(float(b["conf"]), 4),
+                "conf":   round(float(b.get("conf", 1.0)), 4),
                 "rel_x1": round(rel_x1, 5),
                 "rel_y1": round(rel_y1, 5),
                 "rel_x2": round(rel_x2, 5),
                 "rel_y2": round(rel_y2, 5),
-                "rel_w": round(rel_w, 5),
-                "rel_h": round(rel_h, 5),
+                "rel_w":  round(rel_w, 5),
+                "rel_h":  round(rel_h, 5),
             }
 
             line_boxes.append(box_data)
@@ -172,42 +192,54 @@ def sort_reading_order_dynamic(
             {
                 "line_index": line_idx,
                 "word_count": len(line_boxes),
-                "y_avg": round(float(np.mean([b["y1"] for b in line_boxes])), 1),
+                "y_avg": round(
+                    sum(b["y1"] for b in line_boxes) / max(1, len(line_boxes)), 1
+                ),
                 "boxes": line_boxes,
-                "words": line_boxes,
+                "words": line_boxes,  # alias để tương thích với code cũ
             }
         )
 
     return {
-        "total_words": len(flat_boxes),
-        "total_lines": len(structured_lines),
-        "image_dimensions": {"width": img_width, "height": img_height},
-        "lines": structured_lines,
-        "flat_boxes": flat_boxes,
-        "boxes": flat_boxes,
+        "total_words":       len(flat_boxes),
+        "total_lines":       len(structured_lines),
+        "image_dimensions":  {"width": img_width, "height": img_height},
+        "lines":             structured_lines,
+        "flat_boxes":        flat_boxes,
+        "boxes":             flat_boxes,  # alias để tương thích với code cũ
     }
 
 
 def detect_words_from_image(
-    image: Image.Image, conf_threshold: float = 0.25
+    image: Image.Image,
+    conf_threshold: float = 0.50,
+    iou_threshold: float = 0.45,
 ) -> Dict[str, Any]:
     """
-    Chạy YOLOv8 detect trên ảnh PIL và tự động sắp xếp theo thứ tự đọc tự nhiên.
+    Chạy YOLOv8 detect trên ảnh PIL và sắp xếp theo thứ tự đọc tự nhiên
+    bằng thuật toán Vertical Overlap.
+
+    Tham số:
+      image          : ảnh PIL (RGB)
+      conf_threshold : ngưỡng tin cậy YOLO (mặc định 0.50 — lọc sạch noise)
+      iou_threshold  : ngưỡng IoU cho NMS (mặc định 0.45)
     """
     model = load_yolo_model()
     if model is None:
         return {
             "error": "Model YOLOv8 chưa sẵn sàng hoặc không tìm thấy file trọng số",
             "total_words": 0,
+            "total_lines": 0,
             "lines": [],
             "flat_boxes": [],
+            "boxes": [],
         }
 
     width, height = image.size
 
-    # Inference YOLOv8
-    results = model(image, conf=conf_threshold, verbose=False)
-    raw_boxes = []
+    # Inference YOLOv8 với conf và iou được chỉ định rõ
+    results = model(image, conf=conf_threshold, iou=iou_threshold, verbose=False)
+    raw_boxes: List[Dict] = []
 
     if results and len(results) > 0:
         det_boxes = results[0].boxes
@@ -226,4 +258,9 @@ def detect_words_from_image(
                     }
                 )
 
-    return sort_reading_order_dynamic(raw_boxes, width, height)
+    logger.info(
+        f"[YOLO] Inference xong: {len(raw_boxes)} box thô "
+        f"(conf>={conf_threshold}, iou={iou_threshold})"
+    )
+
+    return sort_reading_order(raw_boxes, width, height)
