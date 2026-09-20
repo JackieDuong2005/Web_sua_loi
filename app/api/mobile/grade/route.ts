@@ -188,9 +188,9 @@ async function callGradeEndpoint(
   gradingMode: string,
   scoreConfig: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number },
 ): Promise<any> {
-  // Xây dựng URL tuyệt đối tới /api/grade nội bộ
-  const baseUrl = req.nextUrl.origin
-  const gradeUrl = `${baseUrl}/api/grade`
+  // Xây dựng URL tới /api/grade nội bộ (dùng 127.0.0.1 để tránh vòng lặp Cloudflare Tunnel)
+  const port = process.env.PORT || 3000
+  const localUrl = `http://127.0.0.1:${port}/api/grade`
 
   const body = {
     studentText,
@@ -205,12 +205,24 @@ async function callGradeEndpoint(
     ocrTimeMs,
   }
 
-  const res = await fetch(gradeUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(120000),
-  })
+  let res: Response
+  try {
+    res = await fetch(localUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120000),
+    })
+  } catch (localErr: any) {
+    console.warn(`[Mobile BFF] Gọi nội bộ 127.0.0.1 thất bại (${localErr?.message}), thử fallback origin...`)
+    const fallbackUrl = `${req.nextUrl.origin}/api/grade`
+    res = await fetch(fallbackUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120000),
+    })
+  }
 
   if (!res.ok) {
     const errText = await res.text()

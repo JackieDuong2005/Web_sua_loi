@@ -911,7 +911,7 @@ def build_fallback_pedagogical_comment(creativity_info: dict, errors: list[dict]
 _qwen_model = None
 _qwen_tokenizer = None
 _qwen_lock = threading.Lock()
-ENABLE_QWEN_SLM = os.getenv("ENABLE_QWEN_SLM", "1").lower() in ("1", "true", "yes")
+ENABLE_QWEN_SLM = os.getenv("ENABLE_QWEN_SLM", "0").lower() in ("1", "true", "yes")
 QWEN_MODEL_ID = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
 
 
