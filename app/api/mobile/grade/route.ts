@@ -2,6 +2,33 @@ import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
 import { ensureVietnameseCapitalization } from "@/lib/utils"
+import { prisma } from "@/lib/prisma"
+import { promises as fs } from "fs"
+import path from "path"
+
+// ============================================================
+// LƯU TRỮ ẢNH VẬT LÝ RA ĐĨA TRÊN SERVER
+// ============================================================
+async function saveImageToDisk(imageBase64: string): Promise<string> {
+  if (!imageBase64 || typeof imageBase64 !== "string") return ""
+  try {
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "")
+    if (!base64Data || base64Data.length < 50) return ""
+
+    const buffer = Buffer.from(base64Data, "base64")
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "grades")
+    await fs.mkdir(uploadsDir, { recursive: true })
+
+    const filename = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.jpg`
+    const filepath = path.join(uploadsDir, filename)
+    await fs.writeFile(filepath, buffer)
+
+    return `/uploads/grades/${filename}`
+  } catch (err) {
+    console.error("[Mobile BFF] Lỗi khi lưu ảnh ra đĩa:", err)
+    return ""
+  }
+}
 
 // ============================================================
 // BFF API Gateway cho Android Native App
@@ -364,9 +391,68 @@ export async function POST(req: NextRequest) {
       totalProcessingMs,
     )
 
-    console.log(`[Mobile BFF] ====== KẾT QUẢ: ${androidResponse.criteria.totalScore}/10 (${gradeResult.overall_rating}) ======`)
+    // ================================================================
+    // Bước 5: Tự động lưu vào Server Database (Prisma vihand.db)
+    // ================================================================
+    let imagePath = ""
+    try {
+      imagePath = await saveImageToDisk(base64Data)
+    } catch (saveErr) {
+      console.warn("[Mobile BFF] Không thể lưu file ảnh vật lý:", saveErr)
+    }
 
-    return NextResponse.json(androidResponse)
+    let savedGradeId = ""
+    let savedCreatedAt = new Date().toISOString()
+    try {
+      const scoreNum = androidResponse.criteria.totalScore
+      const scoreStr = `${scoreNum}/10`
+      const scoreBreakdownJson = JSON.stringify({
+        spelling: androidResponse.criteria.spellingScore,
+        format: androidResponse.criteria.formatScore,
+        content: androidResponse.criteria.contentScore,
+        creativity: androidResponse.criteria.creativityScore,
+      })
+
+      const newGrade = await prisma.grade.create({
+        data: {
+          gradingMode: gradingMode || "dictation",
+          studentName: studentName || "Học sinh",
+          assignmentTitle: androidResponse.essayTitle || "Bài chấm di động",
+          className: className || "",
+          originalText: androidResponse.extractedText,
+          fixedText: androidResponse.correctedFullText,
+          corrections: JSON.stringify(androidResponse.errors || []),
+          score: scoreStr,
+          scoreNum: scoreNum,
+          scoreBreakdown: scoreBreakdownJson,
+          feedback: androidResponse.pedagogicalComment,
+          pedagogicalComment: androidResponse.pedagogicalComment,
+          overallRating: gradeResult.overall_rating || (scoreNum >= 8 ? "Tốt" : scoreNum >= 6.5 ? "Khá" : "Cần cố gắng"),
+          processingTimeMs: totalProcessingMs,
+          tokenCount: gradeResult.token_count || 0,
+          imageBase64: "", // Không lưu base64 nặng trong SQLite để tránh bloat
+          imagePath: imagePath,
+          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          isAnonymized: false,
+        }
+      })
+      savedGradeId = newGrade.id
+      savedCreatedAt = newGrade.createdAt.toISOString()
+      console.log(`[Mobile BFF] ✅ ĐÃ TỰ ĐỘNG LƯU VÀO DATABASE SERVER: id=${savedGradeId}`)
+    } catch (dbErr: any) {
+      console.error("[Mobile BFF] ⚠️ Lỗi khi lưu vào prisma.grade:", dbErr?.message || dbErr)
+    }
+
+    const finalResponse = {
+      ...androidResponse,
+      serverGradeId: savedGradeId || `srv_${Date.now()}`,
+      imagePath: imagePath,
+      createdAt: savedCreatedAt,
+    }
+
+    console.log(`[Mobile BFF] ====== KẾT QUẢ: ${finalResponse.criteria.totalScore}/10 (${gradeResult.overall_rating}) ======`)
+
+    return NextResponse.json(finalResponse)
 
   } catch (err: any) {
     const elapsed = Date.now() - startTime

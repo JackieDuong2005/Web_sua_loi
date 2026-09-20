@@ -36,3 +36,35 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+// PATCH /api/grades/[id] - cập nhật sau khi giáo viên chỉnh sửa Bounding Box
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  try {
+    const body = await req.json()
+    const { corrections, score, scoreBreakdown, pedagogicalComment, feedback } = body
+    const scoreNum = score ? (parseFloat(score.split("/")[0]) || undefined) : undefined
+
+    const updated = await prisma.grade.update({
+      where: { id },
+      data: {
+        ...(corrections !== undefined && {
+          corrections: typeof corrections === "string" ? corrections : JSON.stringify(corrections),
+        }),
+        ...(score !== undefined && { score }),
+        ...(scoreNum !== undefined && { scoreNum }),
+        ...(scoreBreakdown !== undefined && {
+          scoreBreakdown: typeof scoreBreakdown === "string" ? scoreBreakdown : JSON.stringify(scoreBreakdown),
+        }),
+        ...(pedagogicalComment !== undefined && { pedagogicalComment }),
+        ...(feedback !== undefined && { feedback }),
+      },
+    })
+    return NextResponse.json({ success: true, grade: updated })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
