@@ -940,6 +940,11 @@ def get_qwen_model():
                 device_map="auto"
             )
         else:
+            try:
+                import torch
+                torch.set_num_threads(min(4, os.cpu_count() or 4))
+            except Exception:
+                pass
             model = AutoModelForCausalLM.from_pretrained(
                 QWEN_MODEL_ID,
                 torch_dtype=torch.float32
@@ -1043,12 +1048,12 @@ def generate_pedagogical_comment_tier2(
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=65,
+                max_new_tokens=45,
                 do_sample=True,
-                temperature=0.85,
-                top_p=0.92,
+                temperature=0.8,
+                top_p=0.9,
                 repetition_penalty=1.15,
-                num_return_sequences=3,
+                num_return_sequences=1,
                 pad_token_id=tokenizer.eos_token_id
             )
 
@@ -1261,10 +1266,10 @@ def generate_dictation_passage_tier2(
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
-                    max_new_tokens=260,
+                    max_new_tokens=120,
                     do_sample=True,
                     temperature=0.7,
-                    top_p=0.92,
+                    top_p=0.90,
                     repetition_penalty=1.12,
                     pad_token_id=tokenizer.eos_token_id
                 )
