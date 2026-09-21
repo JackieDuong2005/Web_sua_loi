@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
 import { ensureVietnameseCapitalization } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
+import { POST as handleGradePost } from "@/app/api/grade/route"
 import { promises as fs } from "fs"
 import path from "path"
 
@@ -188,10 +189,6 @@ async function callGradeEndpoint(
   gradingMode: string,
   scoreConfig: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number },
 ): Promise<any> {
-  // Xây dựng URL tới /api/grade nội bộ (dùng 127.0.0.1 để tránh vòng lặp Cloudflare Tunnel)
-  const port = process.env.PORT || 3000
-  const localUrl = `http://127.0.0.1:${port}/api/grade`
-
   const body = {
     studentText,
     geminiFixedText,
@@ -204,6 +201,26 @@ async function callGradeEndpoint(
     source: "ocr",
     ocrTimeMs,
   }
+
+  // 1. Ưu tiên gọi TRỰC TIẾP handler POST in-process (hoàn toàn không qua mạng, không bao giờ bị 'fetch failed')
+  try {
+    const directReq = new NextRequest("http://127.0.0.1:3000/api/grade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    const directRes = await handleGradePost(directReq)
+    if (directRes.ok) {
+      console.log(`[Mobile BFF] ✓ Chấm điểm in-process thành công`)
+      return await directRes.json()
+    }
+  } catch (directErr: any) {
+    console.warn(`[Mobile BFF] Gọi trực tiếp in-process thất bại (${directErr?.message}), fallback sang fetch...`)
+  }
+
+  // 2. Dự phòng: gọi fetch loopback qua 127.0.0.1
+  const port = process.env.PORT || 3000
+  const localUrl = `http://127.0.0.1:${port}/api/grade`
 
   let res: Response
   try {
@@ -371,10 +388,16 @@ export async function POST(req: NextRequest) {
     console.log(`[Mobile BFF]   YOLO: ${yoloData ? `${yoloData.total_words} từ` : "không khả dụng"}`)
 
     // ================================================================
-    // Bước 3: Gọi /api/grade nội bộ để chấm điểm
+    // Bước 3: Chấm điểm (gọi trực tiếp in-process qua callGradeEndpoint)
     // ================================================================
-    console.log(`[Mobile BFF] 3/4. Chấm điểm (Levenshtein/ViT5)...`)
+    console.log(`[Mobile BFF] 3/4. Chấm điểm (in-process)...`)
     const the_loai = requestedTheLoai || ocrResult.the_loai
+    const scoreConfig = {
+      hinh_thuc: typeof hinh_thuc === "number" ? hinh_thuc : undefined,
+      noi_dung: typeof noi_dung === "number" ? noi_dung : undefined,
+      penalty_per_error: typeof penalty_per_error === "number" ? penalty_per_error : undefined,
+    }
+
     const gradeResult = await callGradeEndpoint(
       req,
       ocrResult.original_text,
@@ -383,11 +406,7 @@ export async function POST(req: NextRequest) {
       base64Data,
       ocrTimeMs,
       gradingMode,
-      {
-        hinh_thuc: typeof hinh_thuc === "number" ? hinh_thuc : undefined,
-        noi_dung: typeof noi_dung === "number" ? noi_dung : undefined,
-        penalty_per_error: typeof penalty_per_error === "number" ? penalty_per_error : undefined,
-      },
+      scoreConfig,
     )
 
     // ================================================================
