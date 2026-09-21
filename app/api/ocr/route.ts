@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
-import { ensureVietnameseCapitalization } from "@/lib/utils"
+import { ensureVietnameseCapitalization, formatAiErrorMessage } from "@/lib/utils"
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite"
 
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
       result = await callGeminiOCR(apiKey, base64Data, mimeType || "image/jpeg")
     } catch (err: any) {
       return NextResponse.json(
-        { error: err?.message || "Gemini OCR thất bại, vui lòng thử lại." },
+        { error: formatAiErrorMessage(err) },
         { status: 503 }
       )
     }
@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("OCR API error:", err)
     return NextResponse.json(
-      { error: err.message || "Lỗi không xác định" },
+      { error: formatAiErrorMessage(err) },
       { status: 500 }
     )
   }

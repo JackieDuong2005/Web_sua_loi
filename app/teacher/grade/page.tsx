@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpGuideButton } from "@/components/help-guide"
+import { formatAiErrorMessage } from "@/lib/utils"
 
 interface Correction {
   error: string
@@ -1681,7 +1682,7 @@ export default function GradingPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || "Lỗi chấm điểm. Bạn có thể nhấn 'Thử lại bước chấm điểm' để chấm lại mà không cần quét ảnh.")
+        setError(formatAiErrorMessage(data.error || "Lỗi chấm điểm. Bạn có thể nhấn 'Thử lại bước chấm điểm' để chấm lại mà không cần quét ảnh."))
         return
       }
 
@@ -1764,7 +1765,7 @@ export default function GradingPage() {
           })
           const ocrData = await ocrRes.json()
           if (!ocrRes.ok) {
-            setError(ocrData.error || "Lỗi OCR")
+            setError(formatAiErrorMessage(ocrData.error || "Lỗi OCR"))
             setIsProcessing(false)
             setProcessingStep(null)
             return

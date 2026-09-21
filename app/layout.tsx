@@ -47,7 +47,7 @@ export default function RootLayout({
     <html lang="vi" className="bg-background">
       <body className={`${roboto.variable} font-sans antialiased`}>
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV) && <Analytics />}
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(() => {});

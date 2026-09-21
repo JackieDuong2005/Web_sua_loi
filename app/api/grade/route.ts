@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
-import { ensureVietnameseCapitalization } from "@/lib/utils"
+import { ensureVietnameseCapitalization, formatAiErrorMessage } from "@/lib/utils"
 
 // ============================================================
 // TIMEOUT CONFIG
@@ -1189,7 +1189,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("Grade API error:", err)
     return NextResponse.json(
-      { error: err.message || "Lỗi không xác định" },
+      { error: formatAiErrorMessage(err) },
       { status: 500 }
     )
   }

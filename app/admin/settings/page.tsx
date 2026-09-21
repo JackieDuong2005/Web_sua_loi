@@ -34,22 +34,22 @@ export default function SettingsPage() {
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-6">
         <Tabs defaultValue="school" className="space-y-6">
-          <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="school" className="gap-2">
-              <School className="w-4 h-4" />
-              <span className="hidden md:inline">Trường học</span>
+          <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 gap-1">
+            <TabsTrigger value="school" className="gap-1.5 px-3 py-2 text-xs sm:text-sm cursor-pointer shrink-0" aria-label="Cài đặt Trường học">
+              <School className="w-4 h-4 shrink-0" />
+              <span>Trường học</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="w-4 h-4" />
-              <span className="hidden md:inline">Thông báo</span>
+            <TabsTrigger value="notifications" className="gap-1.5 px-3 py-2 text-xs sm:text-sm cursor-pointer shrink-0" aria-label="Cài đặt Thông báo">
+              <Bell className="w-4 h-4 shrink-0" />
+              <span>Thông báo</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="gap-2">
-              <Shield className="w-4 h-4" />
-              <span className="hidden md:inline">Bảo mật</span>
+            <TabsTrigger value="security" className="gap-1.5 px-3 py-2 text-xs sm:text-sm cursor-pointer shrink-0" aria-label="Cài đặt Bảo mật">
+              <Shield className="w-4 h-4 shrink-0" />
+              <span>Bảo mật</span>
             </TabsTrigger>
-            <TabsTrigger value="data" className="gap-2">
-              <Database className="w-4 h-4" />
-              <span className="hidden md:inline">Dữ liệu</span>
+            <TabsTrigger value="data" className="gap-1.5 px-3 py-2 text-xs sm:text-sm cursor-pointer shrink-0" aria-label="Cài đặt Dữ liệu">
+              <Database className="w-4 h-4 shrink-0" />
+              <span>Dữ liệu</span>
             </TabsTrigger>
           </TabsList>
 

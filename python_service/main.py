@@ -17,6 +17,8 @@ import asyncio
 import threading
 import os
 import sys
+import json
+import random
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
@@ -1093,6 +1095,228 @@ def generate_pedagogical_comment_tier2(
         }
 
 
+# ==============================================================================
+# D. SÁNG TÁC BÀI ĐỌC CHÍNH TẢ & TÁCH TỪ KHÓ (QWEN2.5-0.5B-INSTRUCT)
+# Chuẩn hóa theo Chương trình GDPT 2018 (Lớp 1 đến Lớp 5)
+# ==============================================================================
+
+FALLBACK_DICTATION_BANK: dict[int, list[dict]] = {
+    1: [
+        {
+            "title": "Bé và Chú Cún Nhỏ",
+            "content": "Bé Na có một chú cún nhỏ rất xinh. Bộ lông của cún trắng tinh như bông. Mỗi khi bé đi học về, cún lại vẫy đuôi mừng rỡ đón bé vào nhà.",
+            "difficultWords": "chú cún, trắng tinh, vẫy đuôi, mừng rỡ",
+            "summary": "Đoạn văn ngắn gọn, dễ thương về tình cảm giữa bé và vật nuôi trong nhà."
+        },
+        {
+            "title": "Mái Trường Thân Yêu",
+            "content": "Trường của em nằm dưới hàng cây xanh mát. Tiếng chim hót líu lo chào đón chúng em mỗi sớm mai. Chúng em cùng nhau học bài thật chăm ngoan.",
+            "difficultWords": "xanh mát, líu lo, sớm mai, chăm ngoan",
+            "summary": "Bài đọc ca ngợi vẻ đẹp thân thương của ngôi trường tiểu học."
+        }
+    ],
+    2: [
+        {
+            "title": "Buổi Sáng Mùa Thu",
+            "content": "Gió mùa thu se lạnh thổi qua từng kẽ lá. Bầu trời xanh trong vắt, không một gợn mây đen. Những tia nắng vàng dịu dàng trải dài trên con đường làng thân quen.",
+            "difficultWords": "se lạnh, trong vắt, gợn mây, dịu dàng, thân quen",
+            "summary": "Đoạn văn miêu tả cảnh sắc buổi sáng mùa thu trong lành và yên bình."
+        },
+        {
+            "title": "Đôi Bạn Thân",
+            "content": "Nam và Minh là đôi bạn cùng tiến của lớp em. Giờ ra chơi, hai bạn thường ngồi dưới gốc cây bàng râm mát để cùng nhau giải những bài toán khó.",
+            "difficultWords": "cùng tiến, ra chơi, cây bàng, râm mát",
+            "summary": "Ca ngợi tình bạn đẹp đẽ, cùng giúp đỡ nhau tiến bộ trong học tập."
+        }
+    ],
+    3: [
+        {
+            "title": "Mùa Lúa Chín Quê Em",
+            "content": "Cánh đồng lúa quê em vào mùa thu hoạch trải rộng như một tấm thảm lúa vàng óng ả. Từng cơn gió nhẹ lướt qua mang theo hương thơm ngòn ngọt, mộc mạc của bông lúa non. Các bác nông dân rộn rã gặt lúa với nụ cười rạng rỡ trên môi.",
+            "difficultWords": "thu hoạch, vàng óng ả, ngòn ngọt, rộn rã, rạng rỡ",
+            "summary": "Đoạn văn gợi tả vẻ đẹp trù phú của đồng lúa chín và niềm vui lao động của người nông dân."
+        },
+        {
+            "title": "Bảo Vệ Môi Trường Xanh",
+            "content": "Sáng chủ nhật, các bạn nhỏ trong xóm rủ nhau nhặt rác và quét dọn đường làng sạch sẽ. Những bồn hoa ven đường được chăm sóc cẩn thận, khoe sắc rực rỡ dưới ánh nắng ban mai. Giữ gìn môi trường xanh đẹp là niềm vui chung của mọi người.",
+            "difficultWords": "nhặt rác, sạch sẽ, chăm sóc, rực rỡ, ban mai",
+            "summary": "Giáo dục ý thức giữ gìn vệ sinh chung và tình yêu thiên nhiên của học sinh."
+        },
+        {
+            "title": "Tình Bạn Tuổi Thơ",
+            "content": "Mỗi ngày đến lớp, chúng em cùng nhau đọc sách và chia sẻ những câu chuyện vui dưới tán cây phượng vĩ. Khi bạn gặp khó khăn, cả lớp luôn sẵn lòng động viên và giúp đỡ. Tình bạn học trò ấm áp như ánh nắng sớm mai soi sáng con đường đến trường.",
+            "difficultWords": "phượng vĩ, chia sẻ, động viên, sẵn lòng, sớm mai",
+            "summary": "Ca ngợi tình cảm bạn bè trong sáng, biết chia sẻ và gắn bó dưới mái trường."
+        }
+    ],
+    4: [
+        {
+            "title": "Dòng Sông Tuổi Thơ",
+            "content": "Dòng sông quê hương hiền hòa uốn lượn quanh những bãi mía, nương dâu xanh mướt. Mặt nước trong veo in bóng những rặng tre rì rào trong gió sớm. Tiếng hò reo vang vọng của lũ trẻ tắm sông lúc hoàng hôn buông xuống làm xao xuyến lòng người.",
+            "difficultWords": "uốn lượn, xanh mướt, trong veo, rì rào, hoàng hôn, xao xuyến",
+            "summary": "Bài văn giàu chất thơ miêu tả dòng sông quê và ký ức êm đềm của tuổi thơ."
+        },
+        {
+            "title": "Rừng Cọ Quê Tôi",
+            "content": "Chẳng đâu đẹp bằng những đồi cọ xanh ngắt của quê tôi. Từng tán cọ xòe tròn như những chiếc ô khổng lồ che mát cả một vùng đồi trung du. Dưới bóng cọ, đàn trâu thong dong gặm cỏ, tiếng suối róc rách hòa cùng tiếng chim ca ríu rít.",
+            "difficultWords": "đồi cọ, xanh ngắt, khổng lồ, thong dong, róc rách, ríu rít",
+            "summary": "Văn phong gợi cảm miêu tả vẻ đẹp đặc trưng của rừng cọ miền trung du Bắc Bộ."
+        }
+    ],
+    5: [
+        {
+            "title": "Kỳ Quan Thiên Nhiên Đất Nước",
+            "content": "Vịnh Hạ Long sừng sững giữa biển trời mênh mông với hàng ngàn hòn đảo đá vôi nhấp nhô tuyệt đẹp. Nước biển bốn mùa trong xanh như ngọc bích, phản chiếu ánh bình minh rạng ngời. Vẻ đẹp kỳ vĩ và thơ mộng của non sông đất nước luôn là niềm tự hào to lớn của mỗi người dân Việt Nam.",
+            "difficultWords": "sừng sững, mênh mông, nhấp nhô, ngọc bích, bình minh, kỳ vĩ",
+            "summary": "Đoạn văn ngợi ca vẻ đẹp hùng vĩ của Vịnh Hạ Long và lòng tự hào dân tộc."
+        },
+        {
+            "title": "Mùa Hoa Tây Bắc",
+            "content": "Khi làn gió xuân ấm áp tràn về, núi rừng Tây Bắc bừng sáng bởi sắc trắng tinh khôi của hoa ban và sắc thắm rực rỡ của hoa đào rừng. Tiếng khèn bè ngân vang réo rắt bên sườn non như lời mời gọi tha thiết của mùa lễ hội truyền thống.",
+            "difficultWords": "Tây Bắc, tinh khôi, hoa ban, rực rỡ, khèn bè, réo rắt, tha thiết",
+            "summary": "Đoạn văn miêu tả vẻ đẹp lộng lẫy, đậm đà bản sắc văn hóa của mùa xuân vùng cao Tây Bắc."
+        }
+    ]
+}
+
+
+def generate_dictation_passage_tier2(
+    grade: int = 3,
+    topic: str = "Tình bạn và trường lớp",
+    sentence_count: int = 4,
+    book_set: str = "KetNoi"
+) -> dict:
+    """Sáng tác bài đọc chính tả kèm trích xuất từ khó bằng Qwen2.5-0.5B-Instruct.
+    Tự động fallback về ngân hàng bài đọc chuẩn GDPT 2018 nếu mô hình tắt hoặc ngoại lệ.
+    """
+    valid_grade = max(1, min(5, int(grade or 3)))
+    fallback_pool = FALLBACK_DICTATION_BANK.get(valid_grade, FALLBACK_DICTATION_BANK[3])
+    fallback_item = random.choice(fallback_pool)
+
+    if not ENABLE_QWEN_SLM:
+        return {
+            "title": fallback_item["title"],
+            "content": fallback_item["content"],
+            "difficultWords": fallback_item["difficultWords"],
+            "summary": fallback_item["summary"],
+            "grade": valid_grade,
+            "topic": topic,
+            "source": "curriculum_bank_deterministic",
+            "latency_ms": 0.0
+        }
+
+    t0 = time.time()
+    try:
+        model, tokenizer = get_qwen_model()
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        book_names = {
+            "KetNoi": "Kết Nối Tri Thức Với Cuộc Sống",
+            "CanhDieu": "Cánh Diều",
+            "ChanTroi": "Chân Trời Sáng Tạo"
+        }
+        book_label = book_names.get(book_set, "Kết Nối Tri Thức")
+
+        system_prompt = (
+            "Bạn là chuyên gia sư phạm tiểu học Việt Nam biên soạn sách giáo khoa Tiếng Việt (GDPT 2018).\n"
+            "Nhiệm vụ: Sáng tác một đoạn văn bài đọc chính tả (nghe - viết) ngắn gọn, trong sáng, giàu tính giáo dục và chuẩn ngữ pháp cho học sinh tiểu học.\n"
+            "Chỉ trả về DUY NHẤT một chuỗi JSON hợp lệ không có markdown codeblock, theo định dạng mẫu:\n"
+            "{\n"
+            '  "title": "Tiêu đề ngắn gọn",\n'
+            '  "content": "Nội dung toàn bộ đoạn văn chính tả",\n'
+            '  "difficultWords": "từ khó 1, từ khó 2, từ khó 3, từ khó 4",\n'
+            '  "summary": "Tóm tắt ngắn gọn thông điệp bài đọc"\n'
+            "}"
+        )
+
+        grade_guide = {
+            1: "Câu ngắn gọn, từ 20-35 từ, từ ngữ đơn giản gần gũi.",
+            2: "Đoạn văn 30-45 từ, câu từ mạch lạc, hình ảnh trong sáng.",
+            3: "Đoạn văn 40-60 từ, miêu tả sinh động, dùng từ láy và hình ảnh so sánh.",
+            4: "Đoạn văn 60-80 từ, câu văn gợi cảm, có cảm xúc và thông điệp ý nghĩa.",
+            5: "Đoạn văn 75-95 từ, hành văn trau chuốt, giàu hình ảnh và chiều sâu tư tưởng."
+        }
+        guide_text = grade_guide.get(valid_grade, grade_guide[3])
+
+        user_content = (
+            f"Thông tin yêu cầu sáng tác bài đọc chính tả:\n"
+            f"- Khối lớp: Lớp {valid_grade} ({guide_text})\n"
+            f"- Chủ đề: \"{topic}\"\n"
+            f"- Số lượng câu: khoảng {sentence_count or 4} câu\n"
+            f"- Bộ sách tham chiếu: {book_label}\n"
+            f"- Yêu cầu trích xuất từ khó: Liệt kê 3-5 từ hoặc cụm từ khó viết trong bài mà học sinh dễ nhầm (như tr/ch, s/x, d/gi/r, l/n, vần khó hoặc dấu hỏi/ngã).\n"
+            f"Hãy xuất chuỗi JSON:"
+        )
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ]
+
+        prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = tokenizer([prompt_text], return_tensors="pt").to(device)
+
+        with _qwen_lock:
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=260,
+                    do_sample=True,
+                    temperature=0.7,
+                    top_p=0.92,
+                    repetition_penalty=1.12,
+                    pad_token_id=tokenizer.eos_token_id
+                )
+
+        generated_ids = outputs[0][inputs.input_ids.shape[1]:]
+        raw_text = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+
+        cleaned = raw_text.replace("```json", "").replace("```", "").strip()
+        start_idx = cleaned.find("{")
+        end_idx = cleaned.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            cleaned = cleaned[start_idx:end_idx + 1]
+
+        parsed = json.loads(cleaned)
+        content = parsed.get("content", "").strip()
+        title = parsed.get("title", f"Chính tả: {topic}").strip()
+        diff_words = parsed.get("difficultWords", "")
+        if isinstance(diff_words, list):
+            diff_words = ", ".join(diff_words)
+        summary = parsed.get("summary", f"Bài đọc chính tả Lớp {valid_grade} chủ đề {topic}").strip()
+
+        if len(content.split()) >= 15:
+            latency = round((time.time() - t0) * 1000, 2)
+            logger.info(f"✅ [Qwen Passage] Sáng tác thành công bài đọc Lớp {valid_grade} ({len(content.split())} từ, {latency}ms)")
+            return {
+                "title": title,
+                "content": content,
+                "difficultWords": diff_words,
+                "summary": summary,
+                "grade": valid_grade,
+                "topic": topic,
+                "source": "qwen2.5_0.5b",
+                "latency_ms": latency
+            }
+        else:
+            raise ValueError("Nội dung bài đọc Qwen sinh ra quá ngắn")
+
+    except Exception as e:
+        logger.warning(f"⚠️ [Qwen Passage] Lỗi khi sinh bài đọc bằng Qwen ({e}) -> Dùng ngân hàng SGK fallback.")
+        latency = round((time.time() - t0) * 1000, 2)
+        return {
+            "title": fallback_item["title"],
+            "content": fallback_item["content"],
+            "difficultWords": fallback_item["difficultWords"],
+            "summary": fallback_item["summary"],
+            "grade": valid_grade,
+            "topic": topic,
+            "source": "curriculum_bank_fallback",
+            "latency_ms": latency
+        }
+
+
 def grade_with_levenshtein(
     student_text: str,
     corrected_text: str,
@@ -1531,6 +1755,25 @@ async def qwen_generate_endpoint(req: QwenTestRequest):
         req.errors,
         current_comments=req.current_comments,
         is_dictation=(req.grading_mode != "essay")
+    )
+    return result
+
+
+class GeneratePassageRequest(BaseModel):
+    grade: Optional[int] = 3
+    topic: Optional[str] = "Tình bạn và trường lớp"
+    sentence_count: Optional[int] = 4
+    book_set: Optional[str] = "KetNoi"
+
+
+@app.post("/qwen/generate-passage")
+async def qwen_generate_passage_endpoint(req: GeneratePassageRequest):
+    """Sáng tác bài đọc chính tả kèm trích xuất từ khó chuẩn GDPT 2018 bằng Qwen2.5 SLM."""
+    result = generate_dictation_passage_tier2(
+        grade=req.grade or 3,
+        topic=req.topic or "Tình bạn và trường lớp",
+        sentence_count=req.sentence_count or 4,
+        book_set=req.book_set or "KetNoi"
     )
     return result
 

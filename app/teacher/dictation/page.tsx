@@ -24,6 +24,7 @@ import {
   SlidersHorizontal, Gauge, Repeat, Hourglass, Mic, Pencil, Eye,
   Wand2, Send, Tag, FileText, Check, Bell, Split, ChevronDown, ChevronUp,
 } from "lucide-react"
+import { formatAiErrorMessage } from "@/lib/utils"
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -776,11 +777,11 @@ export default function DictationPage() {
         setIsAiGenerateOpen(false)
         setActiveTab("player")
       } else {
-        alert(data.error || "Không thể tạo bài đọc AI.")
+        alert(formatAiErrorMessage(data.error || "Không thể tạo bài đọc AI."))
       }
     } catch (err) {
       console.error("Lỗi tạo bài đọc AI:", err)
-      alert("Không thể kết nối đến máy chủ AI.")
+      alert(formatAiErrorMessage(err))
     } finally {
       setGeneratingAi(false)
     }
@@ -1653,7 +1654,7 @@ export default function DictationPage() {
               AI Sáng Tác Bài Đọc Chính Tả Theo Chủ Đề
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Gemini AI tự động sáng tác đoạn văn ngắn đạt chuẩn sư phạm GDPT 2018 theo khối lớp và trích xuất từ khó.
+              Qwen 2.5 SLM tự động sáng tác đoạn văn ngắn đạt chuẩn sư phạm GDPT 2018 theo khối lớp và trích xuất từ khó.
             </DialogDescription>
           </DialogHeader>
 
