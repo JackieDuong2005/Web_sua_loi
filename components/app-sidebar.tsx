@@ -27,8 +27,8 @@ const teacherMenuItems = [
 ]
 
 const studentMenuItems = [
-  { title: "Tổng quan", icon: LayoutDashboard, href: "/student" },
-  { title: "Lịch sử điểm", icon: History, href: "/student/history" },
+  { title: "Góc học tập & Phụ huynh", icon: LayoutDashboard, href: "/student" },
+  { title: "Sổ điểm & Bài chấm", icon: FileText, href: "/student/history" },
 ]
 
 const adminMenuItems = [
