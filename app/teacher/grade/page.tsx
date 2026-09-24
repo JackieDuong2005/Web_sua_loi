@@ -15,7 +15,7 @@ import {
   Camera, CheckCircle, AlertCircle, X,
   FolderOpen, Clock, Zap, FileText, RefreshCw,
   Star, MessageSquare, Save, User, BookOpen, ScrollText, Sparkles,
-  Image as ImageIcon, Target, Pencil, Layers, CheckCircle2, Check, ChevronDown, ChevronRight,
+  Image as ImageIcon, Target, Pencil, Layers, CheckCircle2, Check, ChevronDown, ChevronRight, Sliders,
 } from "lucide-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpGuideButton } from "@/components/help-guide"
 import { formatAiErrorMessage } from "@/lib/utils"
+import AiConfigPlayground from "@/components/teacher/ai-config-playground"
 
 interface Correction {
   error: string
@@ -31,6 +32,17 @@ interface Correction {
   error_type: string
   is_dialect: boolean
   reason: string
+  errorType?: string
+  originalWord?: string
+  correctedWord?: string
+  rel_x1?: number
+  rel_y1?: number
+  rel_w?: number
+  rel_h?: number
+  x1?: number
+  y1?: number
+  x2?: number
+  y2?: number
   bbox?: {
     x1: number
     y1: number
@@ -1421,8 +1433,8 @@ export default function GradingPage() {
     gradingMode?: "dictation" | "essay"
   } | null>(null)
 
-  // ─── Dual-Mode Grading State ────────────────────────────────────────────────
-  const [gradingMode, setGradingMode] = useState<"dictation" | "essay">("essay")
+  // ─── Dual-Mode & Config State ────────────────────────────────────────────────
+  const [gradingMode, setGradingMode] = useState<"dictation" | "essay" | "config">("essay")
   const [groundTruthText, setGroundTruthText] = useState("")
   const [dictationSessionId, setDictationSessionId] = useState("")
   const [pedagogicalComment, setPedagogicalComment] = useState("")
@@ -1675,6 +1687,18 @@ export default function GradingPage() {
       const currentImg = (inputMode === "image" || inputMode === "processed") ? (processedImage || uploadedImage) : undefined
       const compressedImg = currentImg ? await compressImageForAPI(currentImg) : undefined
 
+      // Đọc cấu hình AI tuỳ chỉnh nếu giáo viên đã lưu trong Tab Config
+      let customGeminiConfig: any = undefined
+      let customYoloConfig: any = undefined
+      try {
+        const savedAiConfig = localStorage.getItem("vihand_ai_config")
+        if (savedAiConfig) {
+          const parsed = JSON.parse(savedAiConfig)
+          customGeminiConfig = parsed.geminiConfig
+          customYoloConfig = parsed.yoloConfig
+        }
+      } catch {}
+
       const res = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1687,6 +1711,8 @@ export default function GradingPage() {
           penalty_per_error: scoreConfig.penalty,
           ocrTimeMs,
           imageBase64: compressedImg,
+          geminiConfig: customGeminiConfig,
+          yoloConfig: customYoloConfig,
         }),
       })
       const data = await res.json()
@@ -2039,15 +2065,17 @@ export default function GradingPage() {
         <div className="min-w-0 flex-1">
           <h1 className="text-base sm:text-lg font-semibold text-card-foreground">Chấm điểm bài viết</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {gradingMode === "dictation"
-              ? "Chính tả: So sánh với bài đọc trong sách giáo khoa"
-              : "Tập làm văn: Chấm bài viết tự do & gợi ý lời nhận xét"}
+            {gradingMode === "config"
+              ? "Cấu hình tham số Gemini & YOLO, demo quét chữ viết tay tương tác"
+              : gradingMode === "dictation"
+                ? "Chính tả: So sánh với bài đọc trong sách giáo khoa"
+                : "Tập làm văn: Chấm bài viết tự do & gợi ý lời nhận xét"}
           </p>
         </div>
         <HelpGuideButton role="teacher" />
       </header>
 
-      {/* 🌟 2 TAB CHÍNH CỦA TRANG: PHÂN MÔN CHÍNH TẢ & TẬP LÀM VĂN */}
+      {/* 🌟 3 TAB CỦA TRANG: TẬP LÀM VĂN, CHÍNH TẢ & CONFIG */}
       <div className="bg-card border-b border-border px-4 md:px-6">
         <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
           <button
@@ -2075,10 +2103,26 @@ export default function GradingPage() {
             <Target className="w-4 h-4 text-indigo-600 shrink-0" />
             <span>Chính tả (Nghe - Viết)</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setGradingMode("config")}
+            className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              gradingMode === "config"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400 dark:border-amber-400"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+            }`}
+          >
+            <Sliders className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>Config</span>
+          </button>
         </div>
       </div>
 
       <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+        {gradingMode === "config" ? (
+          <AiConfigPlayground />
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] gap-6 items-start">
 
           {/* LEFT: Form cham diem */}
@@ -2614,6 +2658,7 @@ export default function GradingPage() {
           </div>
 
         </div>
+        )}
       </main>
 
       {/* ── Popup kết quả ── */}
@@ -2623,7 +2668,7 @@ export default function GradingPage() {
           onClose={() => setShowResultPopup(false)}
           gradingResult={gradingResult}
           studentName={studentName}
-          gradingMode={gradingMode}
+          gradingMode={gradingMode === "config" ? "essay" : gradingMode}
           originalImage={uploadedImage}
           processedImage={processedImage}
           hinhThucOverride={hinhThucOverride}

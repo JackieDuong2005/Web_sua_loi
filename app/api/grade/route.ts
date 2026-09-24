@@ -32,20 +32,22 @@ function getApiKey(): string {
 async function callGemini(
   apiKey: string,
   contents: any[],
+  customConfig?: { model?: string; temperature?: number; maxOutputTokens?: number }
 ): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
   if (!apiKey) throw new Error("Chưa cấu hình GEMINI_API_KEY")
 
   const client = new GoogleGenAI({ apiKey })
+  const modelToUse = customConfig?.model || GEMINI_MODEL
 
   const response = await client.models.generateContent({
-    model: GEMINI_MODEL,
+    model: modelToUse,
     contents: contents,
     config: {
       responseMimeType: "application/json",
-      temperature: 0.1,
+      temperature: typeof customConfig?.temperature === "number" ? customConfig.temperature : 0.1,
       topP: 0.95,
       topK: 40,
-      maxOutputTokens: 8192,
+      maxOutputTokens: typeof customConfig?.maxOutputTokens === "number" ? customConfig.maxOutputTokens : 8192,
     },
   })
 
@@ -661,29 +663,44 @@ function buildStudentWordMetas(studentText: string): { words: string[]; metas: S
   return { words, metas }
 }
 
-async function detectYoloBoxes(imageBase64?: string): Promise<any | null> {
+async function detectYoloBoxes(
+  imageBase64?: string,
+  confThreshold: number = 0.50,
+  iouThreshold: number = 0.45
+): Promise<any | null> {
   if (!imageBase64 || typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {
     return null
   }
   try {
     const rawB64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64
-    const serviceUrl = (process.env.VIT5_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1")
-    console.log(`[YOLO] Calling ${serviceUrl}/detect-words (b64 length: ${rawB64.length})...`)
-    const res = await fetch(`${serviceUrl}/detect-words`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.50, iou_threshold: 0.45 }),
-      signal: AbortSignal.timeout(30000),
-    })
-    if (!res.ok) {
-      console.warn(`[YOLO] /detect-words returned status ${res.status}`)
-      return null
+    const serviceUrls = [
+      (process.env.VIT5_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1"),
+      "http://192.168.1.56:8000",
+    ]
+
+    for (const serviceUrl of serviceUrls) {
+      try {
+        console.log(`[YOLO] Calling ${serviceUrl}/detect-words (b64 length: ${rawB64.length}, conf: ${confThreshold})...`)
+        const res = await fetch(`${serviceUrl}/detect-words`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: rawB64, conf_threshold: confThreshold, iou_threshold: iouThreshold }),
+          signal: AbortSignal.timeout(30000),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          console.log(`[YOLO] ✓ Phát hiện ${data.total_words} từ trên ${data.lines?.length || 0} dòng (${serviceUrl})`)
+          return data
+        } else {
+          console.warn(`[YOLO] ${serviceUrl}/detect-words returned status ${res.status}`)
+        }
+      } catch (e: any) {
+        console.warn(`[YOLO] Không gọi được ${serviceUrl}: ${e?.message || e}`)
+      }
     }
-    const data = await res.json()
-    console.log(`[YOLO] ✓ Phát hiện ${data.total_words} từ trên ${data.lines?.length || 0} dòng`)
-    return data
+    return null
   } catch (err: any) {
-    console.error(`[YOLO] Không gọi được /detect-words:`, err?.message || err)
+    console.error(`[YOLO] Lỗi xử lý ảnh detectYoloBoxes:`, err?.message || err)
     return null
   }
 }
@@ -1009,6 +1026,8 @@ export async function POST(req: NextRequest) {
       gradingMode,  // "dictation" (Chính tả SGK) | "essay" (Tập làm văn tự do)
       source,       // "ocr" | "manual"
       ocrTimeMs,    // Thời gian OCR từ client gửi lên (ms)
+      geminiConfig, // { model, temperature, maxOutputTokens, penalty_per_error }
+      yoloConfig,   // { conf_threshold, iou_threshold, imgsz }
     } = await req.json()
 
     if (!studentText || !studentText.trim()) {
@@ -1022,15 +1041,22 @@ export async function POST(req: NextRequest) {
     const mode = gradingMode || (groundTruthText ? "dictation" : "essay")
     const startTime = Date.now()
     const ocrOffset = typeof ocrTimeMs === "number" && ocrTimeMs > 0 ? Math.round(ocrTimeMs) : 0
+    const finalPenalty = typeof penalty_per_error === "number"
+      ? penalty_per_error
+      : (typeof geminiConfig?.penalty_per_error === "number" ? geminiConfig.penalty_per_error : undefined)
+
     const scoreConfig = {
       hinh_thuc:         typeof hinh_thuc === "number" ? hinh_thuc : undefined,
       noi_dung:          typeof noi_dung  === "number" ? noi_dung  : undefined,
-      penalty_per_error: typeof penalty_per_error === "number" ? penalty_per_error : undefined,
+      penalty_per_error: finalPenalty,
       gradingMode:       mode,
     }
 
+    const targetConf = typeof yoloConfig?.conf_threshold === "number" ? yoloConfig.conf_threshold : 0.50
+    const targetIou  = typeof yoloConfig?.iou_threshold  === "number" ? yoloConfig.iou_threshold  : 0.45
+
     // Nhận diện Bounding Box các từ viết tay qua YOLOv8 (nếu có ảnh truyền lên)
-    const yoloData = await detectYoloBoxes(imageBase64)
+    const yoloData = await detectYoloBoxes(imageBase64, targetConf, targetIou)
 
     // ================================================================
     // LUỒNG A — Ground Truth / Fixed Text Alignment:
@@ -1140,7 +1166,7 @@ export async function POST(req: NextRequest) {
 
     let geminiResult: { text: string; tokenCount: number; keyIndex: number }
     try {
-      geminiResult = await callGemini(apiKey, contents)
+      geminiResult = await callGemini(apiKey, contents, geminiConfig)
     } catch (retryErr: any) {
       return NextResponse.json(
         { error: retryErr?.message || "AI đang bận, vui lòng thử lại sau." },
