@@ -673,7 +673,7 @@ async function detectYoloBoxes(imageBase64?: string): Promise<any | null> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.50, iou_threshold: 0.45 }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     })
     if (!res.ok) {
       console.warn(`[YOLO] /detect-words returned status ${res.status}`)

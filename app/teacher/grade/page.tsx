@@ -871,12 +871,21 @@ function ResultPopup({
                   {showBBoxes && (
                     <div className="absolute inset-0 pointer-events-none">
                       {corrections.map((c, i) => {
-                        if (!c.bbox) return null
-                        const theme = getErrorTheme(c.error_type)
+                        const bbox = c.bbox || (c.rel_x1 !== undefined && c.rel_y1 !== undefined ? {
+                          rel_x1: c.rel_x1,
+                          rel_y1: c.rel_y1,
+                          rel_w: c.rel_w ?? 0.05,
+                          rel_h: c.rel_h ?? 0.04,
+                        } : null)
+                        if (!bbox) return null
+                        const errType = c.error_type || c.errorType || "chinh_ta"
+                        const theme = getErrorTheme(errType)
                         const isActive = activeErrorIdx === i
-                        const isFilteredOut = filterErrorType && filterErrorType !== c.error_type
-                        const isTopNear = c.bbox.rel_y1 < 0.08
-                        const label = c.suggestion ? `✓ ${c.suggestion}` : `✕ ${c.error}`
+                        const isFilteredOut = filterErrorType && filterErrorType !== errType
+                        const isTopNear = bbox.rel_y1 < 0.08
+                        const errWord = c.error || c.originalWord || ""
+                        const suggWord = c.suggestion || c.correctedWord || ""
+                        const label = suggWord ? `✓ ${suggWord}` : `✕ ${errWord}`
 
                         return (
                           <div
@@ -889,10 +898,10 @@ function ResultPopup({
                                 : `border-2 border-dashed ${theme.boxBorder} ${theme.boxBg} ${theme.boxHover} z-10`
                             }`}
                             style={{
-                              left: `${c.bbox.rel_x1 * 100}%`,
-                              top: `${c.bbox.rel_y1 * 100}%`,
-                              width: `${Math.max(c.bbox.rel_w * 100, 2.0)}%`,
-                              height: `${Math.max(c.bbox.rel_h * 100, 2.0)}%`,
+                              left: `${bbox.rel_x1 * 100}%`,
+                              top: `${bbox.rel_y1 * 100}%`,
+                              width: `${Math.max(bbox.rel_w * 100, 2.0)}%`,
+                              height: `${Math.max(bbox.rel_h * 100, 2.0)}%`,
                             }}
                             onMouseEnter={() => setActiveErrorIdx(i)}
                             onMouseLeave={() => setActiveErrorIdx(null)}

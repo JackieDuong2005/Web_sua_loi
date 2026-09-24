@@ -179,7 +179,7 @@ async function detectYoloBoxes(imageBase64?: string): Promise<any | null> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageBase64: rawB64, conf_threshold: 0.50, iou_threshold: 0.45 }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     })
     if (!res.ok) {
       console.warn(`[Mobile YOLO] /detect-words returned status ${res.status}`)
@@ -303,15 +303,15 @@ function transformForAndroid(
       penalty: 0.5,
       lineNumber: 1,
       // Tọa độ tuyệt đối (pixels) — dùng cho canvas tương tác
-      x1: bbox.x1 ?? 0,
-      y1: bbox.y1 ?? 0,
-      x2: bbox.x2 ?? 0,
-      y2: bbox.y2 ?? 0,
+      x1: bbox.x1 ?? c.x1 ?? 0,
+      y1: bbox.y1 ?? c.y1 ?? 0,
+      x2: bbox.x2 ?? c.x2 ?? 0,
+      y2: bbox.y2 ?? c.y2 ?? 0,
       // Tọa độ tương đối (0.0–1.0) — dùng cho Bounding Box trên ảnh thật
-      rel_x1: bbox.rel_x1 ?? 0,
-      rel_y1: bbox.rel_y1 ?? 0,
-      rel_w: bbox.rel_w ?? 0,
-      rel_h: bbox.rel_h ?? 0,
+      rel_x1: bbox.rel_x1 ?? c.rel_x1 ?? 0,
+      rel_y1: bbox.rel_y1 ?? c.rel_y1 ?? 0,
+      rel_w: bbox.rel_w ?? c.rel_w ?? 0,
+      rel_h: bbox.rel_h ?? c.rel_h ?? 0,
     }
   })
 
