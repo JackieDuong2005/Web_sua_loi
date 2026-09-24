@@ -13,8 +13,8 @@ async function createPrismaWithWAL(): Promise<PrismaClient> {
   })
   try {
     await client.$queryRawUnsafe("PRAGMA journal_mode = WAL;")
-    await client.$executeRawUnsafe("PRAGMA busy_timeout = 5000;")
-    await client.$executeRawUnsafe("PRAGMA synchronous = NORMAL;")
+    await client.$queryRawUnsafe("PRAGMA busy_timeout = 5000;")
+    await client.$queryRawUnsafe("PRAGMA synchronous = NORMAL;")
   } catch {
     // Bỏ qua nếu chạy trong môi trường test không phải SQLite
   }

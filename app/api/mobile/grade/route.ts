@@ -46,11 +46,17 @@ const GEMINI_MODEL = "gemini-3.1-flash-lite"
 const VIT5_SERVICE_URL = process.env.VIT5_SERVICE_URL || "http://localhost:8000"
 
 // ============================================================
-// GEMINI API CLIENT
+// GEMINI API CLIENT & KEY ROTATION
 // ============================================================
+function getApiKeys(): string[] {
+  const envVal = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || ""
+  return envVal.split(",").map(k => k.trim()).filter(Boolean)
+}
+
 function getApiKey(): string {
-  const key = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(",")[0] || ""
-  return key.trim()
+  const keys = getApiKeys()
+  if (!keys.length) return ""
+  return keys[Math.floor(Math.random() * keys.length)]
 }
 
 // ============================================================
@@ -87,63 +93,75 @@ Nhiệm vụ: Phân tích ảnh bài viết tay của học sinh, nhận diện 
 }`
 
 // ============================================================
-// STEP 1: GEMINI VISION OCR
+// STEP 1: GEMINI VISION OCR (VỚI KEY ROTATION & MODEL FALLBACK)
 // ============================================================
 async function runGeminiOCR(
   apiKey: string,
   imageBase64: string,
   mimeType: string
 ): Promise<{ original_text: string; fixed_text: string; the_loai: string; tokenCount: number }> {
-  const client = new GoogleGenAI({ apiKey })
+  const keys = getApiKeys()
+  const candidateKeys = keys.length > 0 ? keys : (apiKey ? [apiKey] : [])
+  const candidateModels = [GEMINI_MODEL, "gemini-2.5-flash"]
 
-  const response = await client.models.generateContent({
-    model: GEMINI_MODEL,
-    contents: [
-      { inlineData: { mimeType, data: imageBase64 } },
-      OCR_PROMPT,
-    ],
-    config: {
-      responseMimeType: "application/json",
-      temperature: 0.05,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 8192,
-    },
-  })
+  let lastError: any = null
+  for (const model of candidateModels) {
+    for (const key of candidateKeys) {
+      try {
+        const client = new GoogleGenAI({ apiKey: key })
+        const response = await client.models.generateContent({
+          model,
+          contents: [
+            { inlineData: { mimeType, data: imageBase64 } },
+            OCR_PROMPT,
+          ],
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.05,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 8192,
+          },
+        })
 
-  const text = response.text ?? ""
-  const tokenCount = response.usageMetadata?.totalTokenCount || 0
+        const text = response.text ?? ""
+        const tokenCount = response.usageMetadata?.totalTokenCount || 0
 
-  let original_text = ""
-  let fixed_text = ""
-  let the_loai = ""
+        let original_text = ""
+        let fixed_text = ""
+        let the_loai = ""
 
-  try {
-    const cleaned = text
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim()
-    const parsed = JSON.parse(cleaned)
-    original_text = (parsed.original_text || "").trim()
-    fixed_text = (parsed.fixed_text || "").trim()
-    the_loai = (parsed.the_loai || "").trim().toLowerCase()
-  } catch {
-    original_text = text.trim()
-    fixed_text = text.trim()
+        try {
+          const cleaned = text
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/```\s*$/i, "")
+            .trim()
+          const parsed = JSON.parse(cleaned)
+          original_text = (parsed.original_text || "").trim()
+          fixed_text = (parsed.fixed_text || "").trim()
+          the_loai = (parsed.the_loai || "").trim().toLowerCase()
+        } catch {
+          original_text = text.trim()
+          fixed_text = text.trim()
+        }
+
+        if (original_text) {
+          if (the_loai === "tho") {
+            fixed_text = ensureVietnameseCapitalization(fixed_text)
+          }
+          console.log(`[Mobile OCR] ✓ Model ${model} (${the_loai || "auto"}): ${tokenCount} tokens | ${original_text.length} chars`)
+          return { original_text, fixed_text, the_loai, tokenCount }
+        }
+      } catch (err: any) {
+        lastError = err
+        const keySuffix = key.length > 6 ? key.slice(-6) : key
+        console.warn(`[Mobile OCR] Model ${model} key ...${keySuffix} thất bại (${err?.status || err?.message}), chuyển key/model kế tiếp...`)
+      }
+    }
   }
 
-  if (!original_text) {
-    throw new Error("Không nhận diện được nội dung chữ viết tay từ ảnh")
-  }
-
-  // Chuẩn hóa viết hoa theo thể loại
-  if (the_loai === "tho") {
-    fixed_text = ensureVietnameseCapitalization(fixed_text)
-  }
-
-  console.log(`[Mobile OCR] ✓ ${the_loai || "auto"}: ${tokenCount} tokens | ${original_text.length} chars`)
-  return { original_text, fixed_text, the_loai, tokenCount }
+  throw lastError || new Error("Không nhận diện được nội dung chữ viết tay từ ảnh sau khi thử tất cả models và keys")
 }
 
 // ============================================================
