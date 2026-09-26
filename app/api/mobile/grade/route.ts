@@ -206,6 +206,7 @@ async function callGradeEndpoint(
   ocrTimeMs: number,
   gradingMode: string,
   scoreConfig: { hinh_thuc?: number; noi_dung?: number; penalty_per_error?: number },
+  yoloData?: any,
 ): Promise<any> {
   const body = {
     studentText,
@@ -218,6 +219,7 @@ async function callGradeEndpoint(
     gradingMode,
     source: "ocr",
     ocrTimeMs,
+    yoloData,
   }
 
   // 1. Ưu tiên gọi TRỰC TIẾP handler POST in-process (hoàn toàn không qua mạng, không bao giờ bị 'fetch failed')
@@ -425,6 +427,7 @@ export async function POST(req: NextRequest) {
       ocrTimeMs,
       gradingMode,
       scoreConfig,
+      yoloData,
     )
 
     // ================================================================

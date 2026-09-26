@@ -1028,6 +1028,7 @@ export async function POST(req: NextRequest) {
       ocrTimeMs,    // Thời gian OCR từ client gửi lên (ms)
       geminiConfig, // { model, temperature, maxOutputTokens, penalty_per_error }
       yoloConfig,   // { conf_threshold, iou_threshold, imgsz }
+      yoloData: inputYoloData,
     } = await req.json()
 
     if (!studentText || !studentText.trim()) {
@@ -1055,8 +1056,8 @@ export async function POST(req: NextRequest) {
     const targetConf = typeof yoloConfig?.conf_threshold === "number" ? yoloConfig.conf_threshold : 0.50
     const targetIou  = typeof yoloConfig?.iou_threshold  === "number" ? yoloConfig.iou_threshold  : 0.45
 
-    // Nhận diện Bounding Box các từ viết tay qua YOLOv8 (nếu có ảnh truyền lên)
-    const yoloData = await detectYoloBoxes(imageBase64, targetConf, targetIou)
+    // Nhận diện Bounding Box các từ viết tay qua YOLOv8 (sử dụng yoloData truyền lên hoặc gọi mới)
+    const yoloData = inputYoloData || await detectYoloBoxes(imageBase64, targetConf, targetIou)
 
     // ================================================================
     // LUỒNG A — Ground Truth / Fixed Text Alignment:
