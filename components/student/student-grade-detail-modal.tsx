@@ -248,17 +248,18 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[94vh] overflow-y-auto p-4 sm:p-6 gap-5 print:max-w-full print:m-0 print:p-2">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <DialogContent className="w-[96vw] !max-w-[96vw] sm:!max-w-[94vw] md:!max-w-5xl lg:!max-w-6xl xl:!max-w-7xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden bg-background shadow-2xl border-border/80 print:max-w-full print:m-0 print:p-2">
+        {/* ── HEADER CỐ ĐỊNH Ở ĐỈNH MODAL (KHÔNG BỊ CUỘN MẤT) ── */}
+        <DialogHeader className="border-b px-5 py-4 sm:px-6 shrink-0 bg-background/95 backdrop-blur z-20">
+          <div className="flex flex-wrap items-center justify-between gap-3 pr-8">
             <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex flex-col items-center justify-center text-primary font-bold shadow-xs shrink-0 border border-primary/20">
-                <span className="text-2xl leading-none">{grade.scoreNum}</span>
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 flex flex-col items-center justify-center text-primary font-bold shadow-xs shrink-0 border border-primary/20">
+                <span className="text-2xl sm:text-3xl leading-none font-extrabold">{grade.scoreNum}</span>
                 <span className="text-[10px] uppercase font-semibold mt-0.5">Điểm</span>
               </div>
 
               <div>
-                <DialogTitle className="text-xl font-bold flex items-center gap-2 flex-wrap">
+                <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 flex-wrap text-foreground">
                   <span>{grade.assignmentTitle || "Bài kiểm tra viết"}</span>
                   <Badge variant="outline" className="text-xs bg-muted/40 font-semibold">
                     {isEssay ? "Tập làm văn" : "Chính tả Nghe - Viết"}
@@ -283,28 +284,30 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5 text-xs hidden sm:flex">
+              <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5 text-xs hidden sm:flex shadow-2xs">
                 <Printer className="w-3.5 h-3.5" /> In phiếu nhận xét
               </Button>
             </div>
           </div>
         </DialogHeader>
 
-        {/* ── THANH CHUYỂN TAB ── */}
-        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-          <TabsList className="grid grid-cols-2 w-full max-w-sm mx-auto mb-3">
-            <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm">
-              <FileText className="w-4 h-4" /> Bài làm & Nhận xét
-            </TabsTrigger>
-            <TabsTrigger value="comparison" className="gap-1.5 text-xs sm:text-sm">
-              <Layers className="w-4 h-4" /> So sánh đối chiếu
-            </TabsTrigger>
-          </TabsList>
+        {/* ── THANH CHUYỂN TAB CỐ ĐỊNH ── */}
+        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="px-5 pt-3 pb-2 border-b bg-muted/20 shrink-0">
+            <TabsList className="grid grid-cols-2 w-full max-w-sm mx-auto">
+              <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm">
+                <FileText className="w-4 h-4" /> Bài làm & Nhận xét
+              </TabsTrigger>
+              <TabsTrigger value="comparison" className="gap-1.5 text-xs sm:text-sm">
+                <Layers className="w-4 h-4" /> So sánh đối chiếu
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ══════════════════════════════════════════════════════════
               TAB 1: SPLIT-VIEW (ẢNH BÀI LÀM + BOUNDING BOX VÀ BẢNG ĐIỂM)
           ══════════════════════════════════════════════════════════ */}
-          <TabsContent value="overview" className="pt-1">
+          <TabsContent value="overview" className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 min-h-0 m-0">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               
               {/* ── CỘT TRÁI: ẢNH BÀI LÀM & BOUNDING BOX TƯƠNG TÁC (7/12 cột) ── */}
@@ -329,7 +332,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
                 />
 
                 {/* Hộp gợi ý cho Ba Mẹ */}
-                <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 text-xs leading-relaxed text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+                <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 text-xs leading-relaxed text-blue-900 dark:text-blue-200 flex items-start gap-2.5 shadow-2xs">
                   <Lightbulb className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold">Gợi ý cho Ba Mẹ: </span>
@@ -339,62 +342,62 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
               </div>
 
               {/* ── CỘT PHẢI: BẢNG ĐIỂM, NHẬN XÉT SƯ PHẠM & DANH SÁCH LỖI (5/12 cột) ── */}
-              <div className="lg:col-span-5 space-y-4 lg:max-h-[750px] lg:overflow-y-auto lg:pr-1">
+              <div className="lg:col-span-5 space-y-4 lg:max-h-[720px] lg:overflow-y-auto lg:pr-1">
                 
                 {/* 1. THANG ĐIỂM CHI TIẾT THEO PHÂN MÔN */}
                 {isEssay ? (
                   /* Thang điểm 4 phần của TẬP LÀM VĂN */
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <Card className="border-border/60 bg-gradient-to-br from-rose-500/5 to-rose-500/10">
-                      <CardContent className="p-3 space-y-1">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-semibold text-rose-700 dark:text-rose-400">1. Chính tả & Ngữ pháp</span>
-                          <span className="font-bold text-rose-700 dark:text-rose-400">{chinhTaRaw}/{chinhTaMax}đ</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <Card className="border-border/60 bg-gradient-to-br from-rose-500/5 to-rose-500/10 shadow-2xs">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-1 text-xs">
+                          <span className="font-semibold text-rose-700 dark:text-rose-400 truncate">1. Chính tả & Ngữ pháp</span>
+                          <span className="font-bold text-rose-700 dark:text-rose-400 shrink-0">{chinhTaRaw}/{chinhTaMax}đ</span>
                         </div>
                         <Progress value={(chinhTaRaw / chinhTaMax) * 100} className="h-1.5 bg-rose-200" />
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground truncate">
                           {chinhTaErrorCount === 0 ? "Viết đúng 100%" : `${chinhTaErrorCount} lỗi (−${chinhTaDeduction || (chinhTaErrorCount * 0.5).toFixed(1)}đ)`}
                         </p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
-                      <CardContent className="p-3 space-y-1">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-semibold text-blue-700 dark:text-blue-400">2. Trình bày</span>
-                          <span className="font-bold text-blue-700 dark:text-blue-400">{hinhThucRaw}/{hinhThucMax}đ</span>
+                    <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10 shadow-2xs">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-1 text-xs">
+                          <span className="font-semibold text-blue-700 dark:text-blue-400 truncate">2. Hình thức trình bày</span>
+                          <span className="font-bold text-blue-700 dark:text-blue-400 shrink-0">{hinhThucRaw}/{hinhThucMax}đ</span>
                         </div>
                         <Progress value={(hinhThucRaw / hinhThucMax) * 100} className="h-1.5 bg-blue-200" />
                         <p className="text-[11px] text-muted-foreground truncate">{hinhThucNote || "Chữ viết, căn lề"}</p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-border/60 bg-gradient-to-br from-purple-500/5 to-purple-500/10">
-                      <CardContent className="p-3 space-y-1">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-semibold text-purple-700 dark:text-purple-400">3. Nội dung & Ý</span>
-                          <span className="font-bold text-purple-700 dark:text-purple-400">{noiDungRaw}/{noiDungMax}đ</span>
+                    <Card className="border-border/60 bg-gradient-to-br from-purple-500/5 to-purple-500/10 shadow-2xs">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-1 text-xs">
+                          <span className="font-semibold text-purple-700 dark:text-purple-400 truncate">3. Nội dung & Ý tưởng</span>
+                          <span className="font-bold text-purple-700 dark:text-purple-400 shrink-0">{noiDungRaw}/{noiDungMax}đ</span>
                         </div>
                         <Progress value={(noiDungRaw / noiDungMax) * 100} className="h-1.5 bg-purple-200" />
-                        <p className="text-[11px] text-muted-foreground">Đủ ý, bám sát đề</p>
+                        <p className="text-[11px] text-muted-foreground truncate">Đủ ý, bám sát đề</p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-border/60 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
-                      <CardContent className="p-3 space-y-1">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-semibold text-amber-700 dark:text-amber-400">4. Sáng tạo</span>
-                          <span className="font-bold text-amber-700 dark:text-amber-400">{sangTaoRaw}/{sangTaoMax}đ</span>
+                    <Card className="border-border/60 bg-gradient-to-br from-amber-500/5 to-amber-500/10 shadow-2xs">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-1 text-xs">
+                          <span className="font-semibold text-amber-700 dark:text-amber-400 truncate">4. Sáng tạo & Cảm xúc</span>
+                          <span className="font-bold text-amber-700 dark:text-amber-400 shrink-0">{sangTaoRaw}/{sangTaoMax}đ</span>
                         </div>
                         <Progress value={(sangTaoRaw / sangTaoMax) * 100} className="h-1.5 bg-amber-200" />
-                        <p className="text-[11px] text-muted-foreground">Biện pháp tu từ, từ hay</p>
+                        <p className="text-[11px] text-muted-foreground truncate">Biện pháp tu từ, từ hay</p>
                       </CardContent>
                     </Card>
                   </div>
                 ) : (
                   /* Thang điểm 2 phần chuẩn của CHÍNH TẢ SGK */
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <Card className="border-border/60 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+                    <Card className="border-border/60 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 shadow-2xs">
                       <CardContent className="p-3 space-y-1.5">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-800 dark:text-emerald-300">
@@ -413,7 +416,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
                       </CardContent>
                     </Card>
 
-                    <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                    <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10 shadow-2xs">
                       <CardContent className="p-3 space-y-1.5">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5 font-bold text-xs text-blue-800 dark:text-blue-300">
@@ -435,7 +438,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
 
                 {/* 2. Dẫn chứng sáng tạo cô giáo khen (nếu có trong Tập làm văn) */}
                 {sangTaoEvidence.length > 0 && (
-                  <div className="rounded-xl border border-amber-300/80 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-1.5">
+                  <div className="rounded-xl border border-amber-300/80 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-1.5 shadow-2xs">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                       <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                       <span>Câu văn hay cô giáo khen ngợi</span>
@@ -451,7 +454,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
                 )}
 
                 {/* 3. Lời nhận xét sư phạm toàn diện của Giáo viên */}
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 shadow-2xs">
                   <div className="flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-primary" />
                     <h3 className="font-bold text-xs sm:text-sm text-primary">
@@ -472,7 +475,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
 
                     {/* Bộ lọc nhóm lỗi */}
                     {correctionsList.length > 0 && (
-                      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-[220px]">
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         <button
                           onClick={() => setFilterType("all")}
                           className={`px-2 py-0.5 text-[10px] rounded-full border transition-all ${
@@ -517,7 +520,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
                           <div
                             key={idx}
                             id={`student-err-card-${realIdx}`}
-                            className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
                               isHovered ? "ring-2 ring-primary border-primary bg-primary/10 shadow-xs" : "bg-card border-border hover:border-primary/40"
                             }`}
                             onMouseEnter={() => setHoveredErrorIdx(realIdx)}
@@ -575,9 +578,9 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
           </TabsContent>
 
           {/* ══════════════════════════════════════════════════════════
-              TAB 3: SO SÁNH ĐỐI CHIẾU SONG SONG VS INLINE
+              TAB 2: SO SÁNH ĐỐI CHIẾU SONG SONG VS INLINE
           ══════════════════════════════════════════════════════════ */}
-          <TabsContent value="comparison" className="space-y-4 pt-2">
+          <TabsContent value="comparison" className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 min-h-0 space-y-4 m-0">
             <div className="flex justify-end gap-2 text-xs">
               <div className="flex rounded-lg border bg-muted/40 p-0.5 text-xs font-medium">
                 <button
