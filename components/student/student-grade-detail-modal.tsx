@@ -116,24 +116,50 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
   const [playingText, setPlayingText] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  if (!grade) return null
+  // 1. Phân tích danh sách lỗi bằng useMemo (được gọi vô điều kiện ở cấp cao nhất)
+  const correctionsList: CorrectionItem[] = useMemo(() => {
+    if (!grade) return []
+    if (Array.isArray(grade.corrections)) {
+      return grade.corrections
+    } else if (typeof grade.corrections === "string" && grade.corrections.trim()) {
+      try {
+        return JSON.parse(grade.corrections)
+      } catch {
+        return []
+      }
+    }
+    return []
+  }, [grade?.corrections])
 
-  // 1. Phân tích danh sách lỗi
-  let correctionsList: CorrectionItem[] = []
-  if (Array.isArray(grade.corrections)) {
-    correctionsList = grade.corrections
-  } else if (typeof grade.corrections === "string" && grade.corrections.trim()) {
-    try {
-      correctionsList = JSON.parse(grade.corrections)
-    } catch {}
-  }
+  // 2. Đếm các nhóm lỗi để làm filter chips (Hooks vô điều kiện)
+  const errorTypeCounts = useMemo(() => {
+    const map: Record<string, number> = {}
+    correctionsList.forEach(c => {
+      const t = c.error_type || "phu_am_dau"
+      map[t] = (map[t] || 0) + 1
+    })
+    return map
+  }, [correctionsList])
+
+  // Dọn dẹp audio khi unmount hoặc đổi bài
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [grade?.id])
+
+  // KIỂM TRA ĐIỀU KIỆN SAU KHI ĐÃ GỌI ĐỦ TẤT CẢ HOOKS Ở ĐẦU FUNCTION
+  if (!grade) return null
 
   // Lọc lỗi theo nhóm
   const filteredCorrections = filterType === "all"
     ? correctionsList
     : correctionsList.filter(c => c.error_type === filterType)
 
-  // 2. Phân tích Chế độ chấm & Thang điểm Giáo viên (Chính tả vs Tập làm văn)
+  // 3. Phân tích Chế độ chấm & Thang điểm Giáo viên (Chính tả vs Tập làm văn)
   const isEssay = grade.gradingMode === "essay"
 
   let chinhTaRaw = 0
@@ -203,7 +229,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
     }
   }
 
-  // 3. Phát âm chuẩn bằng Edge-TTS
+  // 4. Phát âm chuẩn bằng Edge-TTS
   const playAudio = (text: string) => {
     if (!text) return
     if (audioRef.current) audioRef.current.pause()
@@ -218,16 +244,6 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
   const ratingInfo = getRatingBadge(grade.scoreNum, grade.overallRating)
   const RatingIcon = ratingInfo.icon
   const imageSrc = grade.imageBase64 || grade.imagePath || ""
-
-  // Đếm các nhóm lỗi để làm filter chips
-  const errorTypeCounts = useMemo(() => {
-    const map: Record<string, number> = {}
-    correctionsList.forEach(c => {
-      const t = c.error_type || "phu_am_dau"
-      map[t] = (map[t] || 0) + 1
-    })
-    return map
-  }, [correctionsList])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
