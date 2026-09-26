@@ -34,6 +34,7 @@ import {
   Lightbulb,
   CheckCheck,
 } from "lucide-react"
+import { StudentBoundingBoxCanvas } from "./student-bbox-canvas"
 
 export interface CorrectionItem {
   error: string
@@ -109,7 +110,7 @@ function getRatingBadge(score: number, rating?: string) {
 }
 
 export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGradeDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "image" | "comparison">("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "comparison">("overview")
   const [hoveredErrorIdx, setHoveredErrorIdx] = useState<number | null>(null)
   const [filterType, setFilterType] = useState<string>("all")
   const [textMode, setTextMode] = useState<"sidebyside" | "inline">("sidebyside")
@@ -247,7 +248,7 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 gap-5 print:max-w-full print:m-0 print:p-2">
+      <DialogContent className="max-w-6xl max-h-[94vh] overflow-y-auto p-4 sm:p-6 gap-5 print:max-w-full print:m-0 print:p-2">
         <DialogHeader className="border-b pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3.5">
@@ -291,12 +292,9 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
 
         {/* ── THANH CHUYỂN TAB ── */}
         <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-          <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto mb-2">
+          <TabsList className="grid grid-cols-2 w-full max-w-sm mx-auto mb-3">
             <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm">
-              <FileText className="w-4 h-4" /> Bảng điểm & Nhận xét
-            </TabsTrigger>
-            <TabsTrigger value="image" className="gap-1.5 text-xs sm:text-sm">
-              <ImageIcon className="w-4 h-4" /> Ảnh bài viết tay
+              <FileText className="w-4 h-4" /> Bài làm & Nhận xét
             </TabsTrigger>
             <TabsTrigger value="comparison" className="gap-1.5 text-xs sm:text-sm">
               <Layers className="w-4 h-4" /> So sánh đối chiếu
@@ -304,349 +302,276 @@ export function StudentGradeDetailModal({ grade, open, onOpenChange }: StudentGr
           </TabsList>
 
           {/* ══════════════════════════════════════════════════════════
-              TAB 1: BẢNG ĐIỂM CHUẨN SƯ PHẠM CỦA GIÁO VIÊN
+              TAB 1: SPLIT-VIEW (ẢNH BÀI LÀM + BOUNDING BOX VÀ BẢNG ĐIỂM)
           ══════════════════════════════════════════════════════════ */}
-          <TabsContent value="overview" className="space-y-5 pt-2">
-            {/* THANG ĐIỂM CHI TIẾT THEO PHÂN MÔN */}
-            {isEssay ? (
-              /* Thang điểm 4 phần của TẬP LÀM VĂN (4đ + 3đ + 2đ + 1đ = 10đ) */
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Card className="border-border/60 bg-gradient-to-br from-rose-500/5 to-rose-500/10">
-                  <CardContent className="p-3.5 space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-rose-700 dark:text-rose-400">1. Chính tả & Ngữ pháp</span>
-                      <span className="font-bold text-rose-700 dark:text-rose-400">{chinhTaRaw}/{chinhTaMax}đ</span>
-                    </div>
-                    <Progress value={(chinhTaRaw / chinhTaMax) * 100} className="h-1.5 bg-rose-200" />
-                    <p className="text-[11px] text-muted-foreground">
-                      {chinhTaErrorCount === 0 ? "Viết đúng 100%" : `${chinhTaErrorCount} lỗi (−${chinhTaDeduction || (chinhTaErrorCount * 0.5).toFixed(1)}đ)`}
-                    </p>
-                  </CardContent>
-                </Card>
+          <TabsContent value="overview" className="pt-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              
+              {/* ── CỘT TRÁI: ẢNH BÀI LÀM & BOUNDING BOX TƯƠNG TÁC (7/12 cột) ── */}
+              <div className="lg:col-span-7 space-y-3.5">
+                <StudentBoundingBoxCanvas
+                  imageSrc={imageSrc}
+                  originalText={grade.originalText}
+                  studentName={grade.studentName}
+                  corrections={correctionsList}
+                  hoveredErrorIdx={hoveredErrorIdx}
+                  onHoverError={setHoveredErrorIdx}
+                  onSelectError={(idx) => {
+                    setHoveredErrorIdx(idx)
+                    const el = document.getElementById(`student-err-card-${idx}`)
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                    }
+                  }}
+                  onPlayAudio={playAudio}
+                  playingText={playingText}
+                  filterType={filterType}
+                />
 
-                <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
-                  <CardContent className="p-3.5 space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-blue-700 dark:text-blue-400">2. Hình thức trình bày</span>
-                      <span className="font-bold text-blue-700 dark:text-blue-400">{hinhThucRaw}/{hinhThucMax}đ</span>
-                    </div>
-                    <Progress value={(hinhThucRaw / hinhThucMax) * 100} className="h-1.5 bg-blue-200" />
-                    <p className="text-[11px] text-muted-foreground">{hinhThucNote || "Chữ viết, căn lề, thụt dòng"}</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60 bg-gradient-to-br from-purple-500/5 to-purple-500/10">
-                  <CardContent className="p-3.5 space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-purple-700 dark:text-purple-400">3. Nội dung & Ý tưởng</span>
-                      <span className="font-bold text-purple-700 dark:text-purple-400">{noiDungRaw}/{noiDungMax}đ</span>
-                    </div>
-                    <Progress value={(noiDungRaw / noiDungMax) * 100} className="h-1.5 bg-purple-200" />
-                    <p className="text-[11px] text-muted-foreground">Đủ ý, bám sát yêu cầu đề</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
-                  <CardContent className="p-3.5 space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-amber-700 dark:text-amber-400">4. Sáng tạo & Cảm xúc</span>
-                      <span className="font-bold text-amber-700 dark:text-amber-400">{sangTaoRaw}/{sangTaoMax}đ</span>
-                    </div>
-                    <Progress value={(sangTaoRaw / sangTaoMax) * 100} className="h-1.5 bg-amber-200" />
-                    <p className="text-[11px] text-muted-foreground">Biện pháp tu từ, từ sinh động</p>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              /* Thang điểm 2 phần chuẩn của CHÍNH TẢ SGK (7đ Chính tả + 3đ Trình bày = 10đ) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <Card className="border-border/60 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-1.5 font-bold text-sm text-emerald-800 dark:text-emerald-300">
-                        <PenTool className="w-4 h-4 text-emerald-600" />
-                        <span>1. Điểm Chính tả (Nghe - Viết đối soát)</span>
-                      </div>
-                      <span className="font-extrabold text-base text-emerald-700 dark:text-emerald-400">
-                        {chinhTaRaw} <span className="text-xs font-normal text-muted-foreground">/ {chinhTaMax} điểm</span>
-                      </span>
-                    </div>
-                    <Progress value={(chinhTaRaw / chinhTaMax) * 100} className="h-2 bg-emerald-200" />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
-                      <span>Mắc {chinhTaErrorCount} lỗi chính tả</span>
-                      {chinhTaDeduction > 0 && <span className="text-rose-600 font-semibold">Trừ {chinhTaDeduction}đ</span>}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-1.5 font-bold text-sm text-blue-800 dark:text-blue-300">
-                        <Star className="w-4 h-4 text-blue-600" />
-                        <span>2. Chữ viết & Trình bày sạch đẹp</span>
-                      </div>
-                      <span className="font-extrabold text-base text-blue-700 dark:text-blue-400">
-                        {hinhThucRaw} <span className="text-xs font-normal text-muted-foreground">/ {hinhThucMax} điểm</span>
-                      </span>
-                    </div>
-                    <Progress value={(hinhThucRaw / hinhThucMax) * 100} className="h-2 bg-blue-200" />
-                    <p className="text-xs text-muted-foreground pt-0.5">
-                      {hinhThucNote || "Đánh giá nét chữ đều, độ sạch đẹp và giữ vở"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Dẫn chứng sáng tạo cô giáo khen (nếu có trong Tập làm văn) */}
-            {sangTaoEvidence.length > 0 && (
-              <div className="rounded-xl border border-amber-300/80 bg-amber-50/60 dark:bg-amber-950/20 p-3.5 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span>Điểm sáng tạo & Câu văn hay cô giáo khen ngợi</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {sangTaoEvidence.map((ev, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-100/90 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-300">
-                      ✨ &ldquo;{ev}&rdquo;
-                    </span>
-                  ))}
+                {/* Hộp gợi ý cho Ba Mẹ */}
+                <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 text-xs leading-relaxed text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+                  <Lightbulb className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Gợi ý cho Ba Mẹ: </span>
+                    Bấm trực tiếp vào các hộp khoanh chữ đỏ trên bài vở để nghe cô giáo AI đọc chuẩn từng từ. Khuyến khích con dùng bút chì nắn nót viết lại các chữ này vào vở rèn chữ nhé!
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Lời nhận xét sư phạm toàn diện của Giáo viên */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <h3 className="font-bold text-sm sm:text-base text-primary">
-                  Lời nhận xét sư phạm của Giáo viên (Theo Thông tư 27)
-                </h3>
-              </div>
-              <p className="text-sm sm:text-base leading-relaxed text-foreground font-normal whitespace-pre-wrap bg-background/80 p-3.5 rounded-lg border">
-                {grade.pedagogicalComment || grade.feedback || "Con làm bài rất tốt. Hãy tiếp tục phát huy nét chữ cẩn thận này nhé!"}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
-                <span>Xếp loại sư phạm:</span>
-                <Badge variant="outline" className="font-semibold text-primary">
-                  {grade.overallRating || ratingInfo.label}
-                </Badge>
-                <span>•</span>
-                <span>Chấm tự động & Giáo viên duyệt</span>
-              </div>
-            </div>
+              {/* ── CỘT PHẢI: BẢNG ĐIỂM, NHẬN XÉT SƯ PHẠM & DANH SÁCH LỖI (5/12 cột) ── */}
+              <div className="lg:col-span-5 space-y-4 lg:max-h-[750px] lg:overflow-y-auto lg:pr-1">
+                
+                {/* 1. THANG ĐIỂM CHI TIẾT THEO PHÂN MÔN */}
+                {isEssay ? (
+                  /* Thang điểm 4 phần của TẬP LÀM VĂN */
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Card className="border-border/60 bg-gradient-to-br from-rose-500/5 to-rose-500/10">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-rose-700 dark:text-rose-400">1. Chính tả & Ngữ pháp</span>
+                          <span className="font-bold text-rose-700 dark:text-rose-400">{chinhTaRaw}/{chinhTaMax}đ</span>
+                        </div>
+                        <Progress value={(chinhTaRaw / chinhTaMax) * 100} className="h-1.5 bg-rose-200" />
+                        <p className="text-[11px] text-muted-foreground">
+                          {chinhTaErrorCount === 0 ? "Viết đúng 100%" : `${chinhTaErrorCount} lỗi (−${chinhTaDeduction || (chinhTaErrorCount * 0.5).toFixed(1)}đ)`}
+                        </p>
+                      </CardContent>
+                    </Card>
 
-            {/* Danh sách lỗi chính tả cần sửa (Kèm nút Audio phát âm) */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h4 className="font-bold text-sm sm:text-base flex items-center gap-2">
-                  <span>Chi tiết lỗi cần sửa ({filteredCorrections.length}/{correctionsList.length})</span>
-                </h4>
+                    <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-blue-700 dark:text-blue-400">2. Trình bày</span>
+                          <span className="font-bold text-blue-700 dark:text-blue-400">{hinhThucRaw}/{hinhThucMax}đ</span>
+                        </div>
+                        <Progress value={(hinhThucRaw / hinhThucMax) * 100} className="h-1.5 bg-blue-200" />
+                        <p className="text-[11px] text-muted-foreground truncate">{hinhThucNote || "Chữ viết, căn lề"}</p>
+                      </CardContent>
+                    </Card>
 
-                {/* Bộ lọc nhóm lỗi */}
-                {correctionsList.length > 0 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                    <button
-                      onClick={() => setFilterType("all")}
-                      className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
-                        filterType === "all" ? "bg-primary text-white font-bold border-primary" : "bg-background text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      Tất cả ({correctionsList.length})
-                    </button>
-                    {Object.entries(errorTypeCounts).map(([type, count]) => {
-                      const theme = getErrorTheme(type)
-                      return (
-                        <button
-                          key={type}
-                          onClick={() => setFilterType(type)}
-                          className={`px-2.5 py-1 text-xs rounded-full border transition-all whitespace-nowrap ${
-                            filterType === type ? "bg-primary text-white font-bold border-primary" : `${theme.badge}`
-                          }`}
-                        >
-                          {theme.label} ({count})
-                        </button>
-                      )
-                    })}
+                    <Card className="border-border/60 bg-gradient-to-br from-purple-500/5 to-purple-500/10">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-purple-700 dark:text-purple-400">3. Nội dung & Ý</span>
+                          <span className="font-bold text-purple-700 dark:text-purple-400">{noiDungRaw}/{noiDungMax}đ</span>
+                        </div>
+                        <Progress value={(noiDungRaw / noiDungMax) * 100} className="h-1.5 bg-purple-200" />
+                        <p className="text-[11px] text-muted-foreground">Đủ ý, bám sát đề</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-border/60 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-amber-700 dark:text-amber-400">4. Sáng tạo</span>
+                          <span className="font-bold text-amber-700 dark:text-amber-400">{sangTaoRaw}/{sangTaoMax}đ</span>
+                        </div>
+                        <Progress value={(sangTaoRaw / sangTaoMax) * 100} className="h-1.5 bg-amber-200" />
+                        <p className="text-[11px] text-muted-foreground">Biện pháp tu từ, từ hay</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  /* Thang điểm 2 phần chuẩn của CHÍNH TẢ SGK */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <Card className="border-border/60 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-800 dark:text-emerald-300">
+                            <PenTool className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>1. Điểm Chính tả</span>
+                          </div>
+                          <span className="font-bold text-sm text-emerald-700 dark:text-emerald-400">
+                            {chinhTaRaw}/{chinhTaMax}đ
+                          </span>
+                        </div>
+                        <Progress value={(chinhTaRaw / chinhTaMax) * 100} className="h-1.5 bg-emerald-200" />
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                          <span>Mắc {chinhTaErrorCount} lỗi</span>
+                          {chinhTaDeduction > 0 && <span className="text-rose-600 font-semibold">Trừ {chinhTaDeduction}đ</span>}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-blue-800 dark:text-blue-300">
+                            <Star className="w-3.5 h-3.5 text-blue-600" />
+                            <span>2. Trình bày & Chữ viết</span>
+                          </div>
+                          <span className="font-bold text-sm text-blue-700 dark:text-blue-400">
+                            {hinhThucRaw}/{hinhThucMax}đ
+                          </span>
+                        </div>
+                        <Progress value={(hinhThucRaw / hinhThucMax) * 100} className="h-1.5 bg-blue-200" />
+                        <p className="text-[11px] text-muted-foreground truncate pt-0.5">
+                          {hinhThucNote || "Sạch sẽ, giữ vở"}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
-              </div>
 
-              {correctionsList.length === 0 ? (
-                <div className="text-center py-8 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300">
-                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
-                  <p className="font-semibold text-sm">Tuyệt vời! Con không mắc lỗi chính tả nào.</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Bài viết chuẩn chỉnh và chuẩn xác từng từ.</p>
+                {/* 2. Dẫn chứng sáng tạo cô giáo khen (nếu có trong Tập làm văn) */}
+                {sangTaoEvidence.length > 0 && (
+                  <div className="rounded-xl border border-amber-300/80 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Câu văn hay cô giáo khen ngợi</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {sangTaoEvidence.map((ev, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300">
+                          ✨ &ldquo;{ev}&rdquo;
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Lời nhận xét sư phạm toàn diện của Giáo viên */}
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <h3 className="font-bold text-xs sm:text-sm text-primary">
+                      Nhận xét sư phạm của Giáo viên (Thông tư 27)
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm leading-relaxed text-foreground font-normal whitespace-pre-wrap bg-background/80 p-3 rounded-lg border">
+                    {grade.pedagogicalComment || grade.feedback || "Con làm bài rất tốt. Hãy tiếp tục phát huy nét chữ cẩn thận này nhé!"}
+                  </p>
                 </div>
-              ) : (
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  {filteredCorrections.map((item, idx) => {
-                    const theme = getErrorTheme(item.error_type)
-                    const isPlaying = playingText === item.suggestion
-                    return (
-                      <div
-                        key={idx}
-                        className={`p-3 rounded-xl border transition-all ${
-                          hoveredErrorIdx === idx ? "ring-2 ring-primary border-primary bg-primary/5" : "bg-card border-border hover:border-primary/40"
-                        }`}
-                        onMouseEnter={() => setHoveredErrorIdx(idx)}
-                        onMouseLeave={() => setHoveredErrorIdx(null)}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="line-through text-rose-600 font-bold text-sm sm:text-base">
-                              {item.error}
-                            </span>
-                            <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-emerald-600 font-bold text-sm sm:text-base">
-                              {item.suggestion}
-                            </span>
-                            <Badge className={`${theme.badge} text-[10px] py-0 px-1.5 border`}>
-                              {theme.label}
-                            </Badge>
-                            {item.is_dialect && (
-                              <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 bg-amber-50">
-                                Phương ngữ
-                              </Badge>
-                            )}
-                          </div>
 
-                          {/* Nút Nghe phát âm chuẩn */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className={`h-8 w-8 p-0 shrink-0 rounded-full ${isPlaying ? "bg-primary text-white animate-pulse" : "text-primary hover:bg-primary/10"}`}
-                            onClick={() => playAudio(item.suggestion)}
-                            title="Nghe phát âm chuẩn từ đúng"
-                          >
-                            <Volume2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                {/* 4. Danh sách lỗi chính tả cần sửa (Kèm nút Audio phát âm) */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                      <span>Chi tiết từ cần rèn ({filteredCorrections.length}/{correctionsList.length})</span>
+                    </h4>
 
-                        {item.reason && (
-                          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed bg-muted/30 p-2 rounded">
-                            💡 {item.reason}
-                          </p>
-                        )}
+                    {/* Bộ lọc nhóm lỗi */}
+                    {correctionsList.length > 0 && (
+                      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-[220px]">
+                        <button
+                          onClick={() => setFilterType("all")}
+                          className={`px-2 py-0.5 text-[10px] rounded-full border transition-all ${
+                            filterType === "all" ? "bg-primary text-white font-bold border-primary" : "bg-background text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          Tất cả ({correctionsList.length})
+                        </button>
+                        {Object.entries(errorTypeCounts).map(([type, count]) => {
+                          const theme = getErrorTheme(type)
+                          return (
+                            <button
+                              key={type}
+                              onClick={() => setFilterType(type)}
+                              className={`px-2 py-0.5 text-[10px] rounded-full border transition-all whitespace-nowrap ${
+                                filterType === type ? "bg-primary text-white font-bold border-primary" : `${theme.badge}`
+                              }`}
+                            >
+                              {theme.label} ({count})
+                            </button>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </TabsContent>
+                    )}
+                  </div>
 
-          {/* ══════════════════════════════════════════════════════════
-              TAB 2: XEM ẢNH VỞ VIẾT TAY & BOUNDING BOX TƯƠNG TÁC
-          ══════════════════════════════════════════════════════════ */}
-          <TabsContent value="image" className="space-y-4 pt-2">
-            {!imageSrc ? (
-              <div className="py-16 text-center text-muted-foreground border-2 border-dashed rounded-xl">
-                <ImageIcon className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="font-medium text-sm">Không có ảnh chụp bài làm được lưu cho bài này.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5 font-medium text-foreground">
-                    <Layers className="w-4 h-4 text-primary" /> Khung khoanh vùng chữ viết tay bị chấm lỗi
-                  </span>
-                  <span>Di chuột vào danh sách lỗi để xem vị trí nổi bật trên vở</span>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {/* Container Ảnh có lớp phủ Bounding Box */}
-                  <div className="lg:col-span-2 relative rounded-xl border overflow-hidden bg-muted/40 max-h-[500px] flex items-center justify-center">
-                    <div className="relative inline-block max-w-full">
-                      <img
-                        src={imageSrc}
-                        alt="Ảnh bài làm viết tay"
-                        className="w-full h-auto max-h-[480px] object-contain block mx-auto select-none"
-                      />
-
-                      {/* Lớp phủ các khung chữ viết bị sai (Bounding Box) */}
-                      {correctionsList.map((c, i) => {
-                        if (!c.bbox) return null
-                        const b = c.bbox
-                        const hasRel = b.rel_x1 !== undefined && b.rel_w !== undefined
-                        if (!hasRel) return null
-
-                        const isHovered = hoveredErrorIdx === i
-                        const theme = getErrorTheme(c.error_type)
+                  {correctionsList.length === 0 ? (
+                    <div className="text-center py-6 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300">
+                      <CheckCircle2 className="w-7 h-7 mx-auto mb-1.5 text-emerald-600" />
+                      <p className="font-semibold text-xs sm:text-sm">Tuyệt vời! Con không mắc lỗi chính tả nào.</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Bài viết chuẩn chỉnh và chuẩn xác từng từ.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredCorrections.map((item, idx) => {
+                        const realIdx = correctionsList.indexOf(item)
+                        const isHovered = hoveredErrorIdx === realIdx
+                        const theme = getErrorTheme(item.error_type)
+                        const isPlaying = playingText === item.suggestion
 
                         return (
                           <div
-                            key={i}
-                            className={`absolute border-2 transition-all cursor-pointer rounded-sm ${theme.border} ${theme.bg} ${
-                              isHovered ? "ring-4 ring-offset-1 ring-amber-400 z-20 scale-105 shadow-lg" : "opacity-80 z-10 hover:opacity-100"
+                            key={idx}
+                            id={`student-err-card-${realIdx}`}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                              isHovered ? "ring-2 ring-primary border-primary bg-primary/10 shadow-xs" : "bg-card border-border hover:border-primary/40"
                             }`}
-                            style={{
-                              left: `${(b.rel_x1 || 0) * 100}%`,
-                              top: `${(b.rel_y1 || 0) * 100}%`,
-                              width: `${(b.rel_w || 0) * 100}%`,
-                              height: `${(b.rel_h || 0) * 100}%`,
-                            }}
-                            onMouseEnter={() => setHoveredErrorIdx(i)}
+                            onMouseEnter={() => setHoveredErrorIdx(realIdx)}
                             onMouseLeave={() => setHoveredErrorIdx(null)}
-                            onClick={() => playAudio(c.suggestion)}
+                            onClick={() => playAudio(item.suggestion)}
                           >
-                            {/* Nhãn từ viết đúng khi hover */}
-                            {isHovered && (
-                              <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-foreground text-background text-[11px] font-bold py-0.5 px-1.5 rounded shadow flex items-center gap-1 z-30">
-                                <span>{c.suggestion}</span>
-                                <Volume2 className="w-3 h-3 text-primary" />
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="line-through text-rose-600 font-bold text-xs sm:text-sm">
+                                  {item.error}
+                                </span>
+                                <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-emerald-600 font-bold text-xs sm:text-sm">
+                                  {item.suggestion}
+                                </span>
+                                <Badge className={`${theme.badge} text-[9px] py-0 px-1 border`}>
+                                  {theme.label}
+                                </Badge>
+                                {item.is_dialect && (
+                                  <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300 bg-amber-50">
+                                    Phương ngữ
+                                  </Badge>
+                                )}
                               </div>
+
+                              {/* Nút Nghe phát âm chuẩn */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`h-7 w-7 p-0 shrink-0 rounded-full ${isPlaying ? "bg-primary text-white animate-pulse" : "text-primary hover:bg-primary/10"}`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  playAudio(item.suggestion)
+                                }}
+                                title="Nghe phát âm chuẩn từ đúng"
+                              >
+                                <Volume2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+
+                            {item.reason && (
+                              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed bg-muted/40 p-1.5 rounded">
+                                💡 {item.reason}
+                              </p>
                             )}
                           </div>
                         )
                       })}
                     </div>
-                  </div>
-
-                  {/* Danh sách lỗi bên cạnh */}
-                  <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Vị trí lỗi trên bài ({correctionsList.length})
-                    </p>
-                    {correctionsList.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Không có lỗi nào.</p>
-                    ) : (
-                      correctionsList.map((item, idx) => {
-                        const isHovered = hoveredErrorIdx === idx
-                        return (
-                          <div
-                            key={idx}
-                            className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
-                              isHovered ? "border-primary bg-primary/10 ring-1 ring-primary" : "bg-card hover:bg-muted/50"
-                            }`}
-                            onMouseEnter={() => setHoveredErrorIdx(idx)}
-                            onMouseLeave={() => setHoveredErrorIdx(null)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="line-through text-rose-600 font-bold">{item.error}</span>
-                              <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-emerald-600 font-bold">{item.suggestion}</span>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  playAudio(item.suggestion)
-                                }}
-                              >
-                                <Volume2 className="w-3.5 h-3.5 text-primary" />
-                              </Button>
-                            </div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
+
+            </div>
           </TabsContent>
 
           {/* ══════════════════════════════════════════════════════════
