@@ -16,7 +16,16 @@ import {
   FolderOpen, Clock, Zap, FileText, RefreshCw,
   Star, MessageSquare, Save, User, BookOpen, ScrollText, Sparkles,
   Image as ImageIcon, Target, Pencil, Layers, CheckCircle2, Check, ChevronDown, ChevronRight, Sliders,
+  Lightbulb, Trophy,
 } from "lucide-react"
+import {
+  IconStepCamera,
+  IconStepEnhance,
+  IconStepScanOcr,
+  IconStepProofread,
+  IconStepScore,
+  IconStepWorkflow,
+} from "@/components/teacher/grade-stepper-icons"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog"
@@ -2555,40 +2564,93 @@ export default function GradingPage() {
 
             {/* Pipeline trang thai */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">📋 Quy trình chấm bài</p>
+              <div className="flex items-center gap-2 mb-3.5">
+                <IconStepWorkflow size={16} className="text-primary shrink-0" />
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quy trình chấm bài</p>
+              </div>
               <div className="space-y-2">
                 {[
-                  { step: 1, icon: "📷", label: "Chụp hoặc tải ảnh vở", active: !processedImage, done: !!processedImage },
-                  { step: 2, icon: "🔧", label: "Căn chỉnh & làm rõ ảnh", active: !!processedImage && !ocrText, done: !!ocrText },
-                  { step: 3, icon: "🔍", label: "Đọc chữ viết tay", active: !!ocrText && !gradingResult, done: !!gradingResult },
+                  {
+                    step: 1,
+                    Icon: IconStepCamera,
+                    label: "Chụp hoặc tải ảnh vở",
+                    active: !processedImage,
+                    done: !!processedImage,
+                    color: "text-blue-600 dark:text-blue-400",
+                    bgActive: "bg-blue-50/80 dark:bg-blue-950/30 border-blue-200/80 dark:border-blue-800/40",
+                  },
+                  {
+                    step: 2,
+                    Icon: IconStepEnhance,
+                    label: "Căn chỉnh & làm rõ ảnh",
+                    active: !!processedImage && !ocrText,
+                    done: !!ocrText,
+                    color: "text-amber-600 dark:text-amber-400",
+                    bgActive: "bg-amber-50/80 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/40",
+                  },
+                  {
+                    step: 3,
+                    Icon: IconStepScanOcr,
+                    label: "Đọc chữ viết tay",
+                    active: !!ocrText && !gradingResult,
+                    done: !!gradingResult,
+                    color: "text-purple-600 dark:text-purple-400",
+                    bgActive: "bg-purple-50/80 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/40",
+                  },
                   {
                     step: 4,
-                    icon: "✍️",
+                    Icon: IconStepProofread,
                     label: gradingMode === "dictation" ? "So sánh với bài đọc SGK" : "Tìm lỗi sai & cách diễn đạt",
                     active: isProcessing,
                     done: !!gradingResult,
+                    color: "text-rose-600 dark:text-rose-400",
+                    bgActive: "bg-rose-50/80 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/40",
                   },
                   {
                     step: 5,
-                    icon: "📊",
+                    Icon: IconStepScore,
                     label: "Cho điểm & nhận xét",
                     active: !!gradingResult,
                     done: false,
+                    color: "text-emerald-600 dark:text-emerald-400",
+                    bgActive: "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/40",
                   },
-                ].map(({ step, icon, label, active, done }) => (
-                  <div key={step} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    done ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300"
-                    : active ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground"
-                  }`}>
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                      done ? "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : active ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                    }`}>
-                      {done ? "✓" : step}
+                ].map(({ step, Icon, label, active, done, color, bgActive }) => (
+                  <div
+                    key={step}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all border ${
+                      done
+                        ? "bg-emerald-50/80 text-emerald-800 border-emerald-200/90 dark:bg-emerald-950/30 dark:border-emerald-800/50 dark:text-emerald-300 font-medium"
+                        : active
+                        ? `${bgActive} text-foreground font-semibold shadow-xs`
+                        : "border-transparent text-muted-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-transform ${
+                        done
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : active
+                          ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {done ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : step}
                     </span>
-                    <span>{icon} {label}</span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`p-1 rounded-md shrink-0 flex items-center justify-center ${
+                          done
+                            ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                            : active
+                            ? `${color} bg-background/80 shadow-2xs`
+                            : "text-muted-foreground/70"
+                        }`}
+                      >
+                        <Icon size={16} />
+                      </span>
+                      <span className="truncate">{label}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2596,7 +2658,10 @@ export default function GradingPage() {
 
             {/* Huong dan su dung */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">📖 Hướng dẫn nhanh</p>
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hướng dẫn nhanh</p>
+              </div>
               <div className="space-y-3">
                 {[
                   {
@@ -2629,7 +2694,10 @@ export default function GradingPage() {
 
             {/* Meo hay */}
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">💡 Mẹo nhỏ cho cô</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="w-4 h-4 text-amber-600 shrink-0" />
+                <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Mẹo nhỏ cho cô</p>
+              </div>
               <ul className="space-y-1.5 text-xs text-amber-700">
                 <li className="flex gap-2"><span>•</span><span>Chụp ảnh thẳng góc, đủ sáng để đọc chữ chuẩn nhất</span></li>
                 <li className="flex gap-2"><span>•</span><span>Cô có thể kéo thanh trượt để chỉnh lại điểm theo ý mình</span></li>
@@ -2639,7 +2707,10 @@ export default function GradingPage() {
 
             {/* Thang diem */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">🏆 Thang điểm</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Trophy className="w-4 h-4 text-amber-600 shrink-0" />
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Thang điểm chuẩn</p>
+              </div>
               <div className="space-y-1.5">
                 {[
                   { range: "9–10", label: "Xuất sắc", color: "bg-emerald-100 text-emerald-700" },
