@@ -19,12 +19,15 @@ import {
   Lightbulb, Trophy,
 } from "lucide-react"
 import {
-  IconStepCamera,
-  IconStepEnhance,
-  IconStepScanOcr,
-  IconStepProofread,
-  IconStepScore,
-  IconStepWorkflow,
+  IconGoogleCamera,
+  IconGoogleEnhance,
+  IconGoogleScanOcr,
+  IconGoogleProofread,
+  IconGoogleScore,
+  IconGoogleWorkflow,
+  IconGoogleBook,
+  IconGoogleLightbulb,
+  IconGoogleTrophy,
 } from "@/components/teacher/grade-stepper-icons"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -2565,14 +2568,14 @@ export default function GradingPage() {
             {/* Pipeline trang thai */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
               <div className="flex items-center gap-2 mb-3.5">
-                <IconStepWorkflow size={16} className="text-primary shrink-0" />
+                <IconGoogleWorkflow size={18} className="text-primary shrink-0" />
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quy trình chấm bài</p>
               </div>
               <div className="space-y-2">
                 {[
                   {
                     step: 1,
-                    Icon: IconStepCamera,
+                    Icon: IconGoogleCamera,
                     label: "Chụp hoặc tải ảnh vở",
                     active: !processedImage,
                     done: !!processedImage,
@@ -2581,7 +2584,7 @@ export default function GradingPage() {
                   },
                   {
                     step: 2,
-                    Icon: IconStepEnhance,
+                    Icon: IconGoogleEnhance,
                     label: "Căn chỉnh & làm rõ ảnh",
                     active: !!processedImage && !ocrText,
                     done: !!ocrText,
@@ -2590,7 +2593,7 @@ export default function GradingPage() {
                   },
                   {
                     step: 3,
-                    Icon: IconStepScanOcr,
+                    Icon: IconGoogleScanOcr,
                     label: "Đọc chữ viết tay",
                     active: !!ocrText && !gradingResult,
                     done: !!gradingResult,
@@ -2599,7 +2602,7 @@ export default function GradingPage() {
                   },
                   {
                     step: 4,
-                    Icon: IconStepProofread,
+                    Icon: IconGoogleProofread,
                     label: gradingMode === "dictation" ? "So sánh với bài đọc SGK" : "Tìm lỗi sai & cách diễn đạt",
                     active: isProcessing,
                     done: !!gradingResult,
@@ -2608,7 +2611,7 @@ export default function GradingPage() {
                   },
                   {
                     step: 5,
-                    Icon: IconStepScore,
+                    Icon: IconGoogleScore,
                     label: "Cho điểm & nhận xét",
                     active: !!gradingResult,
                     done: false,
@@ -2647,7 +2650,7 @@ export default function GradingPage() {
                             : "text-muted-foreground/70"
                         }`}
                       >
-                        <Icon size={16} />
+                        <Icon size={18} />
                       </span>
                       <span className="truncate">{label}</span>
                     </div>
@@ -2659,7 +2662,7 @@ export default function GradingPage() {
             {/* Huong dan su dung */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-2xs">
               <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                <IconGoogleBook size={18} className="text-primary shrink-0" />
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hướng dẫn nhanh</p>
               </div>
               <div className="space-y-3">
@@ -2695,7 +2698,7 @@ export default function GradingPage() {
             {/* Meo hay */}
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="w-4 h-4 text-amber-600 shrink-0" />
+                <IconGoogleLightbulb size={18} className="text-amber-600 shrink-0" />
                 <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Mẹo nhỏ cho cô</p>
               </div>
               <ul className="space-y-1.5 text-xs text-amber-700">
@@ -2708,7 +2711,7 @@ export default function GradingPage() {
             {/* Thang diem */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-4 h-4 text-amber-600 shrink-0" />
+                <IconGoogleTrophy size={18} className="text-amber-600 shrink-0" />
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Thang điểm chuẩn</p>
               </div>
               <div className="space-y-1.5">

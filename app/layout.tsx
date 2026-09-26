@@ -45,6 +45,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="bg-background">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+      </head>
       <body className={`${roboto.variable} font-sans antialiased`}>
         {children}
         {Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV) && <Analytics />}
