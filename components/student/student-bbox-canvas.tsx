@@ -18,10 +18,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 export interface BBoxCoordinates {
-  rel_x1: number
-  rel_y1: number
-  rel_w: number
-  rel_h: number
+  rel_x1?: number
+  rel_y1?: number
+  rel_w?: number
+  rel_h?: number
   x1?: number
   y1?: number
   x2?: number
@@ -32,7 +32,7 @@ export interface StudentBBoxCorrectionItem {
   id?: string
   error: string
   suggestion: string
-  error_type: string
+  error_type?: string
   is_dialect?: boolean
   reason: string
   lineNumber?: number

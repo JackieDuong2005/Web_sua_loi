@@ -333,3 +333,46 @@ main {
     padding: 8px !important;
   }
 }
+
+/* ─── ViHand Grade: Phân hệ Đọc Chính Tả (Design System v2.5.0) ─── */
+:root {
+  --dict-paper: #FFF8EC;
+  --dict-card: #FFFFFF;
+  --dict-ink: #1E2B4A;
+  --dict-mute: #6B7391;
+  --dict-line: #E9DFC9;
+  --dict-pri: #1F6F54;
+  --dict-pris: #E3F3EA;
+  --dict-onp: #FFFFFF;
+  --dict-red: #D94F3D;
+  --dict-hl: #FFD95A;
+  --dict-hlt: #3B2F00;
+  --dict-board: #16382F;
+  --dict-chalk: #F4F1E8;
+  --dict-chalky: #F6D365;
+}
+
+.dark, [data-theme="dark"] {
+  --dict-paper: #111A17;
+  --dict-card: #1A2622;
+  --dict-ink: #EFEBDD;
+  --dict-mute: #9DAAA4;
+  --dict-line: #2B3B35;
+  --dict-pri: #4FC08D;
+  --dict-pris: #1F3A2F;
+  --dict-onp: #06251A;
+  --dict-hl: #6F5C1A;
+  --dict-hlt: #FFE9A0;
+}
+
+/* Waveform visualizer pulse */
+@keyframes dictWavePulse {
+  0%, 100% { transform: scaleY(0.35); opacity: 0.45; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+.dict-wave-bar {
+  animation: dictWavePulse 1.2s ease-in-out infinite;
+  transform-origin: bottom;
+}
+

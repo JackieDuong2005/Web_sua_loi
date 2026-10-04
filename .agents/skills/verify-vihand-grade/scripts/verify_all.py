@@ -27,6 +27,7 @@ from verify_mobile import verify_mobile_app
 from verify_bff import verify_bff_grade
 from verify_ai import verify_ai_service
 from verify_edge import verify_edge_server
+from verify_dictation import verify_dictation_module
 
 def print_banner():
     print("""
@@ -73,6 +74,14 @@ def run_master_verification(surface="all", full_mobile=False):
         except Exception as e:
             results["edge"] = {"status": "FAIL", "message": str(e), "evidence": {}}
 
+    # 5. Surface: Dictation Cockpit & Ground Truth Bridge
+    if surface in ["all", "dictation", "chinhta"]:
+        print("\n▶ [5/5] ĐANG XÁC THỰC SURFACE: TAB ĐỌC CHÍNH TẢ & GROUND TRUTH...")
+        try:
+            results["dictation"] = verify_dictation_module()
+        except Exception as e:
+            results["dictation"] = {"status": "FAIL", "message": str(e), "evidence": {}}
+
     total_sec = round(time.time() - start_total, 2)
 
     # PRINT EVIDENCE DASHBOARD TABLE
@@ -93,7 +102,8 @@ def run_master_verification(surface="all", full_mobile=False):
             "mobile": "1. Mobile Android",
             "bff": "2. BFF AI Gateway",
             "ai": "3. Python AI Core",
-            "edge": "4. Edge & Tunnel"
+            "edge": "4. Edge & Tunnel",
+            "dictation": "5. Tab Đọc Chính Tả"
         }
         label = label_map.get(key, key)
         evidence = data.get("evidence", {})
@@ -107,6 +117,8 @@ def run_master_verification(surface="all", full_mobile=False):
             ev_summary = f"ViT5: {evidence.get('predict_latency_ms', 'N/A')}ms | Khớp từ điển: {evidence.get('keywords_matched', 'N/A')}"
         elif key == "edge":
             ev_summary = f"Tunnel: {'Online' if evidence.get('tunnel_online') else 'Offline'} | RTT: {evidence.get('tunnel_latency_ms', 'N/A')}ms | SSH: {'OK' if evidence.get('ssh_connected') else 'N/A'}"
+        elif key == "dictation":
+            ev_summary = f"TTS Audio: {evidence.get('audio_synthesis', {}).get('audio_size_kb', 'N/A')}KB | SLM: {evidence.get('passage_generation', {}).get('source', 'N/A')} | Không chuông: OK"
         else:
             ev_summary = data.get("message", "")
 
@@ -123,7 +135,7 @@ def run_master_verification(surface="all", full_mobile=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Master Verification Harness for ViHand Grade")
-    parser.add_argument("--surface", default="all", choices=["all", "mobile", "bff", "ai", "edge"], help="Bề mặt cần kiểm thử")
+    parser.add_argument("--surface", default="all", choices=["all", "mobile", "bff", "ai", "edge", "dictation", "chinhta"], help="Bề mặt cần kiểm thử")
     parser.add_argument("--full", action="store_true", help="Chạy assembleDebug đầy đủ cho Android")
     args = parser.parse_args()
 

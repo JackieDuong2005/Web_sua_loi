@@ -31,7 +31,6 @@ DEFAULT_IGNORES = {
     ".vscode", "vendor", ".gradle", ".terraform", "site-packages",
     "eggs", ".eggs", "*.egg-info", ".tox", "bower_components",
     # ViHand Grade specific heavy/independent directories
-    "xiaozhi-esp32-main", "xiaozhi-esp32-server-main",
     "02_Kich_ban_Thuc_nghiem", "Poster nckh", "Font Tieu hoc",
     "He_thong_iots_Do_an_nhung", "android-app", "anhdaduocOCR",
     "scratch", "tmp", "tmp_diagrams", "output",
@@ -41,14 +40,13 @@ DEFAULT_IGNORES = {
 KNOWN_ANCHORS = {
     "app/api/grade/route.ts": "Core AI Grading API Pipeline (Jimp -> Gemini OCR -> ViT5 -> Scoring)",
     "python_service/main.py": "ViT5 Spelling Correction Server (FastAPI / HuggingFace)",
-    "mcp_service/main.py": "Model Context Protocol (MCP) Server for Dictation",
     "lib/image-processor.ts": "9-step Server-side Image Preprocessing Pipeline (Jimp)",
     "prisma/schema.prisma": "Database Schema (SQLite - Users, Classes, Grades, Dictation)",
     "app/teacher/grade/page.tsx": "Teacher Grading UI & Evaluation Canvas",
     "app/teacher/dictation/page.tsx": "AI Dictation & Voice Generation UI",
     "app/admin/users/page.tsx": "User & Role-based Access Control (RBAC) Management",
     "Dockerfile": "Container definition (Node.js + Python runtime)",
-    "start_all.bat": "Local startup orchestrator (Next.js + Python ViT5 + MCP)",
+    "start_all.bat": "Local startup orchestrator (Next.js + Python ViT5)",
 }
 
 MANIFEST_FILES = {
@@ -57,7 +55,6 @@ MANIFEST_FILES = {
     "pyproject.toml": "Python",
     "requirements.txt": "Python Dependencies",
     "python_service/requirements.txt": "FastAPI ViT5 Service Dependencies",
-    "mcp_service/requirements.txt": "MCP Dictation Service Dependencies",
     "go.mod": "Go",
     "Cargo.toml": "Rust",
     "pom.xml": "Java (Maven)",
@@ -156,10 +153,6 @@ def detect_detailed_stack(root):
     if os.path.exists(py_service):
         stack_info.append("AI Service (python_service): FastAPI + ViT5 Seq2Seq Vietnamese Correction")
 
-    # Check MCP Service
-    mcp_service = os.path.join(root, "mcp_service", "main.py")
-    if os.path.exists(mcp_service):
-        stack_info.append("Voice & Dictation (mcp_service): Model Context Protocol (FastMCP) + Edge-TTS")
 
     # Check Database
     schema_path = os.path.join(root, "prisma", "schema.prisma")

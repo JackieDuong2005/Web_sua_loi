@@ -56,7 +56,7 @@ def verify_bff_grade(base_url=None):
         local_alive = False
         try:
             req = urllib.request.Request(f"{DEFAULT_LOCAL_URL}/api/health", headers={"User-Agent": "ViHand-Verifier/1.0"})
-            with urllib.request.urlopen(req, timeout=2) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status == 200:
                     local_alive = True
         except Exception:

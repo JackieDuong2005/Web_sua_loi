@@ -1,14 +1,25 @@
+# Web Framework & API Server
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 pydantic>=2.0.0
 
-# tokenizers>=0.21 hỗ trợ Python 3.13 (có pre-built wheel cho ARM)
-# transformers 4.47.x tương thích tokenizers 0.21 VÀ model ViT5
+# NLP & HuggingFace Models (ViT5 & Qwen2.5 SLM)
+# tokenizers>=0.21 hỗ trợ Python 3.10-3.13 (có pre-built wheel cho ARM aarch64)
+# transformers==4.47.1 tương thích tokenizers 0.21 VÀ ViT5
 tokenizers>=0.21.0
 transformers==4.47.1
 sentencepiece>=0.2.0
 safetensors>=0.4.3
 
-# PyTorch CPU — cài riêng TRƯỚC khi cài file này:
-#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Computer Vision & Handwriting Word Detection (YOLOv8)
+ultralytics>=8.0.0
+pillow>=10.0.0
+
+# Speech Synthesis (Microsoft Edge-TTS)
+edge-tts>=6.1.12
+
+# PyTorch:
+# - Trên Raspberry Pi (CPU): pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# - Trên NVIDIA Jetson (CUDA): cài wheel chính hãng JetPack
 torch
+torchvision

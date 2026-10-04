@@ -59,8 +59,7 @@ model Grade {
 }
 
 // ============================================================
-// Module Xiaozhi Dictation — Bảng phiên đọc chính tả HỢP NHẤT
-// Dùng chung cho cả Robot ESP32 (cục bộ) và Trợ lý MCP (đám mây)
+// Module Dictation — Bảng phiên đọc chính tả & Kho ngữ liệu SGK
 // ============================================================
 
 // Phiên đọc chính tả: nguồn chân lý duy nhất (Single Source of Truth)
@@ -71,44 +70,25 @@ model DictationSession {
   passage       String                             // Văn bản bài đọc chuẩn (Ground Truth để đối chiếu chấm bài)
   className     String   @default("")              // Lớp học (VD: "3A", "4B")
   teacherName   String   @default("")              // Tên giáo viên phụ trách
-  source        String   @default("robot")         // Nguồn tạo phiên: "robot" | "mcp" | "manual"
-  deviceId      String   @default("")              // MAC Address hoặc ID của Robot ESP32 đã đọc bài (nếu source="robot")
+  source        String   @default("web")           // Nguồn tạo phiên: "web" | "manual"
+  deviceId      String   @default("")              // Định danh thiết bị phát âm (nếu có)
   status        String   @default("completed")     // "completed" | "in_progress" | "cancelled"
   summary       String   @default("")              // Tóm tắt phiên
   createdAt     DateTime @default(now())
   logs          DictationLog[]
 }
 
-// Nhật ký hội thoại chi tiết từng lượt trong phiên
+// Nhật ký chi tiết từng lượt trong phiên
 model DictationLog {
   id           String   @id @default(cuid())
   sessionId    String                              // Liên kết DictationSession
   session      DictationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  speaker      String                              // "robot" | "xiaozhi" | "teacher" | "student"
-  content      String                              // Nội dung chat / lệnh điều khiển
+  speaker      String                              // "teacher" | "student" | "ai"
+  content      String                              // Nội dung văn bản / lệnh điều khiển
   createdAt    DateTime @default(now())
 }
 
-// ============================================================
-// Module Xiaozhi Local Server — Robot ESP32-S3 tự host
-// ============================================================
-
-// Quản lý mạch ESP32-S3 đang kết nối tới Voice Core Server
-model RobotDevice {
-  id          String   @id @default(cuid())
-  macAddress  String   @unique                         // Địa chỉ MAC phần cứng của mạch ESP32 (định danh duy nhất)
-  name        String   @default("Robot Trợ Giảng")     // Tên hiển thị (VD: "Robot Lớp 3A")
-  ipAddress   String   @default("")                    // IP nội bộ mạng LAN (cập nhật qua heartbeat)
-  className   String   @default("")                    // Gắn với lớp học cụ thể (VD: "3A", "4B")
-  isOnline    Boolean  @default(false)                 // Trạng thái kết nối hiện tại
-  volume      Int      @default(80)                    // Âm lượng loa: 0 – 100 (%)
-  voiceName   String   @default("vi-VN-HoaiMyNeural")  // Giọng đọc Edge-TTS đang dùng
-  speedRate   String   @default("-15%")                // Tốc độ đọc TTS (chuẩn chính tả tiểu học)
-  lastSeen    DateTime @default(now())                 // Lần cuối gửi heartbeat
-  createdAt   DateTime @default(now())
-}
-
-// Kho ngữ liệu Sách Giáo Khoa Tiếng Việt Tiểu học để Robot tra cứu đọc chuẩn
+// Kho ngữ liệu Sách Giáo Khoa Tiếng Việt Tiểu học
 model TextbookPassage {
   id             String   @id @default(cuid())
   gradeLevel     Int      @default(3)           // Khối lớp: 1 | 2 | 3 | 4 | 5

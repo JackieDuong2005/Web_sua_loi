@@ -1,0 +1,24 @@
+[Unit]
+Description=Cloudflare Tunnel for ViHand Grade Secure HTTPS Access
+Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+After=network-online.target vihand-web.service
+Wants=network-online.target
+Requires=vihand-web.service
+
+[Service]
+Type=simple
+User={{APP_USER}}
+ExecStart={{CLOUDFLARED_BIN}} tunnel --config {{CF_CONFIG_DIR}}/config.yml run
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=always
+RestartSec=15
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cloudflared
+
+[Install]
+WantedBy=multi-user.target

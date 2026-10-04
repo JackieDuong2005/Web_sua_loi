@@ -1,12 +1,12 @@
 @echo off
 chcp 65001 >nul
 :: ====================================================================
-::  SETUP GEMINI API KEY CHO XIAOZHI VOICE CORE
+::  SETUP GEMINI API KEY CHO VIHAND GRADE
 ::  Chay file nay 1 LAN duy nhat truoc khi dung start_all.bat
 :: ====================================================================
 
 echo ================================================================
-echo   THIET LAP GEMINI API KEY CHO XIAOZHI VOICE CORE
+echo   THIET LAP GEMINI API KEY CHO VIHAND GRADE
 echo ================================================================
 echo.
 echo Lay Gemini API Key mien phi tai:

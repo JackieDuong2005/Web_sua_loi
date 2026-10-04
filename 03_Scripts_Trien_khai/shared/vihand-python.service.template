@@ -1,0 +1,40 @@
+[Unit]
+Description=ViHand Grade - Python AI Microservice (ViT5, YOLOv8, Qwen SLM, Edge-TTS)
+Documentation=https://github.com/JackieDuong2005/Web_sua_loi
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{APP_USER}}
+Group={{APP_USER}}
+WorkingDirectory={{APP_DIR}}/python_service
+Environment=PYTHONUNBUFFERED=1
+Environment=ENABLE_QWEN_SLM=1
+Environment=VIT5_WORKERS=1
+EnvironmentFile={{APP_DIR}}/.env.local
+
+# Kích hoạt venv và chạy Uvicorn FastAPI
+ExecStart={{PYTHON_VENV}}/bin/python3 main.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Tự khởi động lại nếu crash
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# Giới hạn tài nguyên an toàn cho Pi4 và Jetson
+MemoryHigh=2000M
+MemoryMax=2500M
+CPUQuota=90%
+LimitNOFILE=65536
+KillMode=mixed
+TimeoutStopSec=30
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vihand-python
+
+[Install]
+WantedBy=multi-user.target

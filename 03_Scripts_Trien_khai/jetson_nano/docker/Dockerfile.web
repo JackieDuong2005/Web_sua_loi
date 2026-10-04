@@ -1,0 +1,48 @@
+# ==============================================================================
+# ViHand Grade — Dockerfile for Web App & AI BFF Gateway (Next.js)
+# ==============================================================================
+FROM node:20-slim AS builder
+
+WORKDIR /app
+
+# Cài đặt công cụ biên dịch cho better-sqlite3 native addon
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
+
+COPY . .
+
+# Đặt biến môi trường build
+ENV DATABASE_URL="file:/app/prisma/vihand.db"
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+
+RUN npx prisma generate
+RUN npm run build
+
+# ==================== Runner Stage ====================
+FROM node:20-slim AS runner
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV DATABASE_URL="file:/app/prisma/vihand.db"
+ENV VIT5_SERVICE_URL="http://vihand-ai:8000"
+
+COPY --from=builder /app ./
+
+EXPOSE 3000
+
+CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]

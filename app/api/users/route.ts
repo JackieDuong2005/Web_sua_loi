@@ -22,6 +22,15 @@ export async function GET(req: NextRequest) {
           role && role !== "all" ? { role } : {},
         ],
       },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        role: true,
+        className: true,
+        active: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: "desc" },
     })
 

@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  vihand-ai:
+    container_name: vihand-ai-core
+    build:
+      context: ../../../
+      dockerfile: 03_Scripts_Trien_khai/jetson_nano/docker/Dockerfile.ai
+    image: vihand-ai:jetson
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENABLE_QWEN_SLM=0
+      - VIT5_WORKERS=1
+    restart: unless-stopped
+    mem_limit: 2200m
+
+  vihand-web:
+    container_name: vihand-web-app
+    build:
+      context: ../../../
+      dockerfile: 03_Scripts_Trien_khai/jetson_nano/docker/Dockerfile.web
+    image: vihand-web:jetson
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - VIT5_SERVICE_URL=http://vihand-ai:8000
+    depends_on:
+      - vihand-ai
+    restart: unless-stopped
+    mem_limit: 1800m

@@ -359,11 +359,14 @@ export async function POST(req: NextRequest) {
       gradingMode = "dictation",
       studentName = "Học sinh",
       className = `Lớp ${studentGrade}A`,
-      the_loai: requestedTheLoai,
+      the_loai: rawTheLoai,
+      essayType: rawEssayType,
       hinh_thuc,
       noi_dung,
       penalty_per_error,
     } = body
+
+    const requestedTheLoai = rawTheLoai || (rawEssayType === "poem" ? "tho" : (rawEssayType === "essay" ? "van_xuoi" : (rawEssayType === "spelling" ? "chinh_ta" : undefined)))
 
     // Validate: bắt buộc có ảnh
     if (!imageBase64 || typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {

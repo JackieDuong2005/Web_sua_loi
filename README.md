@@ -49,7 +49,7 @@ short_description: AI-powered Vietnamese handwriting spelling checker & grader
 | 🤖 **Sửa lỗi chính tả AI** | ViT5 (Seq2Seq tiếng Việt) làm primary; Gemini làm fallback |
 | 📊 **Chấm điểm tự động** | Thang 10 điểm: Chính tả (4đ) + Hình thức (3đ) + Nội dung (2đ) + Sáng tạo (1đ) |
 | 👨‍🏫 **Quản lý lớp học** | Giáo viên tạo lớp, quản lý học sinh, xem báo cáo tiến độ |
-| 🎙️ **Đọc chính tả AI** | Tích hợp MCP + Xiaozhi để tạo và lưu phiên đọc chính tả tự động |
+| 🎙️ **Đọc chính tả AI** | Tích hợp Edge-TTS giọng đọc chuẩn cùng kho ngữ liệu SGK Lớp 1-5 và lưu phiên đọc |
 | 📱 **PWA** | Cài đặt như app native trên điện thoại, hỗ trợ camera trực tiếp |
 | 🔐 **Phân quyền 3 cấp** | Admin / Giáo viên / Học sinh với dashboard riêng biệt |
 

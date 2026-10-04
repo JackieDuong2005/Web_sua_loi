@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -22,9 +21,11 @@ import {
   BookOpen, Clock, CheckCircle2, AlertCircle, Plus, Trash2,
   GraduationCap, Search, Sparkles, Settings2, Music, RefreshCw,
   SlidersHorizontal, Gauge, Repeat, Hourglass, Mic, Pencil, Eye,
-  Wand2, Send, Tag, FileText, Check, Bell, Split, ChevronDown, ChevronUp,
+  Wand2, Send, Tag, FileText, Check, Split, ChevronDown, ChevronUp,
+  Sun, Moon, Copy, Scissors, ExternalLink, FastForward,
 } from "lucide-react"
 import { formatAiErrorMessage } from "@/lib/utils"
+import { HelpGuideButton } from "@/components/help-guide"
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -60,55 +61,73 @@ interface DictationSession {
   logs?: DictationLog[]
 }
 
+// ─── Voice Cards Definition ───────────────────────────────────────────────────
+
+interface VoiceCardDef {
+  id: string
+  name: string
+  gender: "f" | "m"
+  region: string
+  engine: string
+  desc: string
+  recommended?: boolean
+}
+
+const VOICE_CARDS: VoiceCardDef[] = [
+  {
+    id: "hoaimy",
+    name: "Cô Hoài My",
+    gender: "f",
+    region: "Bắc",
+    engine: "vi-VN-HoaiMyNeural",
+    desc: "Nữ · Truyền cảm, rõ nét",
+    recommended: true,
+  },
+  {
+    id: "namminh",
+    name: "Thầy Nam Minh",
+    gender: "m",
+    region: "Bắc",
+    engine: "vi-VN-NamMinhNeural",
+    desc: "Nam · Chuẩn mực, trang trọng",
+  },
+  {
+    id: "trucly",
+    name: "Cô Trúc Ly",
+    gender: "f",
+    region: "Bắc",
+    engine: "google_tts",
+    desc: "Nữ · Tự nhiên, nhẹ nhàng",
+  },
+  {
+    id: "minhduc",
+    name: "Thầy Minh Đức",
+    gender: "m",
+    region: "Bắc",
+    engine: "browser_voice",
+    desc: "Nam · Phong cách bản tin",
+  },
+]
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SPEED_OPTIONS = [
-  { value: "0.65", label: "Cực chậm (-35%) — Lớp 1" },
-  { value: "0.75", label: "Rất chậm (-25%) — Lớp 1-2" },
-  { value: "0.80", label: "Chậm (-20%) — Rèn chữ" },
-  { value: "0.85", label: "Chuẩn (-15%) — Khuyên dùng" },
-  { value: "0.90", label: "Vừa phải (-10%) — Lớp 3" },
-  { value: "0.95", label: "Hơi chậm (-5%) — Lớp 4-5" },
-  { value: "1.00", label: "Bình thường (0%)" },
-  { value: "1.10", label: "Nhanh (+10%)" },
-  { value: "custom", label: "⚙️ Tự chỉnh..." },
-]
-
-const REPEAT_OPTIONS = [
-  { value: "1", label: "1 lần" },
-  { value: "2", label: "2 lần (Chuẩn)" },
-  { value: "3", label: "3 lần" },
-  { value: "4", label: "4 lần" },
-  { value: "5", label: "5 lần" },
-  { value: "custom", label: "⚙️ Tự nhập..." },
-]
-
-const PAUSE_OPTIONS = [
-  { value: "1",    label: "1 giây" },
-  { value: "2",    label: "2 giây" },
-  { value: "3",    label: "3 giây" },
-  { value: "4",    label: "4 giây" },
-  { value: "5",    label: "5 giây" },
-  { value: "6",    label: "6 giây" },
-  { value: "7",    label: "7 giây" },
-  { value: "8",    label: "8 giây" },
-  { value: "9",    label: "9 giây" },
-  { value: "10",   label: "10 giây (Chuẩn)" },
-  { value: "auto", label: "Tự động (~1.6s/từ)" },
-]
-
-const CHUNK_OPTIONS = [
-  { value: "short",    label: "🐣 Cụm ngắn (3–5 từ) — Lớp 1-2" },
-  { value: "standard", label: "📖 Cụm chuẩn (5–8 từ) — Lớp 3" },
-  { value: "sentence", label: "📝 Cả câu dài — Lớp 4-5" },
-]
-
-const VOICE_ENGINE_OPTIONS = [
-  { value: "vi-VN-HoaiMyNeural", label: "🌸 Cô Hoài My (Nữ Miền Bắc — Khuyên dùng)" },
-  { value: "vi-VN-NamMinhNeural", label: "👨‍🏫 Thầy Nam Minh (Nam Miền Bắc chuẩn)" },
-  { value: "google_tts",          label: "🌐 Giọng đọc Google Tiếng Việt (Online)" },
-  { value: "browser_voice",       label: "💻 Giọng đọc Hệ thống Máy tính (Offline)" },
-]
+const SAMPLE_PASSAGES_BY_GRADE: Record<number, { title: string; content: string; difficultWords: string }> = {
+  1: {
+    title: "Bé và Chú Cún Nhỏ (Lớp 1)",
+    content: "Bé Na có một chú cún nhỏ rất xinh. Bộ lông của cún trắng tinh như bông. Mỗi khi bé đi học về, cún lại vẫy đuôi mừng rỡ đón bé vào nhà.",
+    difficultWords: "chú cún, trắng tinh, vẫy đuôi, mừng rỡ",
+  },
+  2: {
+    title: "Buổi Sáng Mùa Thu (Lớp 2)",
+    content: "Gió mùa thu se lạnh thổi qua từng kẽ lá. Bầu trời xanh trong vắt, không một gợn mây đen. Những tia nắng vàng dịu dàng trải dài trên con đường làng thân quen.",
+    difficultWords: "se lạnh, trong vắt, gợn mây, dịu dàng, thân quen",
+  },
+  3: {
+    title: "Ai có lỗi - Trích (Lớp 3)",
+    content: "Cơn giận lặng xuống. Tôi bắt đầu thấy hối hận. Chắc là En-ri-cô không cố ý làm hỏng trang viết của tôi thật. Tôi nhìn cậu, thấy vai áo cậu sứt chỉ, thấy thương cậu quá. Nhưng tôi không đủ can đảm để xin lỗi cậu.",
+    difficultWords: "hối hận, En-ri-cô, sứt chỉ, can đảm",
+  },
+}
 
 const BOOKSET_OPTIONS = [
   { value: "all",      label: "Tất cả bộ sách" },
@@ -139,32 +158,12 @@ function formatDate(dateStr: string) {
 }
 
 function formatClassName(name: string) {
-  if (!name) return "Chọn lớp"
+  if (!name) return "Lớp 3A1"
   const trimmed = name.trim()
   if (trimmed.toLowerCase().startsWith("lớp")) {
     return trimmed
   }
   return `Lớp ${trimmed}`
-}
-
-// ─── Chuông báo hiệu Web Audio (Chime Cue) ──────────────────────────────────
-function playChime() {
-  try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.type = "sine"
-    osc.frequency.setValueAtTime(880, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1)
-    gain.gain.setValueAtTime(0.12, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.35)
-  } catch {}
 }
 
 // ─── Thuật toán tách cụm từ sư phạm nâng cao ─────────────────────────────────
@@ -225,62 +224,90 @@ function splitIntoPedagogicalClauses(
   return clauses.filter(c => c.trim().length > 0)
 }
 
-// ─── Component Chính ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// COMPONENT CHÍNH: TeacherDictationPage (v2.5.0)
+// ══════════════════════════════════════════════════════════════════════════════
 
-export default function DictationPage() {
+export default function TeacherDictationPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState("player")
 
-  // User & Classes
-  const [teacherName, setTeacherName] = useState("Giáo viên")
+  // ─── Theme State (Light Paper / Dark Green) ─────────────────────────────────
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  const toggleTheme = () => {
+    setIsDarkMode(prev => {
+      const next = !prev
+      if (next) {
+        document.documentElement.classList.add("dark")
+        document.documentElement.setAttribute("data-theme", "dark")
+      } else {
+        document.documentElement.classList.remove("dark")
+        document.documentElement.removeAttribute("data-theme")
+      }
+      return next
+    })
+  }
+
+  // ─── Active Tab State ───────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<"editor" | "corpus" | "history" | "design">("editor")
+
+  // ─── Classroom & Teacher Profile ────────────────────────────────────────────
+  const [teacherName, setTeacherName] = useState("Cô Nguyễn Mai Lan")
   const [selectedClass, setSelectedClass] = useState("3A1")
-  const [classList, setClassList] = useState<string[]>(["3A1", "3A2", "4A1", "4A2"])
+  const [classList, setClassList] = useState<string[]>(["3A1", "3A2", "4B", "5A"])
 
-  // Passages State
-  const [passages, setPassages] = useState<TextbookPassage[]>([])
-  const [loadingPassages, setLoadingPassages] = useState(false)
-  const [selectedGrade, setSelectedGrade] = useState("all")
-  const [selectedBookSet, setSelectedBookSet] = useState("all")
-  const [searchPassage, setSearchPassage] = useState("")
-
-  // Current Active Passage for Dictation
+  // ─── Text & Pedagogical Setup ───────────────────────────────────────────────
   const [title, setTitle] = useState("Ai có lỗi (Trích)")
-  const [content, setContent] = useState(
-    "Cơn giận lắng xuống. Tôi bắt đầu thấy hối hận. Chắc là En-ri-cô không cố ý làm hỏng trang viết của tôi thật. Tôi nhìn cậu, thấy vai áo cậu sứt chỉ, thấy thương cậu quá. Nhưng tôi không đủ can đảm để xin lỗi cậu."
+  const [passageText, setPassageText] = useState(
+    "Cơn giận lặng xuống. Tôi bắt đầu thấy hối hận. Chắc là En-ri-cô không cố ý làm hỏng trang viết của tôi thật. Tôi nhìn cậu, thấy vai áo cậu sứt chỉ, thấy thương cậu quá. Nhưng tôi không đủ can đảm để xin lỗi cậu."
   )
   const [difficultWords, setDifficultWords] = useState("hối hận, En-ri-cô, sứt chỉ, can đảm")
 
-  // TTS Settings & Custom Parameters
+  // ─── Voice & Pedagogical Cadence ────────────────────────────────────────────
+  const [voiceGenderFilter, setVoiceGenderFilter] = useState<"all" | "f" | "m">("all")
+  const [selectedVoiceId, setSelectedVoiceId] = useState("hoaimy")
   const [voiceEngine, setVoiceEngine] = useState("vi-VN-HoaiMyNeural")
-  const [speedRate, setSpeedRate] = useState("0.85")
-  const [customSpeedPercent, setCustomSpeedPercent] = useState("-15")
-  const [repeatCount, setRepeatCount] = useState("2")
-  const [customRepeatNum, setCustomRepeatNum] = useState("2")
-  const [pauseSetting, setPauseSetting] = useState("10")
-  const [customPauseSeconds, setCustomPauseSeconds] = useState("10")
+  const [speedRate, setSpeedRate] = useState("0.85") // 0.65 to 1.10
+  const [repeatCount, setRepeatCount] = useState("2") // 1, 2, 3
+  const [pauseSetting, setPauseSetting] = useState("auto") // auto, 10, 15
   const [chunkMode, setChunkMode] = useState<"short" | "standard" | "sentence">("standard")
-  const [enableChime, setEnableChime] = useState(false)
-  const [showPreviewClauses, setShowPreviewClauses] = useState(false)
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedBrowserVoiceUri, setSelectedBrowserVoiceUri] = useState<string>("")
 
-  // Playback Execution State
+  // ─── Playback Execution State ───────────────────────────────────────────────
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [clauses, setClauses] = useState<string[]>([])
   const [currentClauseIndex, setCurrentClauseIndex] = useState(0)
   const [currentRepeat, setCurrentRepeat] = useState(1)
   const [countdown, setCountdown] = useState(0)
+  const [maxCountdown, setMaxCountdown] = useState(10)
   const [isSpeakingNow, setIsSpeakingNow] = useState(false)
   const [playbackComplete, setPlaybackComplete] = useState(false)
 
-  // Sessions History State
+  // ─── Classroom Chalkboard Presentation Overlay State ────────────────────────
+  const [showProjector, setShowProjector] = useState(false)
+  const [isTextHidden, setIsTextHidden] = useState(false)
+
+  // ─── Textbook Corpus & History States ───────────────────────────────────────
+  const [passages, setPassages] = useState<TextbookPassage[]>([])
+  const [loadingPassages, setLoadingPassages] = useState(false)
+  const [filterGrade, setFilterGrade] = useState("3")
+  const [filterBookSet, setFilterBookSet] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+
   const [sessions, setSessions] = useState<DictationSession[]>([])
   const [loadingSessions, setLoadingSessions] = useState(false)
   const [searchSession, setSearchSession] = useState("")
   const [classFilter, setClassFilter] = useState("all")
 
-  // Add Passage Dialog
+  // ─── Modals State ───────────────────────────────────────────────────────────
+  const [isAiGenerateOpen, setIsAiGenerateOpen] = useState(false)
+  const [generatingAi, setGeneratingAi] = useState(false)
+  const [aiTopic, setAiTopic] = useState("")
+  const [aiGradeLevel, setAiGradeLevel] = useState("3")
+  const [aiSentenceCount, setAiSentenceCount] = useState("4")
+  const [aiBookSet, setAiBookSet] = useState("KetNoi")
+
   const [isAddPassageOpen, setIsAddPassageOpen] = useState(false)
   const [newPassage, setNewPassage] = useState({
     title: "",
@@ -291,22 +318,11 @@ export default function DictationPage() {
     difficultWords: "",
   })
 
-  // Edit Passage Dialog
   const [isEditPassageOpen, setIsEditPassageOpen] = useState(false)
   const [editingPassage, setEditingPassage] = useState<TextbookPassage | null>(null)
-
-  // AI Generative Dictation Dialog
-  const [isAiGenerateOpen, setIsAiGenerateOpen] = useState(false)
-  const [generatingAi, setGeneratingAi] = useState(false)
-  const [aiTopic, setAiTopic] = useState("")
-  const [aiGradeLevel, setAiGradeLevel] = useState("3")
-  const [aiSentenceCount, setAiSentenceCount] = useState("4")
-  const [aiBookSet, setAiBookSet] = useState("KetNoi")
-
-  // View Session Detail Dialog
   const [viewingSession, setViewingSession] = useState<DictationSession | null>(null)
 
-  // Audio Playback Session Control
+  // ─── Audio Playback Session Control Refs ────────────────────────────────────
   const playbackIdRef = useRef(0)
   const isPausedRef = useRef(false)
   const isPlayingRef = useRef(false)
@@ -316,278 +332,162 @@ export default function DictationPage() {
   isPlayingRef.current = isPlaying
   isPausedRef.current = isPaused
 
-  // Preview generated clauses & Word Count
+  // ─── Clause Segmentation & Statistics Calculation ───────────────────────────
   const previewClauseList = useMemo(() => {
-    return splitIntoPedagogicalClauses(content, chunkMode)
-  }, [content, chunkMode])
+    return splitIntoPedagogicalClauses(passageText, chunkMode)
+  }, [passageText, chunkMode])
 
-  const wordCount = useMemo(() => {
-    return content.trim() ? content.trim().split(/\s+/).length : 0
-  }, [content])
+  const stats = useMemo(() => {
+    const chars = passageText.length
+    const words = passageText.split(/\s+/).filter(Boolean).length
+    const sentences = passageText.split(/[.?!;\n]+/).filter(Boolean).length
+    const estimatedSeconds = Math.round(words * 2.8 + previewClauseList.length * 6)
+    const minutes = Math.floor(estimatedSeconds / 60)
+    const seconds = estimatedSeconds % 60
+    return { chars, words, sentences, duration: `~${minutes} phút ${seconds} giây` }
+  }, [passageText, previewClauseList])
 
-  // ─── 1. Load User & Voices ──────────────────────────────────────────────────
+  // ─── Load Browser Voices & Initial Data ─────────────────────────────────────
   useEffect(() => {
-    const userStr = localStorage.getItem("vihand_user")
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        if (user.name) setTeacherName(user.name)
-        if (user.classes && user.classes.length > 0) {
-          setClassList(user.classes)
-          setSelectedClass(user.classes[0])
-        }
-      } catch {}
-    }
-
-    fetch("/api/classes")
-      .then(r => r.json())
-      .then(data => {
-        const names = (data.classes || []).map((c: any) => c.name)
-        if (names.length > 0) setClassList(names)
-      })
-      .catch(() => {})
-
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      const loadBrowserVoices = () => {
-        const av = window.speechSynthesis.getVoices()
-        setBrowserVoices(av)
-        const vi = av.find(v => v.lang.includes("vi") || v.lang.includes("VI"))
-        if (vi) setSelectedBrowserVoiceUri(vi.voiceURI)
+    const updateVoices = () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        const vList = window.speechSynthesis.getVoices()
+        const viVoices = vList.filter(v => v.lang.toLowerCase().includes("vi"))
+        setBrowserVoices(viVoices.length > 0 ? viVoices : vList)
       }
-      loadBrowserVoices()
-      window.speechSynthesis.onvoiceschanged = loadBrowserVoices
     }
+
+    updateVoices()
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = updateVoices
+    }
+
+    fetchClasses()
+    fetchPassages()
+    fetchSessions()
 
     return () => {
       stopPlayback()
     }
   }, [])
 
-  // ─── 2. Fetch Passages & Sessions ───────────────────────────────────────────
-  const fetchPassages = useCallback(async () => {
+  // ─── Keyboard Shortcuts for Presentation Mode ───────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!showProjector) return
+      if (e.key === "Escape") {
+        setShowProjector(false)
+      } else if (e.code === "Space") {
+        e.preventDefault()
+        togglePause()
+      } else if (e.key.toLowerCase() === "r") {
+        repeatCurrentClause()
+      } else if (e.key.toLowerCase() === "h") {
+        setIsTextHidden(prev => !prev)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [showProjector, isPaused])
+
+  // ─── Data Fetching ──────────────────────────────────────────────────────────
+  const fetchClasses = async () => {
     try {
-      setLoadingPassages(true)
+      const res = await fetch("/api/classes")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.classes && data.classes.length > 0) {
+          const names = data.classes.map((c: any) => c.name)
+          setClassList(names)
+          if (!names.includes(selectedClass)) setSelectedClass(names[0])
+        }
+      }
+    } catch {}
+  }
+
+  const fetchPassages = async () => {
+    setLoadingPassages(true)
+    try {
       const params = new URLSearchParams()
-      if (selectedGrade !== "all") params.append("gradeLevel", selectedGrade)
-      if (selectedBookSet !== "all") params.append("bookSet", selectedBookSet)
-      if (searchPassage) params.append("q", searchPassage)
+      if (filterGrade !== "all") params.append("gradeLevel", filterGrade)
+      if (filterBookSet !== "all") params.append("bookSet", filterBookSet)
+      if (searchQuery.trim()) params.append("q", searchQuery.trim())
 
       const res = await fetch(`/api/dictation/passages?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
         setPassages(data.passages || [])
       }
-    } catch (err) {
-      console.error("Lỗi tải kho ngữ liệu:", err)
+    } catch (e) {
+      console.error(e)
     } finally {
       setLoadingPassages(false)
     }
-  }, [selectedGrade, selectedBookSet, searchPassage])
+  }
 
-  const fetchSessions = useCallback(async () => {
+  const fetchSessions = async () => {
+    setLoadingSessions(true)
     try {
-      setLoadingSessions(true)
-      const res = await fetch("/api/dictation/sessions?limit=50")
+      const res = await fetch("/api/dictation/sessions?limit=30")
       if (res.ok) {
         const data = await res.json()
         setSessions(data.sessions || [])
       }
-    } catch (err) {
-      console.error("Lỗi tải lịch sử phiên:", err)
+    } catch (e) {
+      console.error(e)
     } finally {
       setLoadingSessions(false)
     }
-  }, [])
+  }
 
-  useEffect(() => {
-    fetchPassages()
-  }, [fetchPassages])
-
-  useEffect(() => {
-    fetchSessions()
-  }, [fetchSessions])
-
-  // ─── 3. High-Quality Audio Engine (Edge-TTS Neural Voice + Fallback) ───────
-
-  const stopPlayback = useCallback(() => {
+  // ─── Playback Engine (Multi-Tier TTS without Chime) ──────────────────────────
+  const stopPlayback = () => {
     playbackIdRef.current += 1
+    setIsPlaying(false)
+    isPlayingRef.current = false
+    setIsPaused(false)
+    isPausedRef.current = false
+    setIsSpeakingNow(false)
+    setCountdown(0)
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+
     if (currentAudioRef.current) {
       currentAudioRef.current.pause()
       currentAudioRef.current.src = ""
       currentAudioRef.current = null
     }
+
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
     }
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    isPlayingRef.current = false
-    isPausedRef.current = false
-    setIsPlaying(false)
-    setIsPaused(false)
-    setIsSpeakingNow(false)
-    setCountdown(0)
-  }, [])
-
-  const getRateString = useCallback((): string => {
-    if (speedRate === "custom") {
-      const num = parseInt(customSpeedPercent, 10) || -15
-      return num >= 0 ? `+${num}%` : `${num}%`
-    }
-    const val = parseFloat(speedRate) || 0.85
-    if (val <= 0.68) return "-35%"
-    if (val <= 0.78) return "-25%"
-    if (val <= 0.82) return "-20%"
-    if (val <= 0.88) return "-15%"
-    if (val <= 0.92) return "-10%"
-    if (val <= 0.97) return "-5%"
-    if (val <= 1.05) return "+0%"
-    return "+10%"
-  }, [speedRate, customSpeedPercent])
-
-  const speakClause = (text: string, sessionToken: number): Promise<void> => {
-    return new Promise((resolve) => {
-      if (playbackIdRef.current !== sessionToken) {
-        resolve()
-        return
-      }
-
-      setIsSpeakingNow(true)
-      const rateStr = getRateString()
-      const numericRate = speedRate === "custom" 
-        ? Math.max(0.5, Math.min(1.5, 1 + (parseInt(customSpeedPercent, 10) || 0) / 100))
-        : (parseFloat(speedRate) || 0.85)
-
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel()
-      }
-
-      if (voiceEngine !== "browser_voice") {
-        if (currentAudioRef.current) {
-          currentAudioRef.current.pause()
-          currentAudioRef.current.src = ""
-          currentAudioRef.current = null
-        }
-
-        const audioUrl = `/api/dictation/tts?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voiceEngine)}&rate=${encodeURIComponent(rateStr)}&lang=vi`
-        const audio = new Audio(audioUrl)
-        audio.preload = "auto"
-        currentAudioRef.current = audio
-
-        let hasResolved = false
-        let isFallbackActive = false
-
-        const safeResolve = () => {
-          if (!hasResolved) {
-            hasResolved = true
-            setIsSpeakingNow(false)
-            currentAudioRef.current = null
-            resolve()
-          }
-        }
-
-        const triggerFallback = () => {
-          if (hasResolved || isFallbackActive || playbackIdRef.current !== sessionToken) return
-          isFallbackActive = true
-
-          if (currentAudioRef.current) {
-            currentAudioRef.current.pause()
-            currentAudioRef.current.src = ""
-            currentAudioRef.current = null
-          }
-          speakWithBrowser(text, numericRate, sessionToken).then(safeResolve)
-        }
-
-        audio.onended = () => {
-          if (playbackIdRef.current === sessionToken && !isFallbackActive) {
-            safeResolve()
-          }
-        }
-
-        audio.onerror = () => {
-          if (playbackIdRef.current === sessionToken && !hasResolved) {
-            triggerFallback()
-          }
-        }
-
-        audio.play().catch((err: any) => {
-          if (err?.name === "AbortError" || isPausedRef.current) {
-            return
-          }
-          if (playbackIdRef.current === sessionToken && !hasResolved) {
-            triggerFallback()
-          }
-        })
-      } else {
-        speakWithBrowser(text, numericRate, sessionToken).then(() => {
-          setIsSpeakingNow(false)
-          resolve()
-        })
-      }
-    })
-  }
-
-  const speakWithBrowser = (text: string, rate: number, sessionToken: number): Promise<void> => {
-    return new Promise((resolve) => {
-      if (typeof window === "undefined" || !("speechSynthesis" in window) || playbackIdRef.current !== sessionToken) {
-        setIsSpeakingNow(false)
-        resolve()
-        return
-      }
-
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.rate = rate
-      utterance.lang = "vi-VN"
-
-      if (selectedBrowserVoiceUri) {
-        const v = browserVoices.find(bv => bv.voiceURI === selectedBrowserVoiceUri)
-        if (v) utterance.voice = v
-      }
-
-      utterance.onend = () => {
-        if (playbackIdRef.current === sessionToken) setIsSpeakingNow(false)
-        resolve()
-      }
-      utterance.onerror = () => {
-        if (playbackIdRef.current === sessionToken) setIsSpeakingNow(false)
-        resolve()
-      }
-
-      window.speechSynthesis.speak(utterance)
-    })
   }
 
   const sleepWithCountdown = (seconds: number, sessionToken: number): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (playbackIdRef.current !== sessionToken) {
-        resolve(false)
-        return
-      }
-
+    return new Promise(resolve => {
       let remaining = seconds
-      setIsSpeakingNow(false)
       setCountdown(remaining)
+      setMaxCountdown(seconds)
 
       if (timerRef.current) clearInterval(timerRef.current)
+
       timerRef.current = setInterval(() => {
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) {
-          clearInterval(timerRef.current!)
+          if (timerRef.current) clearInterval(timerRef.current)
           resolve(false)
           return
         }
 
-        if (isPausedRef.current) {
-          return
-        }
+        if (isPausedRef.current) return
 
         remaining -= 1
         setCountdown(remaining)
 
         if (remaining <= 0) {
-          clearInterval(timerRef.current!)
+          if (timerRef.current) clearInterval(timerRef.current)
           timerRef.current = null
           resolve(true)
         }
@@ -595,31 +495,90 @@ export default function DictationPage() {
     })
   }
 
+  const speakClause = (clause: string, sessionToken: number): Promise<boolean> => {
+    return new Promise(resolve => {
+      if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) {
+        resolve(false)
+        return
+      }
+
+      setIsSpeakingNow(true)
+
+      const cleanupAndResolve = (success: boolean) => {
+        setIsSpeakingNow(false)
+        resolve(success)
+      }
+
+      // Convert speed rate string into percent (-15%, -25%, etc.)
+      const speedNum = parseFloat(speedRate) || 0.85
+      const percentDiff = Math.round((speedNum - 1.0) * 100)
+      const rateStr = `${percentDiff >= 0 ? "+" : ""}${percentDiff}%`
+
+      // ── TẦNG 1 & 2: Edge-TTS qua API Next.js /api/dictation/tts ──
+      const ttsUrl = `/api/dictation/tts?text=${encodeURIComponent(clause)}&voice=${encodeURIComponent(voiceEngine)}&rate=${encodeURIComponent(rateStr)}`
+      const audio = new Audio(ttsUrl)
+      currentAudioRef.current = audio
+
+      audio.onended = () => {
+        currentAudioRef.current = null
+        cleanupAndResolve(true)
+      }
+
+      audio.onerror = () => {
+        // ── TẦNG 3: Fallback ngoại tuyến Web Speech API ──
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(clause)
+          utterance.lang = "vi-VN"
+          utterance.rate = speedNum
+          utterance.onend = () => cleanupAndResolve(true)
+          utterance.onerror = () => cleanupAndResolve(false)
+          window.speechSynthesis.speak(utterance)
+        } else {
+          cleanupAndResolve(false)
+        }
+      }
+
+      audio.play().catch(() => {
+        // Fallback sang SpeechSynthesis
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(clause)
+          utterance.lang = "vi-VN"
+          utterance.rate = speedNum
+          utterance.onend = () => cleanupAndResolve(true)
+          utterance.onerror = () => cleanupAndResolve(false)
+          window.speechSynthesis.speak(utterance)
+        } else {
+          cleanupAndResolve(false)
+        }
+      })
+    })
+  }
+
   const startPlayback = async () => {
-    const clauseList = splitIntoPedagogicalClauses(content, chunkMode)
-    if (clauseList.length === 0) return
+    if (!passageText.trim()) return
 
     stopPlayback()
-    const sessionToken = playbackIdRef.current
-    isPlayingRef.current = true
-    isPausedRef.current = false
 
-    setClauses(clauseList)
-    setIsPlaying(true)
-    setIsPaused(false)
-    setPlaybackComplete(false)
+    const preparedClauses = splitIntoPedagogicalClauses(passageText, chunkMode)
+    if (preparedClauses.length === 0) return
+
+    setClauses(preparedClauses)
     setCurrentClauseIndex(0)
     setCurrentRepeat(1)
+    setIsPlaying(true)
+    isPlayingRef.current = true
+    setIsPaused(false)
+    isPausedRef.current = false
+    setPlaybackComplete(false)
+    setShowProjector(true) // Bật giao diện Bảng Xanh toàn màn hình
 
-    const maxRepeat = repeatCount === "custom"
-      ? (parseInt(customRepeatNum, 10) || 2)
-      : (parseInt(repeatCount, 10) || 2)
+    const sessionToken = playbackIdRef.current
+    const maxRepeat = parseInt(repeatCount, 10) || 2
 
-    for (let i = 0; i < clauseList.length; i++) {
+    for (let i = 0; i < preparedClauses.length; i++) {
       if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
 
       setCurrentClauseIndex(i)
-      const clause = clauseList[i]
 
       for (let r = 1; r <= maxRepeat; r++) {
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
@@ -629,22 +588,15 @@ export default function DictationPage() {
         }
 
         setCurrentRepeat(r)
-
-        if (enableChime && r === 1) {
-          playChime()
-          await new Promise(res => setTimeout(res, 350))
-        }
-
-        await speakClause(clause, sessionToken)
+        await speakClause(preparedClauses[i], sessionToken)
 
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
 
+        // Tính toán thời gian nghỉ viết
         let pauseTime = 10
         if (pauseSetting === "auto") {
-          const wCount = clause.split(/\s+/).filter(Boolean).length
+          const wCount = preparedClauses[i].split(/\s+/).filter(Boolean).length
           pauseTime = Math.max(5, Math.round(wCount * 1.6))
-        } else if (pauseSetting === "custom") {
-          pauseTime = Math.max(2, parseInt(customPauseSeconds, 10) || 10)
         } else {
           pauseTime = parseInt(pauseSetting, 10) || 10
         }
@@ -660,7 +612,6 @@ export default function DictationPage() {
       setIsSpeakingNow(false)
       setCountdown(0)
       setPlaybackComplete(true)
-      if (enableChime) playChime()
       await speakClause("Đã hoàn thành bài đọc chính tả. Các em hãy soát lại bài.", sessionToken)
     }
   }
@@ -695,727 +646,613 @@ export default function DictationPage() {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
     }
-    if (enableChime) playChime()
     await speakClause(clauses[currentClauseIndex], playbackIdRef.current)
   }
 
-  const testVoice = () => {
-    stopPlayback()
-    const sessionToken = playbackIdRef.current
-    if (enableChime) playChime()
-    speakClause("Xin chào thầy cô và các em. Đây là giọng đọc chính tả chuẩn tiếng Việt của ViHand Grade.", sessionToken)
+  const skipToNextClause = () => {
+    if (currentClauseIndex < clauses.length - 1) {
+      setCurrentClauseIndex(prev => prev + 1)
+      setCurrentRepeat(1)
+      repeatCurrentClause()
+    }
   }
 
-  // ─── 4. Mở Phiên Chấm Điểm & Lưu Ground Truth ──────────────────────────────
+  const testVoiceSpecific = (voiceDef: VoiceCardDef) => {
+    stopPlayback()
+    const sessionToken = playbackIdRef.current
+    const sample = `Xin chào các em. Tôi là ${voiceDef.name}, giọng đọc chính tả chuẩn tiếng Việt.`
+    
+    const audio = new Audio(`/api/dictation/tts?text=${encodeURIComponent(sample)}&voice=${encodeURIComponent(voiceDef.engine)}&rate=-15%`)
+    currentAudioRef.current = audio
+    audio.play().catch(() => {})
+  }
+
+  // ─── Ground Truth Session Integration ────────────────────────────────────────
   const handleOpenGrading = async () => {
     try {
       const res = await fetch("/api/dictation/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          passage: content,
+          title: title || `Bài đọc: ${new Date().toLocaleDateString("vi-VN")}`,
+          passage: passageText,
           className: selectedClass,
           teacherName,
-          source: "web_tts",
+          source: "web",
           status: "completed",
-          summary: `Bài đọc chính tả ${title} lớp ${selectedClass}`,
+          summary: `Bài đọc ${stats.words} từ, ${previewClauseList.length} cụm câu`,
         }),
       })
 
-      let sessionId = ""
       if (res.ok) {
         const data = await res.json()
-        sessionId = data.session?.id || ""
+        const sessionId = data.session?.id
+        const q = new URLSearchParams({
+          title,
+          passage: passageText,
+          className: selectedClass,
+          sessionId: sessionId || "",
+          mode: "dictation",
+        })
+        router.push(`/teacher/grade?${q.toString()}`)
+      } else {
+        router.push(`/teacher/grade?title=${encodeURIComponent(title)}&passage=${encodeURIComponent(passageText)}&className=${encodeURIComponent(selectedClass)}&mode=dictation`)
       }
-
-      const query = new URLSearchParams({
-        title,
-        passage: content,
-        className: selectedClass,
-        mode: "dictation",
-        ...(sessionId && { sessionId }),
-      })
-
-      router.push(`/teacher/grade?${query.toString()}`)
-    } catch (err) {
-      console.error("Lỗi mở phiên chấm:", err)
-      router.push(`/teacher/grade`)
+    } catch {
+      router.push(`/teacher/grade?title=${encodeURIComponent(title)}&passage=${encodeURIComponent(passageText)}&className=${encodeURIComponent(selectedClass)}&mode=dictation`)
     }
   }
 
-  // ─── 5. Chọn bài từ Kho SGK ─────────────────────────────────────────────────
+  // ─── Quick Actions & Inserts ────────────────────────────────────────────────
+  const insertCommand = (textToInsert: string) => {
+    setPassageText(prev => prev + textToInsert)
+  }
+
+  const loadPresetByGrade = (grade: number) => {
+    const sample = SAMPLE_PASSAGES_BY_GRADE[grade]
+    if (sample) {
+      setTitle(sample.title)
+      setPassageText(sample.content)
+      setDifficultWords(sample.difficultWords)
+    }
+  }
+
   const handleSelectPassage = (p: TextbookPassage) => {
     setTitle(p.title)
-    setContent(p.content)
+    setPassageText(p.content)
     setDifficultWords(p.difficultWords || "")
-    setActiveTab("player")
+    setActiveTab("editor")
   }
 
-  // ─── 6. AI Sáng Tác Bài Đọc Theo Chủ Đề (Generative Dictation) ───────────────
-  const handleGenerateAiPassage = async () => {
-    if (!aiTopic.trim()) return
-
-    try {
-      setGeneratingAi(true)
-      const res = await fetch("/api/dictation/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gradeLevel: Number(aiGradeLevel),
-          topic: aiTopic.trim(),
-          sentenceCount: Number(aiSentenceCount),
-          bookSet: aiBookSet,
-        }),
-      })
-
-      const data = await res.json()
-      if (res.ok && data.passage) {
-        setTitle(data.passage.title)
-        setContent(data.passage.content)
-        setDifficultWords(data.passage.difficultWords || "")
-        setIsAiGenerateOpen(false)
-        setActiveTab("player")
-      } else {
-        alert(formatAiErrorMessage(data.error || "Không thể tạo bài đọc AI."))
-      }
-    } catch (err) {
-      console.error("Lỗi tạo bài đọc AI:", err)
-      alert(formatAiErrorMessage(err))
-    } finally {
-      setGeneratingAi(false)
-    }
-  }
-
-  // ─── 7. Thêm bài mới vào Kho SGK ────────────────────────────────────────────
-  const handleCreatePassage = async () => {
-    if (!newPassage.title || !newPassage.content) return
-
-    try {
-      const res = await fetch("/api/dictation/passages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPassage),
-      })
-
-      if (res.ok) {
-        setIsAddPassageOpen(false)
-        setNewPassage({
-          title: "",
-          gradeLevel: "3",
-          bookSet: "KetNoi",
-          unit: "Tuần 1",
-          content: "",
-          difficultWords: "",
-        })
-        fetchPassages()
-      }
-    } catch (err) {
-      console.error("Lỗi thêm bài đọc:", err)
-    }
-  }
-
-  // ─── 8. Xóa bài đọc khỏi Kho SGK ──────────────────────────────────────────
   const handleDeletePassage = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa bài đọc này khỏi kho ngữ liệu?")) return
     try {
       const res = await fetch(`/api/dictation/passages?id=${id}`, { method: "DELETE" })
-      if (res.ok) {
-        setPassages(prev => prev.filter(p => p.id !== id))
-      }
-    } catch (err) {
-      console.error("Lỗi xóa bài đọc SGK:", err)
+      if (res.ok) fetchPassages()
+    } catch (e) {
+      console.error(e)
     }
   }
 
-  // ─── 9. Chỉnh sửa bài đọc trong Kho SGK ──────────────────────────────────
-  const handleOpenEditPassage = (p: TextbookPassage) => {
-    setEditingPassage({ ...p })
-    setIsEditPassageOpen(true)
-  }
-
-  const handleSaveEditPassage = async () => {
-    if (!editingPassage || !editingPassage.title || !editingPassage.content) return
-
-    try {
-      const res = await fetch("/api/dictation/passages", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: editingPassage.id,
-          title: editingPassage.title,
-          content: editingPassage.content,
-          difficultWords: editingPassage.difficultWords,
-          unit: editingPassage.unit,
-          gradeLevel: Number(editingPassage.gradeLevel),
-          bookSet: editingPassage.bookSet,
-        }),
-      })
-
-      if (res.ok) {
-        setIsEditPassageOpen(false)
-        setEditingPassage(null)
-        fetchPassages()
-      }
-    } catch (err) {
-      console.error("Lỗi cập nhật bài đọc SGK:", err)
-    }
-  }
-
-  // ─── 10. Xóa phiên đọc lịch sử ──────────────────────────────────────────────
   const handleDeleteSession = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa phiên đọc này?")) return
+    if (!confirm("Bạn có chắc chắn muốn xóa phiên đọc này khỏi lịch sử?")) return
     try {
-      const res = await fetch(`/api/dictation/sessions/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        setSessions(prev => prev.filter(s => s.id !== id))
-      }
-    } catch (err) {
-      console.error("Lỗi xóa phiên:", err)
+      const res = await fetch(`/api/dictation/sessions?id=${id}`, { method: "DELETE" })
+      if (res.ok) fetchSessions()
+    } catch (e) {
+      console.error(e)
     }
   }
+
+  // ─── Filtered Voice Cards ───────────────────────────────────────────────────
+  const filteredVoices = useMemo(() => {
+    if (voiceGenderFilter === "all") return VOICE_CARDS
+    return VOICE_CARDS.filter(v => v.gender === voiceGenderFilter)
+  }, [voiceGenderFilter])
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50/70 dark:bg-slate-950 font-sans">
-      {/* Header Bar */}
-      <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 px-5 backdrop-blur shadow-xs">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="h-5" />
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Đọc Chính Tả AI — Trợ Giảng Lớp Học
-            </h1>
-            <span className="hidden md:inline-block text-xs text-muted-foreground ml-2">
-              (Truyền âm qua TV/Loa & Tạo bài chuẩn Ground Truth)
-            </span>
-          </div>
+    <div className="flex flex-col min-h-screen">
+      {/* ──────────────────────────────────────────────────────────────────────────
+          1. UNIFIED TEACHER HEADER
+      ────────────────────────────────────────────────────────────────────────── */}
+      <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-4 md:px-6">
+        <SidebarTrigger className="-ml-2" />
+        <Separator orientation="vertical" className="h-6" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base sm:text-lg font-semibold text-card-foreground">Đọc chính tả sư phạm</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Trợ giảng đọc chính tả thông minh theo chuẩn GDPT 2018 &amp; Khóa Ground Truth chấm bài
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Badge variant="outline" className="gap-1 py-0.5 px-2.5 bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 text-xs font-medium">
-            <GraduationCap className="h-3.5 w-3.5" />
-            {teacherName}
-          </Badge>
+          <div className="hidden sm:flex items-center gap-2 border border-border/60 bg-muted/40 rounded-full px-3 py-1 text-xs text-muted-foreground">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Neural TTS · 48 kHz</span>
+          </div>
+
           <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-auto min-w-[125px] max-w-[200px] h-8 px-2.5 text-xs font-semibold">
-              <SelectValue placeholder="Chọn lớp">
-                {formatClassName(selectedClass)}
-              </SelectValue>
+            <SelectTrigger className="h-9 text-xs font-semibold rounded-lg w-28 border-border/60">
+              <SelectValue placeholder="Lớp" />
             </SelectTrigger>
-            <SelectContent align="end" className="min-w-[150px]">
-              {classList.map(cls => (
-                <SelectItem key={cls} value={cls}>
-                  {formatClassName(cls)}
+            <SelectContent>
+              {classList.map(c => (
+                <SelectItem key={c} value={c}>
+                  {formatClassName(c)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
+          <HelpGuideButton role="teacher" />
         </div>
       </header>
 
-      {/* Main Content Dashboard */}
-      <main className="flex-1 p-4 md:p-5 max-w-[1500px] mx-auto w-full space-y-3.5">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3.5">
-          <div className="flex items-center justify-between">
-            <TabsList className="grid grid-cols-3 w-full sm:w-[460px] h-9 p-1 bg-slate-200/80 dark:bg-slate-900">
-              <TabsTrigger value="player" className="gap-1.5 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
-                <Volume2 className="h-3.5 w-3.5 text-indigo-600" />
-                Trình Phát Đọc AI
-              </TabsTrigger>
-              <TabsTrigger value="library" className="gap-1.5 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
-                <BookOpen className="h-3.5 w-3.5 text-amber-600" />
-                Kho Ngữ Liệu SGK
-              </TabsTrigger>
-              <TabsTrigger value="history" className="gap-1.5 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
-                <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                Lịch Sử Phiên Đọc
-              </TabsTrigger>
-            </TabsList>
+      {/* ──────────────────────────────────────────────────────────────────────────
+          2. UNIFIED SUB-NAVIGATION TABS BAR
+      ────────────────────────────────────────────────────────────────────────── */}
+      <div className="bg-card border-b border-border px-4 md:px-6">
+        <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => setActiveTab("editor")}
+              className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === "editor"
+                  ? "border-emerald-600 text-emerald-700 dark:text-emerald-400 dark:border-emerald-400"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              }`}
+            >
+              <Mic className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Trình phát đọc</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("corpus")}
+              className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === "corpus"
+                  ? "border-emerald-600 text-emerald-700 dark:text-emerald-400 dark:border-emerald-400"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Kho ngữ liệu SGK</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("history")}
+              className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === "history"
+                  ? "border-emerald-600 text-emerald-700 dark:text-emerald-400 dark:border-emerald-400"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              }`}
+            >
+              <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Lịch sử phiên ({sessions.length})</span>
+            </button>
           </div>
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              TAB 1: TRÌNH PHÁT ĐỌC CHÍNH TẢ (UNIFIED COMPACT DASHBOARD)
-          ══════════════════════════════════════════════════════════════════════ */}
-          <TabsContent value="player" className="space-y-3.5 mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div className="py-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setShowProjector(true)}
+              className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-medium shadow-xs"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Bật Bảng Xanh Trình Chiếu</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ──────────────────────────────────────────────────────────────────────────
+          3. MAIN CONTAINER
+      ────────────────────────────────────────────────────────────────────────── */}
+      <main className="flex-1 p-4 md:p-6 space-y-6 min-w-0 overflow-x-hidden pb-32">
+        
+        {/* ════════════════════════════════════════════════════════════════════════
+            TAB 1: TRÌNH PHÁT ĐỌC & SOẠN BÀI (MAIN COCKPIT)
+        ════════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "editor" && (
+          <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5 items-start">
+            
+            {/* ── CỘT TRÁI: VĂN BẢN ĐỌC & SOẠN THẢO TRANG VỞ ── */}
+            <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xs">
               
-              {/* ──────────────────────────────────────────────────────────────
-                  CỘT TRÁI (6 CỘT): SOẠN BÀI ĐỌC CHÍNH TẢ
-              ────────────────────────────────────────────────────────────── */}
-              <div className="lg:col-span-6 flex flex-col">
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 flex-1 flex flex-col overflow-hidden">
-                  {/* Header Trái */}
-                  <div className="py-2.5 px-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
-                        <BookOpen className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none">
-                          Bài Đọc Chính Tả
-                        </h2>
-                        <span className="text-[10px] text-muted-foreground">Soạn văn bản hoặc trích nguồn SGK</span>
-                      </div>
-                    </div>
+              {/* Card Header */}
+              <div className="flex items-center justify-between p-3.5 md:p-4 border-b border-border/60 gap-2 flex-wrap bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                    Văn bản đọc · Đang soạn:
+                  </span>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    placeholder="Tiêu đề bài đọc..."
+                    className="font-bold text-sm bg-transparent border-b border-dashed border-emerald-600 text-card-foreground outline-hidden px-1"
+                  />
+                </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs text-indigo-700 bg-indigo-50/90 border-indigo-200 hover:bg-indigo-100 h-7 px-2.5 gap-1 font-semibold dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
-                        onClick={() => setIsAiGenerateOpen(true)}
-                      >
-                        <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                        AI Soạn bài
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs text-slate-700 bg-white border-slate-200 hover:bg-slate-50 hover:text-indigo-600 h-7 px-2.5 gap-1 font-medium dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                        onClick={() => setActiveTab("library")}
-                      >
-                        <BookOpen className="h-3.5 w-3.5 text-slate-500" />
-                        Kho SGK
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Body Trái */}
-                  <div className="p-3.5 space-y-3 flex-1 flex flex-col">
-                    {/* Tiêu đề */}
-                    <div className="space-y-1">
-                      <Label htmlFor="title" className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        Tên bài viết
-                      </Label>
-                      <Input
-                        id="title"
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                        placeholder="VD: Ai có lỗi, Hạt gạo làng ta..."
-                        className="h-8 text-sm font-semibold"
-                      />
-                    </div>
-
-                    {/* Đoạn văn */}
-                    <div className="space-y-1 flex-1 flex flex-col">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="content" className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                          Đoạn văn đọc cho học sinh viết ({wordCount} từ)
-                        </Label>
-                        <button
-                          type="button"
-                          onClick={() => setShowPreviewClauses(!showPreviewClauses)}
-                          className="text-[11px] text-indigo-600 hover:underline flex items-center gap-1 font-medium"
-                        >
-                          <Split className="h-3 w-3" />
-                          {showPreviewClauses ? "Thu gọn cụm câu" : `Xem ${previewClauseList.length} cụm câu`}
-                          {showPreviewClauses ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                        </button>
-                      </div>
-                      <Textarea
-                        id="content"
-                        value={content}
-                        onChange={e => setContent(e.target.value)}
-                        rows={6}
-                        placeholder="Nhập hoặc dán nội dung đoạn văn chính tả..."
-                        className="leading-relaxed text-sm resize-none font-sans bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 flex-1 min-h-[120px]"
-                      />
-                    </div>
-
-                    {/* Danh sách cụm câu nếu bấm xem */}
-                    {showPreviewClauses && (
-                      <div className="p-2.5 bg-indigo-50/50 dark:bg-slate-950 border border-indigo-100 dark:border-indigo-900 rounded-lg space-y-1.5 text-xs max-h-32 overflow-y-auto">
-                        <span className="font-semibold text-indigo-900 dark:text-indigo-300 text-[11px]">
-                          Danh sách {previewClauseList.length} cụm câu theo nhịp ngắt:
-                        </span>
-                        {previewClauseList.map((cl, idx) => (
-                          <div key={idx} className="p-1 px-2 bg-white dark:bg-slate-800 rounded border text-slate-700 dark:text-slate-200 flex items-start gap-1.5 text-[11px]">
-                            <span className="font-bold text-indigo-600">{idx + 1}.</span>
-                            <span className="font-sans leading-snug">{cl}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Từ khó */}
-                    <div className="space-y-1.5 pt-0.5">
-                      <Label htmlFor="difficult" className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-between">
-                        <span>Từ khó cần lưu ý cho học sinh</span>
-                        <span className="text-[10px] font-normal text-muted-foreground">(phân cách bằng dấu phẩy)</span>
-                      </Label>
-                      <Input
-                        id="difficult"
-                        value={difficultWords}
-                        onChange={e => setDifficultWords(e.target.value)}
-                        placeholder="VD: hối hận, En-ri-cô, sứt chỉ..."
-                        className="h-8 text-xs bg-slate-50/60 dark:bg-slate-900"
-                      />
-                      {difficultWords && (
-                        <div className="flex flex-wrap gap-1 pt-0.5">
-                          {difficultWords.split(",").map((w, idx) => {
-                            const word = w.trim()
-                            if (!word) return null
-                            return (
-                              <Badge key={idx} variant="secondary" className="text-[10px] h-5 bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300">
-                                ⚠️ {word}
-                              </Badge>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => testVoiceSpecific(VOICE_CARDS.find(v => v.id === selectedVoiceId) || VOICE_CARDS[0])}
+                    className="text-xs font-semibold px-2 py-1 rounded-md text-emerald-700 dark:text-emerald-400 hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    Nghe thử
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText()
+                        if (text) setPassageText(text)
+                      } catch {}
+                    }}
+                    className="text-xs font-semibold px-2 py-1 rounded-md text-emerald-700 dark:text-emerald-400 hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    Dán
+                  </button>
+                  <button
+                    onClick={() => setIsAiGenerateOpen(true)}
+                    className="text-xs font-bold px-2 py-1 rounded-md text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <Wand2 className="h-3 w-3" /> AI soạn bài
+                  </button>
+                  <button
+                    onClick={() => setPassageText("")}
+                    className="text-xs font-semibold px-2 py-1 rounded-md text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                  >
+                    Xóa
+                  </button>
                 </div>
               </div>
 
-              {/* ──────────────────────────────────────────────────────────────
-                  CỘT PHẢI (6 CỘT): TRUNG TÂM PHÁT ĐỌC & CẤU HÌNH NHỊP SƯ PHẠM
-              ────────────────────────────────────────────────────────────── */}
-              <div className="lg:col-span-6 flex flex-col">
-                <div className={`rounded-xl border transition-all shadow-xs overflow-hidden flex-1 flex flex-col bg-white dark:bg-slate-900 ${isPlaying ? "border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/20 ring-1 ring-indigo-500/20" : "border-slate-200 dark:border-slate-800"}`}>
-                  
-                  {/* Header Phải */}
-                  <div className="py-2.5 px-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0">
-                        <Volume2 className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none">
-                          Trình Phát Đọc Lớp Học
-                        </h2>
-                        <span className="text-[10px] text-muted-foreground">Phát âm qua loa & điều khiển nhịp đọc</span>
-                      </div>
-                    </div>
+              {/* Textarea trang vở */}
+              <div className="p-4 md:p-5">
+                <textarea
+                  id="tx"
+                  spellCheck={false}
+                  value={passageText}
+                  onChange={e => setPassageText(e.target.value)}
+                  placeholder="Nhập hoặc dán nội dung đoạn văn bài đọc chính tả vào đây..."
+                  className="w-full min-h-[190px] border-0 outline-hidden resize-none bg-transparent text-card-foreground text-base md:text-lg leading-[1.75]"
+                  style={{ fontFamily: "'Lexend', sans-serif" }}
+                />
+              </div>
 
-                    {/* Live Badge */}
-                    {!isPlaying ? (
-                      playbackComplete ? (
-                        <Badge className="bg-emerald-600 text-white gap-1 text-[11px] h-6 px-2.5 font-medium">
-                          <Check className="h-3 w-3" /> Đã hoàn thành
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-emerald-700 bg-emerald-50/80 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 text-[11px] h-6 px-2.5 font-medium flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Sẵn sàng phát đọc
-                        </Badge>
-                      )
-                    ) : isPaused ? (
-                      <Badge variant="secondary" className="bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 text-[11px] h-6 px-2.5 font-bold animate-pulse">
-                        ⏸ Đang tạm dừng
-                      </Badge>
-                    ) : isSpeakingNow ? (
-                      <Badge className="bg-indigo-600 text-white animate-pulse gap-1 text-[11px] h-6 px-2.5 font-bold">
-                        🔊 Đang đọc... (Lần {currentRepeat}/{repeatCount === "custom" ? customRepeatNum : repeatCount})
-                      </Badge>
-                    ) : countdown > 0 ? (
-                      <Badge className="bg-purple-600 text-white animate-pulse gap-1 text-[11px] h-6 px-2.5 font-bold">
-                        ⏳ Học sinh viết ({countdown}s)
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-indigo-500 text-white text-[11px] h-6 px-2.5">
-                        ⏳ Chuẩn bị cụm tiếp...
-                      </Badge>
-                    )}
-                  </div>
+              {/* Row Từ khó */}
+              <div className="px-4 py-3 border-t border-border/60 flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                <span className="font-semibold text-card-foreground">Từ khó:</span>
+                {difficultWords.split(",").filter(Boolean).map((w, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60 font-semibold rounded-full px-3 py-0.5 text-xs shadow-2xs"
+                  >
+                    {w.trim()}
+                  </span>
+                ))}
+                <Input
+                  value={difficultWords}
+                  onChange={e => setDifficultWords(e.target.value)}
+                  placeholder="Thêm từ khó (cách nhau dấu phẩy)..."
+                  className="h-7 text-xs max-w-[200px] ml-auto border-border/60"
+                />
+              </div>
 
-                  {/* Body Phải */}
-                  <div className="p-3.5 space-y-3 flex-1 flex flex-col justify-between">
-                    
-                    {/* Khu vực hiển thị câu đọc */}
-                    <div className="space-y-2">
-                      {isPlaying ? (
-                        <div className="p-3 bg-white dark:bg-slate-900 border rounded-xl space-y-1.5 shadow-inner">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-indigo-700 dark:text-indigo-400">
-                              Cụm câu {currentClauseIndex + 1}/{clauses.length}
-                            </span>
-                            <span className="text-slate-600 dark:text-slate-400">
-                              Lần đọc {currentRepeat}/{repeatCount === "custom" ? customRepeatNum : repeatCount}
-                            </span>
-                          </div>
-                          <p className="text-sm md:text-base font-bold text-indigo-950 dark:text-indigo-100 leading-relaxed font-sans min-h-[42px] flex items-center">
-                            "{clauses[currentClauseIndex] || ""}"
-                          </p>
-                          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div
-                              className="bg-indigo-600 h-full transition-all duration-300"
-                              style={{
-                                width: `${((currentClauseIndex + 1) / Math.max(1, clauses.length)) * 100}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-2.5 bg-slate-50 dark:bg-slate-950/60 border rounded-xl text-center space-y-0.5">
-                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                            Sẵn sàng đọc cho <span className="text-indigo-600 font-bold">{formatClassName(selectedClass)}</span>
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            Truyền âm qua TV • {voiceEngine === "vi-VN-HoaiMyNeural" ? "Cô Hoài My" : voiceEngine === "vi-VN-NamMinhNeural" ? "Thầy Nam Minh" : "Giọng máy tính"} • {repeatCount === "custom" ? `${customRepeatNum} lần` : `${repeatCount} lần/cụm`}
-                          </p>
-                        </div>
-                      )}
+              {/* Row Chèn lệnh sư phạm & Mẫu nhanh */}
+              <div className="px-4 py-2.5 border-t border-border/60 flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                <span className="font-semibold text-card-foreground">Chèn lệnh:</span>
+                <button
+                  type="button"
+                  onClick={() => insertCommand(" [nghỉ 3s] ")}
+                  className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-1 font-semibold hover:border-emerald-600 transition-colors cursor-pointer"
+                >
+                  ⏸ Nghỉ 3s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertCommand(" [nghỉ 5s] ")}
+                  className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-1 font-semibold hover:border-emerald-600 transition-colors cursor-pointer"
+                >
+                  ⏸ Nghỉ 5s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertCommand(" [chậm] ")}
+                  className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-1 font-semibold hover:border-emerald-600 transition-colors cursor-pointer"
+                >
+                  🐢 Đọc chậm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertCommand(" [nhấn] ")}
+                  className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-1 font-semibold hover:border-emerald-600 transition-colors cursor-pointer"
+                >
+                  🎯 Nhấn giọng
+                </button>
 
-                      {/* Nút Master Control */}
-                      <div className="space-y-1.5">
-                        {!isPlaying ? (
-                          <Button
-                            onClick={startPlayback}
-                            size="lg"
-                            className="w-full gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-sm h-10 text-sm font-bold tracking-wide"
-                          >
-                            <Play className="h-4 w-4 fill-current" />
-                            BẮT ĐẦU ĐỌC CHO CẢ LỚP
-                          </Button>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-2">
-                            <Button
-                              variant={isPaused ? "default" : "outline"}
-                              onClick={togglePause}
-                              className="gap-1.5 h-9 text-xs font-semibold"
-                            >
-                              {isPaused ? <Play className="h-3.5 w-3.5 fill-current" /> : <Pause className="h-3.5 w-3.5" />}
-                              {isPaused ? "Tiếp tục" : "Tạm dừng"}
-                            </Button>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <span className="font-semibold text-card-foreground">Mẫu nhanh:</span>
+                  <button
+                    type="button"
+                    onClick={() => loadPresetByGrade(1)}
+                    className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-0.5 font-bold text-xs hover:border-emerald-600 cursor-pointer"
+                  >
+                    Lớp 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => loadPresetByGrade(2)}
+                    className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-0.5 font-bold text-xs hover:border-emerald-600 cursor-pointer"
+                  >
+                    Lớp 2
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => loadPresetByGrade(3)}
+                    className="border border-border/60 bg-muted/40 text-card-foreground rounded-full px-2.5 py-0.5 font-bold text-xs hover:border-emerald-600 cursor-pointer"
+                  >
+                    Lớp 3
+                  </button>
+                </div>
+              </div>
 
-                            <Button
-                              variant="outline"
-                              onClick={repeatCurrentClause}
-                              className="gap-1.5 h-9 text-xs font-semibold"
-                            >
-                              <RotateCcw className="h-3.5 w-3.5" />
-                              Đọc lại
-                            </Button>
+              {/* Row Hiển thị các cụm từ phân rã sư phạm */}
+              <div className="px-4 py-2.5 border-t border-border/60 flex items-center gap-2 flex-wrap text-xs">
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                  {previewClauseList.length} cụm đọc:
+                </span>
+                <div className="flex gap-1.5 flex-wrap items-center">
+                  {previewClauseList.slice(0, 4).map((c, idx) => (
+                    <span
+                      key={idx}
+                      className="border border-dashed border-border/60 bg-muted/20 rounded-lg px-2 py-0.5 text-xs text-card-foreground"
+                    >
+                      <b className="text-rose-600 mr-1">{idx + 1}</b>
+                      {c.length > 24 ? c.slice(0, 24) + "…" : c}
+                    </span>
+                  ))}
+                  {previewClauseList.length > 4 && (
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      +{previewClauseList.length - 4} cụm khác
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                            <Button
-                              variant="destructive"
-                              onClick={stopPlayback}
-                              className="gap-1.5 h-9 text-xs font-semibold"
-                            >
-                              <Square className="h-3.5 w-3.5 fill-current" />
-                              Dừng hẳn
-                            </Button>
-                          </div>
-                        )}
+              {/* Row Thống kê */}
+              <div className="px-4 py-2.5 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground font-mono bg-muted/10">
+                <span>{stats.chars} ký tự · {stats.words} từ · {stats.sentences} câu</span>
+                <span>Ước tính: {stats.duration}</span>
+              </div>
+            </div>
 
-                        <Button
-                          variant="default"
-                          onClick={handleOpenGrading}
-                          className="w-full gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-8 font-semibold text-xs shadow-xs"
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          🎯 Mở Phiên Chấm Điểm Cho Bài Này
-                        </Button>
-                      </div>
-                    </div>
+            {/* ── CỘT PHẢI: TRUNG TÂM GIỌNG ĐỌC & CẤU HÌNH NHỊP SƯ PHẠM ── */}
+            <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xs space-y-4 p-4 md:p-5">
+              
+              {/* Header Thẻ Giọng Đọc & Bộ lọc */}
+              <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                <h3 className="font-bold text-base text-card-foreground flex items-center gap-1.5">
+                  <span>Giọng đọc ({filteredVoices.length})</span>
+                </h3>
+                
+                <div className="flex bg-muted/50 border border-border/60 rounded-xl p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setVoiceGenderFilter("all")}
+                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                      voiceGenderFilter === "all"
+                        ? "bg-card text-card-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVoiceGenderFilter("f")}
+                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                      voiceGenderFilter === "f"
+                        ? "bg-card text-card-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Nữ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVoiceGenderFilter("m")}
+                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                      voiceGenderFilter === "m"
+                        ? "bg-card text-card-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Nam
+                  </button>
+                </div>
+              </div>
 
-                    <Separator className="my-1" />
-
-                    {/* Section Thiết Lập Nhịp Đọc Gọn Gàng */}
-                    <div className="space-y-2 pt-0.5 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                          <SlidersHorizontal className="h-3.5 w-3.5 text-indigo-600" />
-                          Thiết Lập Nhịp Đọc
-                        </span>
-                        <button
-                          type="button"
-                          onClick={testVoice}
-                          className="text-[11px] text-indigo-600 hover:underline flex items-center gap-1 font-semibold"
-                        >
-                          <Play className="h-2.5 w-2.5 fill-current" /> Thử giọng
-                        </button>
-                      </div>
-
-                      {/* Grid 3 cột: Tốc độ | Lặp | Nghỉ */}
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-0.5">
-                          <Label className="text-[10px] text-slate-500 font-semibold truncate flex items-center gap-1">
-                            <Gauge className="h-2.5 w-2.5 text-amber-500" /> Tốc độ
-                          </Label>
-                          <Select value={speedRate} onValueChange={setSpeedRate}>
-                            <SelectTrigger className="h-7 text-xs px-2 truncate font-medium">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SPEED_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <Label className="text-[10px] text-slate-500 font-semibold truncate flex items-center gap-1">
-                            <Repeat className="h-2.5 w-2.5 text-blue-500" /> Lặp lại
-                          </Label>
-                          <Select value={repeatCount} onValueChange={setRepeatCount}>
-                            <SelectTrigger className="h-7 text-xs px-2 truncate font-medium">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {REPEAT_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <Label className="text-[10px] text-slate-500 font-semibold truncate flex items-center gap-1">
-                            <Hourglass className="h-2.5 w-2.5 text-purple-500" /> Nghỉ viết
-                          </Label>
-                          <Select value={pauseSetting} onValueChange={setPauseSetting}>
-                            <SelectTrigger className="h-7 text-xs px-2 truncate font-medium">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PAUSE_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+              {/* Danh sách 4 Voice Cards */}
+              <div className="grid gap-2.5">
+                {filteredVoices.map(v => {
+                  const isSelected = selectedVoiceId === v.id
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => {
+                        setSelectedVoiceId(v.id)
+                        setVoiceEngine(v.engine)
+                      }}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/20 ring-1 ring-emerald-600"
+                          : "border-border/60 hover:border-border bg-card"
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shrink-0 ${
+                          v.gender === "f" 
+                            ? "bg-pink-100 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300" 
+                            : "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300"
+                        }`}
+                      >
+                        {v.gender === "f" ? "♀" : "♂"}
                       </div>
 
-                      {/* Custom inputs nếu chọn tự nhập */}
-                      {(speedRate === "custom" || repeatCount === "custom") && (
-                        <div className="p-1.5 bg-slate-50 dark:bg-slate-950 rounded border grid grid-cols-2 gap-2 text-xs">
-                          {speedRate === "custom" && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-500">Tỉ lệ tốc độ:</span>
-                              <Input
-                                type="number"
-                                value={customSpeedPercent}
-                                onChange={e => setCustomSpeedPercent(e.target.value)}
-                                className="h-6 text-xs font-bold text-center px-1"
-                              />
-                              <span className="text-[10px]">%</span>
-                            </div>
-                          )}
-                          {repeatCount === "custom" && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-500">Số lần lặp:</span>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={customRepeatNum}
-                                onChange={e => setCustomRepeatNum(e.target.value)}
-                                className="h-6 text-xs font-bold text-center px-1"
-                              />
-                              <span className="text-[10px]">lần</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Grid 2 cột: Giọng đọc AI | Độ dài ngắt cụm */}
-                      <div className="grid grid-cols-2 gap-2 pt-0.5">
-                        <div className="space-y-0.5">
-                          <Label className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
-                            <Mic className="h-2.5 w-2.5 text-emerald-500" /> Giọng đọc AI
-                          </Label>
-                          <Select value={voiceEngine} onValueChange={setVoiceEngine}>
-                            <SelectTrigger className="h-7 text-xs font-semibold text-indigo-950 dark:text-indigo-200">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {VOICE_ENGINE_OPTIONS.map(v => (
-                                <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <Label className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
-                            <Split className="h-2.5 w-2.5 text-sky-500" /> Ngắt cụm
-                          </Label>
-                          <Select value={chunkMode} onValueChange={(v: any) => setChunkMode(v)}>
-                            <SelectTrigger className="h-7 text-xs font-semibold">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CHUNK_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Voice máy tính phụ nếu chọn browser_voice */}
-                      {voiceEngine === "browser_voice" && (
-                        <div className="p-1.5 bg-slate-50 dark:bg-slate-950 rounded border space-y-1">
-                          <Label className="text-[10px] text-slate-500 font-semibold">Giọng máy tính:</Label>
-                          <Select value={selectedBrowserVoiceUri} onValueChange={setSelectedBrowserVoiceUri}>
-                            <SelectTrigger className="h-6 text-xs truncate">
-                              <SelectValue placeholder="Chọn giọng" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-40">
-                              {browserVoices.map(v => (
-                                <SelectItem key={v.voiceURI} value={v.voiceURI}>{v.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {/* Toggle Chuông hiệu lệnh */}
-                      <div className="pt-1 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={enableChime}
-                            onChange={e => setEnableChime(e.target.checked)}
-                            className="h-3 w-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium flex items-center gap-1">
-                            <Bell className="h-3 w-3 text-amber-500" /> Chuông hiệu lệnh trước mỗi cụm
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-sm text-card-foreground truncate">
+                            {v.name}
                           </span>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={playChime}
-                          className="text-[10px] text-slate-400 hover:text-indigo-600 hover:underline"
-                        >
-                          Thử chuông
-                        </button>
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-muted border border-border/60 text-muted-foreground">
+                            {v.region}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {v.desc}
+                        </p>
                       </div>
-                    </div>
 
+                      {/* Nút nghe thử riêng */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          testVoiceSpecific(v)
+                        }}
+                        className="w-8 h-8 rounded-full border border-border/60 bg-card hover:bg-muted flex items-center justify-center hover:scale-105 active:scale-95 transition-all text-emerald-700 dark:text-emerald-400 shrink-0 cursor-pointer shadow-2xs"
+                        title={`Nghe thử giọng ${v.name}`}
+                      >
+                        ▶
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* ── BỘ ĐIỀU KHIỂN TỐC ĐỘ SƯ PHẠM ── */}
+              <div className="pt-3 border-t border-border/60 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                  <span>TỐC ĐỘ ĐỌC · CHUẨN SƯ PHẠM {Math.round((parseFloat(speedRate) - 1.0) * 100)}%</span>
+                  <span className="font-mono text-xs text-emerald-700 dark:text-emerald-400 font-bold">
+                    {parseFloat(speedRate).toFixed(2)}x
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = Math.max(0.65, Math.min(1.10, parseFloat(speedRate) - 0.05))
+                      setSpeedRate(cur.toFixed(2))
+                    }}
+                    className="w-8 h-8 rounded-lg border border-border/60 text-card-foreground font-bold text-sm flex items-center justify-center hover:bg-muted cursor-pointer"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="range"
+                    min={65}
+                    max={110}
+                    value={Math.round(parseFloat(speedRate) * 100)}
+                    onChange={e => setSpeedRate((parseInt(e.target.value, 10) / 100).toFixed(2))}
+                    className="flex-1 accent-emerald-600 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = Math.max(0.65, Math.min(1.10, parseFloat(speedRate) + 0.05))
+                      setSpeedRate(cur.toFixed(2))
+                    }}
+                    className="w-8 h-8 rounded-lg border border-border/60 text-card-foreground font-bold text-sm flex items-center justify-center hover:bg-muted cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+                
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Lớp 1: 0.65 · Lớp 3: 0.90 · Lớp 5: 0.95
+                </p>
+              </div>
+
+              {/* ── LẶP LẠI VÀ NGHỈ VIẾT SEGMENTS ── */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/60">
+                
+                {/* Lặp lại */}
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground block mb-1.5 uppercase">
+                    Lặp lại
+                  </label>
+                  <div className="flex bg-muted/50 border border-border/60 rounded-xl p-0.5 text-xs font-semibold">
+                    {["1", "2", "3"].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRepeatCount(r)}
+                        className={`flex-1 py-1 rounded-lg text-center transition-all cursor-pointer ${
+                          repeatCount === r
+                            ? "bg-card text-card-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Nghỉ viết */}
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground block mb-1.5 uppercase">
+                    Nghỉ viết
+                  </label>
+                  <div className="flex bg-muted/50 border border-border/60 rounded-xl p-0.5 text-xs font-semibold">
+                    {[
+                      { val: "auto", lbl: "Auto" },
+                      { val: "10", lbl: "10s" },
+                      { val: "15", lbl: "15s" },
+                    ].map(p => (
+                      <button
+                        key={p.val}
+                        type="button"
+                        onClick={() => setPauseSetting(p.val)}
+                        className={`flex-1 py-1 rounded-lg text-center transition-all cursor-pointer ${
+                          pauseSetting === p.val
+                            ? "bg-card text-card-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {p.lbl}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
             </div>
-          </TabsContent>
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              TAB 2: KHO NGỮ LIỆU SÁCH GIÁO KHOA
-          ══════════════════════════════════════════════════════════════════════ */}
-          <TabsContent value="library" className="space-y-3.5 mt-0">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border shadow-xs">
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    placeholder="Tìm theo tên bài hoặc nội dung..."
-                    value={searchPassage}
-                    onChange={e => setSearchPassage(e.target.value)}
-                    className="pl-8 h-8 text-xs"
-                  />
-                </div>
+          </div>
+        )}
 
-                <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-                  <SelectTrigger className="w-[110px] h-8 text-xs">
-                    <SelectValue placeholder="Khối lớp" />
+        {/* ════════════════════════════════════════════════════════════════════════
+            TAB 2: KHO NGỮ LIỆU SÁCH GIÁO KHOA (TEXTBOOK CORPUS)
+        ════════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "corpus" && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/60 shadow-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={filterGrade} onValueChange={setFilterGrade}>
+                  <SelectTrigger className="w-28 h-8 text-xs font-bold border-border/60">
+                    <SelectValue placeholder="Lớp" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả khối</SelectItem>
+                    <SelectItem value="all">Tất cả lớp</SelectItem>
                     <SelectItem value="1">Lớp 1</SelectItem>
                     <SelectItem value="2">Lớp 2</SelectItem>
                     <SelectItem value="3">Lớp 3</SelectItem>
@@ -1424,8 +1261,8 @@ export default function DictationPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedBookSet} onValueChange={setSelectedBookSet}>
-                  <SelectTrigger className="w-[150px] h-8 text-xs">
+                <Select value={filterBookSet} onValueChange={setFilterBookSet}>
+                  <SelectTrigger className="w-40 h-8 text-xs font-bold border-border/60">
                     <SelectValue placeholder="Bộ sách" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1434,81 +1271,85 @@ export default function DictationPage() {
                     ))}
                   </SelectContent>
                 </Select>
+
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Tìm kiếm bài đọc..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-8 h-8 text-xs w-48 md:w-64 border-border/60"
+                  />
+                </div>
               </div>
 
-              <Button
-                onClick={() => setIsAddPassageOpen(true)}
-                size="sm"
-                className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs shrink-0"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Thêm bài đọc mới
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={fetchPassages}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1 border-border/60"
+                >
+                  <RefreshCw className="h-3 w-3" /> Làm mới
+                </Button>
+                <Button
+                  onClick={() => setIsAddPassageOpen(true)}
+                  size="sm"
+                  className="h-8 text-xs gap-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Thêm bài đọc
+                </Button>
+              </div>
             </div>
 
             {loadingPassages ? (
-              <div className="py-12 text-center text-muted-foreground space-y-2">
-                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-indigo-600" />
+              <div className="py-16 text-center text-muted-foreground">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-emerald-600 mb-2" />
                 <p className="text-xs">Đang tải kho ngữ liệu SGK...</p>
               </div>
             ) : passages.length === 0 ? (
-              <div className="py-12 text-center border rounded-xl bg-white dark:bg-slate-900 space-y-2">
-                <BookOpen className="h-8 w-8 text-muted-foreground mx-auto" />
-                <h3 className="font-medium text-sm text-slate-700 dark:text-slate-300">Không tìm thấy bài đọc nào phù hợp</h3>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Thử thay đổi bộ lọc hoặc thêm một bài đọc chính tả mới vào kho ngữ liệu.
-                </p>
+              <div className="py-16 text-center bg-card rounded-2xl border border-border/60 space-y-2">
+                <BookOpen className="h-10 w-10 text-muted-foreground mx-auto" />
+                <p className="font-bold text-sm">Chưa có bài đọc nào phù hợp với bộ lọc</p>
+                <p className="text-xs text-muted-foreground">Thử chọn lớp khác hoặc thêm bài đọc mới vào kho.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {passages.map(p => (
-                  <Card key={p.id} className="flex flex-col justify-between border-slate-200 hover:border-indigo-300 transition-all shadow-xs hover:shadow-sm">
-                    <CardHeader className="pb-2 p-3">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <Badge variant="outline" className="text-[10px] font-semibold bg-indigo-50 text-indigo-700 border-indigo-200">
+                  <Card key={p.id} className="border-border/60 bg-card flex flex-col justify-between shadow-xs hover:border-emerald-600 transition-all">
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-0 text-[10px] font-bold">
                           Lớp {p.gradeLevel} • {p.unit}
                         </Badge>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground font-semibold">
                           {p.bookSet === "KetNoi" ? "Kết Nối" : p.bookSet === "CanhDieu" ? "Cánh Diều" : "Chân Trời"}
                         </span>
                       </div>
-                      <CardTitle className="text-sm leading-snug font-bold">{p.title}</CardTitle>
+                      <CardTitle className="text-sm font-bold leading-snug">{p.title}</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2 flex-1 flex flex-col justify-between p-3 pt-0">
-                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed font-sans">
+                    <CardContent className="p-4 pt-0 space-y-3 flex-1 flex flex-col justify-between">
+                      <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed font-sans">
                         {p.content}
                       </p>
-
                       {p.difficultWords && (
-                        <div className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/40 p-1.5 rounded border border-amber-200/60 truncate">
+                        <div className="text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 p-1.5 rounded-lg border border-amber-200 dark:border-amber-800/40 truncate font-semibold">
                           ⚠️ Từ khó: {p.difficultWords}
                         </div>
                       )}
-
-                      <div className="pt-1.5 flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 pt-1">
                         <Button
                           onClick={() => handleSelectPassage(p)}
                           size="sm"
-                          className="flex-1 min-w-0 gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-7"
+                          className="flex-1 h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
                         >
-                          <Volume2 className="h-3 w-3 shrink-0" />
-                          <span className="truncate">Chọn đọc</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEditPassage(p)}
-                          className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 shrink-0"
-                          title="Chỉnh sửa bài đọc"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
+                          Chọn đọc bài này
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeletePassage(p.id)}
-                          className="h-7 w-7 text-rose-500 hover:text-rose-700 hover:bg-rose-50 shrink-0"
-                          title="Xóa bài đọc khỏi kho"
+                          className="h-7 w-7 text-rose-600 hover:bg-rose-50"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1518,34 +1359,33 @@ export default function DictationPage() {
                 ))}
               </div>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              TAB 3: LỊCH SỬ CÁC PHIÊN ĐÃ ĐỌC (GROUND TRUTH SESSIONS)
-          ══════════════════════════════════════════════════════════════════════ */}
-          <TabsContent value="history" className="space-y-3.5 mt-0">
-            <div className="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border shadow-xs">
+        {/* ════════════════════════════════════════════════════════════════════════
+            TAB 3: LỊCH SỬ PHIÊN ĐỌC (GROUND TRUTH ARCHIVE)
+        ════════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "history" && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/60 shadow-xs">
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="relative w-full sm:w-72">
-                  <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Tìm theo tên bài đã đọc..."
                     value={searchSession}
                     onChange={e => setSearchSession(e.target.value)}
-                    className="pl-8 h-8 text-xs"
+                    className="pl-8 h-8 text-xs border-border/60"
                   />
                 </div>
-
                 <Select value={classFilter} onValueChange={setClassFilter}>
-                  <SelectTrigger className="w-auto min-w-[120px] max-w-[180px] h-8 text-xs">
+                  <SelectTrigger className="w-32 h-8 text-xs font-bold border-border/60">
                     <SelectValue placeholder="Lớp" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tất cả lớp</SelectItem>
                     {classList.map(c => (
-                      <SelectItem key={c} value={c}>
-                        {formatClassName(c)}
-                      </SelectItem>
+                      <SelectItem key={c} value={c}>{formatClassName(c)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1555,60 +1395,45 @@ export default function DictationPage() {
                 variant="outline"
                 size="sm"
                 onClick={fetchSessions}
-                className="gap-1.5 text-xs shrink-0 h-8"
+                className="h-8 text-xs gap-1 border-border/60"
               >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Làm mới
+                <RefreshCw className="h-3 w-3" /> Làm mới
               </Button>
             </div>
 
             {loadingSessions ? (
-              <div className="py-12 text-center text-muted-foreground space-y-2">
-                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-indigo-600" />
+              <div className="py-16 text-center text-muted-foreground">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-emerald-600 mb-2" />
                 <p className="text-xs">Đang tải lịch sử phiên đọc...</p>
               </div>
             ) : sessions.length === 0 ? (
-              <div className="py-12 text-center border rounded-xl bg-white dark:bg-slate-900 space-y-2">
-                <Clock className="h-8 w-8 text-muted-foreground mx-auto" />
-                <h3 className="font-medium text-sm text-slate-700 dark:text-slate-300">Chưa có phiên đọc chính tả nào</h3>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Hãy dùng Trình Phát Đọc AI để thực hiện buổi đọc chính tả cho học sinh.
-                </p>
+              <div className="py-16 text-center bg-card rounded-2xl border border-border/60 space-y-2">
+                <Clock className="h-10 w-10 text-muted-foreground mx-auto" />
+                <p className="font-bold text-sm">Chưa có phiên đọc chính tả nào được lưu</p>
+                <p className="text-xs text-muted-foreground">Các bài đọc hoàn thành sẽ tự động xuất hiện tại đây.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sessions
                   .filter(s => {
-                    const matchQuery = searchSession ? s.title.toLowerCase().includes(searchSession.toLowerCase()) : true
-                    const matchClass = classFilter !== "all" ? s.className === classFilter : true
-                    return matchQuery && matchClass
+                    const matchQ = searchSession ? s.title.toLowerCase().includes(searchSession.toLowerCase()) : true
+                    const matchC = classFilter !== "all" ? s.className === classFilter : true
+                    return matchQ && matchC
                   })
                   .map(s => (
-                    <Card key={s.id} className="border-slate-200 hover:border-slate-300 shadow-xs flex flex-col justify-between">
-                      <CardHeader className="pb-2 p-3">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                          <Badge variant="secondary" className="font-semibold text-[10px]">
-                            {formatClassName(s.className || "Chung")}
-                          </Badge>
-                          <span className="text-[10px]">{formatDate(s.createdAt)}</span>
+                    <Card key={s.id} className="border-border/60 bg-card flex flex-col justify-between shadow-xs hover:border-emerald-600 transition-all">
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatClassName(s.className)}</span>
+                          <span>{formatDate(s.createdAt)}</span>
                         </div>
                         <CardTitle className="text-sm font-bold">{s.title}</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-2 p-3 pt-0">
-                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed font-sans">
+                      <CardContent className="p-4 pt-0 space-y-3">
+                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                           {s.passage}
                         </p>
-                        <div className="pt-1.5 flex items-center gap-1.5">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setViewingSession(s)}
-                            className="gap-1 text-xs h-7 px-2 text-indigo-700 border-indigo-200 hover:bg-indigo-50 dark:text-indigo-300 dark:border-indigo-800 shrink-0"
-                            title="Xem chi tiết toàn văn bài đọc"
-                          >
-                            <Eye className="h-3 w-3" />
-                            <span>Chi tiết</span>
-                          </Button>
+                        <div className="flex items-center gap-2 pt-1">
                           <Button
                             onClick={() => {
                               const q = new URLSearchParams({
@@ -1621,17 +1446,15 @@ export default function DictationPage() {
                               router.push(`/teacher/grade?${q.toString()}`)
                             }}
                             size="sm"
-                            className="flex-1 min-w-0 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-7"
+                            className="flex-1 h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-bold gap-1"
                           >
-                            <Sparkles className="h-3 w-3 shrink-0" />
-                            <span className="truncate">Chấm bài</span>
+                            <Sparkles className="h-3 w-3" /> Chấm bài theo bài này
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteSession(s.id)}
-                            className="h-7 w-7 text-rose-500 hover:text-rose-700 hover:bg-rose-50 shrink-0"
-                            title="Xóa phiên đọc"
+                            className="h-7 w-7 text-rose-600 hover:bg-rose-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -1641,204 +1464,289 @@ export default function DictationPage() {
                   ))}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
-      </main>
+          </div>
+        )}
 
-      {/* ─── Dialog: AI Sáng Tác Bài Đọc Theo Chủ Đề (Generative Dictation) ─── */}
-      <Dialog open={isAiGenerateOpen} onOpenChange={setIsAiGenerateOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              AI Sáng Tác Bài Đọc Chính Tả Theo Chủ Đề
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Qwen 2.5 SLM tự động sáng tác đoạn văn ngắn đạt chuẩn sư phạm GDPT 2018 theo khối lớp và trích xuất từ khó.
-            </DialogDescription>
-          </DialogHeader>
+        {/* ════════════════════════════════════════════════════════════════════════
+            TAB 4: HỆ THIẾT KẾ (DESIGN SYSTEM SHOWCASE)
+        ════════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "design" && (
+          <div className="bg-card border border-border/60 rounded-2xl p-6 space-y-6 shadow-xs">
+            <div className="border-b border-border/60 pb-3">
+              <h2 className="text-lg font-bold text-card-foreground">
+                BẢNG MÀU · “BẢNG XANH & BÚT ĐỎ / GIẤY KEM & PHẤN VÀNG”
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Hệ màu sư phạm chuẩn mực cho phần mềm giáo dục tiểu học Việt Nam
+              </p>
+            </div>
 
-          <div className="space-y-3 py-2 text-xs">
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <Label className="font-semibold">Khối Lớp</Label>
-                <Select value={aiGradeLevel} onValueChange={setAiGradeLevel}>
-                  <SelectTrigger className="h-8 font-medium"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Lớp 1 (2–3 câu ngắn)</SelectItem>
-                    <SelectItem value="2">Lớp 2 (3–4 câu)</SelectItem>
-                    <SelectItem value="3">Lớp 3 (4 câu - chuẩn)</SelectItem>
-                    <SelectItem value="4">Lớp 4 (4–5 câu)</SelectItem>
-                    <SelectItem value="5">Lớp 5 (5–6 câu)</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Color Swatches Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="rounded-xl p-3 min-h-[90px] flex flex-col justify-end border border-border/60 bg-muted/30">
+                <b className="text-sm text-card-foreground">Giấy kem</b>
+                <span className="text-[11px] text-muted-foreground">Nền bài viết</span>
               </div>
-
-              <div className="space-y-1">
-                <Label className="font-semibold">Số lượng câu</Label>
-                <Select value={aiSentenceCount} onValueChange={setAiSentenceCount}>
-                  <SelectTrigger className="h-8 font-medium"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2 câu (ngắn gọn)</SelectItem>
-                    <SelectItem value="3">3 câu (vừa phải)</SelectItem>
-                    <SelectItem value="4">4 câu (chuẩn tiết học)</SelectItem>
-                    <SelectItem value="5">5 câu (mở rộng)</SelectItem>
-                    <SelectItem value="6">6 câu (nâng cao)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="rounded-xl p-3 min-h-[90px] flex flex-col justify-end text-white bg-emerald-700">
+                <b className="text-sm">Xanh bảng</b>
+                <span className="text-[11px] opacity-80">Màu chính hệ thống</span>
+              </div>
+              <div className="rounded-xl p-3 min-h-[90px] flex flex-col justify-end text-white bg-rose-600">
+                <b className="text-sm">Bút đỏ</b>
+                <span className="text-[11px] opacity-80">Chấm điểm, xoá</span>
+              </div>
+              <div className="rounded-xl p-3 min-h-[90px] flex flex-col justify-end bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                <b className="text-sm">Vàng dạ</b>
+                <span className="text-[11px] opacity-80">Từ khó highlight</span>
+              </div>
+              <div className="rounded-xl p-3 min-h-[90px] flex flex-col justify-end bg-[#16382F] text-[#F4F1E8]">
+                <b className="text-sm">Bảng xanh</b>
+                <span className="text-[11px] opacity-80">Chiếu màn hình</span>
+              </div>
+              <div className="rounded-xl p-3 min-h-[90px] flex flex-col justify-end bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200">
+                <b className="text-sm">Phấn vàng</b>
+                <span className="text-[11px] opacity-80">Nhấn trọng tâm</span>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label className="font-semibold">Chủ Đề Bài Viết</Label>
-              <Input
-                value={aiTopic}
-                onChange={e => setAiTopic(e.target.value)}
-                placeholder="VD: Mùa hè của em, Tình bạn tuổi thơ, Cây bàng trường em..."
-                className="h-8 text-xs"
-              />
-            </div>
-
-            {/* Quick Topic Chips */}
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Chủ đề gợi ý nhanh:</Label>
-              <div className="flex flex-wrap gap-1">
-                {AI_TOPIC_SUGGESTIONS.map(topic => (
-                  <button
-                    key={topic}
-                    type="button"
-                    onClick={() => setAiTopic(topic)}
-                    className="text-[10px] py-0.5 px-2 rounded-full border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800 transition-colors"
-                  >
-                    + {topic}
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-2 pt-2 border-t border-border/60">
+              <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                Bài đọc & trình chiếu: Lexend (Chống loạn thị, hỗ trợ học sinh đọc tốt)
+              </p>
+              <p className="text-sm font-semibold text-card-foreground">
+                Giao diện điều khiển: Be Vietnam Pro / Sans-serif (Tối ưu hóa dấu thanh tiếng Việt)
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Đồng bộ 100% với ngôn ngữ thiết kế tổng thể của ViHand Grade.
+              </p>
             </div>
           </div>
+        )}
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsAiGenerateOpen(false)} disabled={generatingAi} className="h-8 text-xs">
-              Hủy
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleGenerateAiPassage}
-              disabled={generatingAi || !aiTopic.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 font-semibold h-8 text-xs"
-            >
-              {generatingAi ? (
-                <>
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                  Đang sáng tác bài đọc...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-3 w-3" />
-                  Tạo Bài Đọc Ngay
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </main>
 
-      {/* ─── Dialog: Xem Chi Tiết Toàn Văn Bài Đọc & Từ Khó Trong Lịch Sử ──── */}
-      <Dialog open={!!viewingSession} onOpenChange={open => !open && setViewingSession(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <div className="flex items-center justify-between gap-2">
-              <DialogTitle className="text-base font-bold text-indigo-950 dark:text-indigo-200">
-                {viewingSession?.title}
-              </DialogTitle>
-              <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200">
-                {formatClassName(viewingSession?.className || "Chung")}
-              </Badge>
+      {/* ──────────────────────────────────────────────────────────────────────────
+          4. STICKY BOTTOM ACTION BAR (CỐ ĐỊNH CHÂN TRANG)
+      ────────────────────────────────────────────────────────────────────────── */}
+      <footer className="fixed left-0 right-0 bottom-0 z-40 bg-card/95 border-t border-border px-5 py-3 flex items-center justify-between gap-3 backdrop-blur-md shadow-lg flex-wrap">
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={startPlayback}
+            className="h-11 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm tracking-wide shadow-xs gap-2 cursor-pointer"
+          >
+            <Play className="h-4 w-4 fill-current" />
+            <span>Bắt đầu đọc cho cả lớp</span>
+          </Button>
+
+          <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span>Âm thanh {previewClauseList.length}/{previewClauseList.length} cụm đã sẵn sàng</span>
+          </div>
+        </div>
+
+        {/* Animated Waveform Visualizer */}
+        <div className="hidden md:flex items-end gap-1 h-6 min-w-[140px] px-2 opacity-80">
+          {Array.from({ length: 32 }).map((_, idx) => {
+            const height = 5 + Math.round(Math.abs(Math.sin(idx * 1.3)) * 18)
+            return (
+              <span
+                key={idx}
+                className={`w-1 rounded-sm bg-emerald-600 dark:bg-emerald-400 transition-all ${
+                  isPlaying ? "dict-wave-bar" : "opacity-30"
+                }`}
+                style={{
+                  height: `${height}px`,
+                  animationDelay: `${(idx % 8) * 0.15}s`,
+                }}
+              />
+            )
+          })}
+        </div>
+
+        <div>
+          <Button
+            onClick={handleOpenGrading}
+            variant="outline"
+            className="h-10 px-4 rounded-xl text-xs font-semibold border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 cursor-pointer"
+          >
+            🎯 Chấm bài theo phiên này
+          </Button>
+        </div>
+      </footer>
+
+      {/* ──────────────────────────────────────────────────────────────────────────
+          5. CLASSROOM CHALKBOARD OVERLAY (CHẾ ĐỘ BẢNG XANH TRÌNH CHIẾU)
+      ────────────────────────────────────────────────────────────────────────── */}
+      {showProjector && (
+        <div
+          id="pr"
+          className="fixed inset-0 z-50 bg-[#16382F] text-[#F4F1E8] flex flex-col justify-between p-6 md:p-8 select-none transition-all duration-300"
+          style={{ fontFamily: "'Lexend', sans-serif" }}
+        >
+          {/* Top Bar Trình Chiếu */}
+          <div className="flex items-center justify-between pb-4 border-b border-[#F4F1E8]/20 gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-sm font-semibold tracking-wide">
+              <span className="text-[#F6D365] font-extrabold">{formatClassName(selectedClass)}</span>
+              <span>·</span>
+              <span className="truncate max-w-[300px]">{title || "Bài đọc chính tả"}</span>
             </div>
-            <DialogDescription className="text-xs">
-              Thực hiện vào ngày {viewingSession?.createdAt ? formatDate(viewingSession.createdAt) : ""}
-            </DialogDescription>
-          </DialogHeader>
 
-          {viewingSession && (
-            <div className="space-y-2.5 py-2 text-xs">
-              <div className="space-y-1">
-                <Label className="font-semibold text-slate-700 dark:text-slate-300">
-                  Toàn văn đoạn văn chuẩn:
-                </Label>
-                <div className="p-3 bg-amber-50/40 dark:bg-slate-900 border border-amber-200/70 dark:border-slate-800 rounded-xl leading-relaxed text-sm font-sans text-slate-900 dark:text-slate-100 whitespace-pre-wrap shadow-inner">
-                  {viewingSession.passage}
-                </div>
-              </div>
-
-              {viewingSession.summary && (
-                <div className="text-[11px] text-muted-foreground bg-slate-100 dark:bg-slate-900 p-2 rounded-lg">
-                  📌 <span className="font-medium">Ghi chú:</span> {viewingSession.summary}
-                </div>
-              )}
+            <div className="text-sm font-mono text-[#F6D365] font-bold">
+              Cụm {currentClauseIndex + 1}/{Math.max(1, clauses.length || previewClauseList.length)} · Lần {currentRepeat}/{repeatCount}
             </div>
-          )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 pt-1">
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (viewingSession) {
-                  setTitle(viewingSession.title)
-                  setContent(viewingSession.passage)
-                  setViewingSession(null)
-                  setActiveTab("player")
-                }
+                setShowProjector(false)
               }}
-              className="gap-1 text-xs text-indigo-700 border-indigo-200 hover:bg-indigo-50 h-8"
+              className="rounded-full border-[#F4F1E8]/40 text-[#F4F1E8] hover:bg-[#F4F1E8]/10 h-8 text-xs font-semibold"
             >
-              <Volume2 className="h-3 w-3" />
-              Nạp vào Trình phát đọc
+              Thoát trình chiếu (Esc)
             </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                if (viewingSession) {
-                  const q = new URLSearchParams({
-                    title: viewingSession.title,
-                    passage: viewingSession.passage,
-                    className: viewingSession.className,
-                    sessionId: viewingSession.id,
-                    mode: "dictation",
-                  })
-                  setViewingSession(null)
-                  router.push(`/teacher/grade?${q.toString()}`)
-                }
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-semibold h-8"
-            >
-              <Sparkles className="h-3 w-3" />
-              Mở Chấm Bài Cho Phiên Này
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
 
-      {/* ─── Dialog: Thêm Bài Đọc Mới Vào Kho SGK ───────────────────────────── */}
-      <Dialog open={isAddPassageOpen} onOpenChange={setIsAddPassageOpen}>
-        <DialogContent className="max-w-lg">
+          {/* Central Stage */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-6 space-y-6">
+            
+            {/* Nhắc nhở trạng thái bằng phấn vàng */}
+            <div className="text-sm md:text-base font-extrabold tracking-widest text-[#F6D365] uppercase animate-pulse">
+              {isSpeakingNow ? "🔊 ĐANG ĐỌC · CÁC EM LẮNG NGHE" : countdown > 0 ? "✍️ CÁC EM VIẾT BÀI" : "⏳ CHUẨN BỊ..."}
+            </div>
+
+            {/* Văn bản cụm câu chữ khổng lồ */}
+            <div
+              className={`text-[clamp(28px,5vw,56px)] font-bold text-center leading-[1.35] max-w-[1050px] transition-all duration-300 ${
+                isTextHidden ? "blur-md opacity-25 select-none" : "opacity-100"
+              }`}
+            >
+              "{clauses[currentClauseIndex] || previewClauseList[currentClauseIndex] || "Bắt đầu bài đọc..."}"
+            </div>
+
+            {/* Circular Ring Countdown Timer */}
+            <div className="relative w-32 h-32 md:w-36 md:h-36">
+              <svg width="100%" height="100%" viewBox="0 0 140 140" className="-rotate-90">
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="61"
+                  fill="none"
+                  stroke="#F4F1E82E"
+                  strokeWidth="10"
+                />
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="61"
+                  fill="none"
+                  stroke="#F6D365"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray="383.27"
+                  style={{
+                    strokeDashoffset: `${383.27 * (1 - (countdown / Math.max(1, maxCountdown)))}`,
+                    transition: "stroke-dashoffset 1s linear",
+                  }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl font-mono font-bold text-[#F4F1E8]">
+                {isSpeakingNow ? "🔊" : countdown > 0 ? countdown : "✓"}
+              </div>
+            </div>
+
+            {/* Progress Dots */}
+            <div className="flex items-center gap-2 pt-2">
+              {(clauses.length > 0 ? clauses : previewClauseList).map((_, idx) => (
+                <i
+                  key={idx}
+                  className={`w-3.5 h-3.5 rounded-full border-2 border-[#F4F1E8] transition-all duration-300 ${
+                    idx < currentClauseIndex
+                      ? "bg-[#F4F1E8] opacity-100"
+                      : idx === currentClauseIndex
+                      ? "bg-[#F6D365] border-[#F6D365] scale-125 opacity-100 shadow-sm"
+                      : "opacity-35"
+                  }`}
+                />
+              ))}
+            </div>
+
+          </div>
+
+          {/* Bottom Presenter Controls Bar */}
+          <div className="flex items-center justify-center gap-3 pt-4 border-t border-[#F4F1E8]/20 flex-wrap">
+            <button
+              onClick={repeatCurrentClause}
+              className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all"
+            >
+              ↺ Đọc lại
+            </button>
+            <button
+              onClick={togglePause}
+              className="bg-[#F6D365] text-[#3B2F00] hover:bg-[#F6D365]/90 rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all"
+            >
+              {isPaused ? "▶ Tiếp tục" : "❚❚ Tạm dừng"}
+            </button>
+            <button
+              onClick={() => setIsTextHidden(prev => !prev)}
+              className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all"
+            >
+              {isTextHidden ? "Hiện chữ" : "Ẩn chữ"}
+            </button>
+            <button
+              onClick={skipToNextClause}
+              className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all"
+            >
+              Cụm tiếp ›
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────────────────────
+          MODAL: AI SÁNG TÁC BÀI ĐỌC (QWEN 2.5 SLM / GDPT 2018 BANK)
+      ────────────────────────────────────────────────────────────────────────── */}
+      <Dialog open={isAiGenerateOpen} onOpenChange={setIsAiGenerateOpen}>
+        <DialogContent className="max-w-md bg-card border-border/60">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Plus className="h-4 w-4 text-indigo-600" />
-              Thêm Bài Đọc Vào Kho Ngữ Liệu SGK
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-emerald-700 dark:text-emerald-400">
+              <Sparkles className="h-4 w-4" /> AI Sáng Tác Bài Đọc Chính Tả (Qwen 2.5)
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Lưu bài chính tả chuẩn vào CSDL để dùng lại nhiều lần và đối chiếu chấm bài.
+              Mô hình SLM cục bộ sẽ tự động sáng tác đoạn văn chuẩn GDPT 2018 và trích xuất từ khó.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2.5 py-2 text-xs">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <Label>Khối Lớp</Label>
-                <Select value={newPassage.gradeLevel} onValueChange={v => setNewPassage(p => ({ ...p, gradeLevel: v }))}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <div className="space-y-3.5 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">Chủ đề bài đọc</Label>
+              <Input
+                value={aiTopic}
+                onChange={e => setAiTopic(e.target.value)}
+                placeholder="VD: Mùa hè quê em, Tình bạn, Bảo vệ môi trường..."
+                className="h-8 text-xs border-border/60"
+              />
+              <div className="flex flex-wrap gap-1 pt-1">
+                {AI_TOPIC_SUGGESTIONS.slice(0, 4).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setAiTopic(t)}
+                    className="text-[10px] bg-muted hover:bg-emerald-50 dark:hover:bg-emerald-950/40 px-2 py-0.5 rounded-full text-emerald-700 dark:text-emerald-400 font-semibold cursor-pointer"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-bold">Khối lớp</Label>
+                <Select value={aiGradeLevel} onValueChange={setAiGradeLevel}>
+                  <SelectTrigger className="h-8 text-xs font-bold border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Lớp 1</SelectItem>
                     <SelectItem value="2">Lớp 2</SelectItem>
@@ -1849,10 +1757,109 @@ export default function DictationPage() {
                 </Select>
               </div>
 
-              <div className="space-y-1">
-                <Label>Bộ Sách</Label>
-                <Select value={newPassage.bookSet} onValueChange={v => setNewPassage(p => ({ ...p, bookSet: v }))}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <div>
+                <Label className="text-xs font-bold">Số câu</Label>
+                <Select value={aiSentenceCount} onValueChange={setAiSentenceCount}>
+                  <SelectTrigger className="h-8 text-xs font-bold border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3">3 câu</SelectItem>
+                    <SelectItem value="4">4 câu</SelectItem>
+                    <SelectItem value="5">5 câu</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAiGenerateOpen(false)}
+              className="h-8 text-xs border-border/60 cursor-pointer"
+            >
+              Hủy
+            </Button>
+            <Button
+              disabled={generatingAi}
+              onClick={async () => {
+                setGeneratingAi(true)
+                try {
+                  const res = await fetch("/api/dictation/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      gradeLevel: aiGradeLevel,
+                      topic: aiTopic || "Tình bạn và trường lớp",
+                      sentenceCount: aiSentenceCount,
+                      bookSet: aiBookSet,
+                    }),
+                  })
+                  if (res.ok) {
+                    const data = await res.json()
+                    if (data.passage) {
+                      setTitle(data.passage.title)
+                      setPassageText(data.passage.content)
+                      setDifficultWords(data.passage.difficultWords || "")
+                      setIsAiGenerateOpen(false)
+                    }
+                  }
+                } catch (e) {
+                  console.error(e)
+                } finally {
+                  setGeneratingAi(false)
+                }
+              }}
+              className="h-8 text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white gap-1 cursor-pointer"
+            >
+              {generatingAi ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+              <span>{generatingAi ? "Đang sáng tác..." : "Tạo bài đọc"}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────────────────────────────────────────────────────────
+          MODAL: THÊM BÀI ĐỌC MỚI VÀO KHO SGK
+      ────────────────────────────────────────────────────────────────────────── */}
+      <Dialog open={isAddPassageOpen} onOpenChange={setIsAddPassageOpen}>
+        <DialogContent className="max-w-lg bg-card border-border/60">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+              Thêm Bài Đọc Mới Vào Kho SGK
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-xs font-bold">Khối lớp</Label>
+                <Select
+                  value={newPassage.gradeLevel}
+                  onValueChange={v => setNewPassage(p => ({ ...p, gradeLevel: v }))}
+                >
+                  <SelectTrigger className="h-8 text-xs border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Lớp 1</SelectItem>
+                    <SelectItem value="2">Lớp 2</SelectItem>
+                    <SelectItem value="3">Lớp 3</SelectItem>
+                    <SelectItem value="4">Lớp 4</SelectItem>
+                    <SelectItem value="5">Lớp 5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-bold">Bộ sách</Label>
+                <Select
+                  value={newPassage.bookSet}
+                  onValueChange={v => setNewPassage(p => ({ ...p, bookSet: v }))}
+                >
+                  <SelectTrigger className="h-8 text-xs border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="KetNoi">Kết Nối</SelectItem>
                     <SelectItem value="CanhDieu">Cánh Diều</SelectItem>
@@ -1860,155 +1867,77 @@ export default function DictationPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-1">
-                <Label>Tuần / Bài</Label>
+              <div>
+                <Label className="text-xs font-bold">Tuần/Bài</Label>
                 <Input
                   value={newPassage.unit}
                   onChange={e => setNewPassage(p => ({ ...p, unit: e.target.value }))}
-                  placeholder="VD: Tuần 2"
-                  className="h-8 text-xs"
+                  placeholder="Tuần 1"
+                  className="h-8 text-xs border-border/60"
                 />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label>Tiêu Đề Bài Viết</Label>
+            <div>
+              <Label className="text-xs font-bold">Tiêu đề bài đọc</Label>
               <Input
                 value={newPassage.title}
                 onChange={e => setNewPassage(p => ({ ...p, title: e.target.value }))}
-                placeholder="VD: Cô giáo tí hon, Chuyện hoa chuyện quả..."
-                className="h-8 text-xs font-semibold"
+                placeholder="VD: Cánh én tuổi thơ"
+                className="h-8 text-xs border-border/60"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label>Nội Dung Toàn Văn</Label>
+            <div>
+              <Label className="text-xs font-bold">Nội dung đoạn văn</Label>
               <Textarea
+                rows={4}
                 value={newPassage.content}
                 onChange={e => setNewPassage(p => ({ ...p, content: e.target.value }))}
-                rows={4}
-                placeholder="Nhập đoạn văn chính tả SGK..."
-                className="text-xs font-sans resize-none"
+                placeholder="Nhập toàn bộ văn bản bài đọc chính tả..."
+                className="text-xs border-border/60"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label>Danh Sách Từ Khó (Phân tách bởi dấu phẩy)</Label>
+            <div>
+              <Label className="text-xs font-bold">Từ khó (cách nhau dấu phẩy)</Label>
               <Input
                 value={newPassage.difficultWords}
                 onChange={e => setNewPassage(p => ({ ...p, difficultWords: e.target.value }))}
-                placeholder="VD: nghiêng ngả, sương sớm, long lanh..."
-                className="h-8 text-xs"
+                placeholder="VD: sứt chỉ, hối hận..."
+                className="h-8 text-xs border-border/60"
               />
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsAddPassageOpen(false)} className="h-8 text-xs">Hủy</Button>
-            <Button size="sm" onClick={handleCreatePassage} className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs">
-              Lưu Vào Kho
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAddPassageOpen(false)}
+              className="h-8 text-xs border-border/60 cursor-pointer"
+            >
+              Hủy
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── Dialog: Chỉnh Sửa Bài Đọc Trong Kho SGK ────────────────────────── */}
-      <Dialog open={isEditPassageOpen} onOpenChange={setIsEditPassageOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Pencil className="h-4 w-4 text-amber-600" />
-              Chỉnh Sửa Bài Đọc SGK
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Cập nhật nội dung đoạn văn, từ khó và thông tin khối lớp.
-            </DialogDescription>
-          </DialogHeader>
-
-          {editingPassage && (
-            <div className="space-y-2.5 py-2 text-xs">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Label>Khối Lớp</Label>
-                  <Select
-                    value={String(editingPassage.gradeLevel)}
-                    onValueChange={v => setEditingPassage(p => p ? { ...p, gradeLevel: Number(v) } : null)}
-                  >
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Lớp 1</SelectItem>
-                      <SelectItem value="2">Lớp 2</SelectItem>
-                      <SelectItem value="3">Lớp 3</SelectItem>
-                      <SelectItem value="4">Lớp 4</SelectItem>
-                      <SelectItem value="5">Lớp 5</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label>Bộ Sách</Label>
-                  <Select
-                    value={editingPassage.bookSet}
-                    onValueChange={v => setEditingPassage(p => p ? { ...p, bookSet: v } : null)}
-                  >
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="KetNoi">Kết Nối</SelectItem>
-                      <SelectItem value="CanhDieu">Cánh Diều</SelectItem>
-                      <SelectItem value="ChanTroi">Chân Trời</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label>Tuần / Bài</Label>
-                  <Input
-                    value={editingPassage.unit}
-                    onChange={e => setEditingPassage(p => p ? { ...p, unit: e.target.value } : null)}
-                    placeholder="VD: Tuần 2"
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label>Tiêu Đề Bài Viết</Label>
-                <Input
-                  value={editingPassage.title}
-                  onChange={e => setEditingPassage(p => p ? { ...p, title: e.target.value } : null)}
-                  placeholder="VD: Cô giáo tí hon..."
-                  className="h-8 text-xs font-semibold"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Nội Dung Toàn Văn</Label>
-                <Textarea
-                  value={editingPassage.content}
-                  onChange={e => setEditingPassage(p => p ? { ...p, content: e.target.value } : null)}
-                  rows={4}
-                  placeholder="Nhập đoạn văn chính tả SGK..."
-                  className="text-xs font-sans resize-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Danh Sách Từ Khó (Phân tách bởi dấu phẩy)</Label>
-                <Input
-                  value={editingPassage.difficultWords}
-                  onChange={e => setEditingPassage(p => p ? { ...p, difficultWords: e.target.value } : null)}
-                  placeholder="VD: nghiêng ngả, sương sớm..."
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsEditPassageOpen(false)} className="h-8 text-xs">Hủy</Button>
-            <Button size="sm" onClick={handleSaveEditPassage} className="bg-amber-600 hover:bg-amber-700 text-white h-8 text-xs">
-              Cập Nhật Bài Đọc
+            <Button
+              onClick={async () => {
+                if (!newPassage.title || !newPassage.content) return
+                try {
+                  const res = await fetch("/api/dictation/passages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newPassage),
+                  })
+                  if (res.ok) {
+                    setIsAddPassageOpen(false)
+                    fetchPassages()
+                  }
+                } catch (e) {
+                  console.error(e)
+                }
+              }}
+              className="h-8 text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer"
+            >
+              Lưu vào kho SGK
             </Button>
           </DialogFooter>
         </DialogContent>

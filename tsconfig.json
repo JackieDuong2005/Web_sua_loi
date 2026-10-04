@@ -37,8 +37,6 @@
   ],
   "exclude": [
     "node_modules",
-    "xiaozhi-esp32-server-main",
-    "xiaozhi-esp32-main",
     "android-app",
     "He_thong_iots_Do_an_nhung",
     "01_Bao_cao_Nghien_cuu",

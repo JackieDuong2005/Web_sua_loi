@@ -89,9 +89,6 @@ extract_docx.py
 gemini_ocr.ipynb
 *.ipynb
 
-# Xiaozhi ESP32 firmware (separate project)
-xiaozhi-esp32-main/
-xiaozhi-esp32-server-main/
 
 # TypeScript build cache
 tsconfig.tsbuildinfo

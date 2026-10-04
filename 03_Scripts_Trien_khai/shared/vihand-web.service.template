@@ -1,0 +1,41 @@
+[Unit]
+Description=ViHand Grade - Web Application & AI BFF Gateway (Next.js)
+Documentation=https://github.com/JackieDuong2005/Web_sua_loi
+After=network-online.target vihand-python.service
+Wants=network-online.target
+# Đảm bảo Python AI service đã sẵn sàng trước khi Next.js chạy
+Requires=vihand-python.service
+
+[Service]
+Type=simple
+User={{APP_USER}}
+Group={{APP_USER}}
+WorkingDirectory={{APP_DIR}}
+EnvironmentFile={{APP_DIR}}/.env.local
+Environment=NODE_ENV=production
+Environment=PORT={{PORT}}
+Environment=NODE_OPTIONS="--max-old-space-size=1536"
+
+# Khởi chạy Next.js Server (trỏ trực tiếp vào next/dist/bin/next để tránh lỗi Node parse shell script)
+ExecStart={{NODE_BIN}} {{APP_DIR}}/node_modules/next/dist/bin/next start -p {{PORT}}
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Cơ chế tự phục hồi sau sự cố
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# Giới hạn an toàn tài nguyên (tránh sập nguồn/treo Pi & Jetson)
+MemoryHigh=1600M
+MemoryMax=2048M
+CPUQuota=85%
+LimitNOFILE=65536
+
+# Quản lý log qua journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vihand-web
+
+[Install]
+WantedBy=multi-user.target

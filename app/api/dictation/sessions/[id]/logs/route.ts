@@ -33,7 +33,7 @@ export async function POST(
     const log = await prisma.dictationLog.create({
       data: {
         sessionId: id,
-        speaker: speaker || "xiaozhi",
+        speaker: speaker || "ai",
         content,
       },
     });

@@ -1,0 +1,41 @@
+# ==============================================================================
+# ViHand Grade — Dockerfile for Python AI Microservice on Jetson Nano
+# (ViT5 INT8, YOLOv8 Word Detector, Edge-TTS, FastAPI)
+# Cách ly 100% với hệ thống máy chủ Jetson — Không đụng chạm thư viện host
+# ==============================================================================
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Cài đặt thư viện C cơ bản cần thiết cho PyTorch và OpenCV
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    curl \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy và cài đặt requirements
+COPY python_service/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy mã nguồn python service và trọng số YOLO
+COPY python_service/ ./python_service/
+COPY Test_train_29_12/ver2/runs/detect/train/weights/best.pt /app/weights/best.pt
+
+WORKDIR /app/python_service
+
+# Biến môi trường
+ENV PYTHONUNBUFFERED=1
+ENV ENABLE_QWEN_SLM=0
+ENV VIT5_WORKERS=1
+ENV YOLO_WEIGHTS_PATH=/app/weights/best.pt
+
+EXPOSE 8000
+
+# Healthcheck endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["python3", "main.py"]

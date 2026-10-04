@@ -34,11 +34,11 @@ Chạy script quét chuyên dụng nằm trong skill (đã được tối ưu h�
 python .agents/skills/project-context-prep/scripts/scan_project.py . --max-depth 3
 ```
 
-> ⚠️ **Lưu ý môi trường:** Trên Windows, luôn dùng lệnh `python` (không dùng `python3`). Script đã tự động bỏ qua các thư mục nặng như `xiaozhi-esp32-main`, `02_Kich_ban_Thuc_nghiem`, `Poster nckh`, `node_modules`, `.next`.
+> ⚠️ **Lưu ý môi trường:** Trên Windows, luôn dùng lệnh `python` (không dùng `python3`). Script đã tự động bỏ qua các thư mục nặng như `02_Kich_ban_Thuc_nghiem`, `Poster nckh`, `node_modules`, `.next`.
 
 Output trả về JSON cấu trúc gồm:
 - `tech_stack_detected`: Chi tiết phiên bản Next.js, React, Tailwind, Prisma, Gemini SDK, FastAPI, v.v.
-- `core_anchor_points`: Danh sách các điểm neo cốt lõi của ứng dụng (Grading pipeline, ViT5 server, MCP server, DB schema).
+- `core_anchor_points`: Danh sách các điểm neo cốt lõi của ứng dụng (Grading pipeline, ViT5 server, DB schema).
 - `manifests_found` & `config_files_found`: Các file cấu hình và khai báo thư viện.
 - `largest_source_files`: Các file chứa logic lớn nhất của ViHand Grade.
 - `directory_tree_depth_limited`: Cây thư mục sạch đã lọc toàn bộ noise.
@@ -56,7 +56,6 @@ Dựa vào báo cáo Bước 1, đọc có chọn lọc theo thứ tự ưu tiê
 3. **Mô hình Dữ liệu & AI Services**:
    - [`prisma/schema.prisma`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/prisma/schema.prisma) — Các bảng `User`, `Class`, `GradeRecord`, `DictationSession`.
    - [`python_service/main.py`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/python_service/main.py) — FastAPI endpoint `/predict` chạy mô hình ViT5.
-   - [`mcp_service/main.py`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/mcp_service/main.py) — MCP Server cho tính năng đọc chính tả.
 4. **Giao diện người dùng chính**:
    - [`app/teacher/grade/page.tsx`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/teacher/grade/page.tsx) — Canvas và bảng chấm điểm của giáo viên.
    - [`app/teacher/dictation/page.tsx`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/teacher/dictation/page.tsx) — Phát âm và điều khiển bài đọc chính tả.
@@ -84,14 +83,13 @@ Trình bày tóm tắt cho người dùng theo mẫu chuẩn sau:
   - **Frontend / Fullstack**: Next.js 16 (App Router), React 19, Tailwind CSS 4, Radix UI.
   - **AI Pipeline**: Google Gemini Flash Lite (Vision OCR) + ViT5 Seq2Seq (Sửa chính tả) + Jimp (Tiền xử lý ảnh 9 bước).
   - **Database**: SQLite qua Prisma ORM 5.
-  - **Dịch vụ phụ trợ**: Python FastAPI (port 8000), MCP Dictation Server (Edge-TTS).
+  - **Dịch vụ phụ trợ**: Python FastAPI (port 8000: ViT5 + Qwen SLM + Edge-TTS).
 
 ### 🏗️ Cấu trúc & Module trọng yếu:
 1. `app/api/grade/route.ts` & `lib/image-processor.ts`: Pipeline chấm điểm và xử lý ảnh.
 2. `python_service/`: Server AI ViT5 chạy cục bộ.
-3. `mcp_service/`: Server MCP sinh giọng đọc chính tả từ kho SGK.
-4. `prisma/schema.prisma`: Cơ sở dữ liệu lớp học, tài khoản và kết quả chấm.
-5. `app/teacher/` & `app/student/`: Giao diện tương tác theo vai trò.
+3. `prisma/schema.prisma`: Cơ sở dữ liệu lớp học, tài khoản và kết quả chấm.
+4. `app/teacher/` & `app/student/`: Giao diện tương tác theo vai trò.
 
 ### 💡 Trạng thái & Hướng làm việc tiếp theo:
 [Nêu ngắn gọn nhận xét về tính năng hoặc module người dùng đang quan tâm]
