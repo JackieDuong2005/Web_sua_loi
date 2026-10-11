@@ -50,13 +50,15 @@ Output trả về JSON cấu trúc gồm:
 Dựa vào báo cáo Bước 1, đọc có chọn lọc theo thứ tự ưu tiên sau (chỉ cần đọc phần đầu và các function/interface chính, không cần đọc toàn bộ hàng nghìn dòng):
 
 1. **README.md** — Mục đích đề tài, các tác giả, cấu hình triển khai cơ bản.
-2. **Core AI Grading Pipeline**:
-   - [`app/api/grade/route.ts`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/api/grade/route.ts) — Luồng chấm bài 4 bước (Jimp -> Gemini OCR -> ViT5 Spelling -> Scoring).
+2. **Core AI Grading & Mobile Gateway Pipeline**:
+   - [`app/api/mobile/grade/route.ts`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/api/mobile/grade/route.ts) — BFF Gateway chuyên dụng cho Android: Gemini OCR + YOLOv8 + Levenshtein + Tự động lưu server.
+   - [`app/api/grade/route.ts`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/api/grade/route.ts) — Web Grading Pipeline (Jimp -> Ground Truth Alignment / ViT5 -> Qwen nhận xét sư phạm).
    - [`lib/image-processor.ts`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/lib/image-processor.ts) — Pipeline tiền xử lý ảnh 9 bước (Jimp).
 3. **Mô hình Dữ liệu & AI Services**:
-   - [`prisma/schema.prisma`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/prisma/schema.prisma) — Các bảng `User`, `Class`, `GradeRecord`, `DictationSession`.
-   - [`python_service/main.py`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/python_service/main.py) — FastAPI endpoint `/predict` chạy mô hình ViT5.
-4. **Giao diện người dùng chính**:
+   - [`prisma/schema.prisma`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/prisma/schema.prisma) — Database schema lưu `User`, `Class`, `Grade`, `DictationSession`.
+   - [`python_service/main.py`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/python_service/main.py) — FastAPI endpoints: `/grade`, `/correct` (ViT5 INT8), `/detect-words` (YOLOv8), `/qwen/generate` (Qwen SLM), `/tts` (Edge-TTS).
+4. **Ứng dụng Di động & Giao diện người dùng**:
+   - [`android_app/`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/android_app) — Native Android (Kotlin, Jetpack Compose, CameraX, Retrofit, Server-Only storage).
    - [`app/teacher/grade/page.tsx`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/teacher/grade/page.tsx) — Canvas và bảng chấm điểm của giáo viên.
    - [`app/teacher/dictation/page.tsx`](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/app/teacher/dictation/page.tsx) — Phát âm và điều khiển bài đọc chính tả.
 
@@ -65,9 +67,10 @@ Dựa vào báo cáo Bước 1, đọc có chọn lọc theo thứ tự ưu tiê
 ### Bước 3 — Ghi nhận các điểm lưu ý kỹ thuật
 
 Trong lúc quan sát codebase, chú ý:
-- Trạng thái các biến môi trường trong `.env` (`GEMINI_API_KEY`, `HF_TOKEN`, `DATABASE_URL`).
-- Database SQLite `prisma/vihand.db` là dữ liệu thực — tuyệt đối không xóa hoặc làm hỏng khi migrate.
-- Các script khởi động hệ thống (`start_all.bat`, `scripts/start.sh`).
+- Trạng thái các biến môi trường trong `.env` (`GEMINI_API_KEY`, `GEMINI_API_KEYS`, `NEXTAUTH_SECRET`, `DATABASE_URL`).
+- Database SQLite `prisma/vihand.db` là cơ sở dữ liệu thực — tuyệt đối không xóa hoặc làm hỏng khi migrate.
+- Cơ chế **Server-Only Storage**: Android App gửi ảnh và nhận điểm trực tiếp từ Server (Raspberry Pi/BFF), không lưu trữ local database trên điện thoại.
+- Các script khởi động hệ thống (`start_all.bat`, `start_lightweight.bat`, `scripts/start.sh`).
 
 ---
 
@@ -79,17 +82,18 @@ Trình bày tóm tắt cho người dùng theo mẫu chuẩn sau:
 ## 📌 Tổng quan dự án ViHand Grade
 
 - **Mục tiêu**: Hệ thống AI nhận dạng chữ viết tay tiếng Việt, sửa lỗi chính tả và chấm điểm tự động cho học sinh tiểu học (Đề tài NCKH Sinh viên TĐT).
-- **Tech Stack chính**:
-  - **Frontend / Fullstack**: Next.js 16 (App Router), React 19, Tailwind CSS 4, Radix UI.
-  - **AI Pipeline**: Google Gemini Flash Lite (Vision OCR) + ViT5 Seq2Seq (Sửa chính tả) + Jimp (Tiền xử lý ảnh 9 bước).
-  - **Database**: SQLite qua Prisma ORM 5.
-  - **Dịch vụ phụ trợ**: Python FastAPI (port 8000: ViT5 + Qwen SLM + Edge-TTS).
+- **Hệ sinh thái 4 bề mặt (4 Surfaces)**:
+  - **1. Mobile App**: Android Native (Kotlin, CameraX, Jetpack Compose, Retrofit, Server-Only storage).
+  - **2. Fullstack & BFF Gateway**: Next.js 16 (App Router), React 19, Tailwind CSS 4, Prisma ORM 5.
+  - **3. AI Core Microservice**: Python FastAPI (ViT5 Seq2Seq INT8 + YOLOv8 Word Detector + Qwen2.5 SLM + Edge-TTS).
+  - **4. Edge Computing Station**: Raspberry Pi 5 kết nối Cloudflare Tunnel (`vihandgrade.click`).
 
 ### 🏗️ Cấu trúc & Module trọng yếu:
-1. `app/api/grade/route.ts` & `lib/image-processor.ts`: Pipeline chấm điểm và xử lý ảnh.
-2. `python_service/`: Server AI ViT5 chạy cục bộ.
-3. `prisma/schema.prisma`: Cơ sở dữ liệu lớp học, tài khoản và kết quả chấm.
-4. `app/teacher/` & `app/student/`: Giao diện tương tác theo vai trò.
+1. `app/api/mobile/grade/route.ts` & `app/api/grade/route.ts`: Pipeline chấm điểm di động & web.
+2. `python_service/`: Server AI ViT5 + YOLOv8 + Qwen SLM chạy cục bộ / trên Pi.
+3. `android_app/`: Ứng dụng Android native chấm bài và xem kết quả trực tiếp từ server.
+4. `prisma/schema.prisma`: Cơ sở dữ liệu lớp học, tài khoản và kết quả chấm (`vihand.db`).
+5. `app/teacher/` & `app/student/`: Giao diện tương tác theo vai trò.
 
 ### 💡 Trạng thái & Hướng làm việc tiếp theo:
 [Nêu ngắn gọn nhận xét về tính năng hoặc module người dùng đang quan tâm]

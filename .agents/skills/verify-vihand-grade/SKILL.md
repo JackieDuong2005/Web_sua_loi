@@ -36,7 +36,7 @@ python .agents/skills/verify-vihand-grade/scripts/verify_all.py
 
 ### 2.2. Kiểm thử riêng lẻ từng bề mặt (Tiết kiệm thời gian khi vừa sửa 1 module):
 ```powershell
-# Bề mặt 1: Chỉ kiểm tra Android Native App (Biên dịch Kotlin, Room DB, APK)
+# Bề mặt 1: Chỉ kiểm tra Android Native App (Biên dịch Kotlin, Retrofit API client, Server-Only storage)
 python .agents/skills/verify-vihand-grade/scripts/verify_all.py --surface mobile
 
 # Bề mặt 2: Chỉ kiểm tra BFF Gateway với ảnh bài thi thật (Bounding Box & Barem điểm)
@@ -47,6 +47,9 @@ python .agents/skills/verify-vihand-grade/scripts/verify_all.py --surface ai
 
 # Bề mặt 4: Chỉ kiểm tra Trạm Biên Raspberry Pi & Cloudflare Tunnel
 python .agents/skills/verify-vihand-grade/scripts/verify_all.py --surface edge
+
+# Bề mặt 5: Chỉ kiểm tra Tab Đọc chính tả & Edge-TTS Audio
+python .agents/skills/verify-vihand-grade/scripts/verify_all.py --surface dictation
 ```
 
 ---
@@ -57,10 +60,11 @@ Khi chạy xong, AI Verifier phải đối chiếu kết quả theo bảng tiêu
 
 | Bề mặt (Surface) | Cơ chế AI "Lái" (Drive) | Bằng chứng thu thập (Capture Evidence) | Tiêu chí Pass |
 |---|---|---|---|
-| **1. Mobile App** | Chạy Gradle compile: `.\gradlew.bat compileDebugKotlin` + kiểm tra Room DB schema. | Log compilation, kích thước APK (~26MB), schema `GradeRecordEntity`. | Zero error, exit code 0. |
-| **2. BFF AI Gateway** | Nạp ảnh bài thi thật `err_01/00_anh_goc.jpg` $\to$ gửi `POST /api/mobile/grade`. | Status HTTP 200, Bounding Box $\in [0.0, 1.0]$, 4 tiêu chí điểm, lời nhận xét sư phạm, `serverGradeId`. | HTTP 200, BBoxes hợp lệ, điểm thang 10, có lưu DB. |
-| **3. Python AI Core** | Gửi mẫu câu sai `"su bé ngủ xay, thay cho só xời"` vào `/predict`. | Tốc độ suy luận ms, text sửa thành `"ru bé ngủ say, thay cho gió trời"`. | Latency $< 2000\text{ms}$, sửa đúng $\ge 2$ từ sai. |
+| **1. Mobile App** | Chạy Gradle compile: `.\gradlew.bat compileDebugKotlin` + kiểm tra Server-Only Storage (`GradeRepository.kt`). | Log compilation, kích thước APK (~26MB), kết nối Retrofit API. | Zero error, exit code 0. |
+| **2. BFF AI Gateway** | Nạp ảnh bài thi thật `err_01/00_anh_goc.jpg` $\to$ gửi `POST /api/mobile/grade`. | Status HTTP 200, Bounding Box $\in [0.0, 1.0]$, 4 tiêu chí điểm, lời nhận xét sư phạm, `serverGradeId`. | HTTP 200, BBoxes hợp lệ, điểm thang 10, tự động lưu DB server. |
+| **3. Python AI Core** | Gửi mẫu câu sai `"cô giáo bẩu em cố gắn học tập"` vào `/correct` hoặc `/grade`. | Tốc độ suy luận ms, text sửa thành `"Cô giáo bảo em cố gắng học tập"`. | Latency $< 3000\text{ms}$, sửa đúng $\ge 2$ từ sai. |
 | **4. Trạm Biên Pi** | Ping `GET https://vihandgrade.click/api/health` + SSH check service. | RTT latency ms, tunnel status, trạng thái `active` của `vihand-ai.service`. | Tunnel online, RTT $< 300\text{ms}$. |
+| **5. Đọc Chính Tả** | Gửi văn bản mẫu vào `/tts` + kiểm tra Ground Truth Bridge. | Status HTTP 200, audio/mpeg stream bytearray $> 0$. | Audio stream hợp lệ, không giật lag. |
 
 ---
 

@@ -37,7 +37,7 @@ def verify_mobile_app(full_assemble=False):
         "repo_root": repo_root,
         "android_dir": android_dir,
         "gradlew_exists": os.path.exists(gradlew_bat),
-        "room_entity_exists": os.path.exists(os.path.join(android_dir, "app", "src", "main", "java", "com", "example", "data", "local", "GradeRecordEntity.kt")),
+        "server_storage_repo_exists": os.path.exists(os.path.join(android_dir, "app", "src", "main", "java", "com", "example", "data", "repository", "GradeRepository.kt")),
         "compose_viewer_exists": os.path.exists(os.path.join(android_dir, "app", "src", "main", "java", "com", "example", "ui", "components", "PhotoBoundingBoxViewer.kt")),
     }
 

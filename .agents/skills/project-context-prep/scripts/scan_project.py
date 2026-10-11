@@ -38,10 +38,13 @@ DEFAULT_IGNORES = {
 
 # Project-specific core entry points & anchor files
 KNOWN_ANCHORS = {
+    "app/api/mobile/grade/route.ts": "Mobile BFF API Gateway (Android Native + YOLOv8 + Auto-save)",
     "app/api/grade/route.ts": "Core AI Grading API Pipeline (Jimp -> Gemini OCR -> ViT5 -> Scoring)",
-    "python_service/main.py": "ViT5 Spelling Correction Server (FastAPI / HuggingFace)",
+    "python_service/main.py": "AI Core Service: ViT5 INT8 + YOLOv8 Word Detector + Qwen SLM (FastAPI)",
     "lib/image-processor.ts": "9-step Server-side Image Preprocessing Pipeline (Jimp)",
     "prisma/schema.prisma": "Database Schema (SQLite - Users, Classes, Grades, Dictation)",
+    "android_app/app/src/main/java/com/example/ui/viewmodel/MainViewModel.kt": "Android MainViewModel (Grading Workflow & Live Results)",
+    "android_app/app/src/main/java/com/example/data/repository/GradeRepository.kt": "Android GradeRepository (Server-Only Storage via Retrofit)",
     "app/teacher/grade/page.tsx": "Teacher Grading UI & Evaluation Canvas",
     "app/teacher/dictation/page.tsx": "AI Dictation & Voice Generation UI",
     "app/admin/users/page.tsx": "User & Role-based Access Control (RBAC) Management",
@@ -148,11 +151,19 @@ def detect_detailed_stack(root):
         except Exception:
             pass
 
-    # Check Python ViT5 Service
+    # Check Python AI Service
     py_service = os.path.join(root, "python_service", "main.py")
     if os.path.exists(py_service):
-        stack_info.append("AI Service (python_service): FastAPI + ViT5 Seq2Seq Vietnamese Correction")
+        stack_info.append("AI Core (python_service): FastAPI + PyTorch ViT5 INT8 + YOLOv8 Word Detector + Qwen2.5 SLM + Edge-TTS")
 
+    # Check Mobile App & BFF Gateway
+    mobile_bff = os.path.join(root, "app", "api", "mobile", "grade", "route.ts")
+    if os.path.exists(mobile_bff):
+        stack_info.append("Mobile Gateway: Next.js BFF (/api/mobile/grade) - Gemini OCR + YOLOv8 + Server-Only Storage")
+
+    android_app_dir = os.path.join(root, "android_app")
+    if os.path.exists(android_app_dir):
+        stack_info.append("Mobile Surface (android_app): Native Android Kotlin + CameraX + Jetpack Compose + Retrofit")
 
     # Check Database
     schema_path = os.path.join(root, "prisma", "schema.prisma")
