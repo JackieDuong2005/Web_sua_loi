@@ -28,6 +28,7 @@ WORKDIR /app/python_service
 
 # Biến môi trường
 ENV PYTHONUNBUFFERED=1
+ENV ENABLE_VIT5=0
 ENV ENABLE_QWEN_SLM=0
 ENV VIT5_WORKERS=1
 ENV YOLO_WEIGHTS_PATH=/app/weights/best.pt

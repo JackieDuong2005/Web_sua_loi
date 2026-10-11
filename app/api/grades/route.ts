@@ -82,7 +82,19 @@ export async function POST(req: NextRequest) {
       tokenCount,
       imageBase64,
       dictationSessionId,
+      clientRequestId: rawClientRequestId,
     } = body
+
+    const clientRequestId = rawClientRequestId || req.headers.get("x-client-request-id") || null
+
+    if (clientRequestId) {
+      const existing = await prisma.grade.findUnique({
+        where: { clientRequestId },
+      })
+      if (existing) {
+        return NextResponse.json({ grade: existing }, { status: 200 })
+      }
+    }
 
     // Validate bắt buộc
     if (!studentName || !score || !originalText) {
@@ -135,6 +147,7 @@ export async function POST(req: NextRequest) {
         imageBase64: imageBase64 || "",
         imagePath: imagePath || "",
         dictationSessionId: dictationSessionId || "",
+        clientRequestId: clientRequestId || null,
         // Issue #26: Chính sách lưu trữ dữ liệu học sinh (mặc định 365 ngày = 1 niên khóa)
         expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         isAnonymized: false,

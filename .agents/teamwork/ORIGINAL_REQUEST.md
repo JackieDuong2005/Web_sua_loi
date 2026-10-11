@@ -72,3 +72,42 @@ Bổ sung các mã màu `emerald_primary` (`#FF059669`) và `background_cream` (
 ### Kiểm thử Tự động
 - [ ] Chạy kiểm thử `.\gradlew.bat testDebugUnitTest` vượt qua 100% không có lỗi.
 - [ ] Chạy `npx tsc --noEmit` đạt 0 lỗi biên dịch.
+
+
+## 2026-10-05T15:01:07Z
+
+Rà soát toàn diện toàn bộ hệ sinh thái dự án ViHand Grade (Next.js 16 Web Studio BFF, Python AI Core ViT5 + YOLOv8, Android Native App Kotlin/Compose, Trạm biên Raspberry Pi và cơ sở dữ liệu SQLite Prisma/Room DB) và biên soạn bộ 2 tài liệu đặc tả kiến trúc và kỹ thuật end-to-end hoàn chỉnh, chuẩn mực nhất bằng định dạng Markdown.
+
+Working directory: c:/Users/Jackie Duong/Desktop/Web_sua_loi
+Integrity mode: development
+
+## Requirements
+
+### R1. Biên soạn Tài liệu 1: Đặc tả Tổng quan Kiến trúc Toàn Hệ thống ViHand Grade
+Soạn thảo tài liệu toàn cảnh kiến trúc hệ sinh thái tại file:
+`01_Bao_cao_Nghien_cuu/Tai_lieu_Bao_cao/03_Dac_Ta_Kien_Truc_He_Thong/01_Tong_Quan_Kien_Truc_He_Thong_ViHandGrade.md`.
+Tài liệu cần bao quát:
+- Bối cảnh bài toán giáo dục tiểu học và chuyển đổi số theo Thông tư 27/2020/TT-BGDĐT.
+- Sơ đồ kiến trúc tổng thể 4 tầng (Client Mobile/Web, Gateway BFF, AI Microservices Core, Database & Edge Computing).
+- Mô hình cộng tác Multi-Agent / Hybrid Edge-Cloud (Zero-Token offline fallback, Cloudflare Tunnel).
+- Quy chuẩn luồng dữ liệu nghiệp vụ (Chấm điểm OCR chữ viết tay, Luyện viết chính tả sư phạm Neural TTS, Quản lý điểm số và sổ tay từ khó).
+- Đánh giá các thuộc tính chất lượng (Bảo mật RBAC/Data protection, Tính sẵn sàng High Availability, Hiệu năng và độ trễ).
+
+### R2. Biên soạn Tài liệu 2: Đặc tả Kỹ thuật Hệ thống ViHand Grade End-to-End
+Soạn thảo tài liệu đặc tả kỹ thuật chi tiết end-to-end tại file:
+`01_Bao_cao_Nghien_cuu/Tai_lieu_Bao_cao/03_Dac_Ta_Kien_Truc_He_Thong/02_Dac_Ta_Ky_Thuat_End2End_ViHandGrade.md`.
+Tài liệu cần đào sâu chi tiết kỹ thuật từng dòng dữ liệu và module:
+- **Tầng Client Mobile**: Cấu trúc Android Native (Jetpack Compose, Room DB v4, CameraX, Retrofit2, Edge TTS client, Bounding Box co-transformation touch gestures).
+- **Tầng Web Studio & BFF**: Next.js 16 App Router, TypeScript, Prisma ORM, Server Actions & API Routes, cơ chế Rate Limiting Guard, xác thực phiên làm việc.
+- **Tầng AI Core Service**: FastAPI Python, YOLOv8 Line/Word Segmentation, VietOCR / Gemini Multimodal Fallback, ViT5 Vietnamese Correction Engine, Qwen 2.5 SLM Generator.
+- **Hợp đồng API & Schemas**: Toàn bộ HTTP routes (`/api/mobile/grade`, `/api/dictation/*`, `/api/grades/*`, `/api/users`), JSON request/response DTOs, mã trạng thái và xử lý ngoại lệ.
+- **Mô hình Dữ liệu**: Sơ đồ ERD Prisma SQLite (`vihand.db`) và Room DB cục bộ, đồng bộ hai chiều (Two-way sync) và bảo toàn tính toàn vẹn khi mất mạng.
+- **Quy trình Kiểm thử & Xác thực**: Toàn bộ kết quả thực nghiệm theo chuẩn Lauren Tan / PStack (Unit tests Android 23/23, TypeScript 0 error, kiểm thử ảnh bài thi thật).
+
+## Acceptance Criteria
+
+### Tính Đầy Đủ & Khách Quan của Tài Liệu
+- [ ] Cả 2 file tài liệu `.md` được tạo đúng vị trí thư mục `01_Bao_cao_Nghien_cuu/Tai_lieu_Bao_cao/03_Dac_Ta_Kien_Truc_He_Thong/`.
+- [ ] File 1 (`01_Tong_Quan_Kien_Truc_He_Thong_ViHandGrade.md`) chứa đầy đủ sơ đồ Mermaid kiến trúc hệ thống, phân tích luồng nghiệp vụ và mô hình bảo mật.
+- [ ] File 2 (`02_Dac_Ta_Ky_Thuat_End2End_ViHandGrade.md`) chứa đầy đủ chi tiết kỹ thuật end-to-end: API payloads, mã nguồn dẫn chứng, Room DB schema v4, Prisma schema, luồng xử lý ảnh $\to$ Bounding Box $\to$ Điểm số TT27.
+- [ ] Không chứa thông tin giả định; tất cả thông số độ trễ, kích thước APK, cấu trúc bảng CSDL và endpoint đều khớp chính xác 100% với codebase thực tế.

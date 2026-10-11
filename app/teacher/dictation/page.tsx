@@ -22,7 +22,7 @@ import {
   GraduationCap, Search, Sparkles, Settings2, Music, RefreshCw,
   SlidersHorizontal, Gauge, Repeat, Hourglass, Mic, Pencil, Eye,
   Wand2, Send, Tag, FileText, Check, Split, ChevronDown, ChevronUp,
-  Sun, Moon, Copy, Scissors, ExternalLink, FastForward,
+  Sun, Moon, Copy, Scissors, ExternalLink, FastForward, Presentation,
 } from "lucide-react"
 import { formatAiErrorMessage } from "@/lib/utils"
 import { HelpGuideButton } from "@/components/help-guide"
@@ -284,6 +284,13 @@ export default function TeacherDictationPage() {
   const [isSpeakingNow, setIsSpeakingNow] = useState(false)
   const [playbackComplete, setPlaybackComplete] = useState(false)
 
+  // ─── 4-Step Pedagogical Workflow State (GDPT 2018) ──────────────────────────
+  const [pedagogicalStep, setPedagogicalStep] = useState<1 | 2 | 3 | 4>(1)
+  const [step2WordIndex, setStep2WordIndex] = useState(0)
+  const [stepStatusMessage, setStepStatusMessage] = useState("")
+  const [createdSessionId, setCreatedSessionId] = useState<string | null>(null)
+  const [isWorkflowAutoAdvancing, setIsWorkflowAutoAdvancing] = useState(false)
+
   // ─── Classroom Chalkboard Presentation Overlay State ────────────────────────
   const [showProjector, setShowProjector] = useState(false)
   const [isTextHidden, setIsTextHidden] = useState(false)
@@ -336,6 +343,13 @@ export default function TeacherDictationPage() {
   const previewClauseList = useMemo(() => {
     return splitIntoPedagogicalClauses(passageText, chunkMode)
   }, [passageText, chunkMode])
+
+  const difficultWordsList = useMemo(() => {
+    return difficultWords
+      .split(/[,;\n]+/)
+      .map(w => w.trim())
+      .filter(Boolean)
+  }, [difficultWords])
 
   const stats = useMemo(() => {
     const chars = passageText.length
@@ -495,7 +509,7 @@ export default function TeacherDictationPage() {
     })
   }
 
-  const speakClause = (clause: string, sessionToken: number): Promise<boolean> => {
+  const speakClause = (clause: string, sessionToken: number, customRateStr?: string): Promise<boolean> => {
     return new Promise(resolve => {
       if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) {
         resolve(false)
@@ -512,7 +526,7 @@ export default function TeacherDictationPage() {
       // Convert speed rate string into percent (-15%, -25%, etc.)
       const speedNum = parseFloat(speedRate) || 0.85
       const percentDiff = Math.round((speedNum - 1.0) * 100)
-      const rateStr = `${percentDiff >= 0 ? "+" : ""}${percentDiff}%`
+      const rateStr = customRateStr || `${percentDiff >= 0 ? "+" : ""}${percentDiff}%`
 
       // ── TẦNG 1 & 2: Edge-TTS qua API Next.js /api/dictation/tts ──
       const ttsUrl = `/api/dictation/tts?text=${encodeURIComponent(clause)}&voice=${encodeURIComponent(voiceEngine)}&rate=${encodeURIComponent(rateStr)}`
@@ -554,11 +568,95 @@ export default function TeacherDictationPage() {
     })
   }
 
-  const startPlayback = async () => {
+  // ─── BƯỚC 1: ĐỌC MẪU TOÀN BÀI (Listen to Full Passage) ─────────────────────
+  const startStep1Overview = async (autoAdvance = false) => {
     if (!passageText.trim()) return
-
     stopPlayback()
 
+    setPedagogicalStep(1)
+    setIsPlaying(true)
+    isPlayingRef.current = true
+    setIsPaused(false)
+    isPausedRef.current = false
+    setStepStatusMessage("Bước 1: Đang đọc mẫu toàn bài · Học sinh chú ý lắng nghe để hiểu nội dung và nhịp điệu.")
+
+    const sessionToken = playbackIdRef.current
+    await speakClause(`Các em hãy lắng nghe cô đọc mẫu bài chính tả: ${title || "bài đọc hôm nay"}.`, sessionToken, "-10%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    await speakClause(passageText, sessionToken, "-10%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    await speakClause("Đã kết thúc phần đọc mẫu. Bây giờ chúng ta cùng chuyển sang Bước 2: Luyện viết từ khó trên bảng con.", sessionToken, "-10%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    setIsPlaying(false)
+    isPlayingRef.current = false
+    setStepStatusMessage("Đã hoàn thành đọc mẫu. Sẵn sàng chuyển sang Bước 2: Luyện từ khó.")
+
+    if (autoAdvance) {
+      setPedagogicalStep(2)
+      await startStep2DrillWord(0, true)
+    }
+  }
+
+  // ─── BƯỚC 2: HƯỚNG DẪN TỪ KHÓ & LUYỆN VIẾT BẢNG CON ────────────────────────
+  const startStep2DrillWord = async (wordIndex: number, autoAdvanceNext = false) => {
+    if (difficultWordsList.length === 0) {
+      setStepStatusMessage("Bài đọc chưa có danh sách từ khó. Sẵn sàng vào Bước 3: Nghe - Viết chính thức.")
+      setPedagogicalStep(3)
+      return
+    }
+
+    const targetIdx = Math.max(0, Math.min(difficultWordsList.length - 1, wordIndex))
+    setStep2WordIndex(targetIdx)
+    setPedagogicalStep(2)
+
+    stopPlayback()
+    setIsPlaying(true)
+    isPlayingRef.current = true
+    setIsPaused(false)
+    isPausedRef.current = false
+
+    const sessionToken = playbackIdRef.current
+    const word = difficultWordsList[targetIdx]
+    setStepStatusMessage(`Bước 2: Luyện từ khó (${targetIdx + 1}/${difficultWordsList.length}): "${word}"`)
+
+    await speakClause(`Từ khó thứ ${targetIdx + 1}: ${word}.`, sessionToken, "-15%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    await speakClause(word, sessionToken, "-20%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    setStepStatusMessage(`✍️ Các em viết từ "${word}" vào bảng con`)
+    const finishedWait = await sleepWithCountdown(12, sessionToken)
+    if (!finishedWait || playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    await speakClause("Các em giơ bảng con để cô kiểm tra!", sessionToken, "-10%")
+    await sleepWithCountdown(4, sessionToken)
+
+    setIsPlaying(false)
+    isPlayingRef.current = false
+
+    if (autoAdvanceNext) {
+      if (targetIdx + 1 < difficultWordsList.length) {
+        await startStep2DrillWord(targetIdx + 1, true)
+      } else {
+        setStepStatusMessage("Đã luyện xong tất cả từ khó. Sẵn sàng vào Bước 3: Nghe - Viết chính thức!")
+        setPedagogicalStep(3)
+        if (isWorkflowAutoAdvancing) {
+          await startStep3Dictation(true)
+        }
+      }
+    }
+  }
+
+  // ─── BƯỚC 3: ĐỌC TỪNG CÂU / CỤM (NGHE - VIẾT CHÍNH THỨC) ───────────────────
+  const startStep3Dictation = async (autoAdvance = false) => {
+    if (!passageText.trim()) return
+    stopPlayback()
+
+    setPedagogicalStep(3)
     const preparedClauses = splitIntoPedagogicalClauses(passageText, chunkMode)
     if (preparedClauses.length === 0) return
 
@@ -570,15 +668,17 @@ export default function TeacherDictationPage() {
     setIsPaused(false)
     isPausedRef.current = false
     setPlaybackComplete(false)
-    setShowProjector(true) // Bật giao diện Bảng Xanh toàn màn hình
 
     const sessionToken = playbackIdRef.current
     const maxRepeat = parseInt(repeatCount, 10) || 2
+
+    await speakClause("Bây giờ cả lớp mở vở và bắt đầu viết bài. Các em chú ý lắng nghe và ngồi thẳng lưng.", sessionToken, "-10%")
 
     for (let i = 0; i < preparedClauses.length; i++) {
       if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
 
       setCurrentClauseIndex(i)
+      setStepStatusMessage(`Bước 3: Đang đọc cụm ${i + 1}/${preparedClauses.length} (${stats.words} từ)`)
 
       for (let r = 1; r <= maxRepeat; r++) {
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
@@ -592,7 +692,6 @@ export default function TeacherDictationPage() {
 
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
 
-        // Tính toán thời gian nghỉ viết
         let pauseTime = 10
         if (pauseSetting === "auto") {
           const wCount = preparedClauses[i].split(/\s+/).filter(Boolean).length
@@ -612,8 +711,84 @@ export default function TeacherDictationPage() {
       setIsSpeakingNow(false)
       setCountdown(0)
       setPlaybackComplete(true)
-      await speakClause("Đã hoàn thành bài đọc chính tả. Các em hãy soát lại bài.", sessionToken)
+      setStepStatusMessage("Đã viết xong toàn bài. Chuyển sang Bước 4: Đọc soát lỗi toàn bài.")
+
+      if (autoAdvance) {
+        setPedagogicalStep(4)
+        await startStep4Proofread()
+      } else {
+        setPedagogicalStep(4)
+      }
     }
+  }
+
+  // ─── BƯỚC 4: ĐỌC SOÁT LỖI TOÀN BÀI & KHÓA GROUND TRUTH ─────────────────────
+  const startStep4Proofread = async () => {
+    if (!passageText.trim()) return
+    stopPlayback()
+
+    setPedagogicalStep(4)
+    setIsPlaying(true)
+    isPlayingRef.current = true
+    setIsPaused(false)
+    isPausedRef.current = false
+    setStepStatusMessage("Bước 4: Đọc soát lỗi · Học sinh dùng đầu bút chì dò từng chữ trong vở.")
+
+    const sessionToken = playbackIdRef.current
+
+    await speakClause("Bây giờ các em hãy dùng đầu bút chì dò theo từng chữ trong vở để soát lại toàn bộ lỗi chính tả.", sessionToken, "-12%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    await speakClause(passageText, sessionToken, "-15%")
+    if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
+
+    await speakClause("Đã kết thúc bài đọc chính tả! Các em gấp vở lại và chuẩn bị nộp bài.", sessionToken, "-10%")
+
+    setIsPlaying(false)
+    isPlayingRef.current = false
+    setIsWorkflowAutoAdvancing(false)
+    setStepStatusMessage("🎉 Đã hoàn thành trọn vẹn tiết học chính tả! Đang khóa Ground Truth...")
+
+    // Tự động tạo và lưu DictationSession làm Ground Truth duy nhất
+    try {
+      const res = await fetch("/api/dictation/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title || `Bài đọc chính tả: ${new Date().toLocaleDateString("vi-VN")}`,
+          passage: passageText,
+          className: selectedClass,
+          teacherName,
+          source: "web",
+          status: "completed",
+          summary: `Bài đọc Lớp ${selectedClass}, ${stats.words} từ, ${previewClauseList.length} cụm câu. Luyện từ khó: ${difficultWords}`,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.session?.id) {
+          setCreatedSessionId(data.session.id)
+          fetchSessions()
+          setStepStatusMessage(`✅ Ground Truth đã khóa thành công (Mã phiên: ${data.session.id}). Sẵn sàng chấm bài!`)
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lưu session ground truth:", err)
+    }
+  }
+
+  // ─── CHẠY TRỌN VẸN 4 BƯỚC SƯ PHẠM LIÊN HOÀN ────────────────────────────────
+  const startFullPedagogicalWorkflow = async () => {
+    setIsWorkflowAutoAdvancing(true)
+    await startStep1Overview(true)
+  }
+
+  // Alias tương thích ngược cho startPlayback
+  const startPlayback = async () => {
+    if (pedagogicalStep === 1) await startStep1Overview(false)
+    else if (pedagogicalStep === 2) await startStep2DrillWord(step2WordIndex, false)
+    else if (pedagogicalStep === 3) await startStep3Dictation(false)
+    else if (pedagogicalStep === 4) await startStep4Proofread()
   }
 
   const togglePause = () => {
@@ -857,7 +1032,516 @@ export default function TeacherDictationPage() {
             TAB 1: TRÌNH PHÁT ĐỌC & SOẠN BÀI (MAIN COCKPIT)
         ════════════════════════════════════════════════════════════════════════ */}
         {activeTab === "editor" && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5 items-start">
+          <div className="space-y-5">
+            {/* ── 1. THANH TIẾN TRÌNH 4 BƯỚC SƯ PHẠM (PEDAGOGICAL STEPPER GDPT 2018) ── */}
+            <div className="bg-card border border-border/60 rounded-2xl p-4 md:p-5 shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 text-[11px] font-bold">
+                      Quy chuẩn GDPT 2018
+                    </Badge>
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      Phân môn Chính tả (Nghe - Viết Tiểu học)
+                    </span>
+                  </div>
+                  <h2 className="text-sm md:text-base font-extrabold text-card-foreground mt-1">
+                    Quy Trình 4 Bước Sư Phạm Chuẩn Bộ GD&amp;ĐT
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={startFullPedagogicalWorkflow}
+                    className="h-9 px-4 text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 rounded-xl shadow-xs cursor-pointer"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Dạy trọn vẹn 4 Bước liên hoàn</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* 4 Step Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Step 1 */}
+                <div
+                  onClick={() => setPedagogicalStep(1)}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    pedagogicalStep === 1
+                      ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 ring-2 ring-emerald-600 shadow-xs"
+                      : "border-border/60 bg-muted/20 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                      pedagogicalStep === 1
+                        ? "bg-emerald-600 text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}>1</span>
+                    {pedagogicalStep === 1 && isPlaying && (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-xs sm:text-sm text-card-foreground">
+                    1. Đọc mẫu toàn bài
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                    Nghe toàn bộ nội dung &amp; ngữ điệu
+                  </p>
+                </div>
+
+                {/* Step 2 */}
+                <div
+                  onClick={() => setPedagogicalStep(2)}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    pedagogicalStep === 2
+                      ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 ring-2 ring-emerald-600 shadow-xs"
+                      : "border-border/60 bg-muted/20 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                      pedagogicalStep === 2
+                        ? "bg-emerald-600 text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}>2</span>
+                    {pedagogicalStep === 2 && isPlaying && (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-xs sm:text-sm text-card-foreground">
+                    2. Luyện từ khó
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                    Rèn bảng con ({difficultWordsList.length} từ khó)
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div
+                  onClick={() => setPedagogicalStep(3)}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    pedagogicalStep === 3
+                      ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 ring-2 ring-emerald-600 shadow-xs"
+                      : "border-border/60 bg-muted/20 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                      pedagogicalStep === 3
+                        ? "bg-emerald-600 text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}>3</span>
+                    {pedagogicalStep === 3 && isPlaying && (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-xs sm:text-sm text-card-foreground">
+                    3. Nghe - Viết chính thức
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                    Đọc từng nhịp ({previewClauseList.length} cụm câu)
+                  </p>
+                </div>
+
+                {/* Step 4 */}
+                <div
+                  onClick={() => setPedagogicalStep(4)}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    pedagogicalStep === 4
+                      ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 ring-2 ring-emerald-600 shadow-xs"
+                      : "border-border/60 bg-muted/20 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                      pedagogicalStep === 4
+                        ? "bg-emerald-600 text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}>4</span>
+                    {createdSessionId && (
+                      <Badge className="bg-emerald-500 text-white text-[9px] px-1 py-0 h-4">
+                        Đã khóa GT
+                      </Badge>
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-xs sm:text-sm text-card-foreground">
+                    4. Soát lỗi &amp; Khóa GT
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                    Dò bút chì &amp; Cầu nối chấm bài
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── 2. ACTIVE STEP CONSOLE STAGE (BUỒNG LÁI THEO BƯỚC SƯ PHẠM ĐANG CHỌN) ── */}
+            <div className="bg-card border border-border/60 rounded-2xl p-4 md:p-5 shadow-xs space-y-4 bg-gradient-to-br from-card via-card to-muted/20">
+              
+              {/* Banner Trạng Thái Sư Phạm */}
+              <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-border/60">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-3 h-3 rounded-full bg-emerald-600 animate-pulse" />
+                  <span className="text-xs sm:text-sm font-bold text-card-foreground">
+                    {stepStatusMessage || (
+                      pedagogicalStep === 1
+                        ? "Bước 1: Sẵn sàng đọc mẫu toàn bài cho học sinh lắng nghe"
+                        : pedagogicalStep === 2
+                        ? `Bước 2: Hướng dẫn viết bảng con (${difficultWordsList.length} từ khó)`
+                        : pedagogicalStep === 3
+                        ? `Bước 3: Nghe - Viết chính thức (${previewClauseList.length} cụm câu)`
+                        : "Bước 4: Đọc soát lỗi toàn bài và lưu khóa Ground Truth chấm bài"
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-muted text-muted-foreground border-border/60 text-xs">
+                    {formatClassName(selectedClass)}
+                  </Badge>
+                  {isSpeakingNow && (
+                    <Badge className="bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 text-xs animate-pulse">
+                      🔊 Đang phát âm...
+                    </Badge>
+                  )}
+                  {countdown > 0 && (
+                    <Badge className="bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800 text-xs font-mono font-bold">
+                      ⏳ Học sinh viết: {countdown}s
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* NỘI DUNG SÂN KHẤU TƯƠNG ỨNG TỪNG BƯỚC */}
+              {pedagogicalStep === 1 && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        Toàn văn bài đọc mẫu
+                      </span>
+                      <span>Tốc độ: 0.90x · Giọng: {VOICE_CARDS.find(v => v.id === selectedVoiceId)?.name}</span>
+                    </div>
+                    <p className="text-base sm:text-lg leading-relaxed text-card-foreground font-medium" style={{ fontFamily: "'Lexend', sans-serif" }}>
+                      {passageText}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Button
+                      onClick={() => startStep1Overview(false)}
+                      disabled={isPlaying}
+                      className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs gap-2 shadow-xs cursor-pointer"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>Bắt đầu đọc mẫu toàn bài</span>
+                    </Button>
+
+                    <Button
+                      onClick={togglePause}
+                      disabled={!isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 gap-1.5 cursor-pointer"
+                    >
+                      {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      <span>{isPaused ? "Tiếp tục" : "Tạm dừng"}</span>
+                    </Button>
+
+                    <Button
+                      onClick={stopPlayback}
+                      disabled={!isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1.5 cursor-pointer"
+                    >
+                      <Square className="h-4 w-4" />
+                      <span>Dừng đọc</span>
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        stopPlayback()
+                        setPedagogicalStep(2)
+                      }}
+                      variant="ghost"
+                      className="h-10 px-4 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 ml-auto cursor-pointer"
+                    >
+                      <span>Bỏ qua sang Bước 2: Luyện từ khó ›</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {pedagogicalStep === 2 && (
+                <div className="space-y-4">
+                  {/* Pills chọn từ khó */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-card-foreground">Danh sách từ khó:</span>
+                    {difficultWordsList.map((w, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setStep2WordIndex(idx)
+                          startStep2DrillWord(idx, false)
+                        }}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          step2WordIndex === idx
+                            ? "bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border-amber-400 dark:border-amber-700 ring-2 ring-amber-400 shadow-2xs"
+                            : "bg-card border-border/60 hover:bg-muted text-card-foreground"
+                        }`}
+                      >
+                        <span className="text-[10px] opacity-75">{idx + 1}.</span>
+                        <span>{w}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sân khấu từ khó to */}
+                  <div className="p-6 md:p-8 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-center space-y-3">
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                      Từ khó đang luyện ({step2WordIndex + 1}/{Math.max(1, difficultWordsList.length)})
+                    </span>
+                    <div className="text-3xl md:text-5xl font-black text-amber-900 dark:text-amber-100 py-2 tracking-wide" style={{ fontFamily: "'Lexend', sans-serif" }}>
+                      "{difficultWordsList[step2WordIndex] || "Chưa có từ khó"}"
+                    </div>
+                    <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                      💡 <b>Lời dặn giáo viên:</b> Hướng dẫn học sinh đặt nét bút, phân biệt phụ âm đầu và dấu thanh. Học sinh viết vào bảng con trong 12 giây rồi giơ lên.
+                    </p>
+                  </div>
+
+                  {/* Điều khiển Bước 2 */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Button
+                      onClick={() => startStep2DrillWord(step2WordIndex, false)}
+                      disabled={isPlaying}
+                      className="h-10 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs gap-2 shadow-xs cursor-pointer"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                      <span>Phát âm từ này (2 lần + Viết bảng con)</span>
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        const prevIdx = Math.max(0, step2WordIndex - 1)
+                        setStep2WordIndex(prevIdx)
+                        startStep2DrillWord(prevIdx, false)
+                      }}
+                      disabled={step2WordIndex === 0 || isPlaying}
+                      variant="outline"
+                      className="h-10 px-3 rounded-xl text-xs font-bold border-border/60 cursor-pointer"
+                    >
+                      ‹ Từ trước
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        const nextIdx = Math.min(difficultWordsList.length - 1, step2WordIndex + 1)
+                        setStep2WordIndex(nextIdx)
+                        startStep2DrillWord(nextIdx, false)
+                      }}
+                      disabled={step2WordIndex >= difficultWordsList.length - 1 || isPlaying}
+                      variant="outline"
+                      className="h-10 px-3 rounded-xl text-xs font-bold border-border/60 cursor-pointer"
+                    >
+                      Từ sau ›
+                    </Button>
+
+                    <Button
+                      onClick={() => startStep2DrillWord(0, true)}
+                      disabled={isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-50 cursor-pointer"
+                    >
+                      <span>Luyện tự động tất cả từ khó</span>
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        stopPlayback()
+                        setPedagogicalStep(3)
+                      }}
+                      variant="ghost"
+                      className="h-10 px-4 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 ml-auto cursor-pointer"
+                    >
+                      <span>Sang Bước 3: Nghe - Viết chính thức ›</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {pedagogicalStep === 3 && (
+                <div className="space-y-4">
+                  {/* Sân khấu Cụm câu đang đọc */}
+                  <div className="p-6 md:p-8 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-center space-y-3">
+                    <div className="flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 font-bold max-w-lg mx-auto">
+                      <span>Cụm {currentClauseIndex + 1}/{Math.max(1, clauses.length || previewClauseList.length)}</span>
+                      <span>Lần {currentRepeat}/{repeatCount}</span>
+                      <span>Nghỉ: {pauseSetting === "auto" ? "Tự động (~1.6s/từ)" : `${pauseSetting}s`}</span>
+                    </div>
+
+                    <div className="text-2xl md:text-4xl font-extrabold text-card-foreground py-2 leading-relaxed" style={{ fontFamily: "'Lexend', sans-serif" }}>
+                      "{clauses[currentClauseIndex] || previewClauseList[currentClauseIndex] || previewClauseList[0] || "Bắt đầu bài đọc..."}"
+                    </div>
+
+                    {/* Thanh tiến trình cụm */}
+                    <div className="w-full max-w-md mx-auto bg-muted/60 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-600 h-full transition-all duration-300"
+                        style={{
+                          width: `${Math.round(((currentClauseIndex + 1) / Math.max(1, clauses.length || previewClauseList.length)) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Điều khiển Bước 3 */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Button
+                      onClick={() => startStep3Dictation(false)}
+                      disabled={isPlaying}
+                      className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs gap-2 shadow-xs cursor-pointer"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>{isPlaying ? "Đang đọc..." : "Bắt đầu Nghe - Viết"}</span>
+                    </Button>
+
+                    <Button
+                      onClick={togglePause}
+                      disabled={!isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 gap-1.5 cursor-pointer"
+                    >
+                      {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      <span>{isPaused ? "Tiếp tục" : "Tạm dừng"}</span>
+                    </Button>
+
+                    <Button
+                      onClick={repeatCurrentClause}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 gap-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Đọc lại cụm này</span>
+                    </Button>
+
+                    <Button
+                      onClick={skipToNextClause}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 gap-1.5 cursor-pointer"
+                    >
+                      <FastForward className="h-4 w-4" />
+                      <span>Cụm tiếp theo</span>
+                    </Button>
+
+                    <Button
+                      onClick={stopPlayback}
+                      disabled={!isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1.5 cursor-pointer"
+                    >
+                      <Square className="h-4 w-4" />
+                      <span>Dừng hẳn</span>
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        stopPlayback()
+                        setPedagogicalStep(4)
+                      }}
+                      variant="ghost"
+                      className="h-10 px-4 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 ml-auto cursor-pointer"
+                    >
+                      <span>Sang Bước 4: Soát lỗi toàn bài ›</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {pedagogicalStep === 4 && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        Văn bản học sinh dò bài soát lỗi
+                      </span>
+                      <span>Tốc độ: 0.85x · Đọc chậm để học sinh dò bút chì</span>
+                    </div>
+                    <p className="text-base sm:text-lg leading-relaxed text-card-foreground font-medium" style={{ fontFamily: "'Lexend', sans-serif" }}>
+                      {passageText}
+                    </p>
+                  </div>
+
+                  {/* Bảng nghiệm thu Ground Truth nếu đã hoàn tất */}
+                  {createdSessionId ? (
+                    <div className="p-4 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/50 border border-emerald-400 dark:border-emerald-700 flex items-center justify-between gap-3 flex-wrap shadow-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                          <span className="text-xs font-extrabold text-emerald-900 dark:text-emerald-200">
+                            Ground Truth Đã Được Khóa An Toàn Vào CSDL SQLite
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-mono">
+                          Mã phiên: {createdSessionId} · Lớp: {selectedClass} · {stats.words} từ
+                        </p>
+                      </div>
+
+                      <Button
+                        onClick={handleOpenGrading}
+                        className="h-10 px-5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs gap-2 shadow-xs cursor-pointer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span>🎯 Mở Phiên Chấm Điểm Cho Lớp Ngay (1-Click)</span>
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Button
+                      onClick={startStep4Proofread}
+                      disabled={isPlaying}
+                      className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs gap-2 shadow-xs cursor-pointer"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>{isPlaying ? "Đang đọc soát lỗi..." : "Bắt đầu đọc soát lỗi toàn bài"}</span>
+                    </Button>
+
+                    <Button
+                      onClick={togglePause}
+                      disabled={!isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 gap-1.5 cursor-pointer"
+                    >
+                      {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      <span>{isPaused ? "Tiếp tục" : "Tạm dừng"}</span>
+                    </Button>
+
+                    <Button
+                      onClick={stopPlayback}
+                      disabled={!isPlaying}
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl text-xs font-bold border-border/60 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1.5 cursor-pointer"
+                    >
+                      <Square className="h-4 w-4" />
+                      <span>Dừng đọc</span>
+                    </Button>
+
+                    <Button
+                      onClick={handleOpenGrading}
+                      className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs gap-2 ml-auto shadow-xs cursor-pointer"
+                    >
+                      <Check className="h-4 w-4" />
+                      <span>🎯 Khóa Ground Truth &amp; Chuyển Sang Chấm Bài</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* ── 3. KHUNG SOẠN THẢO VÀ CẤU HÌNH SƯ PHẠM ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5 items-start">
             
             {/* ── CỘT TRÁI: VĂN BẢN ĐỌC & SOẠN THẢO TRANG VỞ ── */}
             <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xs">
@@ -1238,6 +1922,7 @@ export default function TeacherDictationPage() {
             </div>
 
           </div>
+        </div>
         )}
 
         {/* ════════════════════════════════════════════════════════════════════════
@@ -1528,25 +2213,66 @@ export default function TeacherDictationPage() {
       {/* ──────────────────────────────────────────────────────────────────────────
           4. STICKY BOTTOM ACTION BAR (CỐ ĐỊNH CHÂN TRANG)
       ────────────────────────────────────────────────────────────────────────── */}
-      <footer className="fixed left-0 right-0 bottom-0 z-40 bg-card/95 border-t border-border px-5 py-3 flex items-center justify-between gap-3 backdrop-blur-md shadow-lg flex-wrap">
-        <div className="flex items-center gap-3">
+      <footer className="fixed left-0 right-0 bottom-0 z-40 bg-card/95 border-t border-border px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 backdrop-blur-md shadow-lg flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Nút hành động chính phản ánh bước hiện tại */}
           <Button
-            onClick={startPlayback}
-            className="h-11 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm tracking-wide shadow-xs gap-2 cursor-pointer"
+            onClick={() => {
+              if (pedagogicalStep === 1) startStep1Overview(false)
+              else if (pedagogicalStep === 2) startStep2DrillWord(step2WordIndex, false)
+              else if (pedagogicalStep === 3) startStep3Dictation(false)
+              else if (pedagogicalStep === 4) startStep4Proofread()
+            }}
+            disabled={isPlaying}
+            className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm tracking-wide shadow-xs gap-2 cursor-pointer"
           >
             <Play className="h-4 w-4 fill-current" />
-            <span>Bắt đầu đọc cho cả lớp</span>
+            <span>
+              {isPlaying
+                ? "Đang phát đọc..."
+                : pedagogicalStep === 1
+                ? "Bắt đầu Bước 1: Đọc mẫu"
+                : pedagogicalStep === 2
+                ? `Bắt đầu Bước 2: Từ khó (${difficultWordsList[step2WordIndex] || "Từ khó"})`
+                : pedagogicalStep === 3
+                ? "Bắt đầu Bước 3: Nghe - Viết"
+                : "Bắt đầu Bước 4: Soát lỗi"}
+            </span>
           </Button>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+          {/* Quick Step Switcher 1..4 */}
+          <div className="hidden sm:flex bg-muted/60 border border-border/60 rounded-xl p-0.5 text-xs font-semibold">
+            {([1, 2, 3, 4] as const).map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  stopPlayback()
+                  setPedagogicalStep(s)
+                }}
+                className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  pedagogicalStep === s
+                    ? "bg-emerald-700 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+                title={`Chuyển sang Bước ${s}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>Âm thanh {previewClauseList.length}/{previewClauseList.length} cụm đã sẵn sàng</span>
+            <span>
+              {stepStatusMessage || `Bước ${pedagogicalStep}/4 GDPT 2018`}
+            </span>
           </div>
         </div>
 
         {/* Animated Waveform Visualizer */}
-        <div className="hidden md:flex items-end gap-1 h-6 min-w-[140px] px-2 opacity-80">
-          {Array.from({ length: 32 }).map((_, idx) => {
+        <div className="hidden md:flex items-end gap-1 h-6 min-w-[120px] px-2 opacity-80">
+          {Array.from({ length: 24 }).map((_, idx) => {
             const height = 5 + Math.round(Math.abs(Math.sin(idx * 1.3)) * 18)
             return (
               <span
@@ -1563,13 +2289,22 @@ export default function TeacherDictationPage() {
           })}
         </div>
 
-        <div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowProjector(true)}
+            variant="outline"
+            className="h-10 px-3.5 rounded-xl text-xs font-bold border-border/60 gap-1.5 hover:bg-muted cursor-pointer"
+          >
+            <Presentation className="h-4 w-4" />
+            <span className="hidden sm:inline">Bảng xanh trình chiếu</span>
+          </Button>
+
           <Button
             onClick={handleOpenGrading}
-            variant="outline"
-            className="h-10 px-4 rounded-xl text-xs font-semibold border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 cursor-pointer"
+            className="h-10 px-4 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white gap-1.5 shadow-xs cursor-pointer"
           >
-            🎯 Chấm bài theo phiên này
+            <ExternalLink className="h-4 w-4" />
+            <span>Chấm bài (GT)</span>
           </Button>
         </div>
       </footer>
@@ -1584,15 +2319,37 @@ export default function TeacherDictationPage() {
           style={{ fontFamily: "'Lexend', sans-serif" }}
         >
           {/* Top Bar Trình Chiếu */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#F4F1E8]/20 gap-2 flex-wrap">
+          <div className="flex items-center justify-between pb-4 border-b border-[#F4F1E8]/20 gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm font-semibold tracking-wide">
               <span className="text-[#F6D365] font-extrabold">{formatClassName(selectedClass)}</span>
               <span>·</span>
-              <span className="truncate max-w-[300px]">{title || "Bài đọc chính tả"}</span>
+              <span className="truncate max-w-[260px]">{title || "Bài đọc chính tả"}</span>
             </div>
 
-            <div className="text-sm font-mono text-[#F6D365] font-bold">
-              Cụm {currentClauseIndex + 1}/{Math.max(1, clauses.length || previewClauseList.length)} · Lần {currentRepeat}/{repeatCount}
+            {/* 4 Mini Pills Chọn Bước Sư Phạm Trực Tiếp Trên Máy Chiếu */}
+            <div className="flex bg-[#F4F1E8]/10 rounded-xl p-1 gap-1 border border-[#F4F1E8]/20">
+              {[
+                { step: 1 as const, label: "1. Đọc mẫu" },
+                { step: 2 as const, label: `2. Luyện từ khó (${difficultWordsList.length})` },
+                { step: 3 as const, label: `3. Nghe - Viết (${previewClauseList.length})` },
+                { step: 4 as const, label: "4. Soát lỗi & Khóa GT" },
+              ].map(s => (
+                <button
+                  key={s.step}
+                  type="button"
+                  onClick={() => {
+                    stopPlayback()
+                    setPedagogicalStep(s.step)
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    pedagogicalStep === s.step
+                      ? "bg-[#F6D365] text-[#16382F] shadow-sm font-extrabold"
+                      : "text-[#F4F1E8]/70 hover:text-[#F4F1E8] hover:bg-[#F4F1E8]/10"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
 
             <Button
@@ -1601,104 +2358,304 @@ export default function TeacherDictationPage() {
               onClick={() => {
                 setShowProjector(false)
               }}
-              className="rounded-full border-[#F4F1E8]/40 text-[#F4F1E8] hover:bg-[#F4F1E8]/10 h-8 text-xs font-semibold"
+              className="rounded-full border-[#F4F1E8]/40 text-[#F4F1E8] hover:bg-[#F4F1E8]/10 h-8 text-xs font-semibold cursor-pointer"
             >
               Thoát trình chiếu (Esc)
             </Button>
           </div>
 
-          {/* Central Stage */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-6 space-y-6">
-            
-            {/* Nhắc nhở trạng thái bằng phấn vàng */}
-            <div className="text-sm md:text-base font-extrabold tracking-widest text-[#F6D365] uppercase animate-pulse">
-              {isSpeakingNow ? "🔊 ĐANG ĐỌC · CÁC EM LẮNG NGHE" : countdown > 0 ? "✍️ CÁC EM VIẾT BÀI" : "⏳ CHUẨN BỊ..."}
-            </div>
+          {/* Central Stage Dựa Vào pedagogicalStep */}
+          {pedagogicalStep === 1 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-6 space-y-6 max-w-4xl mx-auto">
+              <div className="text-sm md:text-base font-extrabold tracking-widest text-[#F6D365] uppercase animate-pulse">
+                {isSpeakingNow ? "🎧 BƯỚC 1: ĐANG ĐỌC MẪU TOÀN BÀI · HỌC SINH LẮNG NGHE" : "🎧 BƯỚC 1: ĐỌC MẪU TOÀN BÀI"}
+              </div>
 
-            {/* Văn bản cụm câu chữ khổng lồ */}
-            <div
-              className={`text-[clamp(28px,5vw,56px)] font-bold text-center leading-[1.35] max-w-[1050px] transition-all duration-300 ${
-                isTextHidden ? "blur-md opacity-25 select-none" : "opacity-100"
-              }`}
-            >
-              "{clauses[currentClauseIndex] || previewClauseList[currentClauseIndex] || "Bắt đầu bài đọc..."}"
-            </div>
+              <div className="text-xl sm:text-2xl md:text-3xl font-medium text-center leading-relaxed max-w-[950px] p-6 rounded-2xl bg-[#F4F1E8]/5 border border-[#F4F1E8]/10">
+                {passageText}
+              </div>
 
-            {/* Circular Ring Countdown Timer */}
-            <div className="relative w-32 h-32 md:w-36 md:h-36">
-              <svg width="100%" height="100%" viewBox="0 0 140 140" className="-rotate-90">
-                <circle
-                  cx="70"
-                  cy="70"
-                  r="61"
-                  fill="none"
-                  stroke="#F4F1E82E"
-                  strokeWidth="10"
-                />
-                <circle
-                  cx="70"
-                  cy="70"
-                  r="61"
-                  fill="none"
-                  stroke="#F6D365"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="383.27"
-                  style={{
-                    strokeDashoffset: `${383.27 * (1 - (countdown / Math.max(1, maxCountdown)))}`,
-                    transition: "stroke-dashoffset 1s linear",
-                  }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl font-mono font-bold text-[#F4F1E8]">
-                {isSpeakingNow ? "🔊" : countdown > 0 ? countdown : "✓"}
+              <div className="text-xs text-[#F4F1E8]/70">
+                Học sinh lắng nghe để nắm nội dung toàn bài, nhịp điệu và ngữ điệu câu.
               </div>
             </div>
+          )}
 
-            {/* Progress Dots */}
-            <div className="flex items-center gap-2 pt-2">
-              {(clauses.length > 0 ? clauses : previewClauseList).map((_, idx) => (
-                <i
-                  key={idx}
-                  className={`w-3.5 h-3.5 rounded-full border-2 border-[#F4F1E8] transition-all duration-300 ${
-                    idx < currentClauseIndex
-                      ? "bg-[#F4F1E8] opacity-100"
-                      : idx === currentClauseIndex
-                      ? "bg-[#F6D365] border-[#F6D365] scale-125 opacity-100 shadow-sm"
-                      : "opacity-35"
-                  }`}
-                />
-              ))}
+          {pedagogicalStep === 2 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-6 space-y-6">
+              <div className="text-sm md:text-base font-extrabold tracking-widest text-[#F6D365] uppercase animate-pulse">
+                {countdown > 0
+                  ? `✍️ CÁC EM VIẾT BẢNG CON: ${countdown}s`
+                  : isSpeakingNow
+                  ? "🔊 ĐANG PHÁT ÂM TỪ KHÓ..."
+                  : `✍️ BƯỚC 2: LUYỆN TỪ KHÓ TRÊN BẢNG CON (${step2WordIndex + 1}/${difficultWordsList.length})`}
+              </div>
+
+              {/* Từ khó siêu to */}
+              <div className="text-[clamp(42px,8vw,96px)] font-black text-[#F6D365] tracking-wide drop-shadow-md py-4">
+                {difficultWordsList[step2WordIndex] || "Từ khó"}
+              </div>
+
+              {/* Đồng hồ đếm ngược 12s viết bảng con */}
+              <div className="relative w-28 h-28 md:w-32 md:h-32">
+                <svg width="100%" height="100%" viewBox="0 0 140 140" className="-rotate-90">
+                  <circle cx="70" cy="70" r="61" fill="none" stroke="#F4F1E82E" strokeWidth="10" />
+                  <circle
+                    cx="70"
+                    cy="70"
+                    r="61"
+                    fill="none"
+                    stroke="#F6D365"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray="383.27"
+                    style={{
+                      strokeDashoffset: `${383.27 * (1 - (countdown / Math.max(1, maxCountdown || 12)))}`,
+                      transition: "stroke-dashoffset 1s linear",
+                    }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-mono font-bold text-[#F4F1E8]">
+                  {isSpeakingNow ? "🔊" : countdown > 0 ? countdown : "✓"}
+                </div>
+              </div>
+
+              {/* Dãy nút bấm chuyển từ khó nhanh */}
+              <div className="flex items-center gap-2 flex-wrap justify-center pt-2">
+                {difficultWordsList.map((w, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setStep2WordIndex(idx)
+                      startStep2DrillWord(idx, false)
+                    }}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      step2WordIndex === idx
+                        ? "bg-[#F6D365] text-[#16382F] scale-110 shadow-sm"
+                        : "bg-[#F4F1E8]/15 text-[#F4F1E8] hover:bg-[#F4F1E8]/25"
+                    }`}
+                  >
+                    {idx + 1}. {w}
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
 
-          </div>
+          {pedagogicalStep === 3 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-6 space-y-6">
+              <div className="text-sm md:text-base font-extrabold tracking-widest text-[#F6D365] uppercase animate-pulse">
+                {isSpeakingNow
+                  ? `🔊 ĐANG ĐỌC CỤM ${currentClauseIndex + 1}/${previewClauseList.length} (LẦN ${currentRepeat}/${repeatCount})`
+                  : countdown > 0
+                  ? `✍️ CÁC EM VIẾT VỞ: ${countdown}s`
+                  : `✍️ BƯỚC 3: NGHE - VIẾT CHÍNH THỨC (${currentClauseIndex + 1}/${previewClauseList.length})`}
+              </div>
+
+              {/* Văn bản cụm câu chữ khổng lồ */}
+              <div
+                className={`text-[clamp(28px,5vw,56px)] font-bold text-center leading-[1.35] max-w-[1050px] transition-all duration-300 ${
+                  isTextHidden ? "blur-md opacity-25 select-none" : "opacity-100"
+                }`}
+              >
+                "{clauses[currentClauseIndex] || previewClauseList[currentClauseIndex] || "Bắt đầu bài đọc..."}"
+              </div>
+
+              {/* Circular Ring Countdown Timer */}
+              <div className="relative w-32 h-32 md:w-36 md:h-36">
+                <svg width="100%" height="100%" viewBox="0 0 140 140" className="-rotate-90">
+                  <circle cx="70" cy="70" r="61" fill="none" stroke="#F4F1E82E" strokeWidth="10" />
+                  <circle
+                    cx="70"
+                    cy="70"
+                    r="61"
+                    fill="none"
+                    stroke="#F6D365"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray="383.27"
+                    style={{
+                      strokeDashoffset: `${383.27 * (1 - (countdown / Math.max(1, maxCountdown)))}`,
+                      transition: "stroke-dashoffset 1s linear",
+                    }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl font-mono font-bold text-[#F4F1E8]">
+                  {isSpeakingNow ? "🔊" : countdown > 0 ? countdown : "✓"}
+                </div>
+              </div>
+
+              {/* Progress Dots */}
+              <div className="flex items-center gap-2 pt-2 flex-wrap justify-center">
+                {(clauses.length > 0 ? clauses : previewClauseList).map((_, idx) => (
+                  <i
+                    key={idx}
+                    className={`w-3.5 h-3.5 rounded-full border-2 border-[#F4F1E8] transition-all duration-300 ${
+                      idx < currentClauseIndex
+                        ? "bg-[#F4F1E8] opacity-100"
+                        : idx === currentClauseIndex
+                        ? "bg-[#F6D365] border-[#F6D365] scale-125 opacity-100 shadow-sm"
+                        : "opacity-35"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pedagogicalStep === 4 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-6 space-y-6 max-w-4xl mx-auto">
+              <div className="text-sm md:text-base font-extrabold tracking-widest text-[#F6D365] uppercase animate-pulse">
+                {isSpeakingNow ? "🔍 BƯỚC 4: ĐANG ĐỌC SOÁT LỖI TOÀN BÀI..." : "🔍 BƯỚC 4: SOÁT LỖI TOÀN BÀI & DÒ BÚT CHÌ"}
+              </div>
+
+              <div className="text-xl sm:text-2xl md:text-3xl font-medium text-center leading-relaxed max-w-[950px] p-6 rounded-2xl bg-[#F4F1E8]/5 border border-[#F4F1E8]/10">
+                {passageText}
+              </div>
+
+              <div className="text-xs text-[#F4F1E8]/70">
+                Học sinh dùng bút chì dò lại từng từ. Khi hoàn tất, thầy/cô bấm nút Khóa Ground Truth để chuyển sang chấm bài.
+              </div>
+            </div>
+          )}
 
           {/* Bottom Presenter Controls Bar */}
           <div className="flex items-center justify-center gap-3 pt-4 border-t border-[#F4F1E8]/20 flex-wrap">
-            <button
-              onClick={repeatCurrentClause}
-              className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all"
-            >
-              ↺ Đọc lại
-            </button>
-            <button
-              onClick={togglePause}
-              className="bg-[#F6D365] text-[#3B2F00] hover:bg-[#F6D365]/90 rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all"
-            >
-              {isPaused ? "▶ Tiếp tục" : "❚❚ Tạm dừng"}
-            </button>
-            <button
-              onClick={() => setIsTextHidden(prev => !prev)}
-              className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all"
-            >
-              {isTextHidden ? "Hiện chữ" : "Ẩn chữ"}
-            </button>
-            <button
-              onClick={skipToNextClause}
-              className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all"
-            >
-              Cụm tiếp ›
-            </button>
+            {pedagogicalStep === 1 && (
+              <>
+                <button
+                  onClick={() => startStep1Overview(false)}
+                  disabled={isPlaying}
+                  className="bg-[#F6D365] text-[#16382F] hover:bg-[#F6D365]/90 rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all cursor-pointer"
+                >
+                  {isPlaying ? "Đang đọc mẫu..." : "▶ Bắt đầu đọc mẫu"}
+                </button>
+                <button
+                  onClick={togglePause}
+                  disabled={!isPlaying}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  {isPaused ? "▶ Tiếp tục" : "❚❚ Tạm dừng"}
+                </button>
+                <button
+                  onClick={() => {
+                    stopPlayback()
+                    setPedagogicalStep(2)
+                  }}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  Sang Bước 2: Luyện từ khó ›
+                </button>
+              </>
+            )}
+
+            {pedagogicalStep === 2 && (
+              <>
+                <button
+                  onClick={() => {
+                    if (step2WordIndex > 0) {
+                      setStep2WordIndex(i => i - 1)
+                      startStep2DrillWord(step2WordIndex - 1, false)
+                    }
+                  }}
+                  disabled={step2WordIndex <= 0}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all disabled:opacity-40 cursor-pointer"
+                >
+                  ‹ Từ trước
+                </button>
+                <button
+                  onClick={() => startStep2DrillWord(step2WordIndex, false)}
+                  className="bg-[#F6D365] text-[#16382F] hover:bg-[#F6D365]/90 rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all cursor-pointer"
+                >
+                  ↺ Phát âm từ này
+                </button>
+                <button
+                  onClick={() => {
+                    if (step2WordIndex < difficultWordsList.length - 1) {
+                      setStep2WordIndex(i => i + 1)
+                      startStep2DrillWord(step2WordIndex + 1, false)
+                    }
+                  }}
+                  disabled={step2WordIndex >= difficultWordsList.length - 1}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all disabled:opacity-40 cursor-pointer"
+                >
+                  Từ tiếp theo ›
+                </button>
+                <button
+                  onClick={() => {
+                    stopPlayback()
+                    setPedagogicalStep(3)
+                  }}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  Sang Bước 3: Nghe - Viết ›
+                </button>
+              </>
+            )}
+
+            {pedagogicalStep === 3 && (
+              <>
+                <button
+                  onClick={repeatCurrentClause}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  ↺ Đọc lại
+                </button>
+                <button
+                  onClick={togglePause}
+                  className="bg-[#F6D365] text-[#3B2F00] hover:bg-[#F6D365]/90 rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all cursor-pointer"
+                >
+                  {isPaused ? "▶ Tiếp tục" : "❚❚ Tạm dừng"}
+                </button>
+                <button
+                  onClick={() => setIsTextHidden(prev => !prev)}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  {isTextHidden ? "Hiện chữ" : "Ẩn chữ"}
+                </button>
+                <button
+                  onClick={skipToNextClause}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  Cụm tiếp ›
+                </button>
+                <button
+                  onClick={() => {
+                    stopPlayback()
+                    setPedagogicalStep(4)
+                  }}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  Sang Bước 4 ›
+                </button>
+              </>
+            )}
+
+            {pedagogicalStep === 4 && (
+              <>
+                <button
+                  onClick={startStep4Proofread}
+                  disabled={isPlaying}
+                  className="bg-[#F6D365] text-[#16382F] hover:bg-[#F6D365]/90 rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all cursor-pointer"
+                >
+                  {isPlaying ? "Đang đọc soát lỗi..." : "▶ Đọc soát lỗi toàn bài"}
+                </button>
+                <button
+                  onClick={togglePause}
+                  disabled={!isPlaying}
+                  className="bg-[#F4F1E8]/15 hover:bg-[#F4F1E8]/25 text-[#F4F1E8] rounded-2xl px-5 py-3 text-base font-bold transition-all cursor-pointer"
+                >
+                  {isPaused ? "▶ Tiếp tục" : "❚❚ Tạm dừng"}
+                </button>
+                <button
+                  onClick={handleOpenGrading}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-6 py-3 text-base font-extrabold shadow-md transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <span>🎯 Khóa Ground Truth & Mở Chấm Bài</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

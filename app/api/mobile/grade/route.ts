@@ -345,8 +345,9 @@ function transformForAndroid(
 // MAIN HANDLER — POST /api/mobile/grade
 // ============================================================
 export async function POST(req: NextRequest) {
-  // Rate limiting & DoS guard
-  const blocked = guardAiRoute(req, 20)
+  // Rate limiting & DoS guard (phân chia quota theo từng thiết bị)
+  const deviceId = req.headers.get("x-device-id")?.slice(0, 64) ?? ""
+  const blocked = guardAiRoute(req, Number(process.env.MOBILE_GRADE_RPM ?? 40), deviceId)
   if (blocked) return blocked
 
   const startTime = Date.now()
@@ -364,7 +365,58 @@ export async function POST(req: NextRequest) {
       hinh_thuc,
       noi_dung,
       penalty_per_error,
+      clientRequestId: rawClientRequestId,
     } = body
+
+    const clientRequestId = rawClientRequestId || req.headers.get("x-client-request-id") || null
+
+    if (clientRequestId) {
+      try {
+        const existing = await prisma.grade.findUnique({
+          where: { clientRequestId }
+        })
+        if (existing) {
+          console.log(`[Mobile BFF] ⚡ Idempotent HIT: clientRequestId=${clientRequestId} -> id=${existing.id}`)
+          let criteria = {
+            spellingScore: 0,
+            formatScore: 0,
+            contentScore: 0,
+            creativityScore: 0,
+            totalScore: existing.scoreNum,
+          }
+          try {
+            const sb = JSON.parse(existing.scoreBreakdown || "{}")
+            criteria.spellingScore = sb.spelling ?? 0
+            criteria.formatScore = sb.format ?? 0
+            criteria.contentScore = sb.content ?? 0
+            criteria.creativityScore = sb.creativity ?? 0
+          } catch {}
+          let errors: any[] = []
+          try {
+            errors = JSON.parse(existing.corrections || "[]")
+          } catch {}
+          return NextResponse.json({
+            status: "success",
+            serverGradeId: existing.id,
+            essayTitle: existing.assignmentTitle,
+            studentName: existing.studentName,
+            className: existing.className,
+            criteria,
+            pedagogicalComment: existing.pedagogicalComment || existing.feedback || "",
+            pedagogicalComments: [existing.pedagogicalComment || existing.feedback || ""],
+            extractedText: existing.originalText,
+            correctedFullText: existing.fixedText,
+            errors,
+            processingTimeMs: existing.processingTimeMs,
+            serverSource: "ViHand Grade Server (Idempotent Cache)",
+            imagePath: existing.imagePath,
+            createdAt: existing.createdAt.toISOString(),
+          })
+        }
+      } catch (findErr) {
+        console.warn("[Mobile BFF] Lỗi kiểm tra idempotency:", findErr)
+      }
+    }
 
     const requestedTheLoai = rawTheLoai || (rawEssayType === "poem" ? "tho" : (rawEssayType === "essay" ? "van_xuoi" : (rawEssayType === "spelling" ? "chinh_ta" : undefined)))
 
@@ -487,6 +539,7 @@ export async function POST(req: NextRequest) {
           tokenCount: gradeResult.token_count || 0,
           imageBase64: "", // Không lưu base64 nặng trong SQLite để tránh bloat
           imagePath: imagePath,
+          clientRequestId: clientRequestId || null,
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           isAnonymized: false,
         }
@@ -498,9 +551,20 @@ export async function POST(req: NextRequest) {
       console.error("[Mobile BFF] ⚠️ Lỗi khi lưu vào prisma.grade:", dbErr?.message || dbErr)
     }
 
+    if (!savedGradeId) {
+      console.error("[Mobile BFF] ❌ Không thể lưu bản ghi vào Prisma Database. Hủy response để tránh cấp ID giả.")
+      return NextResponse.json(
+        {
+          status: "error",
+          error: "Không thể lưu kết quả chấm vào cơ sở dữ liệu máy chủ. Vui lòng thử lại.",
+        },
+        { status: 503 }
+      )
+    }
+
     const finalResponse = {
       ...androidResponse,
-      serverGradeId: savedGradeId || `srv_${Date.now()}`,
+      serverGradeId: savedGradeId,
       imagePath: imagePath,
       createdAt: savedCreatedAt,
     }

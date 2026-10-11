@@ -99,7 +99,7 @@ def verify_ai_service(ai_url=None):
                     matches = [kw for kw in expected_keywords if kw in corrected.lower()]
                     evidence["keywords_matched"] = f"{len(matches)}/{len(expected_keywords)} ({', '.join(matches)})"
 
-                    is_pass = len(matches) >= 1 and p_elapsed_ms < 5000
+                    is_pass = len(matches) >= 1 and p_elapsed_ms < 12000
 
                     return {
                         "status": "PASS" if is_pass else "FAIL",

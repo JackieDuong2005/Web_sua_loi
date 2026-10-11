@@ -15,7 +15,7 @@ export async function DELETE(
       const diskPath = path.join(process.cwd(), "public", existing.imagePath.replace(/^\//, ""))
       await fs.unlink(diskPath).catch(() => {})
     }
-    await prisma.grade.delete({ where: { id } })
+    await prisma.grade.deleteMany({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -65,6 +65,9 @@ export async function PATCH(
     })
     return NextResponse.json({ success: true, grade: updated })
   } catch (error: any) {
+    if (error?.code === "P2025") {
+      return NextResponse.json({ error: "Không tìm thấy bài thi để cập nhật" }, { status: 404 })
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

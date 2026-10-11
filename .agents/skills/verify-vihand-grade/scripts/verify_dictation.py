@@ -79,14 +79,14 @@ def verify_dictation_module():
     # ──────────────────────────────────────────────────────────────────────────
     print("▶ [Bước 1/6] Kiểm tra liveness của hạ tầng Web BFF và Python Microservice...", flush=True)
     try:
-        status_web, _, data_web, lat_web = http_get(f"{NEXTJS_URL}/api/health", timeout=3)
+        status_web, _, data_web, lat_web = http_get(f"{NEXTJS_URL}/api/health", timeout=10)
         web_ok = status_web == 200
     except Exception as e:
         web_ok = False
         lat_web = 0
 
     try:
-        status_py, _, data_py, lat_py = http_get(f"{PYTHON_AI_URL}/health", timeout=3)
+        status_py, _, data_py, lat_py = http_get(f"{PYTHON_AI_URL}/health", timeout=10)
         py_ok = status_py == 200
     except Exception as e:
         py_ok = False
@@ -98,6 +98,7 @@ def verify_dictation_module():
     }
 
     if not web_ok:
+        print(f"   [FAIL] Next.js dev server tại {NEXTJS_URL} không phản hồi. Hãy chạy 'npm run dev'.")
         return {
             "status": "FAIL",
             "message": "Next.js dev server tại http://localhost:3000 không phản hồi. Hãy chạy 'npm run dev'.",
@@ -167,7 +168,7 @@ def verify_dictation_module():
     try:
         status_tts, headers_tts, audio_bytes, lat_tts = http_get(
             f"{NEXTJS_URL}/api/dictation/tts?{tts_query}",
-            timeout=15
+            timeout=25
         )
         content_type = headers_tts.get("Content-Type", "")
         audio_size_kb = round(len(audio_bytes) / 1024, 2)

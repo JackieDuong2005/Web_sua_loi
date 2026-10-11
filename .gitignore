@@ -22,9 +22,8 @@ Thumbs.db
 /lib/generated/prisma
 
 # Database files (created at runtime)
-prisma/*.db
-prisma/*.db-shm
-prisma/*.db-wal
+prisma/*.db*
+*.db.bak
 prisma/prisma/
 
 # Python cache and environment

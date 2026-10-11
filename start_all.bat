@@ -70,10 +70,10 @@ echo     [OK] Cua so Next.js da duoc mo. Vui long doi san sang tai http://localh
 echo.
 
 REM ------------------------------------------------------------------
-REM 5. Khoi dong AI Service: ViT5 Grader + Qwen SLM + Edge-TTS (Python - Port 8000)
+REM 5. Khoi dong AI Service: ViT5 + YOLOv8 + Qwen SLM (Quantized) + Edge-TTS (Python - Port 8000)
 REM ------------------------------------------------------------------
-echo [2/2] Dang khoi dong AI Service: ViT5 + Qwen SLM + Edge-TTS (Python - Port 8000)...
-start "ViHand AI Service (Port 8000)" cmd /k "cd /d ""%~dp0python_service"" && set ENABLE_QWEN_SLM=1 && echo Dang khoi dong Python AI Service (ViT5 + Qwen2.5 SLM)... && python main.py"
+echo [2/2] Dang khoi dong AI Service: ViT5 + YOLOv8 + Qwen SLM (Quantized 16-bit) + Edge-TTS (Port 8000)...
+start "ViHand AI Service (Port 8000)" cmd /k "cd /d ""%~dp0python_service"" && set "PYTHONIOENCODING=utf-8" && set "ENABLE_QWEN_SLM=1" && set "QWEN_PRECISION=bfloat16" && echo Dang khoi dong Python AI Service (ViT5 + YOLOv8 + Qwen2.5 SLM Quantized 16-bit)... && python main.py"
 echo     [OK] Cua so AI Service da duoc mo. Vui long doi tai model tai http://localhost:8000
 echo.
 
@@ -84,10 +84,16 @@ echo ================================================================
 echo  TAT CA CAC DICH VU DANG DUOC KHOI DONG!
 echo ================================================================
 echo.
-echo  DICH VU             CONG DUNG                        PORT
-echo  -------             ---------                        ----
-echo  Next.js Web         Giao dien + Cham diem + Doc bai  3000
-echo  ViHand AI Service   ViT5 + Qwen2.5 SLM + Edge-TTS    8000
+echo  DICH VU             CONG DUNG                                    PORT
+echo  -------             ---------                                    ----
+echo  Next.js Web         Giao dien + Cham diem + Doc bai              3000
+echo  ViHand AI Service   ViT5 + YOLOv8 + Qwen SLM (Quantized) + TTS   8000
+echo.
+echo  CAU HINH MO HINH AI:
+echo  - ViT5 Correction:   Dynamic INT8 Quantization (CPU)
+echo  - YOLOv8 Detector:   Nhan dien vi tri chu viet tay (best.pt)
+echo  - Qwen2.5 SLM:       16-bit BFloat16 Quantization (Tiet kiem 75%% RAM)
+echo  - Microsoft TTS:     Giong doc chuan Ha Noi / Sai Gon (Edge-TTS)
 echo.
 echo  DIA CHI TRUY CAP:
 echo  - Trang chu Web:        http://localhost:3000

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { verifyPassword, hashPassword, signJwt } from "@/lib/auth"
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +24,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (user.password !== password) {
+    const isMatch = verifyPassword(password, user.password)
+    if (!isMatch) {
       return NextResponse.json(
         { error: "Mật khẩu không đúng" },
         { status: 401 }
@@ -37,6 +39,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Tự động nâng cấp mật khẩu từ thô lên hash Scrypt nếu chưa được băm
+    if (!user.password.startsWith("scrypt:")) {
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashPassword(password) },
+        })
+      } catch (hashErr) {
+        console.warn("[Auth] Không thể cập nhật hash mật khẩu:", hashErr)
+      }
+    }
+
     // Nếu là giáo viên, lấy các lớp đang quản lý
     let classes: string[] = []
     if (user.role === "teacher") {
@@ -46,6 +60,16 @@ export async function POST(req: NextRequest) {
       classes = teacherClasses.map((c) => c.name)
     }
 
+    // Cấp phát JWT Bearer Token (thời hạn 7 ngày)
+    const token = signJwt({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      className: user.className,
+      classes,
+    })
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -54,7 +78,9 @@ export async function POST(req: NextRequest) {
         role: user.role,
         className: user.className,
         classes, // Danh sách lớp GV quản lý
+        token,
       },
+      token,
     })
   } catch (error: any) {
     console.error("Login error:", error)

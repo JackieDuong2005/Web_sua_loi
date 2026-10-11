@@ -28,6 +28,10 @@ if (typeof setInterval !== "undefined") {
 }
 
 export function getClientIp(req: NextRequest): string {
+  const cfIp = req.headers.get("cf-connecting-ip")
+  if (cfIp) {
+    return cfIp.trim()
+  }
   const forwarded = req.headers.get("x-forwarded-for")
   if (forwarded) {
     return forwarded.split(",")[0].trim()
@@ -83,9 +87,10 @@ export function checkRateLimit(
   }
 }
 
-export function guardAiRoute(req: NextRequest, maxRequestsPerMinute = 30): NextResponse | null {
+export function guardAiRoute(req: NextRequest, maxRequestsPerMinute = 30, extraKey = ""): NextResponse | null {
   const ip = getClientIp(req)
-  const rateResult = checkRateLimit(`ai:${ip}`, maxRequestsPerMinute)
+  const key = extraKey ? `ai:${ip}:${extraKey}` : `ai:${ip}`
+  const rateResult = checkRateLimit(key, maxRequestsPerMinute)
 
   if (!rateResult.allowed) {
     return NextResponse.json(

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mermaid Validation</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <h1>Mermaid Test Results</h1>
+  <div id="results"></div>
+  <script>
+    mermaid.initialize({ startOnLoad: false });
+
+    const diagrams = {
+      "Diagram 1 (3.1 Overview 4-Tier)": `graph TD
+    subgraph TIER1 ["1. TẦNG CLIENT & THIẾT BỊ ĐẦU CUỐI (CLIENT TIER)"]
+        MobileApp["Android Native App<br/>(Kotlin / Jetpack Compose SDK 36)<br/>CameraX • Room DB v4 • Pinch 1x-4x"]
+        WebApp["Web Studio & PWA<br/>(Next.js 16.2.4 / React 19)<br/>Teacher Studio • Student Portal • Admin"]
+    end
+
+    subgraph TIER2 ["2. TẦNG CỔNG GIAO TIẾP & BFF GATEWAY (:3000)"]
+        RateLimit["In-Memory Sliding Window Guard<br/>(lib/api-guard.ts • 20-60 req/min)"]
+        MobileBFF["Mobile All-in-One BFF Route<br/>(POST /api/mobile/grade)"]
+        WebBFF["Core Grading & Alignment Route<br/>(POST /api/grade)"]
+        TTSBFF["Dictation & Audio Stream Bridge<br/>(GET /api/dictation/tts)"]
+        PrismaORM["Prisma Client v5.22.0<br/>(WAL Mode • Busy Timeout 5s)"]
+    end
+
+    subgraph TIER3 ["3. TẦNG LÕI AI MICROSERVICES (:8000) & CLOUD VLM"]
+        YoloService["YOLOv8 Word Detector<br/>(Vertical Overlap 0.40 • imgsz=640)"]
+        ViT5Service["ViT5 Correction Engine<br/>(Dynamic INT8 • Prose Chunking <=160)"]
+        QwenService["Qwen 2.5-0.5B-Instruct SLM<br/>(bfloat16 • TT27 Pedagogical Comments)"]
+        EdgeTTSService["Microsoft Edge-TTS Engine<br/>(HoaiMyNeural / NamMinhNeural • -15%)"]
+        GeminiCloud["Google Gemini Cloud Vision<br/>(gemini-3.1-flash-lite • Key Rotation)"]
+    end
+
+    subgraph TIER4 ["4. TẦNG CƠ SỞ DỮ LIỆU & TRẠM TÍNH TOÁN BIÊN (EDGE APPLIANCE)"]
+        SqliteDB[("SQLite vihand.db<br/>(WAL Mode • 22.4MB)")]
+        DiskStorage[("Lưu trữ Ảnh Vật lý<br/>(/public/uploads/grades/...)")]
+        EdgeHardware["Raspberry Pi 4 (4GB) / Jetson Nano<br/>(Swap 3072MB • CGroups MemoryMax)"]
+        CFTunnel["Cloudflare Named Tunnel<br/>(vihandgrade.click • Outbound TLS)"]
+    end
+
+    %% Tương tác luồng mạng
+    MobileApp -->|"HTTP POST (Base64 Image)"| RateLimit
+    WebApp -->|"HTTP POST / Fetch"| RateLimit
+    RateLimit --> MobileBFF
+    RateLimit --> WebBFF
+    RateLimit --> TTSBFF
+
+    MobileBFF -->|"Parallel Vision Call"| GeminiCloud
+    MobileBFF -->|"Parallel Box Call (POST :8000)"| YoloService
+    MobileBFF -->|"In-process Call"| WebBFF
+
+    WebBFF -->|"Local Correction (POST :8000)"| ViT5Service
+    WebBFF -->|"Pedagogical Comment (POST :8000)"| QwenService
+    TTSBFF -->|"Stream Audio (GET :8000)"| EdgeTTSService
+
+    WebBFF --> PrismaORM
+    MobileBFF --> PrismaORM
+    PrismaORM -->|"Ghi bản ghi Grade"| SqliteDB
+    MobileBFF -->|"Lưu file ảnh jpg"| DiskStorage
+
+    CFTunnel -.->|"Ingress TLS Traffic"| RateLimit
+    EdgeHardware -.->|"Hosting Node"| TIER2
+    EdgeHardware -.->|"Hosting Node"| TIER3
+    EdgeHardware -.->|"Hosting Node"| TIER4`,
+
+      "Diagram 2 (3.2.A Routing Sequence)": `sequenceDiagram
+    autonumber
+    actor User as Giáo viên / Học sinh
+    participant Client as Thiết bị Đầu cuối (App / Web)
+    participant Gateway as Next.js AI Gateway (:3000)
+    participant LocalAI as Python AI Core (:8000)
+    participant Gemini as Google Gemini Cloud VLM
+    participant DB as SQLite / Disk Storage
+
+    User->>Client: Nộp bài thi học sinh (Chính tả / Tập làm văn)
+    Client->>Gateway: Gửi bài thi qua POST /api/grade hoặc /api/mobile/grade
+    Gateway->>Gateway: Kiểm tra Rate Limit (Sliding Window Guard)
+
+    alt Chế độ Có Bài Mẫu Ground Truth (Zero-Token Offline Mode)
+        Gateway->>Gateway: Đối soát 1-1 qua LCS Diff Opcodes (Không ảo giác)
+        Gateway->>LocalAI: Phân tích 6 nhóm lỗi qua parse_vietnamese_syllable
+        LocalAI-->>Gateway: Trả về chi tiết lỗi ngữ âm & barem 7đ-3đ
+        Gateway->>DB: Lưu bản ghi kết quả (tokenCount = 0)
+        Gateway-->>Client: Hoàn thành chấm bài (0đ chi phí Cloud, Zero-Token)
+    else Chế độ Chấm Từ Ảnh Chụp Viết Tay (Hybrid Mode)
+        par Nhận diện Ký tự & Quét Hộp Chữ
+            Gateway->>Gemini: Gửi ảnh sang Gemini 3.1 Flash Lite (Prompt 5 bước)
+            Gemini-->>Gateway: Trích xuất thô original_text & fixed_text
+        and Quét Bounding Box tại Biên
+            Gateway->>LocalAI: Gửi ảnh sang YOLOv8 (:8000/detect-words)
+            LocalAI-->>Gateway: Trả về tọa độ relative BBox [0.0, 1.0]
+        end
+        
+        Gateway->>Gateway: So khớp thứ tự đọc Universal Reading-Order
+        
+        alt Trạm Biên ViT5 Cục bộ Khả dụng
+            Gateway->>LocalAI: Gọi ViT5 INT8 & Qwen 2.5 sinh nhận xét
+            LocalAI-->>Gateway: Kết quả sửa lỗi & 3 phương án nhận xét
+        else Trạm Biên ViT5 Bị Treo / Quá tải (Fallback Mode)
+            Gateway->>Gemini: Dự phòng nóng gọi Gemini Text Grading Prompt
+            Gemini-->>Gateway: Điểm số Thông tư 27 & nhận xét dự phòng
+        end
+
+        Gateway->>DB: Tách Base64 ghi đĩa, lưu bản ghi vào vihand.db
+        Gateway-->>Client: Trả về GradeApiResponse đầy đủ BBox & Điểm số
+    end`,
+
+      "Diagram 3 (3.2.B Decision Flowchart)": `flowchart TD
+    Start(["Bắt đầu Yêu cầu Chấm điểm"]) --> CheckInput{"Đầu vào có văn bản<br/>mẫu Ground Truth không?"}
+    
+    CheckInput -- "CÓ (Đã có bài chuẩn SGK)" --> ZeroTokenRoute["CHẾ ĐỘ ZERO-TOKEN OFFLINE<br/>• So khớp chuỗi LCS Diff 1-1<br/>• Phân tích âm tiết Levenshtein<br/>• Barem Thông tư 27 (7đ-3đ)<br/>• tokenCount = 0 (100% Cục bộ)"]
+    
+    CheckInput -- "KHÔNG" --> CheckMedia{"Đầu vào là Ảnh chụp<br/>hay Văn bản thuần?"}
+    
+    CheckMedia -- "Ảnh chụp bài thi" --> ParallelStep["XỬ LÝ SONG SONG (PARALLEL)<br/>1. Cloud: Gemini 3.1 Flash Lite OCR<br/>2. Edge: YOLOv8 Word Bounding Boxes"]
+    CheckMedia -- "Văn bản nhập tay" --> LocalViT5Check{"Dịch vụ ViT5<br/>cục bộ sẵn sàng?"}
+    
+    ParallelStep --> MapBoxes["Ánh xạ Tọa độ Bounding Box<br/>theo Thứ tự Đọc Tự nhiên"]
+    MapBoxes --> LocalViT5Check
+    
+    LocalViT5Check -- "CÓ (Online)" --> RunViT5["Động cơ ViT5 INT8 Sửa lỗi<br/>+ Qwen 2.5 SLM Sinh Lời Phê Sư Phạm"]
+    LocalViT5Check -- "KHÔNG (Timeout / Lỗi)" --> FallbackGemini["DỰ PHÒNG NÓNG (FALLBACK)<br/>Gemini Text Prompt Barem Bộ GD&ĐT"]
+    
+    ZeroTokenRoute --> SaveData["Tự động Bóc tách Lưu Ảnh ra Đĩa<br/>và Ghi Bản ghi vào SQLite vihand.db"]
+    RunViT5 --> SaveData
+    FallbackGemini --> SaveData
+    
+    SaveData --> Finish(["Trả về Kết quả Chấm hoàn tất"])`,
+
+      "Diagram 4 (3.3 OCR Sequence)": `sequenceDiagram
+    autonumber
+    actor Teacher as Giáo viên Tiểu học
+    participant AndroidApp as Android Native App (Compose)
+    participant CameraX as CameraX Engine (Hardware)
+    participant MobileBFF as Next.js BFF (/api/mobile/grade)
+    participant YOLO as YOLOv8 Word Detector (:8000)
+    participant Gemini as Gemini Cloud Vision VLM
+    participant GradingCore as Grading Engine (LCS Diff)
+    participant DB as SQLite (vihand.db) & Disk
+
+    Teacher->>AndroidApp: Mở màn hình CameraScanScreen & Chụp ảnh bài thi
+    AndroidApp->>CameraX: Khởi tạo chụp ảnh với CAPTURE_MODE_MINIMIZE_LATENCY
+    CameraX-->>AndroidApp: Trả về ImageProxy (Xoay EXIF, tạo chớp flash 90ms)
+    AndroidApp->>AndroidApp: Nén ảnh JPEG Base64 & Thiết lập cấu hình lớp/chế độ
+    AndroidApp->>MobileBFF: POST /api/mobile/grade (imageBase64, studentName, gradingMode)
+
+    activate MobileBFF
+    MobileBFF->>MobileBFF: Kiểm tra Rate Limit Guard (Tối đa 20 req/phút/IP)
+
+    par Gọi Gemini Cloud OCR
+        MobileBFF->>Gemini: Gửi ảnh + OCR Prompt 5 bước (Khóa API xoay vòng)
+        Gemini-->>MobileBFF: Trả về JSON (the_loai, original_text, fixed_text)
+    and Gọi YOLOv8 Biên
+        MobileBFF->>YOLO: POST /detect-words (conf=0.50, iou=0.45, imgsz=640)
+        YOLO-->>MobileBFF: Trả về danh sách hộp từ (rel_x1, rel_y1, rel_w, rel_h)
+    end
+
+    MobileBFF->>GradingCore: Gọi trực tiếp handleGradePost (Trong cùng bộ nhớ Node.js)
+    GradingCore->>GradingCore: Chạy thuật toán LCS Diff Opcodes & Phân rã âm tiết tiếng Việt
+    GradingCore->>GradingCore: Ánh xạ từ sai sang Bounding Box theo Universal Reading Order
+    GradingCore->>GradingCore: Tính điểm Thông tư 27 & Lời nhận xét khích lệ
+    GradingCore-->>MobileBFF: Trả về đối tượng Grade Result hoàn chỉnh
+    MobileBFF->>DB: Bóc tách Base64 ghi file /public/uploads/grades/xyz.jpg
+    MobileBFF->>DB: Lưu thông tin vào Prisma vihand.db (imagePath, scores, errors)
+    MobileBFF-->>AndroidApp: Phản hồi JSON DTO GradeApiResponse (HTTP 200 OK)
+    deactivate MobileBFF
+
+    AndroidApp->>AndroidApp: Lưu bài chấm vào Room DB v4 (vihand_grade.db)
+    AndroidApp->>Teacher: Hiển thị GradingResultScreen (Ảnh thật + BBox cảm ứng + Điểm số)
+    Teacher->>AndroidApp: Dùng cử chỉ 2 ngón tay Pinch-to-zoom (1x-4x) kiểm tra nét chữ`,
+
+      "Diagram 5 (3.4 TTS Dictation Flowchart)": `flowchart TD
+    subgraph Step1 ["1. TIẾP NHẬN & CHUẨN BỊ BÀI ĐỌC SGK"]
+        A1["Giáo viên truy cập Dictation Studio<br/>(Web /teacher/dictation hoặc App Android)"]
+        A2{"Lựa chọn Nguồn Bài Đọc"}
+        A3["Kho bài trích SGK GDPT 2018<br/>(Kết nối tri thức, Cánh diều, Chân trời)"]
+        A4["Sáng tác bài mới bằng AI<br/>(POST /api/dictation/generate - Qwen 2.5 SLM)"]
+        A1 --> A2
+        A2 -- "Bài chuẩn SGK" --> A3
+        A2 -- "Bài mới theo chủ đề" --> A4
+        A3 --> A5["Trích xuất Đoạn văn & Danh sách Từ Khó"]
+        A4 --> A5
+    end
+
+    subgraph Step2 ["2. PHÂN TÁCH NGỮ PHÁP SƯ PHẠM"]
+        B1["Hàm splitIntoPedagogicalClauses<br/>Tách đoạn văn thành các cụm từ ngắn (3-5 từ)"]
+        A5 --> B1
+        B2["Cấu hình Tham số Nhịp đọc Sư phạm:<br/>• Giọng đọc: Cô Hoài My (Nữ) / Thầy Nam Minh (Nam)<br/>• Tốc độ: rate = -15% (Chậm, rõ âm)<br/>• Lặp lại: 2 lần mỗi cụm<br/>• Khoảng dừng: 10 giây giữa các lượt"]
+        B1 --> B2
+    end
+
+    subgraph Step3 ["3. ĐIỀU KHIỂN LUỒNG PHÁT ÂM THANH NEURAL TTS"]
+        B2 --> C1["Bắt đầu Chu trình Đọc Tự động"]
+        C1 --> C2["Yêu cầu luồng âm thanh:<br/>GET /api/dictation/tts?text=...&voice=...&rate=-15%"]
+        C2 --> C3{"Kiểm tra Trạng thái Kết nối"}
+        C3 -- "Kết nối Mạng Tốt" --> C4["Microsoft Edge-TTS Stream<br/>(audio/mpeg trực tiếp, độ trễ <1.0s)"]
+        C3 -- "Mạng Chập chờn" --> C5["Fallback 1: Google Translate TTS Direct"]
+        C3 -- "Ngoại tuyến Hoàn toàn" --> C6["Fallback 2: Android System TTS Cục bộ<br/>(Locale vi-VN offline)"]
+        C4 --> C7["Phát âm thanh lần 1 ra loa trợ giảng"]
+        C5 --> C7
+        C6 --> C7
+        C7 --> C8["Đếm ngược ngắt nghỉ 10 giây<br/>(Học sinh nắn nót viết bài vào vở)"]
+        C8 --> C9["Phát âm thanh lặp lại lần 2"]
+        C9 --> C10{"Còn cụm từ tiếp theo không?"}
+        C10 -- "CÒN" --> C2
+        C10 -- "HẾT" --> C11["Đọc toàn bài lần cuối để học sinh soát lỗi"]
+    end
+
+    subgraph Step4 ["4. KẾT NỐI SANG MODULE CHẤM ĐIỂM"]
+        C11 --> D1["Lưu phiên đọc vào DictationSession DB"]
+        D1 --> D2["Bấm 'Chuyển sang Chấm bài'<br/>(Liên kết đoạn văn làm Ground Truth)"]
+        D2 --> D3(["Sẵn sàng Chấm điểm Zero-Token"])
+    end`,
+
+      "Diagram 6 (3.5 Two-Way Sync Sequence)": `sequenceDiagram
+    autonumber
+    actor Student as Học sinh Tiểu học
+    participant AppUI as Giao diện StudentHomeScreen
+    participant LocalRoom as Room DB v4 (vihand_grade.db)
+    participant Repo as GradeRepository (Android)
+    participant WebBFF as Next.js Web BFF (/api/grades)
+    participant ServerDB as SQLite Máy chủ (prisma/vihand.db)
+    participant AndroidTTS as Android Native TextToSpeech
+
+    Note over Student, ServerDB: GIAI ĐOẠN 1: ĐỒNG BỘ HAI CHIỀU (TWO-WAY SYNC)
+    Student->>AppUI: Khởi động ứng dụng hoặc bấm nút "Làm mới dữ liệu"
+    AppUI->>Repo: Kích hoạt syncTwoWayWithServer()
+    
+    par Chiều 1: Upload Bản ghi Ngoại tuyến (Mobile -> Web)
+        Repo->>LocalRoom: Truy vấn các bài chưa đồng bộ (serverId == null)
+        LocalRoom-->>Repo: Trả về danh sách bài offline
+        loop Từng bài thi offline
+            Repo->>WebBFF: POST /api/grades (ServerGradeSyncRequest)
+            WebBFF->>ServerDB: Ghi bản ghi Grade & sinh cuid()
+            ServerDB-->>WebBFF: Trả về newServerGradeId
+            WebBFF-->>Repo: Phản hồi thành công { success: true, id: cuid }
+            Repo->>LocalRoom: Cập nhật serverId = newServerGradeId
+        end
+    and Chiều 2: Download Bản ghi Mới từ Trường (Web -> Mobile)
+        Repo->>WebBFF: GET /api/grades?class=Lớp 3A1
+        WebBFF->>ServerDB: Truy vấn toàn bộ bảng điểm của lớp
+        ServerDB-->>WebBFF: Trả về danh sách ServerGrades
+        WebBFF-->>Repo: Phản hồi ServerGradesResponse
+        Repo->>LocalRoom: So khớp khóa kết hợp studentName_essayTitle_className
+        Repo->>LocalRoom: Chèn các bài mới tải về vào bảng grade_records
+    end
+    Repo-->>AppUI: Trả về kết quả đồng bộ Triple(uploaded, errors, downloaded)
+
+    Note over Student, AndroidTTS: GIAI ĐOẠN 2: ĐỘNG HÓA SỔ TAY TỪ KHÓ CÁ NHÂN HÓA
+    AppUI->>LocalRoom: Truy vấn các bài làm gần nhất của học sinh hiện tại
+    LocalRoom-->>AppUI: Trả về danh sách GradeRecordEntity (kèm errorsJson)
+    AppUI->>AppUI: Chạy hàm extractDifficultWords(records, fallback)
+    alt Học sinh có bài làm mắc lỗi chính tả
+        AppUI->>AppUI: Trích xuất cặp (originalWord -> explanation) từ errorsJson
+        AppUI->>AppUI: Khử trùng lặp từ không phân biệt hoa/thường (distinctBy)
+    else Học sinh mới hoặc đạt điểm 10 tuyệt đối
+        AppUI->>AppUI: Tự động nạp danh sách chuẩn SGK (DEFAULT_SGK_DIFFICULT_WORDS)
+    end
+    AppUI->>Student: Hiển thị danh sách từ khó với phông chữ viết tay hp001_normal.ttf
+    
+    Student->>AppUI: Bấm vào thẻ từ khó (ví dụ: "trổ hoa")
+    AppUI->>AndroidTTS: speak("trổ hoa", QUEUE_FLUSH, Locale("vi", "VN"))
+    AndroidTTS-->>Student: Phát âm thanh mẫu chuẩn tiếng Việt để học sinh rèn luyện`
+    };
+
+    window.validationResults = {};
+
+    async function runValidation() {
+      for (const [name, code] of Object.entries(diagrams)) {
+        try {
+          const isValid = await mermaid.parse(code);
+          window.validationResults[name] = { valid: true, error: null };
+        } catch (err) {
+          window.validationResults[name] = { valid: false, error: err.message || String(err) };
+        }
+      }
+      console.log("VALIDATION_COMPLETE:", JSON.stringify(window.validationResults, null, 2));
+      document.getElementById('results').innerText = JSON.stringify(window.validationResults, null, 2);
+    }
+
+    runValidation();
+  </script>
+</body>
+</html>

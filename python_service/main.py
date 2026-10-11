@@ -446,6 +446,11 @@ def correct_with_vit5(text: str) -> str:
         logger.info("⚡ Cache hit — bỏ qua ViT5 inference")
         return cached
 
+    enable_vit5 = os.getenv("ENABLE_VIT5", "1").lower() not in ("0", "false", "no", "off")
+    if not enable_vit5 and _model is None:
+        logger.info("⚡ ENABLE_VIT5=0: Bỏ qua ViT5 inference, giữ nguyên văn bản (Gemini API xử lý sửa lỗi)")
+        return text
+
     tokenizer, model = get_model()
 
     lines = [l for l in text.split('\n')]  # Giữ nguyên cả dòng trống
@@ -913,12 +918,13 @@ def build_fallback_pedagogical_comment(creativity_info: dict, errors: list[dict]
 _qwen_model = None
 _qwen_tokenizer = None
 _qwen_lock = threading.Lock()
-ENABLE_QWEN_SLM = os.getenv("ENABLE_QWEN_SLM", "0").lower() in ("1", "true", "yes")
+ENABLE_QWEN_SLM = os.getenv("ENABLE_QWEN_SLM", "1").lower() in ("1", "true", "yes")
 QWEN_MODEL_ID = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
+QWEN_PRECISION = os.getenv("QWEN_PRECISION", "bfloat16").lower()
 
 
 def get_qwen_model():
-    """Tải Lazy load mô hình Qwen2.5-0.5B-Instruct vào bộ nhớ."""
+    """Tải Lazy load mô hình Qwen2.5-0.5B-Instruct vào bộ nhớ với lượng tử hóa tiết kiệm RAM."""
     global _qwen_model, _qwen_tokenizer
     if _qwen_model is not None:
         return _qwen_model, _qwen_tokenizer
@@ -927,7 +933,7 @@ def get_qwen_model():
         if _qwen_model is not None:
             return _qwen_model, _qwen_tokenizer
 
-        logger.info(f"⏳ [Tầng 2] Đang tải mô hình SLM: {QWEN_MODEL_ID}...")
+        logger.info(f"⏳ [Tầng 2] Đang tải mô hình SLM: {QWEN_MODEL_ID} (chế độ {QWEN_PRECISION})...")
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -945,14 +951,44 @@ def get_qwen_model():
                 torch.set_num_threads(min(4, os.cpu_count() or 4))
             except Exception:
                 pass
-            model = AutoModelForCausalLM.from_pretrained(
-                QWEN_MODEL_ID,
-                torch_dtype=torch.float32
-            )
+
+            if QWEN_PRECISION in ("int8", "qint8"):
+                logger.info("🔧 [Tầng 2] Tải model và lượng tử hóa Dynamic INT8 trên CPU...")
+                raw_model = AutoModelForCausalLM.from_pretrained(
+                    QWEN_MODEL_ID,
+                    torch_dtype=torch.float32
+                )
+                try:
+                    for layer in raw_model.model.layers:
+                        torch.quantization.quantize_dynamic(
+                            layer, {torch.nn.Linear}, dtype=torch.qint8, inplace=True
+                        )
+                    model = raw_model
+                    logger.info("✅ [Tầng 2] Lượng tử hóa INT8 các transformer layers thành công!")
+                except Exception as q_err:
+                    logger.warning(f"⚠️ [Tầng 2] Quantize INT8 thất bại ({q_err}), chuyển sang bfloat16")
+                    model = AutoModelForCausalLM.from_pretrained(
+                        QWEN_MODEL_ID,
+                        torch_dtype=torch.bfloat16
+                    )
+            elif QWEN_PRECISION in ("float32", "fp32"):
+                logger.info("ℹ️ [Tầng 2] Tải model Qwen chế độ Float32 chuẩn...")
+                model = AutoModelForCausalLM.from_pretrained(
+                    QWEN_MODEL_ID,
+                    torch_dtype=torch.float32
+                )
+            else:
+                # Mặc định: bfloat16 (16-bit half precision - tiết kiệm ~75% RAM, chỉ tốn ~577MB thay vì ~2.3GB)
+                logger.info("🔧 [Tầng 2] Tải model với lượng tử hóa 16-bit bfloat16 (tiết kiệm ~75% RAM)...")
+                model = AutoModelForCausalLM.from_pretrained(
+                    QWEN_MODEL_ID,
+                    torch_dtype=torch.bfloat16
+                )
+
         model.eval()
         _qwen_tokenizer = tokenizer
         _qwen_model = model
-        logger.info(f"✅ [Tầng 2] Đã tải thành công SLM {QWEN_MODEL_ID} trên thiết bị {device}")
+        logger.info(f"✅ [Tầng 2] Đã tải thành công SLM {QWEN_MODEL_ID} ({QWEN_PRECISION}) trên thiết bị {device}")
         return _qwen_model, _qwen_tokenizer
 
 
@@ -1048,9 +1084,9 @@ def generate_pedagogical_comment_tier2(
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=45,
+                max_new_tokens=32,
                 do_sample=True,
-                temperature=0.8,
+                temperature=0.7,
                 top_p=0.9,
                 repetition_penalty=1.15,
                 num_return_sequences=1,
@@ -1610,15 +1646,20 @@ async def grade_endpoint(req: GradeRequest):
 
 @app.on_event("startup")
 async def startup_event():
-    """Tải model lên RAM ngay khi khởi động server, tránh chậm ở lần chấm đầu tiên"""
-    logger.info("==========================================")
-    logger.info("ĐANG TẢI MÔ HÌNH VIT5 LÊN RAM...")
-    logger.info("Vui lòng đợi khoảng 10-30 giây...")
-    try:
-        get_model()
-        logger.info("✅ TẢI MÔ HÌNH VIT5 THÀNH CÔNG!")
-    except Exception as e:
-        logger.error(f"❌ LỖI TẢI MÔ HÌNH VIT5: {e}")
+    enable_vit5 = os.getenv("ENABLE_VIT5", "1").lower() not in ("0", "false", "no", "off")
+    if enable_vit5:
+        logger.info("==========================================")
+        logger.info("ĐANG TẢI MÔ HÌNH VIT5 LÊN RAM...")
+        logger.info("Vui lòng đợi khoảng 10-30 giây...")
+        try:
+            get_model()
+            logger.info("✅ TẢI MÔ HÌNH VIT5 THÀNH CÔNG!")
+        except Exception as e:
+            logger.error(f"❌ LỖI TẢI MÔ HÌNH VIT5: {e}")
+    else:
+        logger.info("==========================================")
+        logger.info("ℹ️ Chế độ ENABLE_VIT5=0: Tạm tắt ViT5 để khởi động siêu nhanh.")
+        logger.info("   YOLOv8 & Gemini API sẽ đảm nhận xử lý.")
 
     try:
         import sys
@@ -1636,6 +1677,9 @@ async def startup_event():
 @app.post("/preload")
 def preload_model():
     """Tải model trước để request đầu tiên không bị chậm (dùng cho API trigger)"""
+    enable_vit5 = os.getenv("ENABLE_VIT5", "1").lower() not in ("0", "false", "no", "off")
+    if not enable_vit5:
+        return {"status": "vit5 disabled (ENABLE_VIT5=0)"}
     try:
         get_model()
         return {"status": "model loaded"}
@@ -1724,6 +1768,10 @@ async def tts_endpoint(text: str, voice: str = "vi-VN-HoaiMyNeural", rate: str =
         )
     except HTTPException:
         raise
+    except Exception as e:
+        logger.error(f"Lỗi Edge-TTS: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi tạo âm thanh Edge-TTS: {str(e)}")
+
 @app.get("/qwen/status")
 async def qwen_status_endpoint():
     """Kiểm tra trạng thái cấu hình và tải của Qwen2.5-0.5B-Instruct."""
@@ -1733,6 +1781,8 @@ async def qwen_status_endpoint():
     return {
         "enabled": ENABLE_QWEN_SLM,
         "model_id": QWEN_MODEL_ID,
+        "precision": QWEN_PRECISION,
+        "quantized": QWEN_PRECISION in ("bfloat16", "bf16", "int8", "qint8"),
         "is_loaded": is_loaded,
         "device": "cuda" if has_cuda else "cpu",
         "description": "Tầng 2: SLM Pedagogical Paraphraser (Qwen2.5-0.5B-Instruct)"
