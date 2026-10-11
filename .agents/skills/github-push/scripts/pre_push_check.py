@@ -4,10 +4,10 @@
 pre_push_check.py — Automated pre-push safety auditor for ViHand Grade.
 
 Performs:
-  1. Secret leak scanning (API keys, HuggingFace tokens, private keys) in diff and untracked files.
+  1. Secret leak scanning (API keys, access tokens, private keys) in diff and untracked files.
   2. Large file size checks (>10MB warning, >50MB critical, >100MB GitHub limit).
   3. Database protection check (ensures SQLite vihand.db is never committed).
-  4. Remote URL sanitization (masks credentials in 'hf' and other remotes).
+  4. Remote URL sanitization (masks credentials in remotes).
   5. Vietnamese UTF-8 filename quotepath validation.
 """
 

@@ -1,17 +1,16 @@
 ---
 name: github-push
 description: >
-  Đẩy toàn bộ thay đổi của dự án ViHand Grade lên GitHub (origin) và tùy chọn HuggingFace Spaces (hf)
-  một cách an toàn — tự động quét lộ secret/token, kiểm tra file nhị phân lớn (>10MB), bảo vệ database
-  SQLite vihand.db, hỗ trợ tiếng Việt UTF-8 trên Windows, tạo conventional commit message thông minh,
-  và xử lý push an toàn. Kích hoạt khi người dùng nói: "push lên github", "đẩy code lên", "commit và push",
-  "git push", "upload lên github", hoặc tương tự.
+  Đẩy toàn bộ thay đổi của dự án ViHand Grade lên GitHub (origin) một cách an toàn — tự động quét lộ secret/token,
+  kiểm tra file nhị phân lớn (>10MB), bảo vệ database SQLite vihand.db, hỗ trợ tiếng Việt UTF-8 trên Windows, tạo conventional
+  commit message thông minh, và xử lý push an toàn. Kích hoạt khi người dùng nói: "push lên github", "đẩy code lên",
+  "commit và push", "git push", "upload lên github", hoặc tương tự.
 ---
 
 # GitHub Push Skill (ViHand Grade)
 
-Mục tiêu: Đẩy toàn bộ thay đổi của project lên GitHub (`origin`) và tùy chọn Hugging Face Spaces (`hf`) một cách an toàn tuyệt đối:
-- **Không lộ API Key / Access Token** (Gemini, HuggingFace, OpenAI).
+Mục tiêu: Đẩy toàn bộ thay đổi của project lên GitHub (`origin`) một cách an toàn tuyệt đối:
+- **Không lộ API Key / Access Token** (Gemini, OpenAI, Anthropic).
 - **Không bao giờ push database SQLite chứa dữ liệu học sinh** (`prisma/*.db*`).
 - **Không commit file nhị phân quá nặng** (>10MB, >50MB) làm phình repo vĩnh viễn.
 - **Hiển thị tiếng Việt UTF-8 chuẩn xác trên Windows PowerShell** (không bị mã hóa `\306\260...`).
@@ -38,10 +37,10 @@ python .agents/skills/github-push/scripts/pre_push_check.py
 ```
 
 Script sẽ tự động thực hiện trong 1 giây:
-1. Quét các pattern API Key (`sk-`, `AIza`, `hf_`, private keys) trong cả git diff và untracked files.
+1. Quét các pattern API Key (`sk-`, `AIza`, `ghp_`, private keys) trong cả git diff và untracked files.
 2. Kiểm tra an toàn database: Đảm bảo không có file `prisma/*.db` hay `vihand.db` nào bị stage.
 3. Kiểm tra kích thước file: Cảnh báo file >10MB, chặn file >50MB / >100MB (tránh bị GitHub reject).
-4. Che giấu credentials (mask token HuggingFace nếu có).
+4. Che giấu credentials (mask các token/thông tin nhạy cảm nếu có trong remote URL).
 
 ### Xử lý kết quả kiểm tra:
 - **Nếu trạng thái `BLOCKED` hoặc có `CRITICAL ALERT`:**
@@ -137,9 +136,7 @@ git commit -m "<commit message đã được người dùng xác nhận>"
 
 ---
 
-## Bước 6 — Push lên Remote
-
-### 6a. Push lên GitHub (Bắt buộc)
+## Bước 6 — Push lên GitHub (origin)
 
 ```powershell
 $branch = (git branch --show-current).Trim()
@@ -153,20 +150,6 @@ git push origin $branch
 ```
 *Lưu ý:* Nếu có conflict rebase, báo ngay cho người dùng. Tuyệt đối KHÔNG tự ý dùng `--force`.
 
-### 6b. Push lên Hugging Face Spaces (Tùy chọn)
-
-Kiểm tra an toàn xem có remote `hf` hay không:
-```powershell
-git remote | Select-String "^hf$"
-```
-> 🔒 **CẢNH BÁO BẢO MẬT:** Tuyệt đối **KHÔNG** dùng lệnh `git remote -v` hiển thị ra chat vì URL remote `hf` thường nhúng thẳng token Hugging Face.
-
-Nếu có remote `hf` **VÀ** người dùng yêu cầu đồng bộ lên Hugging Face:
-```powershell
-$branch = (git branch --show-current).Trim()
-git push hf $branch
-```
-
 ---
 
 ## Bước 7 — Báo cáo kết quả
@@ -178,4 +161,4 @@ git log -1 --oneline
 Báo cáo cho người dùng:
 - ✅ Commit hash và message vừa tạo.
 - ✅ Tên branch đã push.
-- ✅ Remote đã cập nhật (`origin` GitHub, và `hf` HuggingFace nếu có).
+- ✅ Remote đã cập nhật (`origin` GitHub).
