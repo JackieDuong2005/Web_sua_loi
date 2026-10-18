@@ -56,7 +56,7 @@ function getApiKeys(): string[] {
 function getApiKey(): string {
   const keys = getApiKeys()
   if (!keys.length) return ""
-  return keys[Math.floor(Math.random() * keys.length)]
+  return keys[0]
 }
 
 // ============================================================
@@ -102,7 +102,7 @@ async function runGeminiOCR(
 ): Promise<{ original_text: string; fixed_text: string; the_loai: string; tokenCount: number }> {
   const keys = getApiKeys()
   const candidateKeys = keys.length > 0 ? keys : (apiKey ? [apiKey] : [])
-  const candidateModels = [GEMINI_MODEL, "gemini-2.5-flash"]
+  const candidateModels = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
 
   let lastError: any = null
   for (const model of candidateModels) {

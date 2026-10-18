@@ -170,7 +170,7 @@ Hệ sinh thái **ViHand Grade** được thiết kế theo mô hình lai **Hybr
 │  ┌────────────────────────────────────────────────────────────┐ │ │ ┌──────────────────────────┐ │
 │  │ YOLOv8 Word Detector (yolo_detector.py)                    │ │ │ │ Google Gemini API        │ │
 │  │ • Trọng số: best.pt (640x640, imgsz=640)                   │ │ │ │ • gemini-3.1-flash-lite  │ │
-│  │ • Thuật toán Vertical Overlap (0.40) gom dòng tự nhiên     │ │ │ │ • gemini-2.5-flash       │ │
+│  │ • Thuật toán Vertical Overlap (0.40) gom dòng tự nhiên     │ │ │ │ • gemini-3.5-flash-lite  │ │
 │  │ • Chuẩn hóa tọa độ tương đối rel_x, rel_y ∈ [0, 1]         │ │ │ │ • Xoay vòng Multi-Keys   │ │
 │  ├────────────────────────────────────────────────────────────┤ │ │ │ • Prompt trích xuất thô  │ │
 │  │ ViT5 Vietnamese Correction Engine (main.py)                │ │ │ │   100% giữ nguyên lỗi    │ │
@@ -395,7 +395,7 @@ Tất cả 6 sơ đồ kiến trúc và quy trình dưới đây được thiế
 │  ┌────────────────────────┐  │ │  ┌──────────────────────────────┐  ┌──────────────────────────┐ │
 │  │ Google Gemini Cloud    │  │ │  │ YOLOv8 Word Detector         │  │ ViT5 Correction Engine   │ │
 │  │ • gemini-3.1-flash-lite│  │ │  │ • best.pt (640x640)          │  │ • Dynamic INT8 CPU       │ │
-│  │ • gemini-2.5-flash FB  │  │ │  │ • Vertical Overlap (0.40)    │  │ • Prose Chunking <=160   │ │
+│  │ • gemini-3.5-flash-lite │  │ │  │ • Vertical Overlap (0.40)    │  │ • Prose Chunking <=160   │ │
 │  │ • Zero-Loss Prompt     │  │ │  │ • Rel BBoxes [0.0, 1.0]      │  │ • 6 Phân nhóm lỗi ngữ âm │ │
 │  │ • Xoay vòng Multi-Keys │  │ │  └──────────────────────────────┘  └──────────────────────────┘ │
 │  └────────────────────────┘  │ │  ┌──────────────────────────────┐  ┌──────────────────────────┐ │

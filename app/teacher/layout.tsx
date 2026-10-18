@@ -14,18 +14,22 @@ export default function TeacherLayout({
   const [isAuthed, setIsAuthed] = useState(false)
 
   useEffect(() => {
-    const user = localStorage.getItem("vihand_user")
-    if (!user) {
-      router.push("/")
-      return
+    try {
+      const user = localStorage.getItem("vihand_user")
+      if (!user) {
+        window.location.replace("/")
+        return
+      }
+      const parsed = JSON.parse(user)
+      if (parsed.role !== "teacher") {
+        window.location.replace("/")
+        return
+      }
+      setIsAuthed(true)
+    } catch {
+      window.location.replace("/")
     }
-    const parsed = JSON.parse(user)
-    if (parsed.role !== "teacher") {
-      router.push("/")
-      return
-    }
-    setIsAuthed(true)
-  }, [router])
+  }, [])
 
   if (!isAuthed) {
     return (

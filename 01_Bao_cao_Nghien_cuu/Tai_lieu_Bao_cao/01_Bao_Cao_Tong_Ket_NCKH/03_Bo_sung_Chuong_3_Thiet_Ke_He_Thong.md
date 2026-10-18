@@ -1,34 +1,35 @@
 # 📘 NỘI DUNG BỔ SUNG & CHỈNH SỬA CHO CHƯƠNG 3
 ## CHƯƠNG 3 — THIẾT KẾ HỆ THỐNG VÀ MÔ HÌNH
 
-> **Hướng dẫn sử dụng cho tác giả:**
-> Mở file `Báo cáo tổng eureka - Thiết bị chấm điểm.docx`, tìm đến Chương 3 để cập nhật: Sơ đồ kiến trúc Web-centric 4 tầng, Bảng chi tiết 9 bước tiền xử lý ảnh Jimp, Barem chấm điểm phân tách 2 phân môn (Chính tả 7-3 vs Tập làm văn 4-3-2-1), Lưu đồ thuật toán đối soát không ảo giác và Chính sách bảo vệ dữ liệu trẻ em theo Nghị định 13/2023/NĐ-CP.
+> **Hướng dẫn tác giả sử dụng tài liệu:**
+> Mở file `Báo cáo tổng eureka - Thiết bị chấm điểm.docx`, tìm đến Chương 3 để cập nhật: Sơ đồ kiến trúc 4 tầng hoàn chỉnh, Bảng chi tiết 9 bước tiền xử lý ảnh Jimp, Barem chấm điểm phân tách 2 phân môn (Chính tả 7-3 vs Tập làm văn 4-3-2-1), Quy trình tích hợp YOLOv8 Bounding Box, Lưu đồ thuật toán Ground-Truth không ảo giác và Chính sách bảo vệ dữ liệu trẻ em theo Nghị định 13/2023/NĐ-CP.
 
 ---
 
 ### 3.1. Cập nhật Sơ đồ Kiến trúc Tổng thể Hệ thống (Mục 3.1)
 
-Thay thế sơ đồ cũ bằng sơ đồ kiến trúc 4 tầng hoàn chỉnh (Web-Centric Architecture):
+* **Vị trí chèn trong file Word:** Thay thế sơ đồ kiến trúc cũ tại **Mục 3.1: Kiến trúc tổng thể hệ thống** (trang 34).
+* **Câu neo định vị trong Word (Anchor Text):** Tìm tiêu đề `3.1. Kiến trúc tổng thể hệ thống` và thay thế đoạn mô tả / hình vẽ cũ bằng sơ đồ kiến trúc 4 tầng dưới đây:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        TẦNG 1: GIAO DIỆN NGƯỜI DÙNG (CLIENT LAYER)                     │
-│  - Thiết bị giáo viên: Trình duyệt Desktop / Tablet / Smartphone (PWA)                  │
-│  - Chức năng: Điều khiển Đọc chính tả Web (/teacher/dictation), Loa giảng dạy lớp học, │
-│               Chụp ảnh bài viết học sinh, Duyệt điểm & Tinh chỉnh thanh trượt (HITL)   │
+│                        TẦNG 1: GIAO DIỆN NGƯỜI DÙNG (CLIENT SURFACES)                  │
+│  - Ứng dụng Android Native (android_app/): Kotlin, CameraX, Compose, Retrofit,         │
+│    Chụp ảnh bài thi, Hiển thị Bounding Box từ sai trực quan, Server-Only Storage.       │
+│  - Cổng thông tin Web (PWA): Quản lý lớp học, Điều khiển đọc chính tả (/dictation),   │
+│    Canvas chấm bài giáo viên (/grade), Tinh chỉnh thanh trượt điểm số (HITL).          │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
-                                            │ HTTP / WebSocket
+                                            │ HTTP / WebSocket / Multipart
                                             ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                    TẦNG 2: ỨNG DỤNG TRUNG TÂM (NEXT.JS 16 APP ROUTER)                  │
-│  - Frontend: React 19, Tailwind CSS 4, Shadcn/ui Components, Recharts Biểu đồ         │
-│  - API Routes:                                                                         │
-│    + /api/preprocess : Pipeline Jimp 9 bước (Nắn góc Deskew, Khử bóng, CLAHE, Lọc ô ly)│
-│    + /api/ocr        : Gọi Google Gemini SDK trích xuất văn bản thô giữ nguyên lỗi sai │
-│    + /api/grade      : Bộ điều phối chấm điểm Đa phân môn (Chính tả vs Tập làm văn)   │
-│    + /api/dictation  : Quản lý bài đọc SGK, phiên đọc, streaming âm thanh Edge-TTS     │
-│    + /api/admin      : Quản trị tài khoản, lớp học, chính sách lưu trữ Soft Purge      │
-│  - Bảo vệ: Rate Limiting Guard (lib/api-guard.ts - giới hạn 30 req/phút/IP)            │
+│               TẦNG 2: CỔNG ĐIỀU PHỐI & MOBILE BFF GATEWAY (NEXT.JS 16 APP ROUTER)       │
+│  - API Routes Điều phối:                                                               │
+│    + /api/mobile/grade : Mobile BFF Gateway chuyên dụng cho Android Native App         │
+│    + /api/grade        : Bộ điều phối Web chấm bài Đa phân môn (Chính tả vs Làm văn)   │
+│    + /api/preprocess   : Pipeline Jimp 9 bước (Nắn góc Deskew, Khử bóng, Lọc ô ly)     │
+│    + /api/dictation    : Quản lý kho ngữ liệu SGK Lớp 1-5, điều phối phiên đọc mẫu     │
+│    + /api/admin        : Quản trị tài khoản RBAC, kích hoạt Soft Purge (Nghị định 13) │
+│  - Bảo vệ hệ thống: Sliding Window Rate Limiter (lib/api-guard.ts - 30 req/phút/IP)    │
 └─────────────────────────────┬───────────────────────────┬──────────────────────────────┘
                               │                           │
               Local REST      │                           │ Cloud HTTPS
@@ -36,25 +37,135 @@ Thay thế sơ đồ cũ bằng sơ đồ kiến trúc 4 tầng hoàn chỉnh (W
 ┌──────────────────────────────────────────────┐  ┌──────────────────────────────────────┐
 │       TẦNG 3: AI MICROSERVICE (PYTHON)       │  │        TẦNG 4: CLOUD VISION VLM      │
 │ - 1. ViT5 Sửa lỗi (chamdentimem) INT8 Quant  │  │ Google Gemini 3.1 Flash Lite API     │
-│ - 2. Microsoft Edge-TTS Audio Streamer (/tts)│  │ - Nhận ảnh đã nắn thẳng qua Jimp     │
+│ - 2. YOLOv8 Word Detector (/detect-words)    │  │ - Nhận diện ảnh đã nắn thẳng qua Jimp│
 │ - 3. Qwen2.5-0.5B-Instruct SLM (/qwen)       │  │ - Trích xuất nguyên gốc original_text│
-│ - 4. SequenceMatcher & Phân loại 6 nhóm lỗi  │  │ - Nhiệt độ cố định temperature = 0.1 │
+│ - 4. Microsoft Edge-TTS Audio Streamer (/tts)│  │ - Nhiệt độ cố định temperature = 0.1 │
+│ - 5. SequenceMatcher & Phân loại 6 nhóm lỗi  │  │ - Bảo toàn 100% lỗi chính tả gốc     │
 └──────────────────────────────────────────────┘  └──────────────────────────────────────┘
                               │
                               ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                          TẦNG CƠ SỞ DỮ LIỆU & LƯU TRỮ TỆP TIN                          │
-│  - Prisma ORM 5: SQLite Database (vihand.db) nhẹ ~16MB (User, Class, Grade, Session...)│
-│  - Hệ thống tệp cục bộ: Thư mục public/uploads/grades/ lưu ảnh bài thi học sinh        │
-│  - Quản trị vòng đời: Tự động ẩn danh hóa & xóa ảnh bài thi sau 365 ngày (Nghị định 13)│
+│  - Prisma ORM 5: Cơ sở dữ liệu SQLite cục bộ (prisma/vihand.db) nhẹ và bảo mật cao     │
+│  - Lưu trữ đĩa phân tách: Thư mục public/uploads/grades/ lưu ảnh bài thi học sinh      │
+│  - Quản trị vòng đời: Tự động ẩn danh hóa & xóa tệp ảnh sau 365 ngày (Nghị định 13)   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2. Kiến trúc Tổng thể Luồng Đọc Chính Tả Sư Phạm & Khóa Ground Truth (Mục 3.2 Mới)
+
+* **Vị trí chèn trong file Word:** Tạo mục mới **Mục 3.2: Kiến trúc tổng thể luồng đọc chính tả sư phạm & cơ chế khóa Ground Truth** ngay sau Mục 3.1 (trang 35, trước mục tiền xử lý ảnh).
+* **Câu neo định vị trong Word (Anchor Text):** Chèn ngay sau phần kết luận của sơ đồ kiến trúc 4 tầng Mục 3.1.
+* **Hành động:** Chèn toàn bộ nội dung lý thuyết, bảng tham số và lưu đồ hoạt động dưới đây vào tài liệu:
+
+#### 3.2.1. Đặt vấn đề và Mục tiêu Sư phạm của Phân hệ Đọc Chính Tả
+Trong phân môn Tiếng Việt cấp Tiểu học (theo Chương trình GDPT 2018), các tiết học Chính tả (Nghe – Viết) đóng vai trò nền tảng trong việc hình thành kỹ năng viết chuẩn chính tả, rèn luyện quy tắc ngữ âm và tốc độ viết của học sinh từ Lớp 1 đến Lớp 5. Tuy nhiên, trong thực tế giảng dạy, giáo viên tiểu học gặp phải các thách thức lớn:
+1. **Tính bất đối xứng về tốc độ:** Tốc độ chép bài của học sinh trong cùng một lớp có sự chênh lệch đáng kể (đặc biệt là học sinh Lớp 1, Lớp 2 mới chuyển giai đoạn từ viết chì sang viết mực). Giáo viên đọc quá nhanh sẽ khiến học sinh bị bỏ từ, mất nhịp; đọc quá chậm sẽ làm phân tán sự chú ý của các em viết nhanh.
+2. **Gánh nặng thể lực và giọng đọc:** Việc phải lặp đi lặp lại từng cụm từ 2 đến 3 lần với âm lượng lớn trong suốt tiết học 35–40 phút gây mệt mỏi thanh quản cho giáo viên, đồng thời khó duy trì được âm sắc, cao độ và độ chuẩn thanh điệu đồng đều qua các tiết học.
+3. **Mất liên kết giữa Đọc và Chấm:** Trong các hệ thống AI thông thường, phân hệ nhận dạng và chấm bài hoạt động tách rời hoàn toàn với bài đọc trên lớp. Giáo viên sau khi đọc xong phải mất thời gian nhập lại hoặc chọn lại bài mẫu, dễ dẫn đến sai lệch ngữ liệu đối chiếu.
+
+Để giải quyết triệt để các vấn đề trên, hệ sinh thái ViHand Grade thiết kế phân hệ **Trợ giảng số Đọc chính tả thông minh** kết hợp **Cơ chế khóa ngữ liệu chuẩn (Ground Truth Locking)** với mục tiêu:
+* Tự động hóa hoàn toàn việc phân rã câu thành các cụm từ ngữ nghĩa phù hợp nhịp viết của lứa tuổi học sinh tiểu học.
+* Cung cấp động cơ phát âm thanh đa tầng (Multi-tier TTS) với âm điệu chuẩn tiếng Việt sư phạm, hoạt động ổn định cả khi trực tuyến lẫn khi mất mạng (Offline Edge).
+* Đóng gói toàn bộ bài đọc mẫu thành một phiên học tập (`DictationSession`), truyền thẳng sang phân hệ chấm bài chỉ bằng 1 cú nhấp chuột (1-Click Handoff), loại bỏ hoàn toàn hiện tượng AI bịa lỗi (Zero-Hallucination).
+
+---
+
+#### 3.2.2. Kiến trúc 4 Khối Chức Năng của Luồng Đọc Chính Tả
+
+Phân hệ Đọc chính tả được cấu thành từ 4 khối chức năng liên hoàn:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│               KHỐI 1: QUẢN LÝ & CHUẨN HÓA NGỮ LIỆU ĐẦU VÀO (INPUT CORPUS)               │
+│ - Kho ngữ liệu số hóa SGK Lớp 1 - 5 (Kết nối tri thức, Chân trời sáng tạo, Cánh diều).  │
+│ - Bộ tạo sinh văn bản tự động qua SLM Qwen2.5-0.5B-Instruct theo chủ đề giáo viên yêu cầu.│
+│ - Bộ bóc tách "Từ khó chính tả" (Hard Words Extraction): Tự động phát hiện các từ chứa   │
+│   âm đầu dễ lẫn (tr/ch, s/x, d/r/gi), vần phức (oang, uych) và dấu thanh (hỏi/ngã).     │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│            KHỐI 2: ĐIỀU PHỐI NHỊP ĐIỆU SƯ PHẠM (PEDAGOGICAL RHYTHM ORCHESTRATOR)        │
+│ - Thuật toán phân rã cụm câu (Pedagogical Clause Splitter): Cắt câu dài thành các cụm  │
+│   từ tự nhiên từ 4 đến 7 từ, không ngắt đôi từ ghép hoặc cụm chủ - vị cố định.         │
+│ - Bộ đếm nhịp nghỉ thích ứng: T_pause = Max(Số từ × Tham số nhịp lớp, T_min).          │
+│ - Chế độ Trình chiếu Phòng học (Classroom Theater): Bộ đếm ngược trực quan hiển thị    │
+│   trên màn hình máy chiếu giúp cả lớp đồng bộ nhịp viết mà không gây áp lực.           │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│             KHỐI 3: ĐỘNG CƠ PHÁT ÂM THANH ĐA TẦNG (MULTI-TIER AUDIO ENGINE)            │
+│ - Tier 1 (Cloud / Edge-TTS): Giọng đọc Neural AI vi-VN-HoaiMyNeural (nữ Bắc Bộ ấm áp)  │
+│   hoặc vi-VN-NamMinhNeural (nam Bắc Bộ dõng dạc), điều chỉnh tốc độ -15% chuẩn đọc mẫu. │
+│ - Tier 2 (Offline Edge / Piper VITS ONNX): Tổng hợp âm thanh cục bộ tại máy chủ phòng  │
+│   học hoặc Raspberry Pi (tần số lấy mẫu 22.05 kHz), sẵn sàng hoạt động khi mất Internet.│
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│         KHỐI 4: LƯU TRỮ PHIÊN & KHÓA GROUND TRUTH (SESSION & GROUND TRUTH HANDOFF)      │
+│ - Lưu phiên làm việc vào SQLite vihand.db (Bảng DictationSession) kèm toàn bộ metadata. │
+│ - Nút bấm 1-Click Handoff: Chuyển toàn bộ ngữ liệu chuẩn sang phân hệ Chấm bài         │
+│   (/teacher/grade?sessionId=...), khóa cứng bài đọc làm căn cứ đối soát tuyệt đối.     │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 3.2. Bổ sung Bảng Chi tiết 9 Bước Pipeline Tiền Xử Lý Ảnh (Mục 3.2.1)
+#### 3.2.3. Bảng Cấu Hình Tham Số Nhịp Đọc Chuẩn Theo Khối Lớp Tiểu Học
 
-Thay thế hoặc bổ sung bảng thông số kỹ thuật 9 bước trong `lib/image-processor.ts`:
+Dựa trên chuẩn kiến thức, kỹ năng của Chương trình Giáo dục phổ thông 2018 đối với phân môn Tiếng Việt tiểu học, hệ thống thiết lập bảng thông số mặc định cho từng khối lớp như sau:
+
+| Khối lớp | Tốc độ viết chuẩn<br>(chữ / 15 phút) | Độ dài cụm từ ngắt nhịp<br>(Số từ / lần đọc) | Thời gian dừng nghỉ<br>(giây / từ) | Số lần lặp lại mặc định<br>(Lần / cụm từ) | Tốc độ đọc TTS<br>(Pitch / Rate) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Lớp 1** (Học kỳ 2) | 30 – 35 chữ | **2 – 3 từ** | **2.5 – 3.0 giây** | 3 lần | -20% (Chậm, rõ âm) |
+| **Lớp 2** | 45 – 50 chữ | **3 – 4 từ** | **2.0 – 2.2 giây** | 2 – 3 lần | -15% (Chuẩn sư phạm) |
+| **Lớp 3** | 65 – 70 chữ | **4 – 5 từ** | **1.6 – 1.8 giây** | 2 lần | -10% (Tự nhiên) |
+| **Lớp 4** | 80 – 85 chữ | **5 – 7 từ** | **1.3 – 1.5 giây** | 2 lần | 0% (Bình thường) |
+| **Lớp 5** | 90 – 100 chữ | **6 – 8 từ** | **1.1 – 1.3 giây** | 1 – 2 lần | 0% (Chuẩn văn bản) |
+
+> **Công thức tính thời gian dừng nghỉ giữa các lần đọc:**
+>
+> $$T_{\text{pause}} = \max\left(N_{\text{words}} \times t_{\text{grade\_factor}} + t_{\text{extra\_punctuation}},\, T_{\min}\right)$$
+>
+> Trong đó:
+> * $N_{\text{words}}$: Số lượng từ trong cụm từ ngữ nghĩa vừa đọc.
+> * $t_{\text{grade\_factor}}$: Hệ số thời gian theo khối lớp (giây/từ) theo bảng trên.
+> * $t_{\text{extra\_punctuation}}$: Thời gian bù thêm nếu cuối cụm có dấu chấm ($+1.5\text{s}$) hoặc dấu phẩy ($+0.8\text{s}$) để học sinh kịp viết hoa hoặc ngắt nhịp.
+> * $T_{\min}$: Thời gian dừng tối thiểu ($3.0\text{s}$).
+
+---
+
+#### 3.2.4. Lưu Đồ Hoạt Động của Nhánh Đọc Chính Tả Sư Phạm
+
+* **Tên hình ảnh:** `Hình 3.2: Lưu đồ hoạt động của phân hệ Đọc chính tả sư phạm và cơ chế khóa Ground Truth`
+* **Đường dẫn tệp ảnh chất lượng cao:** `01_Bao_cao_Nghien_cuu/Tai_lieu_Bao_cao/01_Bao_Cao_Tong_Ket_NCKH/hinh_3_2_luu_do_doc_chinh_ta.jpg`
+
+![Hình 3.2: Lưu đồ hoạt động của phân hệ Đọc chính tả sư phạm và cơ chế khóa Ground Truth](file:///c:/Users/Jackie%20Duong/Desktop/Web_sua_loi/01_Bao_cao_Nghien_cuu/Tai_lieu_Bao_cao/01_Bao_Cao_Tong_Ket_NCKH/hinh_3_2_luu_do_doc_chinh_ta.jpg)
+
+**Thuyết minh chi tiết các bước trong lưu đồ hoạt động (Hình 3.2):**
+1. **Bước 1 (Bắt đầu):** Giáo viên truy cập vào giao diện phân hệ Đọc chính tả (`/teacher/dictation`) trên Cổng thông tin Web.
+2. **Bước 2 (Nạp ngữ liệu bài đọc):** Giáo viên lựa chọn 1 trong 3 nguồn văn bản: (1) Chọn bài đọc mẫu có sẵn trong SGK Tiếng Việt Lớp 1–5; (2) Dán văn bản tự chọn từ giáo án; (3) Yêu cầu mô hình ngôn ngữ nhỏ Qwen2.5-0.5B-Instruct tạo bài viết mới theo chủ đề bài học.
+3. **Bước 3 (Bóc tách từ khó & Luyện viết bảng con):** Hệ thống phân tích văn bản và tự động hiển thị danh sách 5–8 từ khó chính tả tiêu biểu (âm đầu, vần, dấu hỏi ngã). Giáo viên sử dụng danh sách này để hướng dẫn cả lớp luyện viết vào bảng con trước khi bước vào bài viết chính thức.
+4. **Bước 4 (Cấu hình tham số sư phạm):** Hệ thống tải bộ tham số mặc định theo khối lớp (Lớp 1 đến 5). Giáo viên có thể tùy chỉnh: số lần đọc lặp lại (1–3 lần), thời gian dừng giữa các cụm từ (giây), giọng đọc (Hoài My / Nam Minh) và tốc độ phát âm thanh.
+5. **Bước 5 (Kích hoạt Chế độ Phòng học):** Mở giao diện Trình chiếu Phòng học (Classroom Theater Mode) toàn màn hình trên máy chiếu hoặc bảng tương tác, sẵn sàng đồng bộ quá trình nghe - viết của học sinh.
+6. **Bước 6 (Phân rã câu thành cụm từ ngữ nghĩa):** Thuật toán `splitIntoPedagogicalClauses` tự động bóc tách toàn bộ bài đọc thành danh sách các cụm từ ngữ nghĩa có độ dài từ 4 đến 7 từ, tránh việc ngắt gãy cấu trúc ngữ pháp.
+7. **Bước 7 (Phát âm thanh đọc mẫu):** Động cơ TTS đa tầng phát âm thanh của cụm từ hiện tại qua hệ thống loa lớp học với ngữ điệu rõ ràng, chuẩn ngữ âm Bắc Bộ.
+8. **Bước 8 (Đếm ngược thời gian dừng nghỉ):** Hệ thống kích hoạt vòng đếm ngược $T_{\text{pause}}$ trực quan trên màn hình máy chiếu, cho học sinh biết thời gian còn lại để hoàn thành việc viết cụm từ vào vở.
+9. **Bước 9 (Kiểm tra vòng lặp sư phạm):**
+   * *Nhánh lặp lại:* Nếu chưa đủ số lần đọc lặp lại cấu hình cho cụm từ hiện tại $\rightarrow$ Quay lại phát tiếp lần $2, 3$.
+   * *Nhánh kế tiếp:* Nếu đã đọc đủ số lần và chưa hết bài $\rightarrow$ Chuyển sang cụm từ tiếp theo.
+10. **Bước 10 (Lưu phiên & Khóa Ground Truth 1-Click):** Khi hoàn tất toàn bộ bài đọc, hệ thống tự động lưu trữ phiên vào bảng `DictationSession` trong cơ sở dữ liệu SQLite. Giáo viên nhấp nút **"Chấm bài ngay với bài đọc này"** để chuyển hướng thẳng sang màn hình chấm điểm (`/teacher/grade?sessionId=...`), khóa cứng bài đọc mẫu làm Ground Truth tuyệt đối, triệt tiêu 100% ảo giác cho mô hình chấm bài AI.
+
+---
+
+### 3.3. Pipeline Tiền Xử Lý Ảnh Bài Thi 9 Bước Bằng Jimp (Mục 3.3)
+
+* **Vị trí chèn trong file Word:** Cập nhật **Mục 3.3: Chi tiết thuật toán từng bước trong pipeline tiền xử lý ảnh** (trang 36–37).
+* **Câu neo định vị trong Word (Anchor Text):** Tìm câu: *"...các bước trong đường ống tiền xử lý ảnh được thiết kế liên hoàn như sau:"* hoặc bảng mô tả xử lý ảnh cũ.
+* **Hành động:** Chèn hoặc thay thế bằng Bảng đặc tả kỹ thuật 9 bước tiền xử lý ảnh Jimp:
 
 | Bước | Tên bước thuật toán | Phương pháp kỹ thuật | Tham số cấu hình | Tác dụng đối với ảnh bài viết tiểu học |
 |:---:|---|---|---|---|
@@ -71,41 +182,53 @@ Thay thế hoặc bổ sung bảng thông số kỹ thuật 9 bước trong `lib
 
 ---
 
-### 3.3. Tách Biệt Rõ Ràng 2 Barem Chấm Điểm & Lưu Đồ Giải Thuật (Mục 3.3)
+### 3.4. Barem Chấm Điểm 2 Luồng, Tích Hợp YOLOv8 Bounding Box & Lưu Đồ Chấm Điểm (Mục 3.4)
 
-*Cần sửa lại toàn bộ mục 3.3 để làm rõ việc hệ thống không dùng chung 1 barem điểm cho cả 2 phân môn:*
+* **Vị trí chèn trong file Word:** Cập nhật toàn diện **Mục 3.4: Quy trình chấm điểm bằng AI đa phương thức** (trang 38–40).
+* **Câu neo định vị trong Word (Anchor Text):** Bắt đầu từ `3.4.1. Các thành phần chính của quy trình chấm điểm` (trước đây là 3.3).
+* **Hành động:** Thay thế và mở rộng thành 3 tiểu mục con hoàn chỉnh dưới đây:
 
-#### 3.3.1. Barem Chấm Điểm Chuẩn Hóa Theo Định Hướng Chương Trình GDPT 2018
+#### 3.4.1. Barem Chấm Điểm Tích Hợp Thể Hiện 2 Luồng Xử Lý (Mục 3.4.1)
 
-##### [Phân môn 1] Barem Bài Chính Tả (Nghe - Viết / Nhìn - Viết) — Thang 10 Điểm
-Đối với bài chính tả, học sinh chỉ có nhiệm vụ nghe viết lại đúng văn bản SGK, không tự sáng tác nội dung. Do đó barem được thiết kế chuẩn mực gồm 2 phần:
-1. **Độ chính xác chính tả (Tối đa 7.0 điểm)**:
-   - Điểm khởi đầu: 7.0 điểm.
-   - Quy tắc trừ điểm: Khấu trừ cố định **0.5 điểm** cho mỗi lỗi sai khác nhau thuộc 6 nhóm lỗi (`phu_am_dau`, `van`, `dau_thanh`, `viet_hoa`, `bo_sot_them`, `dau_cau`).
-   - Lỗi sai lặp lại giống hệt nhau ở nhiều vị trí trong bài chỉ bị trừ điểm 1 lần (theo tinh thần Thông tư 27 khích lệ học sinh). Điểm sàn chính tả: 0.0 điểm.
-2. **Quy cách trình bày & Chữ viết (Tối đa 3.0 điểm)**:
-   - Đánh giá độ ngay ngắn, thụt đầu dòng đúng quy cách, giữ vở sạch không lem mực (hỗ trợ giáo viên tinh chỉnh qua thanh trượt).
-   - Tổng điểm: $\text{Điểm} = \text{Điểm Chính Tả} (7.0đ) + \text{Điểm Trình Bày} (3.0đ) \in [0.0, 10.0]$.
+* **Vị trí chèn trong file Word:** Thay thế trực tiếp **Bảng 3.3: Barem chấm điểm tích hợp trong hệ thống** (trang 38–39).
+* **Câu neo định vị trong Word (Anchor Text):** Tìm bảng có tiêu đề *"Bảng 3.3 Barem chấm điểm tích hợp trong hệ thống"* và đoạn văn liền sau *"Để triệt tiêu hoàn toàn hiện tượng ảo giác của mô hình AI..."*.
+* **Hành động:** Thay thế toàn bộ bằng 1 bảng duy nhất thể hiện rõ 2 luồng xử lý và đoạn thuyết minh chuẩn hóa dưới đây:
 
-##### [Phân môn 2] Barem Bài Tập Làm Văn (Đoạn Văn Tự Do / Kể Chuyện) — Thang 10 Điểm
-Đánh giá toàn diện năng lực diễn đạt ngôn ngữ và cảm xúc của học sinh theo 4 tiêu chí:
-1. **Chính tả & Ngữ pháp (Tối đa 4.0 điểm)**: Khởi đầu 4.0đ, trừ 0.5đ cho mỗi lỗi chính tả hoặc lỗi câu què cụt do ViT5 phát hiện.
-2. **Hình thức & Bố cục (Tối đa 3.0 điểm)**: Bố cục đoạn văn có mở đoạn, thân đoạn, kết đoạn; chữ viết rõ ràng.
-3. **Nội dung & Diễn đạt (Tối đa 2.0 điểm)**: Đúng chủ đề đề bài yêu cầu, câu văn trôi chảy, có liên kết ý nghĩa.
-4. **Sáng tạo & Cảm xúc (Tối đa 1.0 điểm)**: Tự động cộng điểm khi Tầng 1 phát hiện học sinh biết vận dụng từ láy tượng thanh/tượng hình (+0.5đ) hoặc biện pháp so sánh, nhân hóa (+0.5đ).
+##### Bảng 3.3: Barem chấm điểm tích hợp trong hệ thống (Phân tách 2 luồng xử lý)
 
-##### Quy tắc Xếp loại Đánh giá Chung:
-- **9.0 – 10.0 điểm**: Xếp loại **Xuất sắc** (Hoàn thành xuất sắc nhiệm vụ).
-- **7.0 – 8.5 điểm**: Xếp loại **Tốt** (Hoàn thành tốt).
-- **5.0 – 6.5 điểm**: Xếp loại **Khá** (Hoàn thành khá).
-- **3.0 – 4.5 điểm**: Xếp loại **Trung bình** (Đạt yêu cầu cơ bản).
-- **Dưới 3.0 điểm**: Xếp loại **Cần cố gắng** (Cần rèn luyện thêm).
+| Tiêu chí | Điểm Luồng 1<br>(Chính tả SGK) | Điểm Luồng 2<br>(Tập làm văn) | Phương pháp & Tiêu chuẩn đánh giá chi tiết (Theo Thông tư 27/2020/TT-BGDĐT) |
+|---|:---:|:---:|---|
+| **Chính tả & Ngữ pháp** | **7.0** | **4.0** | • Trừ **0.5đ/lỗi khác nhau** thuộc các nhóm lỗi âm vị (phụ âm đầu, vần, dấu thanh, viết hoa, dấu câu) hoặc câu cụt thiếu thành phần.<br>• **Lỗi sai lặp lại chỉ trừ 1 lần** để khích lệ học sinh. Sàn điểm: 0.0đ.<br>• *Luồng 1 (Chính tả):* Khởi điểm 7.0đ, đối soát 1-1 với văn bản chuẩn SGK qua SequenceMatcher (Zero-Hallucination 100%).<br>• *Luồng 2 (Tập làm văn):* Khởi điểm 4.0đ, mô hình ViT5 phát hiện lỗi chính tả ngữ cảnh và ngữ pháp tiếng Việt. |
+| **Hình thức trình bày** | **3.0** | **3.0** | • Đánh giá theo 4 mức định lượng: **3.0đ** (Tốt) — **2.0đ** (Khá) — **1.0đ** (Đạt) — **0.0đ** (Chưa đạt).<br>• Tiêu chí chung: Nét chữ đều, giữ đúng khoảng cách và độ cao ô ly, thụt đầu dòng đúng quy cách, giữ vở sạch không lem mực/tẩy xóa.<br>• *Luồng 2 đánh giá thêm:* Bố cục đoạn văn có đầy đủ mở đoạn, thân đoạn và kết đoạn rõ ràng. |
+| **Nội dung & Ý tưởng** | **0.0**<br>*(Không áp dụng)* | **2.0** | • Đánh giá theo mức: **2.0đ** (Đúng trọng tâm, ý tứ phong phú, chân thực) → **1.5đ** → **1.0đ** → **0.5đ** → **0.0đ** (Lạc đề).<br>• *Luồng 1 không áp dụng (0.0đ)* vì học sinh chỉ có nhiệm vụ nghe viết/chép đúng văn bản mẫu SGK, không tự sáng tác nội dung. |
+| **Sáng tạo (từ láy, so sánh, nhân hóa)** | **0.0**<br>*(Không áp dụng)* | **1.0** | • Điểm thưởng cộng thêm tự động (Bonus Score):<br>  + **+0.5đ**: Vận dụng từ láy tượng thanh, tượng hình (*lon ton, lấp lánh, rì rào, thoang thoảng...*).<br>  + **+0.5đ**: Sử dụng biện pháp tu từ nghệ thuật: **So sánh** (*như, tựa như*) hoặc **Nhân hóa** (*chị gió, bác gà trống...*).<br>• *Luồng 1 không áp dụng (0.0đ)* đối với bài viết chính tả. |
+| **TỔNG ĐIỂM** | **10.0** | **10.0** | **Thang điểm 10.0 chuẩn mực GDPT 2018.** Hệ thống AI tính toán tự động và đề xuất trước; giáo viên luôn có quyền kiểm tra trực quan và tinh chỉnh điểm số qua giao diện Canvas (Human-in-the-loop). |
+
+> **Cơ chế chống AI bịa lỗi (ảo giác) và quy trình lưu kết quả:**
+> 
+> Để đảm bảo AI chấm bài công bằng và không tự "bịa" ra lỗi sai của học sinh, hệ thống xử lý riêng cho từng dạng bài:
+> 
+> * **Đối với bài Chính tả (từ SGK hoặc thư viện hệ thống):** Hệ thống so sánh trực tiếp từng chữ học sinh viết với bài đọc mẫu có sẵn. Chữ nào viết khác hoặc viết sai so với bài mẫu mới bị tính lỗi, nhờ đó AI hoàn toàn không thể tự phỏng đoán hay bắt lỗi sai oan cho học sinh.
+> * **Đối với bài Tập làm văn:** Do học sinh viết tự do và không có bài mẫu đối chiếu, hệ thống cố định độ ngẫu nhiên của AI ở mức thấp nhất (temperature = 0.1) để kết quả chấm luôn ổn định và công tâm. AI bắt buộc phải chấm đúng theo 4 tiêu chí của Bảng 3.3 và chỉ rõ từ ngữ hoặc câu văn bị sai trong bài, tránh việc cho điểm theo cảm tính.
+> 
+> Sau khi chấm xong, để hệ thống lưu trữ kết quả thẳng vào cơ sở dữ liệu, AI sẽ gửi dữ liệu về theo một khung mẫu chuẩn thống nhất (định dạng JSON). Khung mẫu này gom đầy đủ các thông tin quan trọng gồm: điểm tổng kết, điểm chi tiết từng phần, bài viết gốc nhận dạng được, bài viết đã sửa đúng, danh sách chi tiết các từ sai và lời nhận xét động viên để học sinh tiến bộ hơn.
+
+#### 3.4.2. Quy Trình Định Vị Lỗi Sai Với YOLOv8 Word Bounding Box
+
+Tích hợp trực tiếp mô hình YOLOv8 vào luồng xử lý chấm điểm song song:
+1. Khi ảnh được gửi đến cổng điều phối (`/api/grade` hoặc `/api/mobile/grade`), hệ thống thực hiện hai luồng xử lý song song:
+   - **Luồng 1 (OCR)**: Gemini 3.1 Flash Lite nhận diện văn bản thô $W = [w_1, w_2, ..., w_N]$.
+   - **Luồng 2 (Word Detection)**: Gửi ảnh sang Python microservice endpoint `/detect-words` để YOLOv8 bóc tách toàn bộ hộp bao $B = [b_1, b_2, ..., b_K]$.
+2. **So khớp Token - Hộp bao (Token-to-Bbox Alignment)**:
+   Sau khi cả hai luồng hoàn tất, hệ thống thực hiện ánh xạ chỉ số $1 \leftrightarrow 1$ giữa từ vựng $w_i$ và hộp bao $b_i$ dựa trên thứ tự dòng đọc tự nhiên đã được chuẩn hóa.
+3. **Gán trạng thái trực quan**:
+   - Nếu từ $w_i$ được xác định là đúng $\rightarrow$ gắn nhãn `correct`, hiển thị Bounding Box viền xanh lá.
+   - Nếu từ $w_i$ nằm trong danh sách lỗi sai $\rightarrow$ gắn nhãn `error`, lưu trữ mã lỗi và hiển thị Bounding Box viền đỏ nổi bật.
+4. Trả về cấu trúc JSON chứa đầy đủ tọa độ chuẩn hóa $[x_{\min}, y_{\min}, x_{\max}, y_{\max}]$ để Client (Web/Mobile) vẽ trực tiếp lên canvas bài thi.
 
 ---
 
-#### 3.3.2. Lưu Đồ Thuật Toán Ground-Truth Guided Alignment (Zero-Hallucination)
-
-Vẽ hoặc chèn lưu đồ giải thuật so khớp văn bản bài chính tả vào mục 3.3.2:
+#### 3.4.3. Lưu Đồ Thuật Toán Ground-Truth Guided Alignment (Zero-Hallucination)
 
 ```text
        [ Ảnh bài thi học sinh ]
@@ -114,7 +237,9 @@ Vẽ hoặc chèn lưu đồ giải thuật so khớp văn bản bài chính t�
        [ Pipeline Jimp 9 bước ]  ──► (Ảnh sạch ô ly, khử bóng, nắn thẳng)
                   │
                   ▼
-       [ Google Gemini Vision ]  ──► (Trích xuất nguyên văn original_text)
+       [ Xử lý Song song AI ]
+       ├── Luồng 1: Gemini 3.1 Flash Lite ──► Trích xuất chuỗi từ vựng original_text
+       └── Luồng 2: YOLOv8 Word Detector  ──► Bóc tách tọa độ Bounding Box & Sắp xếp đọc
                   │
                   ▼
     ┌─────────────────────────────┐
@@ -125,19 +250,14 @@ Vẽ hoặc chèn lưu đồ giải thuật so khớp văn bản bài chính t�
     ┌─────────────────────────────┐  ┌─────────────────────────────┐
     │ Nạp Ground Truth bài đọc    │  │ Gửi văn bản vào ViT5        │
     │ từ DictationSession         │  │ để sửa lỗi ngữ pháp & tìm   │
-    └──────────────┬──────────────┘  │ các biện pháp tu từ nghệ thuật│
-                   │                 └──────────────┬──────────────┘
-                   ▼                                │
-    ┌─────────────────────────────┐                 │
-    │ SequenceMatcher Word Diff   │                 ▼
-    │ So khớp từng vị trí từ vựng │  ┌─────────────────────────────┐
-    └──────────────┬──────────────┘  │ Qwen2.5-0.5B-Instruct SLM   │
-                   │                 │ sinh lời nhận xét sư phạm   │
-                   ▼                 └──────────────┬──────────────┘
-    ┌─────────────────────────────┐                 │
-    │ Bộ luật Ngữ âm tiếng Việt   │                 │
-    │ Phân loại vào 6 nhóm lỗi    │                 │
-    └──────────────┬──────────────┘                 │
+    │ (SequenceMatcher Word Diff) │  │ các biện pháp tu từ nghệ thuật│
+    └──────────────┬──────────────┘  └──────────────┬──────────────┘
+                   │                                │
+                   ▼                                ▼
+    ┌─────────────────────────────┐  ┌─────────────────────────────┐
+    │ Bộ luật Ngữ âm tiếng Việt   │  │ Qwen2.5-0.5B-Instruct SLM   │
+    │ Phân loại vào 6 nhóm lỗi    │  │ sinh lời nhận xét sư phạm   │
+    └──────────────┬──────────────┘  └──────────────┬──────────────┘
                    │                                │
                    ▼                                ▼
     ┌─────────────────────────────┐  ┌─────────────────────────────┐
@@ -148,22 +268,28 @@ Vẽ hoặc chèn lưu đồ giải thuật so khớp văn bản bài chính t�
                    │                                │
                    └──────────────┬─────────────────┘
                                   ▼
-                [ Giao diện Human-in-the-loop ]
-         (Giáo viên rà soát, tinh chỉnh thanh trượt điểm)
+                [ Ánh xạ Lỗi ↔ Tọa độ Bounding Box ]
+         (Tô viền đỏ các từ sai trên Canvas bài thi học sinh)
                                   │
                                   ▼
-                [ Lưu kết quả vào SQLite vihand.db ]
+                [ Giao diện Human-in-the-loop ]
+         (Giáo viên duyệt, tinh chỉnh thanh trượt điểm số)
+                                  │
+                                  ▼
+                [ Lưu điểm số vào SQLite vihand.db ]
                 [ Lưu tệp ảnh vào /uploads/grades/ ]
 ```
 
 ---
 
-### 3.4. Bổ sung Chính Sách Bảo Vệ Dữ Liệu & Quyền Riêng Tư Trẻ Em (Mục 3.4.2)
+### 3.5. Bổ sung Chính Sách Bảo Vệ Dữ Liệu Trẻ Em Theo Nghị Định 13/2023/NĐ-CP (Mục 3.5 Mới)
 
-Chèn thêm mục 3.4.2 vào sau phần Phân quyền người dùng (RBAC):
+* **Vị trí chèn trong file Word:** Tạo mục mới **3.5** chèn ngay sau phần cơ chế quản lý dữ liệu (trang 41).
+* **Câu neo định vị trong Word (Anchor Text):** Tìm đoạn kết thúc mục quản trị dữ liệu hoặc phân quyền người dùng (Admin/Teacher/Student).
+* **Hành động:** Chèn mục 3.5 về an toàn thông tin và bảo vệ quyền riêng tư học sinh:
 
-#### 3.4.2. Kiến trúc Bảo vệ Quyền Riêng tư & Vòng đời Dữ liệu Học sinh (Nghị định 13/2023/NĐ-CP)
-> Dữ liệu bài thi của học sinh tiểu học chứa các thông tin nhạy cảm bao gồm: họ tên, lớp học, chữ viết tay cá nhân và hình ảnh chân thực bài làm. Nhằm đảm bảo tuyệt đối an toàn thông tin theo Nghị định số 13/2023/NĐ-CP về Bảo vệ dữ liệu cá nhân, ViHand Grade thiết lập kiến trúc quản trị vòng đời dữ liệu chuyên biệt:
+#### 3.5.1. Kiến trúc Bảo vệ Quyền Riêng tư & Vòng đời Dữ liệu Học sinh (Nghị định 13/2023/NĐ-CP)
+> Dữ liệu bài thi của học sinh tiểu học chứa các thông tin nhạy cảm bao gồm: họ tên, lớp học, nét chữ viết tay cá nhân và hình ảnh chân thực bài làm. Nhằm đảm bảo tuyệt đối an toàn thông tin theo Nghị định số 13/2023/NĐ-CP về Bảo vệ dữ liệu cá nhân, ViHand Grade thiết lập kiến trúc quản trị vòng đời dữ liệu chuyên biệt:
 >
 > 1. **Kiến trúc Lưu trữ Phân tách (Decoupled Image Storage)**:
 >    - Ảnh bài thi tuyệt đối không lưu trực tiếp dưới dạng chuỗi Base64 dài hàng Megabytes trong bảng cơ sở dữ liệu SQLite (tránh gây nghẽn RAM và lỗi phình dữ liệu DB Bloat).

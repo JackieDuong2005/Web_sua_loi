@@ -7,6 +7,25 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  turbopack: {},
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/.next/**',
+          '**/android_app/**',
+          '**/python_service/**',
+          'C:\\System Volume Information/**',
+          'C:\\*.sys',
+          'C:\\*.tmp',
+        ],
+      }
+    }
+    return config
+  },
 }
 
 export default nextConfig

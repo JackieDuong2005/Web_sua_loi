@@ -3,11 +3,15 @@ import { GoogleGenAI } from "@google/genai"
 import { guardAiRoute } from "@/lib/api-guard"
 import { ensureVietnameseCapitalization, formatAiErrorMessage } from "@/lib/utils"
 
-const GEMINI_MODEL = "gemini-3.1-flash-lite"
+const CANDIDATE_MODELS = [
+  "gemini-3.1-flash-lite", // Gốc của hệ thống: Ưu tiên số 1
+  "gemini-3.5-flash-lite", // Backup tự động khi model 3.1 gặp quá tải (503 / 429)
+]
+const GEMINI_MODEL = CANDIDATE_MODELS[0]
 
-function getApiKey(): string {
-  const key = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(",")[0] || ""
-  return key.trim()
+function getApiKeys(): string[] {
+  const envVal = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || ""
+  return envVal.split(",").map(k => k.trim()).filter(Boolean)
 }
 
 // Prompt OCR: Tối ưu cho Gemini 3.1 Flash Lite — phân biệt Thơ/Văn xuôi, chuẩn hóa viết hoa và đối soát từ 1-1
@@ -68,88 +72,115 @@ interface OcrResult {
 }
 
 async function callGeminiOCR(
-  apiKey: string,
   imageBase64: string,
   mimeType: string
 ): Promise<OcrResult> {
-  if (!apiKey) throw new Error("Chưa cấu hình GEMINI_API_KEY")
-
-  const client = new GoogleGenAI({ apiKey })
-
-  try {
-    const response = await client.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: [
-        { inlineData: { mimeType, data: imageBase64 } },
-        OCR_PROMPT,
-      ],
-      config: {
-        responseMimeType: "application/json",
-        temperature: 0.05,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 8192,
-      },
-    })
-
-    const text = response.text ?? ""
-    const tokenCount = response.usageMetadata?.totalTokenCount || 0
-
-    let original_text = ""
-    let gemini_fixed_text = ""
-    let the_loai = ""
-
-    try {
-      const cleaned = text
-        .replace(/^```json\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/```\s*$/i, "")
-        .trim()
-      const parsed = JSON.parse(cleaned)
-      original_text = (parsed.original_text || "").trim()
-      gemini_fixed_text = (parsed.fixed_text || "").trim()
-      the_loai = (parsed.the_loai || "").trim().toLowerCase()
-    } catch {
-      original_text = text.trim()
-      gemini_fixed_text = text.trim()
-    }
-
-    if (!original_text) {
-      throw new Error("Không nhận diện được nội dung từ ảnh")
-    }
-
-    // Đảm bảo chữ đầu dòng và đầu câu luôn được viết hoa chuẩn mực:
-    // - Với THƠ: chữ đầu mỗi dòng luôn viết hoa
-    // - Với VĂN XUÔI: không ép viết hoa đầu dòng vật lý để tránh sửa nhầm từ giữa câu
-    if (the_loai === "tho") {
-      gemini_fixed_text = ensureVietnameseCapitalization(gemini_fixed_text)
-    }
-
-    console.log(
-      `[OCR] ✓ Gemini OCR (${the_loai || "tự động"}): ${tokenCount} tokens` +
-      ` | original: ${original_text.length} chars | fixed: ${gemini_fixed_text.length} chars`
-    )
-    return { original_text, gemini_fixed_text, the_loai, tokenCount, keyIndex: 1 }
-
-  } catch (err: any) {
-    console.error("[OCR] Gemini error:", err?.message)
-    throw err
+  const keys = getApiKeys()
+  if (!keys.length) {
+    throw new Error("Chưa cấu hình GEMINI_API_KEY trong file môi trường (.env / .env.local)")
   }
+
+  let lastError: any = null
+
+  // Thử qua từng model ưu tiên
+  for (const model of CANDIDATE_MODELS) {
+    // Thử qua các API Key khả dụng
+    for (let kIdx = 0; kIdx < keys.length; kIdx++) {
+      const apiKey = keys[kIdx]
+      // Thử tối đa 2 lần cho model/key nếu gặp 503 tạm thời
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const client = new GoogleGenAI({ apiKey })
+          const response = await client.models.generateContent({
+            model,
+            contents: [
+              { inlineData: { mimeType, data: imageBase64 } },
+              OCR_PROMPT,
+            ],
+            config: {
+              responseMimeType: "application/json",
+              temperature: 0.05,
+              topP: 0.95,
+              topK: 40,
+              maxOutputTokens: 8192,
+            },
+          })
+
+          const text = response.text ?? ""
+          const tokenCount = response.usageMetadata?.totalTokenCount || 0
+
+          let original_text = ""
+          let gemini_fixed_text = ""
+          let the_loai = ""
+
+          try {
+            const cleaned = text
+              .replace(/^```json\s*/i, "")
+              .replace(/^```\s*/i, "")
+              .replace(/```\s*$/i, "")
+              .trim()
+            const parsed = JSON.parse(cleaned)
+            original_text = (parsed.original_text || "").trim()
+            gemini_fixed_text = (parsed.fixed_text || "").trim()
+            the_loai = (parsed.the_loai || "").trim().toLowerCase()
+          } catch {
+            original_text = text.trim()
+            gemini_fixed_text = text.trim()
+          }
+
+          if (!original_text) {
+            const emptyErr = new Error("Không nhận diện được nội dung chữ viết từ ảnh bài làm")
+            ;(emptyErr as any).isUnreadableImage = true
+            throw emptyErr
+          }
+
+          if (the_loai === "tho") {
+            gemini_fixed_text = ensureVietnameseCapitalization(gemini_fixed_text)
+          }
+
+          console.log(
+            `[OCR] ✓ Thành công [Model: ${model}, Key #${kIdx + 1}]: ${tokenCount} tokens` +
+            ` | original: ${original_text.length} chars | fixed: ${gemini_fixed_text.length} chars`
+          )
+          return { original_text, gemini_fixed_text, the_loai, tokenCount, keyIndex: kIdx + 1 }
+
+        } catch (err: any) {
+          if (err?.isUnreadableImage) {
+            // Không có chữ trên ảnh — không thử lại các model khác để tránh lãng phí thời gian
+            throw err
+          }
+
+          lastError = err
+          const errMsg = String(err?.message || err)
+          const isOverloadedOrRateLimit = errMsg.includes("503") || errMsg.includes("429") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand")
+          const isInvalidKey = errMsg.includes("400") || errMsg.includes("403") || errMsg.includes("API_KEY_INVALID")
+
+          console.warn(`[OCR] Thử [${model}] với Key #${kIdx + 1} (lần ${attempt + 1}) gặp lỗi:`, err?.status || errMsg.slice(0, 100))
+
+          if (isInvalidKey) {
+            // Key hỏng hoặc không có quyền, bỏ qua key này ngay lập tức
+            break
+          }
+
+          if (isOverloadedOrRateLimit && attempt === 0) {
+            // Chờ 600ms rồi thử lại
+            await new Promise(r => setTimeout(r, 600))
+            continue
+          }
+
+          break
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error("Tất cả model Gemini đều không khả dụng")
 }
 
 export async function POST(req: NextRequest) {
   // Rate limiting & DoS guard (Issue #12)
   const blocked = guardAiRoute(req, 30)
   if (blocked) return blocked
-
-  const apiKey = getApiKey()
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Chưa cấu hình GEMINI_API_KEY trong file môi trường (.env / .env.local)" },
-      { status: 500 }
-    )
-  }
 
   try {
     const { imageBase64, mimeType } = await req.json()
@@ -166,8 +197,14 @@ export async function POST(req: NextRequest) {
 
     let result: OcrResult
     try {
-      result = await callGeminiOCR(apiKey, base64Data, mimeType || "image/jpeg")
+      result = await callGeminiOCR(base64Data, mimeType || "image/jpeg")
     } catch (err: any) {
+      if (err?.isUnreadableImage || String(err?.message || "").includes("Không nhận diện được nội dung")) {
+        return NextResponse.json(
+          { error: "Không nhận diện được chữ viết trên ảnh bài làm. Thầy/cô vui lòng kiểm tra lại ảnh chụp rõ nét và đủ sáng." },
+          { status: 422 }
+        )
+      }
       return NextResponse.json(
         { error: formatAiErrorMessage(err) },
         { status: 503 }

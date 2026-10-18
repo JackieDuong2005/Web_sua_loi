@@ -1723,54 +1723,88 @@ async def correct_endpoint(req: GradeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================================
+# ĐỘNG CƠ TỔNG HỢP GIỌNG NÓI OFFLINE PIPER TTS VITS ONNX
+# Vận hành 100% offline trên Raspberry Pi / máy cục bộ, hỗ trợ Multi-Voice & Loa ngoài
+# ============================================================
+try:
+    from .tts_engine import tts_engine
+except ImportError:
+    try:
+        from tts_engine import tts_engine
+    except Exception as _e:
+        tts_engine = None
+        logger.warning(f"⚠️ Không thể khởi tạo tts_engine: {_e}")
+
+
+class LocalPlayRequest(BaseModel):
+    text: str
+    voice: str = "vi_VN-vais1000-medium"
+    rate: str = "-15%"
+
+
 @app.get("/tts")
-async def tts_endpoint(text: str, voice: str = "vi-VN-HoaiMyNeural", rate: str = "-15%"):
-    """Tạo âm thanh phát âm tiếng Việt chuẩn bằng Microsoft Edge-TTS
-    (vi-VN-HoaiMyNeural giọng Nữ Bắc hoặc vi-VN-NamMinhNeural giọng Nam Bắc).
+async def tts_endpoint(text: str, voice: str = "vi_VN-vais1000-medium", rate: str = "-15%"):
+    """Tạo âm thanh phát âm tiếng Việt OFFLINE chuẩn bằng Piper TTS VITS ONNX
+    (Chạy hoàn toàn nội bộ trên Raspberry Pi, hỗ trợ đổi giọng và giọng clone).
     """
     if not text or not text.strip():
         raise HTTPException(status_code=400, detail="Văn bản không được để trống")
+    if tts_engine is None:
+        raise HTTPException(status_code=503, detail="Động cơ TTS Offline chưa sẵn sàng")
     try:
-        import edge_tts
         from fastapi.responses import Response
 
-        # Chuẩn hóa tham số rate (tránh lỗi double-encoding như "-15%25" làm sập Edge-TTS)
-        clean_rate = rate.replace("%25", "%").strip()
-        if not clean_rate.endswith("%"):
-            if clean_rate.startswith("+") or clean_rate.startswith("-"):
-                clean_rate = f"{clean_rate}%"
-            elif clean_rate.isdigit():
-                clean_rate = f"+{clean_rate}%"
-            else:
-                clean_rate = "-15%"
-
-        # Đảm bảo voice hợp lệ
-        clean_voice = voice.strip()
-        if clean_voice not in ["vi-VN-HoaiMyNeural", "vi-VN-NamMinhNeural"]:
-            clean_voice = "vi-VN-HoaiMyNeural"
-
-        communicate = edge_tts.Communicate(text.strip(), clean_voice, rate=clean_rate)
-        audio_data = bytearray()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_data.extend(chunk["data"])
-
-        if len(audio_data) == 0:
-            raise HTTPException(status_code=500, detail="Không nhận được dữ liệu âm thanh từ Edge-TTS")
+        audio_data = tts_engine.synthesize_wav(text.strip(), voice_id=voice, rate=rate)
+        if not audio_data or len(audio_data) == 0:
+            raise HTTPException(status_code=500, detail="Không thể tạo luồng âm thanh từ Piper TTS")
 
         return Response(
-            content=bytes(audio_data),
-            media_type="audio/mpeg",
+            content=audio_data,
+            media_type="audio/wav",
             headers={
-                "Content-Type": "audio/mpeg",
+                "Content-Type": "audio/wav",
                 "Cache-Control": "public, max-age=86400, s-maxage=86400",
+                "X-TTS-Engine": "Piper-VITS-ONNX-Offline",
             },
         )
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Lỗi Edge-TTS: {e}")
-        raise HTTPException(status_code=500, detail=f"Lỗi tạo âm thanh Edge-TTS: {str(e)}")
+        logger.error(f"❌ Lỗi Piper TTS: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Lỗi tạo âm thanh Piper TTS: {str(e)}")
+
+
+@app.get("/tts/voices")
+async def tts_voices_endpoint():
+    """Danh sách các giọng đọc TTS Offline hiện có trong hệ thống (bao gồm các model Clone)."""
+    if tts_engine is None:
+        return {"voices": [], "count": 0, "status": "unavailable"}
+    try:
+        voices = tts_engine.list_available_voices()
+        return {"voices": voices, "count": len(voices), "engine": "piper-vits-onnx"}
+    except Exception as e:
+        logger.error(f"❌ Lỗi lấy danh sách giọng TTS: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/tts/play-local")
+async def tts_play_local_endpoint(req: LocalPlayRequest):
+    """Phát âm thanh trực tiếp ra Loa phần cứng cắm trên Raspberry Pi (3.5mm AUX / USB)."""
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=400, detail="Văn bản không được để trống")
+    if tts_engine is None:
+        raise HTTPException(status_code=503, detail="Động cơ TTS Offline chưa sẵn sàng")
+    try:
+        success = tts_engine.play_on_local_speaker(req.text.strip(), voice_id=req.voice, rate=req.rate)
+        return {
+            "success": success,
+            "message": "Đã phát ra loa cục bộ thiết bị" if success else "Lỗi khi phát ra loa",
+        }
+    except Exception as e:
+        logger.error(f"❌ Lỗi phát loa cục bộ: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/qwen/status")
 async def qwen_status_endpoint():

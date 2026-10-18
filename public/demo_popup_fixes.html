@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Phương Án Sửa Lỗi Giao Diện Chấm Điểm (425px) — ViHand Grade</title>
+  <!-- Google Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-page: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #059669;
+      --primary-light: #ecfdf5;
+      --primary-border: #a7f3d0;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --score-gradient: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .header-bar {
+      max-width: 1380px;
+      margin: 0 auto 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .controls-panel {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .btn-toggle {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+
+    .btn-toggle.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    /* Container so sánh 3 khung giả lập */
+    .grid-container {
+      max-width: 1380px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .device-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .device-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fafafa;
+    }
+
+    .device-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Giả lập khung màn hình 425px x 520px y hệt DevTools */
+    .viewport-box {
+      width: 100%;
+      height: 520px;
+      background: #f9f6f0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Top Modal Header */
+    .modal-top-header {
+      background: var(--score-gradient);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .score-badge {
+      background: rgba(255,255,255,0.22);
+      backdrop-filter: blur(4px);
+      padding: 4px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      font-weight: 800;
+    }
+
+    /* Sub Tabs (Mobile) */
+    .mobile-nav-tabs {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 6px 12px;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: white;
+      border-color: #cbd5e1;
+      color: #065f46;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    /* Vùng cuộn nội dung */
+    .modal-scroll-area {
+      flex: 1;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    /* ══════ TRƯỜNG HỢP HIỆN TẠI (LỖI) ══════ */
+    /* Mô phỏng 2 thanh cuộn cạnh nhau */
+    .has-double-scrollbar {
+      overflow-y: scroll;
+    }
+    /* Thanh cuộn ngoài giả lập (đại diện cho body của background page) */
+    .viewport-box.buggy-dual-scroll::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 7px;
+      height: 100%;
+      background: #cbd5e1;
+      border-left: 1px solid #94a3b8;
+      z-index: 50;
+    }
+    .viewport-box.buggy-dual-scroll .modal-scroll-area {
+      overflow-y: scroll;
+      margin-right: 7px; /* Nằm ngay sát thanh cuộn ngoài */
+    }
+
+    /* Lỗi chữ bị bóp ngắt hàng ở hiện tại */
+    .broken-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .broken-title {
+      font-size: 13px;
+      font-weight: 600;
+      /* Không có whitespace-nowrap nên bị bẻ đôi từ */
+      max-width: 140px;
+      line-height: 1.25;
+    }
+    .broken-pills-wrap {
+      display: flex;
+      gap: 2px;
+      background: #e2e8f0;
+      padding: 2px;
+      border-radius: 8px;
+      max-width: 135px;
+    }
+    .broken-pill-btn {
+      padding: 4px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: white;
+      border: none;
+      border-radius: 6px;
+      line-height: 1.15;
+      text-align: center;
+    }
+
+    .broken-toolbar-row {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    /* ══════ PHƯƠNG ÁN 1: RESPONSIVE 2 TẦNG (RECOMMENDED) ══════ */
+    .clean-single-scroll {
+      overflow-y: auto;
+    }
+    .clean-single-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .clean-single-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    .prop1-header-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .prop1-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .prop1-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #0f172a;
+    }
+    .prop1-badge-err {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .prop1-pill-group {
+      display: inline-flex;
+      background: #e2e8f0;
+      padding: 2px;
+      border-radius: 8px;
+      width: fit-content;
+    }
+    .prop1-pill-btn {
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .prop1-pill-btn.active {
+      background: white;
+      color: #059669;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* Toolbar 2 tầng thông thoáng */
+    .prop1-toolbar-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .prop1-toolbar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: #64748b;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 6px;
+    }
+    .prop1-toolbar-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .btn-bbox-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid #fecdd3;
+      background: #fff1f2;
+      color: #be123c;
+      white-space: nowrap;
+    }
+    .btn-mode-toggle {
+      display: inline-flex;
+      background: #e2e8f0;
+      padding: 2px;
+      border-radius: 6px;
+    }
+    .btn-mode-opt {
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .btn-mode-opt.active {
+      background: white;
+      color: #0f172a;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* ══════ PHƯƠNG ÁN 2: COMPACT TOOLBAR (RÚT GỌN ICON & NHÃN) ══════ */
+    .prop2-toolbar-row {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    /* Mockup ảnh học sinh */
+    .img-mockup {
+      width: 100%;
+      height: 240px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .bbox-sim {
+      position: absolute;
+      border: 2px dashed #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+      border-radius: 4px;
+    }
+    .bbox-tag {
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 0;
+      background: #ef4444;
+      color: white;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 1px 4px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    /* Footer */
+    .modal-footer {
+      background: #fafafa;
+      border-top: 1px solid #e2e8f0;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .btn-save-sm {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-close-sm {
+      background: white;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Thẻ ghi chú so sánh bên dưới */
+    .notes-box {
+      padding: 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .note-bad {
+      color: #b91c1c;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .note-good {
+      color: #047857;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="header-bar">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <span class="badge-tag">ViHand Grade — Mobile Responsive Fix</span>
+        <span style="font-size: 12px; color: var(--text-muted);">Độ phân giải mô phỏng: <b>425px × 520px</b></span>
+      </div>
+      <h1 style="font-size: 19px; font-weight: 800;">So Sánh Các Phương Án Sửa Lỗi Gãy Chữ & 2 Thanh Cuộn Dọc</h1>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">
+        Xem xét cách bố trí lại thanh công cụ và khoá cuộn nền khi xem kết quả chấm bài trên điện thoại
+      </p>
+    </div>
+
+    <!-- Thông tin trạng thái -->
+    <div class="controls-panel">
+      <span style="font-size: 12px; color: var(--text-muted);">Khung hình:</span>
+      <span style="font-size: 12px; font-weight: 700; color: #059669; background: #ecfdf5; padding: 2px 8px; border-radius: 6px;">
+        Responsive 425px
+      </span>
+    </div>
+  </div>
+
+  <!-- Bảng So Sánh 3 Cột -->
+  <div class="grid-container">
+
+    <!-- CỘT 0: HIỆN TẠI (ĐANG BỊ LỖI THEO ẢNH CHỤP) -->
+    <div class="device-card" style="border-color: #fca5a5;">
+      <div class="device-header" style="background: #fff1f2;">
+        <div class="device-title" style="color: #b91c1c;">
+          <span>❌ Hiện tại (Bị lỗi theo ảnh)</span>
+        </div>
+        <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: #fee2e2; color: #b91c1c; font-weight: 700;">
+          2 thanh cuộn + Gãy chữ
+        </span>
+      </div>
+
+      <!-- Viewport 425px mô phỏng DevTools -->
+      <div class="viewport-box buggy-dual-scroll">
+        <!-- Header -->
+        <div class="modal-top-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="score-badge">
+              <span style="font-size: 9px; opacity: 0.8;">ĐIỂM</span>
+              <span style="font-size: 16px;">4.5</span>
+              <span style="font-size: 10px; opacity: 0.8;">/10</span>
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700;">Kết quả chấm điểm</div>
+              <div style="font-size: 10px; opacity: 0.9;">📄 Trung bình • ⏱ 31.4s</div>
+            </div>
+          </div>
+          <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Mobile sub tabs -->
+        <div class="mobile-nav-tabs">
+          <div class="tab-btn active">📄 Bài viết & Lỗi (8)</div>
+          <div class="tab-btn">📖 Bảng điểm & Lưu (4.5đ)</div>
+        </div>
+
+        <!-- Scroll area (BỊ 2 THANH CUỘN LỒNG) -->
+        <div class="modal-scroll-area">
+          
+          <!-- LỖI 1: Bị ngắt chữ Bài viết học / sinh và Trực / tiếp -->
+          <div class="broken-header-row">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color: #059669;">📄</span>
+              <div class="broken-title" style="color: #dc2626; text-decoration: underline;">
+                Bài viết học sinh <span style="font-size: 10px; color: #64748b; font-weight: normal;">(8 lỗi được đánh dấu)</span>
+              </div>
+            </div>
+            <div class="broken-pills-wrap">
+              <div class="broken-pill-btn" style="color: #dc2626;">📄 Trực tiếp</div>
+              <div class="broken-pill-btn" style="color: #dc2626;">📋 Song song</div>
+            </div>
+          </div>
+
+          <!-- LỖI 2: Toolbar chen chúc đè chữ -->
+          <div class="broken-toolbar-row" style="border-color: #fca5a5;">
+            <div style="font-size: 10px; color: #b91c1c; line-height: 1.2;">
+              <span style="text-decoration: line-through;">sai</span> → <span style="border-bottom: 2px solid #86efac; color: #15803d;">đúng</span> • Học sinh đối chiếu trực tiếp
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <span style="font-size: 10px; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; padding: 2px 4px; border-radius: 4px; white-space: nowrap;">
+                🎯 Khung lỗi: BẬT
+              </span>
+              <span style="font-size: 10px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px; white-space: nowrap;">
+                Text | Ảnh
+              </span>
+            </div>
+          </div>
+
+          <!-- Ảnh có lỗi -->
+          <div class="img-mockup">
+            <div style="font-family: serif; font-size: 26px; color: #334155; transform: rotate(-1deg); opacity: 0.85;">
+              Gió từ tay mẹ ...
+            </div>
+            <!-- Bbox 1 -->
+            <div class="bbox-sim" style="top: 30px; left: 80px; width: 65px; height: 42px;">
+              <div class="bbox-tag">#2 ✓ Ru</div>
+            </div>
+            <!-- Bbox 2 -->
+            <div class="bbox-sim" style="top: 80px; right: 70px; width: 70px; height: 42px;">
+              <div class="bbox-tag">#3 ✓ say</div>
+            </div>
+            <!-- Bbox 3 -->
+            <div class="bbox-sim" style="bottom: 40px; left: 90px; width: 85px; height: 50px; border-color: #2563eb; background: rgba(37, 99, 235, 0.12);">
+              <div class="bbox-tag" style="background: #2563eb;">#4 ✓ Thay</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <span style="font-size: 11px; color: #d97706;">⚠️ Chưa lưu bài</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-save-sm">💾 Lưu nhanh</button>
+            <button class="btn-close-sm">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="notes-box">
+        <div class="note-bad">
+          <span>✕</span>
+          <span><b>2 thanh cuộn dọc</b>: Mép phải có 2 thanh cuộn xám song song (1 của trang nền và 1 của popup).</span>
+        </div>
+        <div class="note-bad">
+          <span>✕</span>
+          <span><b>Chữ gãy lộn xộn</b>: Tiêu đề và nút bấm bị ngắt từ đôi (<i>"Bài viết học / sinh"</i>, <i>"Trực / tiếp"</i>).</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CỘT 1: ĐỀ XUẤT 1 - RESPONSIVE 2 TẦNG (RECOMMENDED) -->
+    <div class="device-card" style="border: 2px solid var(--primary); box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.15);">
+      <div class="device-header" style="background: var(--primary-light);">
+        <div class="device-title" style="color: var(--primary);">
+          <span>⭐ Đề xuất 1: Responsive 2 Tầng Thoáng Mắt</span>
+        </div>
+        <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: var(--primary); color: white; font-weight: 700;">
+          Khuyên dùng
+        </span>
+      </div>
+
+      <!-- Viewport 425px -->
+      <div class="viewport-box">
+        <!-- Header -->
+        <div class="modal-top-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="score-badge">
+              <span style="font-size: 9px; opacity: 0.8;">ĐIỂM</span>
+              <span style="font-size: 16px;">4.5</span>
+              <span style="font-size: 10px; opacity: 0.8;">/10</span>
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700;">Kết quả chấm điểm</div>
+              <div style="font-size: 10px; opacity: 0.9;">📄 Trung bình • ⏱ 31.4s</div>
+            </div>
+          </div>
+          <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Mobile sub tabs -->
+        <div class="mobile-nav-tabs">
+          <div class="tab-btn active">📄 Bài viết & Lỗi (8)</div>
+          <div class="tab-btn">📖 Bảng điểm & Lưu (4.5đ)</div>
+        </div>
+
+        <!-- Scroll area (CHỈ 1 THANH CUỘN DUY NHẤT) -->
+        <div class="modal-scroll-area clean-single-scroll">
+          
+          <!-- SỬA 1: Header xếp 2 tầng thông minh trên màn hình hẹp -->
+          <div class="prop1-header-stack">
+            <div class="prop1-header-top">
+              <div class="prop1-title">
+                <span style="color: var(--primary);">📄</span>
+                <span>Bài viết học sinh</span>
+                <span class="prop1-badge-err">(8 lỗi được phát hiện)</span>
+              </div>
+            </div>
+            <!-- Nút chọn chế độ xem nguyên chữ, không ngắt hàng -->
+            <div class="prop1-pill-group">
+              <button class="prop1-pill-btn active">📄 Trực tiếp</button>
+              <button class="prop1-pill-btn">📋 So sánh song song</button>
+            </div>
+          </div>
+
+          <!-- SỬA 2: Toolbar 2 tầng gọn gàng, rõ ràng -->
+          <div class="prop1-toolbar-card">
+            <!-- Dòng trên: Chú thích ý nghĩa màu sắc -->
+            <div class="prop1-toolbar-top">
+              <div style="display: flex; items-center; gap: 4px;">
+                <span style="color: #b91c1c; text-decoration: line-through; font-weight: 600;">chữ sai</span>
+                <span>→</span>
+                <span style="color: #15803d; border-bottom: 2px solid #86efac; font-weight: 700;">chữ đúng</span>
+              </div>
+              <span style="font-size: 10.5px; color: #94a3b8;">Học sinh đối chiếu trực tiếp</span>
+            </div>
+            <!-- Dòng dưới: Các nút bấm điều khiển Bounding Box & Text/Ảnh -->
+            <div class="prop1-toolbar-bottom">
+              <button class="btn-bbox-toggle">
+                🎯 Khung lỗi: BẬT
+              </button>
+              <div class="btn-mode-toggle">
+                <button class="btn-mode-opt">Text</button>
+                <button class="btn-mode-opt active">Ảnh bài làm</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ảnh có lỗi -->
+          <div class="img-mockup">
+            <div style="font-family: serif; font-size: 26px; color: #334155; transform: rotate(-1deg); opacity: 0.85;">
+              Gió từ tay mẹ ...
+            </div>
+            <!-- Bbox 1 -->
+            <div class="bbox-sim" style="top: 30px; left: 80px; width: 65px; height: 42px;">
+              <div class="bbox-tag">#2 ✓ Ru</div>
+            </div>
+            <!-- Bbox 2 -->
+            <div class="bbox-sim" style="top: 80px; right: 70px; width: 70px; height: 42px;">
+              <div class="bbox-tag">#3 ✓ say</div>
+            </div>
+            <!-- Bbox 3 -->
+            <div class="bbox-sim" style="bottom: 40px; left: 90px; width: 85px; height: 50px; border-color: #2563eb; background: rgba(37, 99, 235, 0.12);">
+              <div class="bbox-tag" style="background: #2563eb;">#4 ✓ Thay</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <span style="font-size: 11px; color: #d97706;">⚠️ Chưa lưu bài</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-save-sm">💾 Lưu nhanh</button>
+            <button class="btn-close-sm">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="notes-box">
+        <div class="note-good">
+          <span>✓</span>
+          <span><b>Chỉ duy nhất 1 thanh cuộn</b>: Khóa cuộn `document.body` ở nền, triệt tiêu hoàn toàn thanh cuộn kép.</span>
+        </div>
+        <div class="note-good">
+          <span>✓</span>
+          <span><b>Chữ nguyên vẹn 100%</b>: Nhờ `whitespace-nowrap` và chia 2 tầng trên mobile, chữ không bao giờ bị bẻ gãy.</span>
+        </div>
+        <div class="note-good">
+          <span>✓</span>
+          <span><b>Nút bấm to rõ</b>: Dễ chạm trên màn hình cảm ứng điện thoại, chú thích màu sắc rõ ràng.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CỘT 2: ĐỀ XUẤT 2 - COMPACT 1 HÀNG TỐI GIẢN (ULTRA-COMPACT) -->
+    <div class="device-card">
+      <div class="device-header">
+        <div class="device-title">
+          <span>⚡ Đề xuất 2: Rút Gọn Nhãn (1 Hàng Siêu Gọn)</span>
+        </div>
+        <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: #e2e8f0; color: #475569; font-weight: 700;">
+          Tiết kiệm chiều cao
+        </span>
+      </div>
+
+      <!-- Viewport 425px -->
+      <div class="viewport-box">
+        <!-- Header -->
+        <div class="modal-top-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="score-badge">
+              <span style="font-size: 9px; opacity: 0.8;">ĐIỂM</span>
+              <span style="font-size: 16px;">4.5</span>
+              <span style="font-size: 10px; opacity: 0.8;">/10</span>
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700;">Kết quả chấm điểm</div>
+              <div style="font-size: 10px; opacity: 0.9;">📄 Trung bình • ⏱ 31.4s</div>
+            </div>
+          </div>
+          <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Mobile sub tabs -->
+        <div class="mobile-nav-tabs">
+          <div class="tab-btn active">📄 Bài viết & Lỗi (8)</div>
+          <div class="tab-btn">📖 Bảng điểm & Lưu (4.5đ)</div>
+        </div>
+
+        <!-- Scroll area (CHỈ 1 THANH CUỘN) -->
+        <div class="modal-scroll-area clean-single-scroll">
+          
+          <!-- Header 1 hàng rút gọn nhãn -->
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 13px; font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+              <span>📄 Bài viết</span>
+              <span style="font-size: 10.5px; color: #dc2626; font-weight: 600;">(8 lỗi)</span>
+            </div>
+            <div class="btn-mode-toggle">
+              <button class="btn-mode-opt active" style="font-size: 11px; padding: 3px 6px;">Trực tiếp</button>
+              <button class="btn-mode-opt" style="font-size: 11px; padding: 3px 6px;">Song song</button>
+            </div>
+          </div>
+
+          <!-- Toolbar 1 hàng siêu gọn -->
+          <div class="prop2-toolbar-row">
+            <span style="font-size: 11px; color: #64748b; white-space: nowrap;">
+              <span style="color: #dc2626; text-decoration: line-through;">sai</span> → <span style="color: #16a34a; font-weight: bold;">đúng</span>
+            </span>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <button style="font-size: 10px; font-weight: 700; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; padding: 3px 6px; border-radius: 5px; white-space: nowrap;">
+                🎯 BẬT
+              </button>
+              <div class="btn-mode-toggle">
+                <button class="btn-mode-opt" style="font-size: 10.5px; padding: 2px 6px;">Text</button>
+                <button class="btn-mode-opt active" style="font-size: 10.5px; padding: 2px 6px;">Ảnh</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ảnh có lỗi -->
+          <div class="img-mockup" style="height: 265px;">
+            <div style="font-family: serif; font-size: 26px; color: #334155; transform: rotate(-1deg); opacity: 0.85;">
+              Gió từ tay mẹ ...
+            </div>
+            <!-- Bbox 1 -->
+            <div class="bbox-sim" style="top: 30px; left: 80px; width: 65px; height: 42px;">
+              <div class="bbox-tag">#2 ✓ Ru</div>
+            </div>
+            <!-- Bbox 2 -->
+            <div class="bbox-sim" style="top: 80px; right: 70px; width: 70px; height: 42px;">
+              <div class="bbox-tag">#3 ✓ say</div>
+            </div>
+            <!-- Bbox 3 -->
+            <div class="bbox-sim" style="bottom: 40px; left: 90px; width: 85px; height: 50px; border-color: #2563eb; background: rgba(37, 99, 235, 0.12);">
+              <div class="bbox-tag" style="background: #2563eb;">#4 ✓ Thay</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <span style="font-size: 11px; color: #d97706;">⚠️ Chưa lưu bài</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-save-sm">💾 Lưu nhanh</button>
+            <button class="btn-close-sm">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="notes-box">
+        <div class="note-good">
+          <span>✓</span>
+          <span><b>Tiết kiệm chiều dọc</b>: Dồn tất cả lên 1 hàng duy nhất bằng cách rút gọn nhãn chữ.</span>
+        </div>
+        <div class="note-good">
+          <span>✓</span>
+          <span><b>Chỉ duy nhất 1 thanh cuộn</b>: Khóa cuộn nền triệt để.</span>
+        </div>
+        <div class="note-bad" style="color: #64748b;">
+          <span>•</span>
+          <span>Nhãn chữ hơi ngắn gọn (ví dụ: <i>"BẬT"</i> thay vì <i>"Khung lỗi: BẬT"</i>).</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

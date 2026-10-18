@@ -17,49 +17,87 @@ import { ensureVietnameseCapitalization, formatAiErrorMessage } from "@/lib/util
 // Xem thêm: TechSpec §5 và §9.4 về cấu hình self-host.
 export const maxDuration = 300   // Vercel only — không tác dụng trên self-host
 
-const GEMINI_MODEL = "gemini-3.1-flash-lite"
+const CANDIDATE_MODELS = [
+  "gemini-3.1-flash-lite", // Gốc của hệ thống: Ưu tiên số 1
+  "gemini-3.5-flash-lite", // Backup khi model 3.1 gặp quá tải (503 / 429)
+]
+const GEMINI_MODEL = CANDIDATE_MODELS[0]
 const VIT5_SERVICE_URL = process.env.VIT5_SERVICE_URL || "http://localhost:8000"
 
+// ============================================================
+// GEMINI API CLIENT (Multi-Model & Key Rotation)
+// ============================================================
+function getApiKeys(): string[] {
+  const envVal = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || ""
+  return envVal.split(",").map(k => k.trim()).filter(Boolean)
+}
 
-// ============================================================
-// GEMINI API CLIENT (Single API Key)
-// ============================================================
 function getApiKey(): string {
-  const key = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(",")[0] || ""
-  return key.trim()
+  const keys = getApiKeys()
+  return keys[0] || ""
 }
 
 async function callGemini(
-  apiKey: string,
+  _ignoredKey: string,
   contents: any[],
   customConfig?: { model?: string; temperature?: number; maxOutputTokens?: number }
 ): Promise<{ text: string; tokenCount: number; keyIndex: number }> {
-  if (!apiKey) throw new Error("Chưa cấu hình GEMINI_API_KEY")
+  const keys = getApiKeys()
+  if (!keys.length) throw new Error("Chưa cấu hình GEMINI_API_KEY trong file môi trường (.env / .env.local)")
 
-  const client = new GoogleGenAI({ apiKey })
-  const modelToUse = customConfig?.model || GEMINI_MODEL
+  const modelsToTry = customConfig?.model ? [customConfig.model, ...CANDIDATE_MODELS] : CANDIDATE_MODELS
+  const uniqueModels = Array.from(new Set(modelsToTry))
+  let lastError: any = null
 
-  const response = await client.models.generateContent({
-    model: modelToUse,
-    contents: contents,
-    config: {
-      responseMimeType: "application/json",
-      temperature: typeof customConfig?.temperature === "number" ? customConfig.temperature : 0.1,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: typeof customConfig?.maxOutputTokens === "number" ? customConfig.maxOutputTokens : 8192,
-    },
-  })
+  for (const model of uniqueModels) {
+    for (let kIdx = 0; kIdx < keys.length; kIdx++) {
+      const apiKey = keys[kIdx]
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const client = new GoogleGenAI({ apiKey })
+          const response = await client.models.generateContent({
+            model,
+            contents: contents,
+            config: {
+              responseMimeType: "application/json",
+              temperature: typeof customConfig?.temperature === "number" ? customConfig.temperature : 0.1,
+              topP: 0.95,
+              topK: 40,
+              maxOutputTokens: typeof customConfig?.maxOutputTokens === "number" ? customConfig.maxOutputTokens : 8192,
+            },
+          })
 
-  const text = response.text ?? ""
-  const tokenCount = response.usageMetadata?.totalTokenCount || 0
+          const text = response.text ?? ""
+          const tokenCount = response.usageMetadata?.totalTokenCount || 0
 
-  if (!text || text.trim().length === 0) {
-    throw new Error("Gemini trả về nội dung rỗng")
+          if (!text || text.trim().length === 0) {
+            throw new Error("Gemini trả về nội dung rỗng")
+          }
+
+          console.log(`[Gemini] ✓ Thành công [Model: ${model}, Key #${kIdx + 1}]: (${tokenCount} tokens, ${text.length} chars)`)
+          return { text, tokenCount, keyIndex: kIdx + 1 }
+        } catch (err: any) {
+          lastError = err
+          const errMsg = String(err?.message || err)
+          const isOverloadedOrRateLimit = errMsg.includes("503") || errMsg.includes("429") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand")
+          const isInvalidKey = errMsg.includes("400") || errMsg.includes("403") || errMsg.includes("API_KEY_INVALID")
+
+          console.warn(`[Gemini] Thử [${model}] với Key #${kIdx + 1} (lần ${attempt + 1}) không thành công:`, err?.status || errMsg.slice(0, 100))
+
+          if (isInvalidKey) {
+            break // Chuyển key tiếp theo
+          }
+          if (isOverloadedOrRateLimit && attempt === 0) {
+            await new Promise(r => setTimeout(r, 600))
+            continue
+          }
+          break
+        }
+      }
+    }
   }
 
-  console.log(`[Gemini] ✓ Thành công (${tokenCount} tokens, ${text.length} chars)`)
-  return { text, tokenCount, keyIndex: 1 }
+  throw lastError || new Error("Tất cả model Gemini đều không phản hồi")
 }
 
 // ============================================================

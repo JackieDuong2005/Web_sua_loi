@@ -49,14 +49,38 @@ pip install -r "$PYTHON_DIR/requirements.txt" --quiet
 
 log "Thư viện đã cài đặt:"
 python3 -c "
-import torch, transformers, ultralytics, edge_tts
+import torch, transformers, ultralytics, piper, onnxruntime, soundfile
 print(f'  • PyTorch: {torch.__version__} (Device: cpu, Threads: {torch.get_num_threads()})')
 print(f'  • Transformers: {transformers.__version__}')
 print(f'  • Ultralytics YOLO: {ultralytics.__version__}')
-print(f'  • Edge-TTS: Sẵn sàng')
+print(f'  • ONNX Runtime: {onnxruntime.__version__}')
+print(f'  • Piper TTS: Sẵn sàng (VITS ONNX Offline Engine)')
 "
 
-step "BƯỚC 3/4: TẢI TRƯỚC MODEL VIT5 VỀ BỘ NHỚ ĐỆM (PRE-DOWNLOAD)"
+step "BƯỚC 3/5: TẢI TRƯỚC MÔ HÌNH PIPER TTS TIẾNG VIỆT OFFLINE"
+
+TTS_MODELS_DIR="$PYTHON_DIR/models/tts"
+mkdir -p "$TTS_MODELS_DIR"
+log "Đang kiểm tra và tải trước model tiếng Việt Piper TTS (VAIS1000 22kHz)..."
+python3 -c "
+import os, urllib.request
+models_dir = '$TTS_MODELS_DIR'
+base_url = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/vi/vi_VN/vais1000/medium'
+onnx_file = os.path.join(models_dir, 'vi_VN-vais1000-medium.onnx')
+json_file = os.path.join(models_dir, 'vi_VN-vais1000-medium.onnx.json')
+
+if not os.path.exists(json_file):
+    print('  -> Đang tải JSON config...')
+    urllib.request.urlretrieve(f'{base_url}/vi_VN-vais1000-medium.onnx.json', json_file)
+
+if not os.path.exists(onnx_file):
+    print('  -> Đang tải ONNX model (~60MB)...')
+    urllib.request.urlretrieve(f'{base_url}/vi_VN-vais1000-medium.onnx', onnx_file)
+
+print('  [✔] Piper TTS Vietnamese Model (VAIS1000) sẵn sàng!')
+"
+
+step "BƯỚC 4/5: TẢI TRƯỚC MODEL VIT5 VỀ BỘ NHỚ ĐỆM (PRE-DOWNLOAD)"
 
 log "Đang tải trước mô hình ViT5 chamdentimem/ViT5_Vietnamese_Correction..."
 python3 -c "
@@ -71,7 +95,7 @@ qmodel = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=tor
 print('  [✔] Model ViT5 INT8 nạp thành công!')
 "
 
-step "BƯỚC 4/4: KIỂM TRA TRỌNG SỐ YOLOV8 WORD DETECTOR"
+step "BƯỚC 5/5: KIỂM TRA TRỌNG SỐ YOLOV8 WORD DETECTOR"
 
 YOLO_WEIGHTS="$APP_DIR/Test_train_29_12/ver2/runs/detect/train/weights/best.pt"
 if [ -f "$YOLO_WEIGHTS" ]; then

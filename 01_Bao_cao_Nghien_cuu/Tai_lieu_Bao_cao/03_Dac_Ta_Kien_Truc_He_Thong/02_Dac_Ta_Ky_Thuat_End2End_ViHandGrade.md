@@ -93,7 +93,7 @@ Hệ sinh thái **ViHand Grade** giải quyết trọn vẹn bài toán chuyển
 │  ┌────────────────────────┐  │ │  ┌──────────────────────────────┐  ┌──────────────────────────┐ │
 │  │ Google Gemini Cloud    │  │ │  │ YOLOv8 Word Detector         │  │ ViT5 Correction Engine   │ │
 │  │ • gemini-3.1-flash-lite│  │ │  │ • best.pt (640x640)          │  │ • Dynamic INT8 CPU       │ │
-│  │ • gemini-2.5-flash FB  │  │ │  │ • Vertical Overlap (0.40)    │  │ • Prose Chunking <=160   │ │
+│  │ • gemini-3.5-flash-lite │  │ │  │ • Vertical Overlap (0.40)    │  │ • Prose Chunking <=160   │ │
 │  │ • Zero-Loss Prompt     │  │ │  │ • Rel BBoxes [0.0, 1.0]      │  │ • 6 Phân nhóm lỗi ngữ âm │ │
 │  │ • Xoay vòng Multi-Keys │  │ │  └──────────────────────────────┘  └──────────────────────────┘ │
 │  └────────────────────────┘  │ │  ┌──────────────────────────────┐  ┌──────────────────────────┐ │

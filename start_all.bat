@@ -48,7 +48,12 @@ if %errorlevel% neq 0 (
 )
 
 REM ------------------------------------------------------------------
-REM 3. Kiem tra cau hinh GEMINI API KEY
+REM 3. Giai phong port cu neu bi treo (:3000, :8000)
+REM ------------------------------------------------------------------
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(3000, 8000); foreach ($p in $ports) { $conns = Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue; if ($conns) { foreach ($c in $conns) { try { Stop-Process -Id $c.OwningProcess -Force -ErrorAction SilentlyContinue } catch {} } } }" >nul 2>&1
+
+REM ------------------------------------------------------------------
+REM 4. Kiem tra cau hinh GEMINI API KEY
 REM ------------------------------------------------------------------
 if exist ".env.local" (
     echo [OK] Da tim thay file cau hinh .env.local
@@ -56,53 +61,45 @@ if exist ".env.local" (
     echo [OK] Da nhan dien GEMINI_API_KEY tu bien moi truong he thong.
 ) else (
     echo [!] CANH BAO: Chua tim thay file .env.local hoac bien GEMINI_API_KEY.
-    echo     He thong van khoi dong, nhung tinh nang OCR Gemini co the bi han che.
-    echo     Ban co the chay setup_api_key.bat de bo sung key bat cu luc nao.
 )
 echo.
 
 REM ------------------------------------------------------------------
-REM 4. Khoi dong Web Frontend va REST API (Next.js - Port 3000)
+REM 5. Khoi dong Web Frontend va REST API (Next.js - Port 3000)
 REM ------------------------------------------------------------------
 echo [1/2] Dang khoi dong Web Frontend va REST API (Next.js - Port 3000)...
-start "ViHand Grade Web (Port 3000)" cmd /k "cd /d ""%~dp0"" && echo Dang khoi dong Next.js dev server... && npm run dev"
-echo     [OK] Cua so Next.js da duoc mo. Vui long doi san sang tai http://localhost:3000
+start "ViHand Grade Web (Port 3000)" cmd /k "cd /d ""%~dp0"" && set PORT=3000 && npm run dev"
+echo     [OK] Cua so Next.js da duoc mo.
 echo.
 
 REM ------------------------------------------------------------------
-REM 5. Khoi dong AI Service: ViT5 + YOLOv8 + Qwen SLM (Quantized) + Edge-TTS (Python - Port 8000)
+REM 6. Khoi dong AI Service: ViT5 + YOLOv8 + Qwen SLM + TTS (Python - Port 8000)
 REM ------------------------------------------------------------------
-echo [2/2] Dang khoi dong AI Service: ViT5 + YOLOv8 + Qwen SLM (Quantized 16-bit) + Edge-TTS (Port 8000)...
-start "ViHand AI Service (Port 8000)" cmd /k "cd /d ""%~dp0python_service"" && set "PYTHONIOENCODING=utf-8" && set "ENABLE_QWEN_SLM=1" && set "QWEN_PRECISION=bfloat16" && echo Dang khoi dong Python AI Service (ViT5 + YOLOv8 + Qwen2.5 SLM Quantized 16-bit)... && python main.py"
-echo     [OK] Cua so AI Service da duoc mo. Vui long doi tai model tai http://localhost:8000
+echo [2/2] Dang khoi dong AI Service: ViT5 + YOLOv8 + Qwen SLM + Piper TTS (Port 8000)...
+start "ViHand AI Service (Port 8000)" cmd /k "cd /d ""%~dp0python_service"" && set PYTHONIOENCODING=utf-8 && set ENABLE_VIT5=1 && set ENABLE_YOLO=1 && set ENABLE_QWEN_SLM=1 && python main.py"
+echo     [OK] Cua so AI Service da duoc mo.
 echo.
 
 REM ------------------------------------------------------------------
-REM 6. Thong tin dieu huong
+REM 7. Thong tin dieu huong & Tu dong mo trinh duyet
 REM ------------------------------------------------------------------
 echo ================================================================
 echo  TAT CA CAC DICH VU DANG DUOC KHOI DONG!
 echo ================================================================
 echo.
-echo  DICH VU             CONG DUNG                                    PORT
-echo  -------             ---------                                    ----
-echo  Next.js Web         Giao dien + Cham diem + Doc bai              3000
-echo  ViHand AI Service   ViT5 + YOLOv8 + Qwen SLM (Quantized) + TTS   8000
-echo.
-echo  CAU HINH MO HINH AI:
-echo  - ViT5 Correction:   Dynamic INT8 Quantization (CPU)
-echo  - YOLOv8 Detector:   Nhan dien vi tri chu viet tay (best.pt)
-echo  - Qwen2.5 SLM:       16-bit BFloat16 Quantization (Tiet kiem 75%% RAM)
-echo  - Microsoft TTS:     Giong doc chuan Ha Noi / Sai Gon (Edge-TTS)
-echo.
 echo  DIA CHI TRUY CAP:
 echo  - Trang chu Web:        http://localhost:3000
 echo  - Cham diem AI:         http://localhost:3000/teacher/grade
 echo  - Doc chinh ta Web:     http://localhost:3000/teacher/dictation
+echo  - Cong hoc sinh:        http://localhost:3000/student
 echo  - API Docs (Swagger):   http://localhost:8000/docs
+echo.
+echo  Dang cho 5 giay de tu dong mo trinh duyet...
+timeout /t 5 /nobreak >nul 2>&1 || ping -n 6 127.0.0.1 >nul
+start http://localhost:3000/teacher
 echo.
 echo  LUU Y:
 echo  - Giu nguyen 2 cua so Command Prompt vua mo de he thong hoat dong.
-echo  - Muon tat he thong, chi can dong 2 cua so terminal do.
+echo  - Muon tat he thong, chi can dong 2 cua so terminal do la xong.
 echo ================================================================
 pause

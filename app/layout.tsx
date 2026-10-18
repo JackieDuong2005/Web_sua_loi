@@ -60,7 +60,15 @@ export default function RootLayout({
         {Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV) && <Analytics />}
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                for (var i = 0; i < regs.length; i++) {
+                  regs[i].unregister();
+                }
+              });
+            } else {
+              navigator.serviceWorker.register('/sw.js').catch(function() {});
+            }
           }
         `}} />
       </body>

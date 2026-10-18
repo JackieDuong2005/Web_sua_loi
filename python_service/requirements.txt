@@ -15,8 +15,10 @@ safetensors>=0.4.3
 ultralytics>=8.0.0
 pillow>=10.0.0
 
-# Speech Synthesis (Microsoft Edge-TTS)
-edge-tts>=6.1.12
+# Offline Speech Synthesis (Piper TTS VITS ONNX for Raspberry Pi & Local ARM/x86)
+piper-tts>=1.2.0
+onnxruntime>=1.15.0
+soundfile>=0.12.1
 
 # PyTorch:
 # - Trên Raspberry Pi (CPU): pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu

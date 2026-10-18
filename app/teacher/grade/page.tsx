@@ -454,6 +454,29 @@ function ResultPopup({
     }
   }, [])
 
+  // Issue #Fix: Khóa cuộn trang nền triệt để (cả html lẫn body) khi mở ResultPopup để triệt tiêu hoàn toàn hiện tượng 2 thanh cuộn dọc song song
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return
+    const origBodyOverflow = document.body.style.overflow
+    const origHtmlOverflow = document.documentElement.style.overflow
+    const origBodyPaddingRight = document.body.style.paddingRight
+
+    // Bù padding-right nếu trình duyệt có thanh cuộn cửa sổ để chống giật giàn trang (layout shift)
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
+    if (scrollBarWidth > 0) {
+      document.body.style.paddingRight = `${scrollBarWidth}px`
+    }
+
+    document.body.style.overflow = "hidden"
+    document.documentElement.style.overflow = "hidden"
+
+    return () => {
+      document.body.style.overflow = origBodyOverflow
+      document.documentElement.style.overflow = origHtmlOverflow
+      document.body.style.paddingRight = origBodyPaddingRight
+    }
+  }, [open])
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node
@@ -797,36 +820,38 @@ function ResultPopup({
   const errorsTextsJSX = (
     <div className="space-y-4">
 
-      {/* ── Header với compact toggle ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <FileText className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-sm text-foreground">Bài viết học sinh</span>
+      {/* ── Header với responsive toggle chống gãy chữ (Phương án 1) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <FileText className="w-4 h-4 text-primary shrink-0" />
+          <span className="font-bold text-sm text-foreground whitespace-nowrap">Bài viết học sinh</span>
           {corrections.length > 0 && (
-            <span className="text-[10px] text-muted-foreground">({corrections.length} lỗi được đánh dấu)</span>
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">({corrections.length} lỗi được đánh dấu)</span>
           )}
         </div>
         {/* Compact pill toggle */}
-        <div className="flex items-center gap-0.5 bg-muted/60 rounded-lg p-0.5">
+        <div className="inline-flex self-start sm:self-auto items-center gap-0.5 bg-muted/70 rounded-lg p-0.5 border border-border/50 shrink-0">
           <button
+            type="button"
             onClick={() => setViewMode("inline")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               viewMode === "inline"
-                ? "bg-white shadow-sm text-primary"
+                ? "bg-white shadow-xs text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             📄 Trực tiếp
           </button>
           <button
+            type="button"
             onClick={() => setViewMode("sidebyside")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               viewMode === "sidebyside"
-                ? "bg-white shadow-sm text-primary"
+                ? "bg-white shadow-xs text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            📋 Song song
+            📋 So sánh song song
           </button>
         </div>
       </div>
@@ -836,48 +861,64 @@ function ResultPopup({
         <div className="grid gap-3 grid-cols-1 xl:grid-cols-[1fr_300px]">
           {/* CỘT TRÁI: Bài viết có annotation */}
           <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            {/* Panel header: legend + Image/Text toggle */}
-            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
-              <span className="text-[11px] text-slate-500 flex items-center gap-2">
-                <span style={{ color: "#b91c1c", textDecoration: "line-through", textDecorationColor: "#fca5a5", fontSize: "12px" }}>sai</span>
-                <span className="text-slate-400">→</span>
-                <span style={{ color: "#15803d", borderBottom: "2px solid #86efac" }}>đúng</span>
-                &nbsp;·&nbsp; Học sinh đối chiếu trực tiếp
-              </span>
-              {/* Ảnh/Text toggle + Toggle khoanh vùng lỗi trong panel */}
+            {/* Panel header: legend + Image/Text toggle (Cố định vị trí, chống nhảy layout khi chuyển Text/Ảnh) */}
+            <div className="px-3 sm:px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-col gap-2">
+              {/* Tầng 1: Legend chú thích */}
+              <div className="text-[11.5px] text-slate-500 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                  <span style={{ color: "#b91c1c", textDecoration: "line-through", textDecorationColor: "#fca5a5", fontSize: "12px", fontWeight: 600 }}>chữ sai</span>
+                  <span className="text-slate-400">→</span>
+                  <span style={{ color: "#15803d", borderBottom: "2px solid #86efac", fontWeight: 700 }}>chữ đúng</span>
+                </span>
+                <span className="text-slate-400 text-[10.5px] truncate">· Học sinh đối chiếu trực tiếp</span>
+              </div>
+
+              {/* Tầng 2: Công cụ - CỐ ĐỊNH 2 ĐẦU: Bên trái Khung lỗi, bên phải chọn Text/Ảnh */}
               {displayImage && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {imageLayer && (
+                <div className="flex items-center justify-between gap-2 w-full min-h-[32px]">
+                  {/* Bên trái: Nút Khung lỗi (hoặc nhãn Text khi ở chế độ text để giữ nguyên vị trí, không co giật) */}
+                  <div className="flex items-center min-w-0">
+                    {imageLayer ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowBBoxes(!showBBoxes)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer border whitespace-nowrap ${
+                          showBBoxes
+                            ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100 shadow-2xs"
+                            : "bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200"
+                        }`}
+                        title="Bật/tắt khung đỏ phát hiện vị trí chữ sai trên ảnh bài viết"
+                      >
+                        <Target className={`w-3.5 h-3.5 ${showBBoxes ? "text-rose-600" : "text-stone-400"}`} />
+                        <span>{showBBoxes ? "🎯 Khung lỗi: BẬT" : "🎯 Khung lỗi: TẮT"}</span>
+                      </button>
+                    ) : (
+                      <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
+                        Văn bản ô ly học sinh
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bên phải: Nút chuyển Text / Ảnh bài làm - LUÔN GHIM CỐ ĐỊNH Ở GÓC PHẢI (ml-auto) */}
+                  <div className="flex items-center gap-0.5 bg-slate-200/70 rounded-md p-0.5 shrink-0 border border-slate-300/40 ml-auto">
                     <button
                       type="button"
-                      onClick={() => setShowBBoxes(!showBBoxes)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer border ${
-                        showBBoxes
-                          ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100 shadow-2xs"
-                          : "bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200"
-                      }`}
-                      title="Bật/tắt khung đỏ phát hiện vị trí chữ sai trên ảnh bài viết"
-                    >
-                      <Target className={`w-3.5 h-3.5 ${showBBoxes ? "text-rose-600" : "text-stone-400"}`} />
-                      <span>{showBBoxes ? "🎯 Khung lỗi: BẬT" : "🎯 Khung lỗi: TẮT"}</span>
-                    </button>
-                  )}
-                  <div className="flex items-center gap-0.5 bg-slate-200/60 rounded-md p-0.5">
-                    <button
                       onClick={() => setImageLayer(false)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-                        !imageLayer ? "bg-white shadow-sm text-slate-700 font-semibold" : "text-slate-400 hover:text-slate-600"
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        !imageLayer ? "bg-white shadow-2xs text-slate-800 font-bold" : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
                       <FileText className="w-3 h-3" /> Text
                     </button>
                     <button
+                      type="button"
                       onClick={() => setImageLayer(true)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-                        imageLayer ? "bg-white shadow-sm text-slate-700 font-semibold" : "text-slate-400 hover:text-slate-600"
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        imageLayer ? "bg-white shadow-2xs text-slate-800 font-bold" : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
-                      <ImageIcon className="w-3 h-3" /> Ảnh
+                      <ImageIcon className="w-3 h-3" /> Ảnh bài làm
                     </button>
                   </div>
                 </div>
@@ -1023,7 +1064,7 @@ function ResultPopup({
           </div>
 
           {/* CỘT PHẢI: Danh sách lỗi */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex flex-col">
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex flex-col xl:max-h-[calc(100vh-240px)]">
             <div className="px-3 py-2.5 bg-muted/50 border-b border-border flex items-center gap-2 shrink-0">
               <AlertCircle className="w-3.5 h-3.5 text-destructive" />
               <span className="font-semibold text-xs">Danh sách lỗi</span>
@@ -1031,7 +1072,7 @@ function ResultPopup({
                 <Badge className="ml-auto bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 h-4">{corrections.length} lỗi</Badge>
               )}
             </div>
-            <div className="overflow-y-auto flex-1 p-2.5 space-y-2">
+            <div className="p-2.5 space-y-2 xl:overflow-y-auto xl:flex-1 custom-scrollbar">
               {corrections.length > 0 ? corrections.map((c, i) => {
                 const theme = getErrorTheme(c.error_type)
                 const isActive = activeErrorIdx === i
@@ -1257,26 +1298,26 @@ function ResultPopup({
         <button
           type="button"
           onClick={() => setMobileTab("review")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
             mobileTab === "review"
               ? "bg-white text-emerald-800 shadow-sm border border-stone-200"
               : "text-stone-600 hover:text-stone-900"
           }`}
         >
-          <FileText className="w-3.5 h-3.5 text-emerald-600" />
-          Bài viết &amp; Lỗi {corrections.length > 0 && `(${corrections.length})`}
+          <FileText className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <span className="truncate">Bài viết &amp; Lỗi {corrections.length > 0 && `(${corrections.length})`}</span>
         </button>
         <button
           type="button"
           onClick={() => setMobileTab("score")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
             mobileTab === "score"
               ? "bg-white text-blue-800 shadow-sm border border-stone-200"
               : "text-stone-600 hover:text-stone-900"
           }`}
         >
-          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-          Bảng điểm &amp; Lưu ({displayScore}đ)
+          <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+          <span className="truncate">Bảng điểm &amp; Lưu ({displayScore}đ)</span>
         </button>
       </div>
 
@@ -1284,7 +1325,7 @@ function ResultPopup({
       <div className="flex-1 overflow-hidden lg:grid lg:grid-cols-[380px_1fr] flex flex-col">
         {/* Cột trái: Bảng điểm + Lưu + Nhận xét */}
         <div
-          className={`overflow-y-auto border-r border-stone-200 bg-white p-3 sm:p-5 space-y-4 ${
+          className={`overflow-y-auto custom-scrollbar border-r border-stone-200 bg-white p-3 sm:p-5 space-y-4 ${
             mobileTab === "score" ? "flex-1 block" : "hidden lg:block"
           }`}
         >
@@ -1292,7 +1333,7 @@ function ResultPopup({
         </div>
         {/* Cột phải: Ảnh hoặc Lỗi + Văn bản */}
         <div
-          className={`overflow-y-auto p-3 sm:p-5 ${
+          className={`overflow-y-auto custom-scrollbar p-3 sm:p-5 ${
             mobileTab === "review" ? "flex-1 block" : "hidden lg:block"
           }`}
           style={{ backgroundColor: "#f9f6f0" }}
@@ -2168,37 +2209,37 @@ export default function GradingPage() {
               </div>
             )}
 
-            {/* 🎯 TAB 1: BÀI ĐỌC SGK (CHO PHÂN MÔN CHÍNH TẢ) */}
+            {/* 🎯 TAB 1: BÀI ĐỌC SGK (CHO PHÂN MÔN CHÍNH TẢ - ĐỀ XUẤT 2) */}
             {gradingMode === "dictation" && (
               !groundTruthText.trim() ? (
-                <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/20 dark:bg-indigo-950/10 p-3 space-y-2">
+                <div className="space-y-1.5">
                   <button
                     type="button"
                     onClick={() => {
                       fetchSgkPassages()
                       setIsSelectSGKOpen(true)
                     }}
-                    className="w-full p-3.5 rounded-xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-white/90 hover:bg-indigo-50/70 dark:bg-slate-900 dark:border-indigo-800 transition-all flex items-center justify-between gap-3 group cursor-pointer text-left shadow-2xs"
+                    className="w-full p-3 rounded-xl border border-border/80 hover:border-primary/50 bg-card hover:bg-muted/40 transition-all flex items-center justify-between gap-3 group cursor-pointer text-left shadow-2xs"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <BookOpen className="w-5 h-5" />
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <BookOpen className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
-                          <span>Chọn bài trong SGK (Tuần 1–35)</span>
-                          <span className="text-[10px] font-normal px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 rounded-full">
-                            Có sẵn 35 tuần
+                        <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                          <span>Chọn bài SGK đối chiếu</span>
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full">
+                            Tuần 1–35
                           </span>
                         </div>
                         <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                          Nhấn để chọn nhanh bài đọc mẫu đối chiếu chấm điểm
+                          Bấm để mở kho 35 tuần hoặc tự dán
                         </p>
                       </div>
                     </div>
-                    <div className="shrink-0 flex items-center gap-1 text-xs font-semibold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
-                      <span>Chọn bài</span>
-                      <FolderOpen className="w-4 h-4" />
+                    <div className="shrink-0 flex items-center gap-1 text-xs font-semibold text-primary group-hover:translate-x-0.5 transition-transform">
+                      <span>Chọn</span>
+                      <ChevronRight className="w-4 h-4" />
                     </div>
                   </button>
 
@@ -2208,19 +2249,19 @@ export default function GradingPage() {
                       <button
                         type="button"
                         onClick={() => setShowManualSgkInput(true)}
-                        className="text-[11px] text-stone-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                        className="text-[11px] text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                       >
                         Hoặc tự dán bài đọc khác
                       </button>
                     </div>
                   ) : (
-                    <div className="pt-1 space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-stone-600">
-                        <span className="font-medium">Dán nội dung bài đọc mẫu:</span>
+                    <div className="p-3 rounded-xl border border-border/80 bg-card space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Dán nội dung bài đọc mẫu:</span>
                         <button
                           type="button"
                           onClick={() => setShowManualSgkInput(false)}
-                          className="text-[11px] text-stone-400 hover:text-stone-600 cursor-pointer"
+                          className="text-[11px] hover:text-foreground cursor-pointer"
                         >
                           Đóng lại
                         </button>
@@ -2230,21 +2271,21 @@ export default function GradingPage() {
                         onChange={e => setGroundTruthText(e.target.value)}
                         placeholder="Dán nội dung bài đọc vào đây..."
                         rows={3}
-                        className="text-xs font-sans resize-none leading-relaxed border-indigo-200/80 focus-visible:ring-indigo-400 bg-white dark:bg-slate-900"
+                        className="text-xs font-sans resize-none leading-relaxed border-border focus-visible:ring-primary bg-background"
                       />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-950/20 p-3.5 space-y-2">
+                <div className="rounded-xl border border-border/80 bg-card p-3 space-y-2 shadow-2xs">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200 truncate">
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      <span className="text-xs font-bold text-foreground truncate">
                         {assignmentTitle || "Bài đọc SGK đã chọn"}
                       </span>
                       <span className="text-[10px] text-muted-foreground shrink-0">
-                        ({groundTruthText.trim().split(/\s+/).length} từ)
+                        ({groundTruthText.trim().split(/\s+/).length} từ • Đang dùng làm Ground Truth)
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -2254,25 +2295,25 @@ export default function GradingPage() {
                           fetchSgkPassages()
                           setIsSelectSGKOpen(true)
                         }}
-                        className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer flex items-center gap-1"
+                        className="text-[11px] font-medium text-primary hover:underline cursor-pointer flex items-center gap-1"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>Đổi bài</span>
                       </button>
-                      <span className="text-stone-300">|</span>
+                      <span className="text-border">|</span>
                       <button
                         type="button"
                         onClick={() => {
                           setGroundTruthText("")
                           setAssignmentTitle("")
                         }}
-                        className="text-[11px] font-medium text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
+                        className="text-[11px] font-medium text-destructive hover:underline cursor-pointer"
                       >
                         Bỏ chọn
                       </button>
                     </div>
                   </div>
-                  <div className="text-xs text-stone-600 dark:text-stone-300 bg-white dark:bg-slate-800/90 rounded-lg p-2.5 border border-indigo-100 dark:border-indigo-900/50 line-clamp-2 leading-relaxed">
+                  <div className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-2.5 border border-border/50 line-clamp-2 leading-relaxed">
                     {groundTruthText}
                   </div>
                 </div>
