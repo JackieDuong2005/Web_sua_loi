@@ -16,7 +16,7 @@ import {
   FolderOpen, Clock, Zap, FileText, RefreshCw,
   Star, MessageSquare, Save, User, BookOpen, ScrollText, Sparkles,
   Image as ImageIcon, Target, Pencil, Layers, CheckCircle2, Check, ChevronDown, ChevronRight, Sliders,
-  Lightbulb, Trophy,
+  Lightbulb, Trophy, Volume2,
 } from "lucide-react"
 import {
   IconGoogleCamera,
@@ -406,6 +406,92 @@ function ResultPopup({
   const suggestionsPopupRef = useRef<HTMLDivElement>(null)
   const suggestionsButtonRef = useRef<HTMLButtonElement>(null)
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [isPlayingComment, setIsPlayingComment] = useState(false)
+  const [playingWordIdx, setPlayingWordIdx] = useState<number | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Dọn dẹp audio an toàn
+  const stopActiveAudio = useCallback((ref: React.MutableRefObject<HTMLAudioElement | null>) => {
+    if (ref.current) {
+      try {
+        ref.current.pause()
+        ref.current.onended = null
+        ref.current.onerror = null
+        ref.current.src = ""
+        ref.current.load()
+      } catch {
+        // Ignore abort issues
+      }
+      ref.current = null
+    }
+  }, [])
+
+  // Dọn dẹp audio khi unmount hoặc đóng popup
+  useEffect(() => {
+    return () => {
+      stopActiveAudio(audioRef)
+    }
+  }, [stopActiveAudio])
+
+  // Nghe cô giáo đọc nhận xét (voice=vi_VN-vais1000-medium&style=warm_story)
+  const playCommentAudio = useCallback((text: string) => {
+    if (!text.trim()) return
+    stopActiveAudio(audioRef)
+    if (isPlayingComment) {
+      setIsPlayingComment(false)
+      return
+    }
+    setPlayingWordIdx(null)
+    setIsPlayingComment(true)
+    const url = `/api/dictation/tts?text=${encodeURIComponent(text)}&voice=vi_VN-vais1000-medium&style=warm_story`
+    const audio = new Audio(url)
+    audioRef.current = audio
+    audio.onended = () => {
+      setIsPlayingComment(false)
+      audioRef.current = null
+    }
+    audio.onerror = () => {
+      setIsPlayingComment(false)
+      audioRef.current = null
+    }
+    audio.play().catch(err => {
+      if (err.name !== "AbortError") {
+        console.warn("Audio playback interrupted or blocked:", err)
+      }
+      setIsPlayingComment(false)
+      audioRef.current = null
+    })
+  }, [isPlayingComment, stopActiveAudio])
+
+  // Phát âm từ sửa lỗi (voice=vi_VN-vais1000-medium&style=emphasis)
+  const playWordPronunciation = useCallback((word: string, idx: number) => {
+    if (!word.trim()) return
+    stopActiveAudio(audioRef)
+    if (playingWordIdx === idx) {
+      setPlayingWordIdx(null)
+      return
+    }
+    setIsPlayingComment(false)
+    setPlayingWordIdx(idx)
+    const url = `/api/dictation/tts?text=${encodeURIComponent(word)}&voice=vi_VN-vais1000-medium&style=emphasis`
+    const audio = new Audio(url)
+    audioRef.current = audio
+    audio.onended = () => {
+      setPlayingWordIdx(null)
+      audioRef.current = null
+    }
+    audio.onerror = () => {
+      setPlayingWordIdx(null)
+      audioRef.current = null
+    }
+    audio.play().catch(err => {
+      if (err.name !== "AbortError") {
+        console.warn("Audio playback interrupted or blocked:", err)
+      }
+      setPlayingWordIdx(null)
+      audioRef.current = null
+    })
+  }, [playingWordIdx, stopActiveAudio])
 
   const updatePopupPosition = useCallback(() => {
     if (!suggestionsButtonRef.current) return
@@ -745,8 +831,28 @@ function ResultPopup({
               Nhận xét của giáo viên
             </span>
           </div>
-          {/* 🌟 Nút mở popup 3 nhận xét */}
-          {suggestions.length > 0 && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* 🔊 Nghe cô giáo đọc nhận xét */}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => playCommentAudio(teacherComment)}
+              disabled={!teacherComment.trim()}
+              className={`text-[11px] font-semibold px-2.5 py-1 h-7 rounded-md transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap border ${
+                isPlayingComment
+                  ? "bg-amber-100 text-amber-900 border-amber-300 ring-2 ring-amber-400/40"
+                  : "text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border-emerald-300"
+              }`}
+              title={isPlayingComment ? "Dừng đọc" : "Nghe cô giáo đọc nhận xét"}
+            >
+              <Volume2 className={`w-3.5 h-3.5 ${isPlayingComment ? "animate-pulse text-amber-600" : "text-emerald-600"}`} />
+              <span className="hidden sm:inline">{isPlayingComment ? "Dừng đọc" : "Nghe cô đọc"}</span>
+              <span className="sm:hidden">{isPlayingComment ? "Dừng" : "Nghe"}</span>
+            </Button>
+
+            {/* 🌟 Nút mở popup 3 nhận xét */}
+            {suggestions.length > 0 && (
             <button
               ref={suggestionsButtonRef}
               type="button"
@@ -772,6 +878,7 @@ function ResultPopup({
               <ChevronDown className={`w-3 h-3 transition-transform duration-200 lg:hidden ${showSuggestionsPopup ? "rotate-180" : ""}`} />
             </button>
           )}
+          </div>
         </div>
 
         <div className="p-3.5 space-y-2">
@@ -1099,6 +1206,23 @@ function ResultPopup({
                       <span className="text-destructive text-xs font-medium line-through bg-red-50 px-1 rounded">{c.error}</span>
                       <span className="text-muted-foreground text-xs font-bold">→</span>
                       <span className="text-green-700 text-xs font-semibold bg-green-50 px-1 rounded">{c.suggestion}</span>
+                      {c.suggestion && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            playWordPronunciation(c.suggestion, i)
+                          }}
+                          className={`p-1 rounded-md transition-all cursor-pointer inline-flex items-center justify-center ${
+                            playingWordIdx === i
+                              ? "bg-amber-100 text-amber-700 ring-1 ring-amber-400"
+                              : "text-emerald-700 hover:bg-emerald-100/70"
+                          }`}
+                          title={`Nghe phát âm chuẩn: "${c.suggestion}" (style=emphasis)`}
+                        >
+                          <Volume2 className={`w-3.5 h-3.5 ${playingWordIdx === i ? "animate-pulse text-amber-600" : ""}`} />
+                        </button>
+                      )}
                       <Badge variant="outline" className={`text-[9px] px-1.5 py-0.5 h-4 border font-medium ${theme.badge}`}>{theme.label}</Badge>
                       {c.is_dialect && <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border bg-amber-50 text-amber-700 border-amber-200">🗣</Badge>}
                     </div>
@@ -1208,6 +1332,23 @@ function ResultPopup({
                           <span className="text-destructive font-medium line-through bg-red-50 px-1 rounded">{c.error}</span>
                           <span className="text-muted-foreground font-bold">→</span>
                           <span className="text-green-700 font-semibold bg-green-50 px-1 rounded">{c.suggestion}</span>
+                          {c.suggestion && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                playWordPronunciation(c.suggestion, i + 1000)
+                              }}
+                              className={`p-1 rounded-md transition-all cursor-pointer inline-flex items-center justify-center ${
+                                playingWordIdx === i + 1000
+                                  ? "bg-amber-100 text-amber-700 ring-1 ring-amber-400"
+                                  : "text-emerald-700 hover:bg-emerald-100/70"
+                              }`}
+                              title={`Nghe phát âm chuẩn: "${c.suggestion}" (style=emphasis)`}
+                            >
+                              <Volume2 className={`w-3.5 h-3.5 ${playingWordIdx === i + 1000 ? "animate-pulse text-amber-600" : ""}`} />
+                            </button>
+                          )}
                           <Badge variant="outline" className={`text-[10px] px-1.5 py-0.5 h-5 border font-medium ${theme.badge}`}>{theme.label}</Badge>
                           {c.is_dialect && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border bg-amber-50 text-amber-700 border-amber-200">🗣 Phương ngữ</Badge>}
                         </div>
@@ -1234,7 +1375,12 @@ function ResultPopup({
   // ── Luôn hiển thị fullscreen qua portal ──
   if (!open || typeof document === "undefined") return null
 
-  const handleClose = () => { onClose() }
+  const handleClose = () => {
+    stopActiveAudio(audioRef)
+    setIsPlayingComment(false)
+    setPlayingWordIdx(null)
+    onClose()
+  }
 
   return createPortal(
     <div
@@ -1395,7 +1541,7 @@ function ResultPopup({
                     ? "bg-emerald-100 text-emerald-800 border-emerald-400"
                     : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 shadow-2xs hover:shadow-xs"
                 }`}
-                title="Bảo AI Qwen sinh 3 nhận xét mới khác nếu chưa ưng ý"
+                title="Nhờ Trợ lý AI tạo 3 gợi ý nhận xét mới nếu chưa ưng ý"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? "animate-spin text-emerald-600" : "text-emerald-700"}`} />
                 <span>{isRegenerating ? "Đang tạo..." : regenerateSuccess ? "Đã đổi mới!" : "Tạo mới"}</span>

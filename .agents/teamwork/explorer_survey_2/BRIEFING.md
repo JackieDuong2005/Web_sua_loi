@@ -1,36 +1,50 @@
-# BRIEFING — 2026-10-05T15:22:00Z
+# BRIEFING — 2026-10-18T19:07:00Z
 
 ## Mission
-Conduct an exhaustive, deep code-level investigation into the Android Native App (android_app/) covering Jetpack Compose, Room DB v4, CameraX, Retrofit, Edge TTS, Design Tokens, and Tests.
+Survey the Frontend Multi-Surface UI for ViHand Grade (Teacher Dictation, Teacher Grade, Student Portal) to support the Semantic-Acoustic Decoupled Pipeline (Qwen2.5-0.5B + Piper VITS ONNX).
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: Teamwork explorer specializing in Android Native App architecture for ViHand Grade
+- Roles: frontend UI survey, architecture analysis, synthesized report
 - Working directory: c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2
-- Original parent: 18c248ba-19cd-491f-bb1c-a47796deb34c
-- Milestone: explorer_survey_2
+- Original parent: 0516b259-befc-4fac-baa8-b10ce65a612b
+- Milestone: Survey & UI Analysis Complete
 
 ## 🔒 Key Constraints
 - Read-only investigation — do NOT implement
-- Record exact file paths, class names, method names, and line numbers. NO ASSUMPTIONS.
-- .agents/teamwork/ holds only metadata — never place source code, tests, or data files here.
+- TUYỆT ĐỐI KHÔNG DÙNG SƠ ĐỒ MERMAID (tuân thủ GEMINI.md)
+- Write output to .agents/teamwork/explorer_survey_2/
 
 ## Current Parent
-- Conversation ID: 18c248ba-19cd-491f-bb1c-a47796deb34c
-- Updated: 2026-10-05T15:22:00Z
+- Conversation ID: 0516b259-befc-4fac-baa8-b10ce65a612b
+- Updated: not yet
 
 ## Investigation State
-- **Explored paths**: android_app/app/build.gradle.kts, libs.versions.toml, AndroidManifest.xml, MainActivity.kt, MainViewModel.kt, ReportsViewModel.kt, HistoryScreen.kt, StudentHomeScreen.kt, PhotoBoundingBoxViewer.kt, GradingResultScreen.kt, DictationScreen.kt, CameraScanScreen.kt, HomeScreen.kt, LoginScreen.kt, ProfileSettingsScreen.kt, ReportsAnalyticsScreen.kt, AppDatabase.kt, GradeRecordEntity.kt, ClassEntity.kt, StudentEntity.kt, GradeRecordDao.kt, ClassDao.kt, StudentDao.kt, UserSessionManager.kt, GradeRepository.kt, SampleEssays.kt, LocalDictationPassages.kt, GradeApiService.kt, NetworkClient.kt, GradeApiModels.kt, colors.xml, themes.xml, Color.kt, Theme.kt, Type.kt, ExampleRobolectricTest.kt, ExampleUnitTest.kt, GreetingScreenshotTest.kt, Milestone1StressTest.kt, test reports index.html, apk outputs.
-- **Key findings**: Complete Android Native App survey covering: (1) MVVM & Compose UDF with co-transformation BBox touch gestures (1x-4x zoom & pan in lockstep), (2) Room DB v4 schema, entities, DAOs, and two-way sync protocol with Web BFF vihand.db, (3) Retrofit2 13 API endpoints, OkHttp timeouts, CameraX low latency capture, and Edge TTS speech streaming with multi-level fallback, (4) Design system matching Web Next.js (emerald, cream, 6 error categories, TT27 levels) and HP001 font, (5) 23/23 unit tests passed on Robolectric SDK 36 Pixel 8 in 1m 50.57s. APK size 26,617,394 bytes (~25.38 MB).
-- **Unexplored areas**: None within android_app/ scope. Investigation 100% complete.
+- **Explored paths**:
+  - `app/teacher/dictation/page.tsx` (2496 lines)
+  - `app/teacher/grade/page.tsx` (2914 lines)
+  - `app/student/page.tsx` (516 lines)
+  - `components/student/student-grade-detail-modal.tsx` (673 lines)
+  - `components/student/student-bbox-canvas.tsx` (449 lines)
+  - `app/api/dictation/tts/route.ts` & `app/api/dictation/play-local/route.ts`
+  - `python_service/tts_engine.py` & `python_service/main.py`
+- **Key findings**:
+  - Exact file locations, state variables, component trees, and UI placements cataloged.
+  - Dictation header badge can integrate Qwen RAM status polling (`GET /api/dictation/qwen-director`) alongside Piper ONNX readiness.
+  - "Trích xuất SGK / PDF" dialog designed with drag-and-drop / paste text to populate `title`, `passageText`, `difficultWords`.
+  - "Qwen2.5 Đạo diễn Nhịp đọc" button and interactive Prosody Script preview designed with per-clause style badges (`warm_story`, `emphasis`, `standard`, `question`), rate, and pause duration.
+  - Piper VITS acoustic controls (`PROSODY_STYLE_PRESETS`, `read_punctuation` toggle) specified for both cockpit and chalkboard modes.
+  - Step 3 dictation playback loop mapped to dynamically consume per-clause `style`, `rate`, `noise_scale`, `noise_w`, `pause_sec`.
+  - Teacher comment playback buttons mapped with `voice=vi_VN-vais1000-medium&style=warm_story` on grading page, student portal hero, and student detail modal.
+  - Misspelled word pronunciation buttons mapped with `voice=vi_VN-vais1000-medium&style=emphasis` on grading error cards, student practice bank, and student bbox canvas.
+- **Unexplored areas**: None for frontend survey.
 
 ## Key Decisions Made
-- Executed exhaustive, code-level investigation without assumptions.
-- Generated comprehensive findings report (report.md) and 5-component handoff (handoff.md).
+- All findings and integration blueprints synthesized into `survey_frontend.md` and summarized in `handoff.md`.
 
 ## Artifact Index
-- DISPATCH.md — Task dispatch record
-- BRIEFING.md — Persistent situational awareness
-- progress.md — Liveness heartbeat and milestone tracking
-- report.md — Comprehensive Android Native App audit findings (6 sections, full code evidence)
-- handoff.md — 5-component handoff report (Observation, Logic Chain, Caveats, Conclusion, Verification Method)
+- survey_frontend.md — Comprehensive findings
+- handoff.md — 5-component handoff report
+- progress.md — Liveness heartbeat
+- BRIEFING.md — Situational awareness
+- DISPATCH.md — Received task

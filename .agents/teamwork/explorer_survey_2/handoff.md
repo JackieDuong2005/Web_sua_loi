@@ -1,135 +1,121 @@
-# HANDOFF REPORT — ANDROID NATIVE APP ARCHITECTURE SURVEY (ViHand Grade)
+# HANDOFF REPORT: FRONTEND MULTI-SURFACE UI SURVEY
+## Semantic-Acoustic Decoupled Pipeline (Qwen2.5-0.5B + Piper VITS ONNX)
 
-- **Agent**: `explorer_survey_2` (Teamwork Explorer)
-- **Recipient**: Parent Orchestrator (`18c248ba-19cd-491f-bb1c-a47796deb34c`)
-- **Scope**: Android Native App (`android_app/`) architecture, Jetpack Compose, Room DB v4, CameraX, Retrofit, Edge TTS, Design Tokens, Testing.
-- **Handoff Type**: Hard (Task Complete)
-
----
-
-## 1. OBSERVATION
-
-Dưới đây là các dữ liệu quan sát trực tiếp từ mã nguồn thực tế, không có bất kỳ giả định nào:
-
-1. **Cấu hình Bản dựng & App Specs**:
-   - `android_app/app/build.gradle.kts`:
-     - Line 13: `namespace = "com.example"`
-     - Line 14: `compileSdk { version = release(36) { minorApiLevel = 1 } }`
-     - Line 17-21: `applicationId = "vn.edu.tdtu.vihandgrade"`, `minSdk = 24`, `targetSdk = 36`, `versionCode = 1`, `versionName = "1.0"`
-     - Line 59-60: `JavaVersion.VERSION_11`
-     - Line 63-64: `buildFeatures { compose = true; buildConfig = true }`
-   - `android_app/gradle/libs.versions.toml`:
-     - AGP: `9.1.1` (line 2), Kotlin: `2.2.10` (line 11), Compose BOM: `2024.09.00` (line 12), Room: `2.7.0` (line 15-17), Retrofit: `2.12.0` (line 22), Moshi: `1.15.2` (line 34-35), CameraX: `1.5.0` (line 28-31), Robolectric: `4.16.1` (line 37), Roborazzi: `1.59.0` (line 38), KSP: `2.3.5` (line 13).
-   - `android_app/app/src/main/AndroidManifest.xml`:
-     - Line 5-6: Quyền `android.permission.INTERNET`, `android.permission.CAMERA`
-     - Line 17: `android:usesCleartextTraffic="true"`
-   - Kích thước APK debug:
-     - Lệnh: `Get-Item "android_app/app/build/outputs/apk/debug/app-debug.apk"`
-     - Kết quả: `26,617,394 bytes` (~ `25.38 MB`).
-
-2. **Cử chỉ Bounding Box & Phóng To / Thu Nhỏ (PhotoBoundingBoxViewer.kt)**:
-   - `android_app/app/src/main/java/com/example/ui/components/PhotoBoundingBoxViewer.kt`:
-     - Line 427-443: `Modifier.pointerInput(displayedImgWidthPx, displayedImgHeightPx)` gọi `detectTransformGestures { _, pan, zoom, _ -> ... }` thu phóng `(scale * zoom).coerceIn(1.0f, 4.0f)`.
-     - Line 431-432: Giới hạn dịch chuyển `maxOffsetX = (displayedImgWidthPx * (newScale - 1f) / 2f).coerceAtLeast(0f)` và `maxOffsetY = (displayedImgHeightPx * (newScale - 1f) / 2f).coerceAtLeast(0f)`.
-     - Line 450-455: `Box` chung áp dụng `.graphicsLayer { scaleX = scale; scaleY = scale; translationX = offsetX; translationY = offsetY }` đồng bộ co-transformation cho cả Layer 1 (Ảnh thật) và Layer 2 (Khung Bounding Box).
-     - Line 513-555: Giới hạn tọa độ `safeRelX = rawRelX.coerceIn(0f, 0.95f)`, `safeRelY = rawRelY.coerceIn(0f, 0.95f)`, `safeRelW.coerceIn(0.035f, 0.35f)`, `safeRelH.coerceIn(0.035f, 0.16f)`. Chiều cao chặn tối đa 0.16 tránh phủ dòng kẻ dưới.
-     - Line 565-567: Đổi vị trí huy hiệu nổi: Nếu cách mép trên $< 24\text{dp}$ (`safeRelY < 0.08f`) thì chuyển xuống đáy hộp (`heightDp + 2.dp`).
-
-3. **Cơ Sở Dữ Liệu Cục Bộ (Room DB Schema v4)**:
-   - `android_app/app/src/main/java/com/example/data/local/AppDatabase.kt`:
-     - Line 8-12: `@Database(entities = [GradeRecordEntity::class, ClassEntity::class, StudentEntity::class], version = 4, exportSchema = false)`
-     - Line 27: Tên database `"vihand_grade.db"`
-     - Line 29: `.fallbackToDestructiveMigration()`
-   - `android_app/app/src/main/java/com/example/data/local/GradeRecordEntity.kt`:
-     - Line 6-27: Bảng `grade_records` gồm 18 cột, trong đó cột `serverId: String? = null` (Line 26) là khóa ngoại đồng bộ hai chiều với Web Prisma `vihand.db`.
-   - `android_app/app/src/main/java/com/example/data/local/GradeRecordDao.kt`:
-     - Line 36-79: 10 câu query phân tích sư phạm Thông tư 27 (`getTotalCount`, `getAverageScore`, `getExcellentCount`, `getGoodCount`, `getFairCount`, `getNeedsImprovementCount`, `getDistinctClasses`, `getRecordsByClass`, `getRecordsSince`, `getUnderperformingStudents`).
-   - `android_app/app/src/main/java/com/example/data/repository/GradeRepository.kt`:
-     - Line 708-731: Hàm `syncTwoWayWithServer(serverUrl, studentName, className)` đồng bộ hai chiều: đẩy bài offline lên `/api/grades` và kéo bài từ server về lưu vào Room DB.
-     - Line 53-65: Cache ảnh bài thi dạng JPEG 90 trong `context.filesDir/grades/`.
-
-4. **Tầng Mạng & API Retrofit2**:
-   - `android_app/app/src/main/java/com/example/data/api/GradeApiService.kt`:
-     - 13 endpoints: `POST api/mobile/grade`, `GET api/health`, `POST api/auth/login`, `GET api/dictation/passages`, `GET api/classes`, `GET api/users`, `POST api/grades`, `GET api/grades`, `PATCH api/grades/{id}`, `DELETE api/grades/{id}`, `POST api/dictation/generate`, `POST api/dictation/sessions`, `POST api/dictation/sessions/{id}/logs`.
-   - `android_app/app/src/main/java/com/example/data/api/NetworkClient.kt`:
-     - Line 12: `DEFAULT_BASE_URL = "https://vihandgrade.click/"`
-     - Line 24-28: `connectTimeout 15s`, `readTimeout 60s`, `writeTimeout 60s`, `callTimeout 90s`.
-   - `android_app/app/src/main/java/com/example/data/api/GradeApiModels.kt`:
-     - Line 1-279: Toàn bộ DTOs sử dụng `@JsonClass(generateAdapter = true)`.
-
-5. **Kính Ngắm CameraX & Phát Âm Edge-TTS**:
-   - `android_app/app/src/main/java/com/example/ui/screens/CameraScanScreen.kt`:
-     - Line 251-291: `ProcessCameraProvider`, `PreviewView`, `ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY`, `cameraControl.enableTorch(isFlashOn)`.
-     - Line 964-974: Xoay ảnh Bitmap tự động theo `imageProxy.imageInfo.rotationDegrees` bằng ma trận Matrix trước khi đóng `imageProxy`.
-     - Line 745-859: Chế độ quét liên tục cả lớp `batchBitmaps` và gửi chấm hàng loạt `onBatchCapture`.
-   - `android_app/app/src/main/java/com/example/ui/screens/DictationScreen.kt`:
-     - Line 175-208: `splitIntoPedagogicalClauses` tách cụm từ sư phạm 3-5 từ.
-     - Line 282: Phát âm trực tuyến `$cleanBaseUrl/api/dictation/tts?text=$encodedText&voice=$selectedVoice&rate=$rateStr` với giọng đọc `vi-VN-HoaiMyNeural` hoặc `vi-VN-NamMinhNeural`.
-     - Line 301-327: Cơ chế fallback sang Android `TextToSpeech` cục bộ khi lỗi mạng.
-
-6. **Design Tokens & Bộ Phông Chữ**:
-   - `android_app/app/src/main/res/values/colors.xml`: Line 10-11: `emerald_primary` (`#FF059669`), `background_cream` (`#FFFAF9F6`).
-   - `android_app/app/src/main/res/values/themes.xml`: Line 4-7: `Theme.MyApplication` gán `windowBackground = @color/background_cream` và `statusBarColor = @color/emerald_primary`.
-   - `android_app/app/src/main/java/com/example/ui/theme/Color.kt`: Khớp 100% 6 mã màu loại lỗi (`ErrorPhuAmDau` Rose-500, `ErrorDauThanh` Purple-500, `ErrorVan` Orange-500, `ErrorAmChinh` Emerald-500, `ErrorPhuAmCuoi` Sky-500, `ErrorVietHoa` Blue-600) và thang điểm Thông tư 27.
-   - `android_app/app/src/main/java/com/example/ui/theme/Type.kt`: Tích hợp `FontFamilyTieuHoc` từ `hp001_normal.ttf` và `hp001_bold.ttf`.
-
-7. **Kiểm Thử Đơn Vị & Robolectric SDK 36 (23/23 Tests Passed)**:
-   - `android_app/app/build/reports/tests/testDebugUnitTest/index.html`:
-     - Line 41: `23 tests`
-     - Line 47: `0 failures`
-     - Line 53: `0 skipped`
-     - Line 59: `1m50.57s duration`
-     - Line 69: `100% successful`
-     - Danh sách 4 file test:
-       1. `ExampleRobolectricTest`: 6 tests, 0 failures (48.213s)
-       2. `ExampleUnitTest`: 6 tests, 0 failures (0.013s)
-       3. `GreetingScreenshotTest`: 1 test, 0 failures (19.411s)
-       4. `Milestone1StressTest`: 10 tests, 0 failures (4.775s)
+**Working directory**: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2`  
+**Author**: `explorer_survey_2`  
+**Recipient**: `orchestrator_4` (`0516b259-befc-4fac-baa8-b10ce65a612b`)  
+**Artifact**: `survey_frontend.md`
 
 ---
 
-## 2. LOGIC CHAIN
+### 1. OBSERVATION
 
-1. Từ **Observation 1 & 7**: Ứng dụng Android Native biên dịch trên nền Android 16 (SDK 36, minorApiLevel = 1), minSdk 24 (tương thích 96.4% thiết bị). Bộ kiểm thử Robolectric 4.16.1 chạy trên profile Pixel 8 SDK 36 vượt qua 23/23 bài kiểm tra trong 1 phút 50 giây, khẳng định tính ổn định và tính tương thích cao của ứng dụng Native.
-2. Từ **Observation 2 & 5**: Cử chỉ thu phóng Pinch-to-zoom 2 ngón (1x - 4x) và kéo ảnh Pan trên `PhotoBoundingBoxViewer.kt` sử dụng chung một `graphicsLayer` cho cả ảnh chụp thực tế và lưới Bounding Box. Logic này đảm bảo khi giáo viên thu phóng hoặc di chuyển ảnh để soi nét chữ, các hộp Bounding Box luôn neo chính xác $1:1$ vào nét chữ mà không xảy ra sai lệch tọa độ.
-3. Từ **Observation 3 & 4**: Kiến trúc Room DB v4 bổ sung cột `serverId` kết hợp cùng phương thức `syncTwoWayWithServer` trong `GradeRepository.kt` và 13 API endpoints của `GradeApiService.kt` thiết lập kênh đồng bộ hai chiều toàn diện giữa điện thoại và máy chủ Next.js BFF (`/api/grades`). Hệ thống tự động đẩy bài offline và tải bài mới từ máy chủ về máy, bảo toàn toàn vẹn dữ liệu ngay cả khi ngắt kết nối mạng.
-4. Từ **Observation 5**: Luồng âm thanh sư phạm trong `DictationScreen.kt` kết hợp linh hoạt giữa Microsoft Edge-TTS Neural độ trễ thấp từ server và Android native `TextToSpeech` ngoại tuyến, chia nhỏ văn bản thành cụm 3-5 từ với chu kỳ đọc 2 lần và nghỉ 10 giây, phản ánh đúng phương pháp sư phạm chính tả tiểu học.
-5. Từ **Observation 6**: Hệ thống Design Tokens từ XML (`colors.xml`, `themes.xml`) tới Compose (`Color.kt`, `Theme.kt`, `Type.kt`) đồng bộ 100% với bảng màu Tailwind CSS trên Web Next.js và tích hợp phông chữ tập viết chuẩn HP001 của Bộ GD&ĐT.
+1. **`app/teacher/dictation/page.tsx`**:
+   - Header badge at line 983–986 currently renders a static indicator:
+     ```tsx
+     <div className="hidden sm:flex items-center gap-1.5 border border-emerald-500/20 bg-emerald-500/10 rounded-full px-2.5 py-1 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+       <span>Piper Offline TTS (Pi 4/5)</span>
+     </div>
+     ```
+     No polling or live Qwen RAM status badge is currently present.
+   - Text editing and passage setup toolbar (lines 1093–1138) contains buttons for `AI soạn bài` (`setIsAiGenerateOpen(true)`), `Kho SGK`, `Dán`, and `Xóa`, but lacks the **"📄 Trích xuất SGK / PDF (Qwen2.5)"** button.
+   - Passage clause preview currently relies on regex function `splitIntoPedagogicalClauses` (lines 177–232). It has no concept of acoustic prosody styling (`style`), difficult word emphasis, or per-clause pauses.
+   - Acoustic controls in the cockpit right column (lines 1248–1438) currently allow selecting voice (`selectedVoiceId`), output destination (`audioOutputDest`), speed rate slider (`speedRate`), repeat count (`repeatCount`), and pause (`pauseSetting`). It lacks a **Prosody Style selector** (`warm_story`, `standard`, `emphasis`, `question`) and **"Đọc tên dấu câu"** toggle (`read_punctuation`).
+   - `speakClause` function (lines 535–597) only sends `{ text, voice, rate }` to `/api/dictation/play-local` or `/api/dictation/tts`, omitting `style`, `noise_scale`, `noise_w`, and `read_punctuation`.
+   - Step 3 dictation loop (`startStep3Dictation`, lines 683–751) iterates through plain strings in `preparedClauses` with a fixed auto-pause rule (`pauseTime = Math.max(5, Math.round(wCount * 1.6))`), ignoring dynamic prosody parameters directed by Qwen.
+
+2. **`app/teacher/grade/page.tsx`**:
+   - Pedagogical comment block (lines 740–800) displays `teacherComment` in a `<Textarea>` with a `3 Gợi ý mẫu` button, but lacks a button to play or preview the comment via TTS.
+   - Word corrections list (lines 1076–1114) maps `corrections` to cards showing `c.error → c.suggestion` with type badges, but currently lacks an audio speaker button for teachers to listen to the correct pronunciation of misspelled words.
+
+3. **`app/student/page.tsx`**:
+   - Hero banner quote (line 218–220) displays:
+     ```tsx
+     <p className="text-xs sm:text-sm text-muted-foreground italic line-clamp-1">
+       &ldquo;{latestGrade?.pedagogicalComment || latestGrade?.feedback || "Con làm bài rất tốt!"}&rdquo;
+     </p>
+     ```
+     No audio button is attached to this comment.
+   - Word practice section `wordsToPractice` (lines 406–444) contains a speaker button calling `playAudio(w.suggestion)` (line 426).
+   - In line 71, `playAudio` is currently hardcoded with legacy online Edge-TTS:
+     ```typescript
+     const audio = new Audio(`/api/dictation/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=-15%`)
+     ```
+
+4. **`components/student/student-grade-detail-modal.tsx`**:
+   - Teacher pedagogical comment card (lines 456–468) displays `grade.pedagogicalComment || grade.feedback` without an audio play button.
+   - Misspelled word correction list (lines 513–573) has a `<Volume2>` button calling `playAudio(item.suggestion)` (line 557).
+   - In line 238, `playAudio` is also hardcoded with `voice=vi-VN-HoaiMyNeural&rate=-15%`:
+     ```typescript
+     const audio = new Audio(`/api/dictation/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=-15%`)
+     ```
+   - This `playAudio` is also passed directly to `StudentBoundingBoxCanvas` (`onPlayAudio={playAudio}`, line 329), meaning clicking on any red bounding box on the actual scanned notebook image currently triggers this outdated endpoint.
+
+5. **`app/api/dictation/...`**:
+   - `app/api/dictation/tts/route.ts`: Currently forwards `text`, `voice`, and `rate` to `VIT5_SERVICE_URL/tts`.
+   - `app/api/dictation/play-local/route.ts`: Currently forwards `text`, `voice`, and `rate` to `VIT5_SERVICE_URL/tts/play-local`.
+   - `app/api/dictation/qwen-director/route.ts`: Does not yet exist in `app/api/dictation/`.
 
 ---
 
-## 3. CAVEATS
+### 2. LOGIC CHAIN
 
-- **Môi trường thiết bị vật lý**: Các kiểm thử UI và cử chỉ được kiểm chứng thông qua Robolectric SDK 36 (Native Graphics Mode với Roborazzi snapshot). Để kiểm tra hiệu ứng xúc giác rung (Haptic Feedback) và hiệu năng camera ở điều kiện ánh sáng thực tế ngoài lớp học, cần chạy trên thiết bị Android vật lý.
-- **Dung lượng bộ nhớ đệm**: Cần lưu ý dọn dẹp thư mục `context.filesDir/grades/` định kỳ qua `clearPhotoCache()` nếu thiết bị giáo viên chụp liên tục hàng nghìn bài thi độ phân giải cao.
-- Ngoài các điểm trên, không có giả định nào khác.
+1. **Step 1 (Dictation Cockpit Header & RAM Badge)**:
+   - Observation 1 shows a static badge at line 983.
+   - By creating `app/api/dictation/qwen-director/route.ts` with `GET` proxying to `http://127.0.0.1:8000/qwen/status`, the frontend can poll every 10s and capture `is_loaded`, `available_ram_mb`, and `lifecycle_mode`.
+   - Connecting UI states (`isQwenProcessing`, `qwenJustUnloaded`) will accurately reflect `Ngủ 0MB RAM`, `Đang bật cờ xử lý`, and `Đã lưu kịch bản & Xả RAM`.
+
+2. **Step 2 (Textbook & PDF Extraction)**:
+   - Observation 1 shows toolbar buttons at line 1093.
+   - Placing a **"📄 Trích xuất SGK / PDF (Qwen2.5)"** dialog with file input (`FileReader.readAsText`) and raw text textarea allows teachers to submit messy text.
+   - Sending `POST /api/dictation/qwen-director` with `{ action: "extract_sgk", raw_text, grade }` triggers backend cleaning and populates `title`, `passageText`, and `difficultWords`.
+
+3. **Step 3 (Prosody Direction & Dynamic Playback)**:
+   - Observation 1 shows deterministic splitting and hardcoded playback loops.
+   - Adding **"🎬 Qwen2.5 Đạo diễn Nhịp đọc"** calls `POST /api/dictation/qwen-director` with `{ action: "direct_prosody", passage, difficult_words, grade, chunk_mode }`.
+   - The interactive preview displays clauses with color-coded badges (`warm_story`, `emphasis`, `standard`, `question`), assigned rate, and calculated pause duration (+2.5s on difficult words).
+   - Upgrading `speakClause` to pass `style`, `noise_scale`, `noise_w`, and `read_punctuation` allows `startStep3Dictation` to dynamically adapt acoustic delivery clause-by-clause.
+
+4. **Step 4 (Multi-Surface Teacher & Student Parity)**:
+   - Observations 2, 3, and 4 show comment sections missing audio play buttons, while correction words use an outdated, hardcoded voice (`vi-VN-HoaiMyNeural`).
+   - Adding a **"🔊 Nghe cô giáo đọc nhận xét"** button on `app/teacher/grade/page.tsx`, `app/student/page.tsx`, and `components/student/student-grade-detail-modal.tsx` targeting `/api/dictation/tts?voice=vi_VN-vais1000-medium&style=warm_story` fulfills R4.
+   - Updating `playAudio` in both `app/student/page.tsx` and `components/student/student-grade-detail-modal.tsx` (which propagates to `StudentBoundingBoxCanvas`) plus adding a speaker button on `app/teacher/grade/page.tsx` to use `voice=vi_VN-vais1000-medium&style=emphasis` fulfills R4.
 
 ---
 
-## 4. CONCLUSION
+### 3. CAVEATS
 
-- Phân hệ di động Android Native App (`android_app/`) của hệ sinh thái ViHand Grade đã được hoàn thiện toàn diện về mặt kiến trúc phần mềm, sẵn sàng phục vụ cho việc biên soạn Bộ 2 tài liệu đặc tả kiến trúc và kỹ thuật hệ thống (`01_Tong_Quan_Kien_Truc_He_Thong_ViHandGrade.md` và `02_Dac_Ta_Ky_Thuat_End2End_ViHandGrade.md`).
-- Báo cáo chi tiết đã được tạo tại:
-  `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\report.md`
+1. **Local Audio Playback on Server**:
+   - `play-local` plays audio on the physical machine running `python_service` (via `aplay` on Linux / `winsound` on Windows). On web clients (remote browser), audio must be streamed via `/api/dictation/tts` (`new Audio()`). The UI already supports this toggle via `audioOutputDest` ("web" vs "rpi_local").
+2. **Audio Cache & Latency**:
+   - When generating audio for teacher comments or words, caching responses on the BFF with appropriate `Cache-Control` prevents duplicate synthesis calls when teachers click repeatedly.
+3. **No Mermaid Diagrams**:
+   - All architecture and workflow schemas are rendered in clean ASCII box drawing as mandated by `GEMINI.md`.
 
 ---
 
-## 5. VERIFICATION METHOD
+### 4. CONCLUSION
 
-Bất kỳ kiểm định viên độc lập nào cũng có thể kiểm chứng lại toàn bộ các phát hiện trên bằng các lệnh sau:
+The frontend architecture across all 4 surfaces is fully surveyed and prepared for implementation:
+- **`app/teacher/dictation/page.tsx`**: Integration points identified for Live Status Badge, SGK Extraction Dialog, Prosody Director Preview, Acoustic Controls, and Step 3 Dynamic Loop.
+- **`app/teacher/grade/page.tsx`**: Integration points identified for Teacher Comment Audio (`warm_story`) and Correction Pronunciation (`emphasis`).
+- **`app/student/page.tsx`**: Integration points identified for Hero Comment Audio (`warm_story`) and Spelling Practice Audio (`emphasis`).
+- **`components/student/student-grade-detail-modal.tsx`**: Integration points identified for Pedagogical Comment Audio (`warm_story`) and BBox Canvas Audio (`emphasis`).
+- Detailed implementation blueprints, TypeScript types, ASCII flowcharts, and component layouts are documented in `survey_frontend.md`.
 
-1. **Kiểm tra kết quả Unit Test**:
-   ```powershell
-   cd "c:\Users\Jackie Duong\Desktop\Web_sua_loi\android_app"
-   .\gradlew.bat testDebugUnitTest
-   ```
-   *Tiêu chí đạt*: Toàn bộ 23 tests vượt qua thành công (100% pass, 0 failure). Báo cáo HTML nằm tại `app/build/reports/tests/testDebugUnitTest/index.html`.
+---
 
-2. **Kiểm tra kích thước file APK**:
-   ```powershell
-   Get-Item "c:\Users\Jackie Duong\Desktop\Web_sua_loi\android_app\app\build\outputs\apk\debug\app-debug.apk" | Select-Object Name, Length
-   ```
-   *Tiêu chí đạt*: Kích thước file chính xác là `26,617,394` bytes (~25.38 MB).
+### 5. VERIFICATION METHOD
 
-3. **Kiểm tra các token màu XML**:
-   Mở tệp `android_app/app/src/main/res/values/colors.xml` và xác minh sự hiện diện của `emerald_primary` (`#FF059669`) và `background_cream` (`#FFFAF9F6`).
+1. **Inspect Survey Artifacts**:
+   - View `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\survey_frontend.md`
+   - View `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\handoff.md`
+2. **Verify Target Codebases**:
+   - `app/teacher/dictation/page.tsx` lines 983–986, 1093–1138, 1248–1438, 535–597, 683–751.
+   - `app/teacher/grade/page.tsx` lines 740–800, 1076–1114.
+   - `app/student/page.tsx` lines 67–76, 218–220, 422–430.
+   - `components/student/student-grade-detail-modal.tsx` lines 234–243, 456–468, 550–562.
+3. **Invalidation Conditions**:
+   - If `app/api/dictation/qwen-director/route.ts` is named differently or returns schemas other than `{ action: "extract_sgk" | "direct_prosody" }`.
+   - If `python_service/tts_engine.py` modifies preset names from `warm_story`, `standard`, `emphasis`, `question`.

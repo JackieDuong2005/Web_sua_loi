@@ -10,27 +10,19 @@ const VIT5_SERVICE_URL = process.env.VIT5_SERVICE_URL || "http://127.0.0.1:8000"
 const DEFAULT_OFFLINE_VOICES = [
   {
     id: "vi_VN-vais1000-medium",
-    name: "Cô Hoài My (ONNX)",
+    name: "Cô Hoài My (VITS + Zero-Phase DSP)",
     gender: "f",
     region: "Bắc",
-    desc: "Nữ · Ấm áp, truyền cảm, chuẩn sư phạm",
+    desc: "Nữ · Chuẩn sư phạm, lọc sạch rè kim loại bằng 5 tầng DSP",
     isOffline: true,
     recommended: true,
   },
   {
-    id: "vi_VN-mailinh-medium",
-    name: "Cô Mai Linh",
-    gender: "f",
-    region: "Bắc",
-    desc: "Nữ · Rõ ràng, dõng dạc, rèn chính tả",
-    isOffline: true,
-  },
-  {
     id: "vi_VN-25hours_single-low",
-    name: "Cô Trúc Ly (Light)",
+    name: "Cô Trúc Ly (Light + DSP)",
     gender: "f",
     region: "Bắc",
-    desc: "Nữ · Siêu nhẹ, tiết kiệm tài nguyên Pi",
+    desc: "Nữ · Siêu nhẹ, tối ưu tài nguyên Pi",
     isOffline: true,
   },
   {

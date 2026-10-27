@@ -18,9 +18,9 @@ const nextConfig = {
           '**/.next/**',
           '**/android_app/**',
           '**/python_service/**',
-          'C:\\System Volume Information/**',
-          'C:\\*.sys',
-          'C:\\*.tmp',
+          '**/*.sys',
+          '**/*.tmp',
+          '**/System Volume Information/**',
         ],
       }
     }

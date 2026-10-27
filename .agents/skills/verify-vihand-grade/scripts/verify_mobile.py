@@ -51,11 +51,22 @@ def verify_mobile_app(full_assemble=False):
     task_name = "assembleDebug" if full_assemble else "compileDebugKotlin"
     print(f"[Mobile Verification] Đang chạy kiểm tra biên dịch Android ({task_name})...", flush=True)
 
+    env = os.environ.copy()
+    if not env.get("JAVA_HOME"):
+        candidate_jbr = r"D:\Program1\Android_Studio\jbr"
+        if os.path.exists(candidate_jbr):
+            env["JAVA_HOME"] = candidate_jbr
+    if not env.get("ANDROID_HOME"):
+        candidate_sdk = r"D:\Program1\Android\Sdk"
+        if os.path.exists(candidate_sdk):
+            env["ANDROID_HOME"] = candidate_sdk
+
     start_time = time.time()
     try:
         proc = subprocess.run(
             [gradlew_bat, task_name, "--daemon"],
             cwd=android_dir,
+            env=env,
             capture_output=True,
             text=True,
             timeout=300

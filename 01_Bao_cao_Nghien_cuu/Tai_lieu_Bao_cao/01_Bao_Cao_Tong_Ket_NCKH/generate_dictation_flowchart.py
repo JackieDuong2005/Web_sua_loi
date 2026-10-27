@@ -1,184 +1,246 @@
 # -*- coding: utf-8 -*-
 """
-Script tạo Sơ đồ / Lưu đồ hoạt động Phân hệ Đọc chính tả (Mục 3.2 Chương 3)
-Chuẩn Technical White Paper Flowchart: Nền trắng (#FFFFFF), nét đen (#000000, 1.5pt), 100% tiếng Việt UTF-8.
+Script tạo Sơ đồ / Lưu đồ hoạt động Phân hệ Đọc chính tả sư phạm (Mục 3.2.2 Chương 3)
+Phiên bản Phương án 1 (Tinh gọn dứt điểm - Tối ưu cho bảo vệ đồ án):
+- Loại bỏ hoàn toàn bước "Mở màn hình trình chiếu lớp học" thừa thãi.
+- Định vị hệ thống là "Trợ lý âm thanh sư phạm thông minh", truyền phát giọng đọc qua loa phòng học.
+- Chuẩn hóa ngôn ngữ sư phạm, loại bỏ thuật ngữ code sâu.
+- Nền trắng (#FFFFFF), nét đen kỹ thuật (#000000, 1.4pt).
 """
-import sys
 import os
+import sys
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image
 
-# Thiết lập font tiếng Việt
-plt.rcParams['font.sans-serif'] = ['Arial', 'Segoe UI', 'DejaVu Sans']
+# Cấu hình font chữ tiếng Việt sắc nét
+plt.rcParams['font.sans-serif'] = ['Segoe UI', 'Arial', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-def generate_dictation_flowchart():
-    # Canvas tỉ lệ dọc chuẩn (8.0 x 15.0 inches)
-    fig, ax = plt.subplots(figsize=(8.2, 15.2), dpi=120)
+def create_streamlined_flowchart():
+    # Canvas khổ dọc chuẩn tỷ lệ trang báo cáo A4
+    fig, ax = plt.subplots(figsize=(8.6, 16.2), dpi=150)
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
     ax.axis('off')
     fig.patch.set_facecolor('#FFFFFF')
     ax.set_facecolor('#FFFFFF')
 
-    # Tiêu đề chính & phụ
-    ax.text(50, 98.2, "LƯU ĐỒ HOẠT ĐỘNG PHÂN HỆ ĐỌC CHÍNH TẢ SƯ PHẠM", 
-            ha='center', va='center', fontsize=13.5, fontweight='bold', color='#000000')
-    ax.text(50, 96.2, "Hệ sinh thái ViHand Grade — Kiến trúc Đọc chính tả Trợ giảng số & Khóa Ground Truth", 
-            ha='center', va='center', fontsize=9.0, fontstyle='normal', color='#333333')
+    # 1. TIÊU ĐỀ BIỂU ĐỒ (CĂN GIỮA)
+    ax.text(50, 98.4, "LƯU ĐỒ HOẠT ĐỘNG PHÂN HỆ ĐỌC CHÍNH TẢ SƯ PHẠM", 
+            ha='center', va='center', fontsize=13.0, fontweight='bold', color='#000000')
+    ax.text(50, 96.6, "Hệ sinh thái ViHand Grade — Trợ lý âm thanh lớp học và chuẩn hóa văn bản chấm điểm", 
+            ha='center', va='center', fontsize=8.8, fontstyle='italic', color='#333333')
 
-    # Hàm vẽ khối Start / End
-    def draw_start_end(x, y, text, w=24, h=2.6):
+    # HÀM VẼ KHỐI START / END (Hình Oval bo tròn)
+    def draw_start_end(x, y, text, w=22, h=2.6):
         box = patches.FancyBboxPatch(
             (x - w/2, y - h/2), w, h,
             boxstyle=f"round,pad=0.2,rounding_size={h/2}",
             edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.5
         )
         ax.add_patch(box)
-        ax.text(x, y, text, ha='center', va='center', fontsize=9, fontweight='bold', color='#000000')
+        ax.text(x, y, text, ha='center', va='center', fontsize=9.2, fontweight='bold', color='#000000')
 
-    # Hàm vẽ khối Process
-    def draw_process(x, y, text, w=68, h=4.4, fontsize=8.0, fontweight='normal'):
+    # HÀM VẼ KHỐI PROCESS (Hình chữ nhật: Dòng 1 Bold, Dòng 2 Regular)
+    def draw_process(x, y, title, subtitle=None, w=68, h=4.4, is_highlight=False):
         box = patches.Rectangle(
             (x - w/2, y - h/2), w, h,
-            edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.5
+            edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.8 if is_highlight else 1.3
         )
         ax.add_patch(box)
-        ax.text(x, y, text, ha='center', va='center', fontsize=fontsize, fontweight=fontweight,
-                color='#000000', multialignment='center')
+        if subtitle:
+            ax.text(x, y + 0.95, title, ha='center', va='center', fontsize=8.5, fontweight='bold', color='#000000')
+            ax.text(x, y - 1.05, subtitle, ha='center', va='center', fontsize=7.7, fontweight='normal', color='#262626')
+        else:
+            ax.text(x, y, title, ha='center', va='center', fontsize=8.5, fontweight='bold', color='#000000')
 
-    # Hàm vẽ khối I/O (Hình bình hành)
-    def draw_io(x, y, text, w=68, h=4.0, fontsize=8.0):
-        offset = 2.5
+    # HÀM VẼ KHỐI I/O (Hình bình hành)
+    def draw_io(x, y, title, subtitle=None, w=68, h=4.3):
+        offset = 2.4
         poly = patches.Polygon([
             [x - w/2 + offset, y + h/2],
             [x + w/2, y + h/2],
             [x + w/2 - offset, y - h/2],
             [x - w/2, y - h/2]
-        ], closed=True, edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.5)
+        ], closed=True, edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.4)
         ax.add_patch(poly)
-        ax.text(x, y, text, ha='center', va='center', fontsize=fontsize, color='#000000', multialignment='center')
+        if subtitle:
+            ax.text(x, y + 0.95, title, ha='center', va='center', fontsize=8.5, fontweight='bold', color='#000000')
+            ax.text(x, y - 1.05, subtitle, ha='center', va='center', fontsize=7.7, fontweight='normal', color='#262626')
+        else:
+            ax.text(x, y, title, ha='center', va='center', fontsize=8.5, fontweight='bold', color='#000000')
 
-    # Hàm vẽ khối Decision (Hình thoi)
-    def draw_decision(x, y, text, w=34, h=4.6, fontsize=7.5):
+    # HÀM VẼ KHỐI DECISION (Hình thoi)
+    def draw_decision(x, y, text, w=30, h=4.8):
         diamond = patches.Polygon([
             [x, y + h/2],
             [x + w/2, y],
             [x, y - h/2],
             [x - w/2, y]
-        ], closed=True, edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.5)
+        ], closed=True, edgecolor='#000000', facecolor='#FFFFFF', linewidth=1.4)
         ax.add_patch(diamond)
-        ax.text(x, y, text, ha='center', va='center', fontsize=fontsize, fontweight='bold',
+        ax.text(x, y, text, ha='center', va='center', fontsize=8.2, fontweight='bold',
                 color='#000000', multialignment='center')
 
-    # Mũi tên thẳng xuống
+    # HÀM VẼ MŨI TÊN THẲNG
     def draw_arrow(x1, y1, x2, y2, label=None, label_pos=None):
         ax.annotate(
             '', xy=(x2, y2), xytext=(x1, y1),
-            arrowprops=dict(facecolor='#000000', edgecolor='#000000', width=0.9, headwidth=4.5, headlength=5.5, shrink=0)
+            arrowprops=dict(facecolor='#000000', edgecolor='#000000', width=0.8, headwidth=4.3, headlength=5.0, shrink=0)
         )
         if label:
             lx = (x1 + x2)/2 if label_pos is None else label_pos[0]
             ly = (y1 + y2)/2 if label_pos is None else label_pos[1]
-            ax.text(lx, ly, label, ha='center', va='center', fontsize=8.0, fontweight='bold', color='#000000',
-                    bbox=dict(boxstyle='square,pad=0.1', facecolor='#FFFFFF', edgecolor='none'))
+            ax.text(lx, ly, label, ha='center', va='center', fontsize=7.8, fontweight='bold', color='#000000',
+                    bbox=dict(boxstyle='square,pad=0.15', facecolor='#FFFFFF', edgecolor='none'))
 
-    # Mũi tên uốn khúc
-    def draw_elbow(points, label=None, label_pos=None):
+    # HÀM VẼ MŨI TÊN VÒNG LẶP (UỐN KHÚC)
+    def draw_loop(points):
         for i in range(len(points) - 2):
             p1, p2 = points[i], points[i+1]
             ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color='#000000', linewidth=1.1)
         p_pre, p_end = points[-2], points[-1]
         ax.annotate(
             '', xy=(p_end[0], p_end[1]), xytext=(p_pre[0], p_pre[1]),
-            arrowprops=dict(facecolor='#000000', edgecolor='#000000', width=0.9, headwidth=4.5, headlength=5.5, shrink=0)
+            arrowprops=dict(facecolor='#000000', edgecolor='#000000', width=0.8, headwidth=4.3, headlength=5.0, shrink=0)
         )
-        if label:
-            lx = label_pos[0] if label_pos else points[0][0]
-            ly = label_pos[1] if label_pos else points[0][1]
-            ax.text(lx, ly, label, ha='center', va='center', fontsize=8.0, fontweight='bold', color='#000000',
-                    bbox=dict(boxstyle='square,pad=0.1', facecolor='#FFFFFF', edgecolor='none'))
 
-    # BẮT ĐẦU VẼ CÁC KHỐI
+    # ================== BẮT ĐẦU VẼ CÁC KHỐI TUẦN TỰ ==================
+
     # 1. Bắt đầu
-    draw_start_end(50, 93.5, "BẮT ĐẦU")
-    draw_arrow(50, 92.2, 50, 89.2)
+    y_start = 93.8
+    draw_start_end(50, y_start, "BẮT ĐẦU")
+    draw_arrow(50, y_start - 1.3, 50, 90.7)
 
-    # 2. Nạp ngữ liệu
-    draw_io(50, 87.0, "Bước 1: Nạp bài đọc chính tả đầu vào\n(Kho SGK Lớp 1-5 / Qwen 2.5 SLM / Soạn thảo tự do)")
-    draw_arrow(50, 85.0, 50, 82.2)
+    # 2. Bước 1 (Hình bình hành)
+    y_b1 = 88.5
+    draw_io(50, y_b1, 
+            "Bước 1: Tiếp nhận bài đọc chính tả", 
+            "(Chọn từ SGK Lớp 1–5 / Giáo viên tự soạn / Trí tuệ nhân tạo gợi ý)")
+    draw_arrow(50, y_b1 - 2.15, 50, 84.1)
 
-    # 3. Trích xuất từ khó
-    draw_process(50, 80.0, "Bước 2: Trích xuất danh sách \"Từ khó dễ sai\"\n(Hướng dẫn học sinh luyện viết trước trên bảng con)")
-    draw_arrow(50, 77.8, 50, 75.0)
+    # 3. Bước 2 (Hình chữ nhật)
+    y_b2 = 81.8
+    draw_process(50, y_b2, 
+                 "Bước 2: Tự động trích xuất danh sách \"Từ khó chính tả\"", 
+                 "(Phát âm mẫu để học sinh luyện viết trước trên bảng con)")
+    draw_arrow(50, y_b2 - 2.2, 50, 77.4)
 
-    # 4. Thiết lập tham số sư phạm
-    draw_process(50, 72.8, "Bước 3: Thiết lập tham số nhịp đọc chuẩn sư phạm\n• Tốc độ: -15% | • Lặp lại: 2-3 lượt | • Khoảng dừng: 1.5s/từ")
-    draw_arrow(50, 70.6, 50, 67.8)
+    # 4. Bước 3 (Hình chữ nhật)
+    y_b3 = 75.1
+    draw_process(50, y_b3, 
+                 "Bước 3: Thiết lập tham số nhịp đọc theo khối lớp", 
+                 "• Tốc độ đọc: Thư thái, rõ chữ   |   • Lặp lại: 2–3 lượt   |   • Khoảng dừng: 1.5–2.0 giây/từ")
+    draw_arrow(50, y_b3 - 2.2, 50, 70.7)
 
-    # 5. Kích hoạt Phòng học
-    draw_process(50, 65.6, "Bước 4: Bấm \"Bắt đầu đọc\" → Mở Chế độ Phòng học\n(Classroom Theater View - Giao diện chiếu bảng lớp học)")
-    draw_arrow(50, 63.4, 50, 60.6)
+    # 5. Bước 4 (Hình chữ nhật)
+    y_b4 = 68.4
+    draw_process(50, y_b4, 
+                 "Bước 4: Tách bài đọc thành các cụm từ ngắn vừa sức", 
+                 "(Mỗi cụm từ gồm 3–7 từ, giữ nguyên vẹn nghĩa câu và từ ghép)")
+    draw_arrow(50, y_b4 - 2.2, 50, 64.0)
 
-    # 6. Tách cụm từ sư phạm
-    draw_process(50, 58.4, "Bước 5: Tách văn bản thành danh sách câu / cụm từ sư phạm\n(Thuật toán phân rã splitIntoPedagogicalClauses)")
-    draw_arrow(50, 56.2, 50, 53.4)
+    # 6. Bước 5 (Hình chữ nhật) - Khối nhận nhánh lặp âm thanh
+    y_b5 = 61.7
+    draw_process(50, y_b5, 
+                 "Bước 5: Phát âm thanh câu đọc qua loa lớp học", 
+                 "(Giọng đọc chuẩn tiếng Việt, ngữ điệu truyền cảm, phát âm tròn vành rõ chữ)")
+    draw_arrow(50, y_b5 - 2.2, 50, 57.3)
 
-    # 7. Phát âm thanh TTS
-    draw_process(50, 51.0, "Bước 6: Tổng hợp & Phát âm thanh câu đọc hiện tại\nĐộng cơ đa tầng: Piper VITS Offline (22kHz) ↔ Edge-TTS")
-    draw_arrow(50, 48.8, 50, 46.0)
+    # 7. Bước 6 (Hình chữ nhật)
+    y_b6 = 55.0
+    draw_process(50, y_b6, 
+                 "Bước 6: Tự động đếm nhịp dừng nghỉ chờ học sinh viết", 
+                 "(Khoảng dừng chờ học sinh viết tính toán thích ứng theo độ dài từng cụm)")
+    draw_arrow(50, y_b6 - 2.2, 50, 50.2)
 
-    # 8. Đếm ngược ngắt nghỉ
-    draw_process(50, 43.6, "Bước 7: Kích hoạt đồng hồ đếm ngược thời gian ngắt nghỉ\nThời gian chờ viết: T_pause = Số từ × 1.5 giây")
-    draw_arrow(50, 41.4, 50, 38.6)
+    # 8. Rẽ nhánh 1 (Hình thoi)
+    y_d1 = 47.7
+    draw_decision(50, y_d1, "Đã đọc đủ\nsố lần lặp?", w=28, h=4.8)
+    
+    # YES -> xuống nhánh kiểm tra hết bài
+    draw_arrow(50, y_d1 - 2.4, 50, 41.0, label="ĐÃ ĐỦ", label_pos=(50, 42.8))
+    
+    # NO -> quay lại Bước 5 phát nhắc lại
+    # Cạnh trái hình thoi (x=36, y=47.7) -> ra lề trái x=6 -> lên y=61.7 -> vào mép trái Bước 5 (x=16)
+    draw_loop([
+        [36, y_d1], 
+        [6, y_d1], 
+        [6, y_b5], 
+        [16, y_b5]
+    ])
+    # Nhãn nhánh lặp 1: thoáng đãng trên đoạn ngang
+    ax.text(21, 48.9, "CHƯA ĐỦ (Đọc nhắc lại)", ha='center', va='center', 
+            fontsize=7.6, fontweight='bold', color='#000000',
+            bbox=dict(boxstyle='square,pad=0.15', facecolor='#FFFFFF', edgecolor='none'))
 
-    # 9. Decision: Lặp lại cụm từ?
-    draw_decision(50, 36.0, "Đã lặp đủ\nsố lượt câu?", w=30, h=4.6)
-    # YES -> đi xuống
-    draw_arrow(50, 33.7, 50, 30.5, label="YES", label_pos=(50, 32.0))
-    # NO -> quay lại phát lại câu (elbow loop)
-    draw_elbow([[35, 36.0], [10, 36.0], [10, 51.0], [16, 51.0]], label="NO (Đọc lặp lại)", label_pos=(18, 44.0))
+    # 9. Rẽ nhánh 2 (Hình thoi)
+    y_d2 = 38.4
+    draw_decision(50, y_d2, "Đã đọc xong\ntoàn bộ bài?", w=28, h=4.8)
+    
+    # YES -> xuống thông báo kết thúc
+    draw_arrow(50, y_d2 - 2.4, 50, 31.7, label="ĐÃ XONG", label_pos=(50, 33.5))
+    
+    # NO -> chuyển cụm từ kế tiếp (quay lại cạnh phải Bước 5)
+    # Cạnh phải hình thoi (x=64, y=38.4) -> ra lề phải x=94 -> lên y=61.7 -> vào mép phải Bước 5 (x=84)
+    draw_loop([
+        [64, y_d2], 
+        [94, y_d2], 
+        [94, y_b5], 
+        [84, y_b5]
+    ])
+    # Nhãn nhánh lặp 2: thoáng đãng trên đoạn ngang
+    ax.text(79, 39.6, "CHƯA XONG (Cụm kế tiếp)", ha='center', va='center', 
+            fontsize=7.6, fontweight='bold', color='#000000',
+            bbox=dict(boxstyle='square,pad=0.15', facecolor='#FFFFFF', edgecolor='none'))
 
-    # 10. Decision: Hết bài đọc?
-    draw_decision(50, 28.0, "Đã đọc hết\ntoàn bài?", w=30, h=4.6)
-    # YES -> đi xuống
-    draw_arrow(50, 25.7, 50, 22.5, label="YES", label_pos=(50, 24.0))
-    # NO -> chuyển câu tiếp theo (elbow loop)
-    draw_elbow([[65, 28.0], [90, 28.0], [90, 51.0], [84, 51.0]], label="NO (Câu kế tiếp)", label_pos=(84, 40.0))
+    # 10. Bước 7 (Hình chữ nhật)
+    y_b7 = 29.3
+    draw_process(50, y_b7, 
+                 "Bước 7: Phát câu thông báo kết thúc bài đọc", 
+                 "(\"Đã hoàn thành bài đọc, các em hãy soát lại toàn bài!\")")
+    draw_arrow(50, y_b7 - 2.2, 50, 24.9)
 
-    # 11. Thông báo kết thúc
-    draw_process(50, 20.3, "Bước 8: Phát câu thông báo kết thúc bài đọc\n(\"Đã hoàn thành bài đọc, các em hãy soát lại toàn bài!\")", h=3.8)
-    draw_arrow(50, 18.4, 50, 15.8)
+    # 11. Bước 8 (Hình bình hành - Lưu trữ dữ liệu)
+    y_b8 = 22.6
+    draw_io(50, y_b8, 
+            "Bước 8: Tự động lưu thông tin tiết học vào hệ thống", 
+            "(Lưu bài đọc mẫu để làm cơ sở đối chiếu chấm điểm tự động)")
+    draw_arrow(50, y_b8 - 2.15, 50, 18.2)
 
-    # 12. Lưu DictationSession SQLite
-    draw_io(50, 13.8, "Bước 9: Tự động lưu phiên vào CSDL SQLite (Prisma)\n(Lưu DictationSession & DictationLog làm Ground Truth)", h=3.6)
-    draw_arrow(50, 12.0, 50, 9.5)
+    # 12. Bước 9 (Hình chữ nhật nổi bật)
+    y_b9 = 15.9
+    draw_process(50, y_b9, 
+                 "Bước 9: Chuyển trực tiếp sang phân hệ Chấm điểm", 
+                 "(Khóa bài đọc mẫu làm chuẩn đối chiếu với ảnh chụp bài làm của học sinh)", 
+                 is_highlight=True)
+    draw_arrow(50, y_b9 - 2.2, 50, 11.3)
 
-    # 13. Luân chuyển 1-Click sang Chấm bài
-    draw_process(50, 7.3, "Bước 10: Giáo viên bấm \"Chuyển sang Chấm bài\" (1-Click Handoff)\nKhóa Ground Truth đối soát trực tiếp với ảnh bài thi học sinh", h=4.0, fontweight='bold')
-    draw_arrow(50, 5.3, 50, 3.2)
+    # 13. Kết thúc
+    y_end = 9.8
+    draw_start_end(50, y_end, "KẾT THÚC")
 
-    # 14. Kết thúc
-    draw_start_end(50, 2.0, "KẾT THÚC")
+    # ================== XUẤT ẢNH JPEG CHẤT LƯỢNG CAO ==================
+    target_paths = [
+        r"c:\Users\Jackie Duong\Desktop\Web_sua_loi\01_Bao_cao_Nghien_cuu\Tai_lieu_Bao_cao\01_Bao_Cao_Tong_Ket_NCKH\hinh_3_2_luu_do_doc_chinh_ta.jpg",
+        r"c:\Users\Jackie Duong\Desktop\Web_sua_loi\01_Bao_cao_Nghien_cuu\Lưu đồ giải thuật\Hinh_3_2_luu_do_doc_chinh_ta.jpg",
+        r"C:\Users\Jackie Duong\.gemini\antigravity\brain\92de4067-ebc0-4563-ac10-c6929f8d5945\hinh_3_2_luu_do_doc_chinh_ta.jpg"
+    ]
 
-    # Lưu ảnh JPG chất lượng cao
-    out_dir = r"c:\Users\Jackie Duong\Desktop\Web_sua_loi\01_Bao_cao_Nghien_cuu\Tai_lieu_Bao_cao\01_Bao_Cao_Tong_Ket_NCKH"
-    out_path = os.path.join(out_dir, "hinh_3_2_luu_do_doc_chinh_ta.jpg")
-    os.makedirs(out_dir, exist_ok=True)
-
-    temp_png = out_path + ".temp.png"
-    fig.savefig(temp_png, format='png', dpi=120, facecolor='#FFFFFF', bbox_inches='tight')
+    for idx, out_path in enumerate(target_paths):
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        temp_png = out_path + ".temp.png"
+        fig.savefig(temp_png, format='png', dpi=150, facecolor='#FFFFFF', bbox_inches='tight')
+        img = Image.open(temp_png).convert('RGB')
+        img.save(out_path, 'JPEG', quality=95)
+        if os.path.exists(temp_png):
+            os.remove(temp_png)
+        print(f"[SUCCESS] Exported index {idx} - Size: {img.size}")
+    
     plt.close(fig)
 
-    img = Image.open(temp_png).convert('RGB')
-    img.save(out_path, 'JPEG', quality=95)
-    if os.path.exists(temp_png):
-        os.remove(temp_png)
-
-    print(f"[SUCCESS] Flowchart generated: {out_path} - Dimensions: {img.size}")
-
 if __name__ == '__main__':
-    generate_dictation_flowchart()
+    create_streamlined_flowchart()

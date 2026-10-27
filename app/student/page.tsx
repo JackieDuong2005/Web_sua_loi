@@ -60,19 +60,92 @@ export default function StudentDashboard() {
   const [studentName, setStudentName] = useState("Học sinh")
   const [selectedGrade, setSelectedGrade] = useState<StudentGradeRecord | null>(null)
 
-  // Audio preview cho kho từ khó
+  // Audio preview cho kho từ khó & nhận xét sư phạm
   const [playingWord, setPlayingWord] = useState<string | null>(null)
+  const [isPlayingComment, setIsPlayingComment] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  const stopActiveAudio = (ref: React.MutableRefObject<HTMLAudioElement | null>) => {
+    if (ref.current) {
+      try {
+        ref.current.pause()
+        ref.current.onended = null
+        ref.current.onerror = null
+        ref.current.src = ""
+        ref.current.load()
+      } catch {
+        // Ignore abort issues
+      }
+      ref.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopActiveAudio(audioRef)
+    }
+  }, [])
+
+  // Phát âm từ khó (style=emphasis)
   const playAudio = (text: string) => {
     if (!text) return
-    if (audioRef.current) audioRef.current.pause()
+    stopActiveAudio(audioRef)
+    if (playingWord === text) {
+      setPlayingWord(null)
+      return
+    }
+    setIsPlayingComment(false)
     setPlayingWord(text)
-    const audio = new Audio(`/api/dictation/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=-15%`)
+    const audio = new Audio(
+      `/api/dictation/tts?text=${encodeURIComponent(text)}&voice=vi_VN-vais1000-medium&style=emphasis&rate=-10%`
+    )
     audioRef.current = audio
-    audio.onended = () => setPlayingWord(null)
-    audio.onerror = () => setPlayingWord(null)
-    audio.play().catch(() => setPlayingWord(null))
+    audio.onended = () => {
+      setPlayingWord(null)
+      audioRef.current = null
+    }
+    audio.onerror = () => {
+      setPlayingWord(null)
+      audioRef.current = null
+    }
+    audio.play().catch(err => {
+      if (err.name !== "AbortError") {
+        console.warn("Audio playback interrupted:", err)
+      }
+      setPlayingWord(null)
+      audioRef.current = null
+    })
+  }
+
+  // Nghe cô giáo đọc nhận xét (style=warm_story)
+  const playCommentAudio = (text: string) => {
+    if (!text) return
+    stopActiveAudio(audioRef)
+    if (isPlayingComment) {
+      setIsPlayingComment(false)
+      return
+    }
+    setPlayingWord(null)
+    setIsPlayingComment(true)
+    const audio = new Audio(
+      `/api/dictation/tts?text=${encodeURIComponent(text)}&voice=vi_VN-vais1000-medium&style=warm_story`
+    )
+    audioRef.current = audio
+    audio.onended = () => {
+      setIsPlayingComment(false)
+      audioRef.current = null
+    }
+    audio.onerror = () => {
+      setIsPlayingComment(false)
+      audioRef.current = null
+    }
+    audio.play().catch(err => {
+      if (err.name !== "AbortError") {
+        console.warn("Audio playback interrupted:", err)
+      }
+      setIsPlayingComment(false)
+      audioRef.current = null
+    })
   }
 
   useEffect(() => {
@@ -214,9 +287,26 @@ export default function StudentDashboard() {
                     <p className="text-base sm:text-lg font-bold text-foreground">
                       {scoreLevel.message}
                     </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground italic line-clamp-1">
-                      &ldquo;{latestGrade?.pedagogicalComment || latestGrade?.feedback || "Con làm bài rất tốt!"}&rdquo;
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs sm:text-sm text-muted-foreground italic line-clamp-1">
+                        &ldquo;{latestGrade?.pedagogicalComment || latestGrade?.feedback || "Con làm bài rất tốt!"}&rdquo;
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => playCommentAudio(latestGrade?.pedagogicalComment || latestGrade?.feedback || "Con làm bài rất tốt!")}
+                        className={`h-6 px-2 text-[11px] font-semibold gap-1 rounded-md shrink-0 border transition-all ${
+                          isPlayingComment
+                            ? "bg-amber-100 text-amber-800 border-amber-300 ring-1 ring-amber-400"
+                            : "text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                        }`}
+                        title={isPlayingComment ? "Dừng đọc" : "Nghe cô giáo đọc nhận xét (Piper TTS warm_story)"}
+                      >
+                        <Volume2 className={`w-3 h-3 ${isPlayingComment ? "animate-pulse text-amber-600" : "text-emerald-600"}`} />
+                        <span>{isPlayingComment ? "Dừng" : "Nghe cô đọc"}</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
 

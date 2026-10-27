@@ -61,6 +61,22 @@ interface DictationSession {
   logs?: DictationLog[]
 }
 
+// ─── Directed Prosody Clause Definition (Qwen 2.5 + Piper VITS) ───────────────
+
+interface DirectedClause {
+  index: number
+  text: string
+  word_count: number
+  style: string
+  style_label: string
+  rate: string
+  noise_scale: number
+  noise_w: number
+  pause_sec: number
+  matched_difficult_words: string[]
+  starts_new_paragraph: boolean
+}
+
 // ─── Voice Cards Definition ───────────────────────────────────────────────────
 
 interface VoiceCardDef {
@@ -73,31 +89,32 @@ interface VoiceCardDef {
   recommended?: boolean
   isCustom?: boolean
   isOffline?: boolean
+  isWebSpeech?: boolean
 }
 
 const VOICE_CARDS: VoiceCardDef[] = [
   {
     id: "vi_VN-vais1000-medium",
-    name: "Cô Hoài My (ONNX)",
+    name: "Cô Hoài My (VITS + Zero-Phase DSP)",
     gender: "f",
     region: "Bắc",
     engine: "vi_VN-vais1000-medium",
-    desc: "Nữ · Chuẩn mực sư phạm, tự nhiên (VAIS1000)",
+    desc: "Nữ · Chuẩn sư phạm, lọc sạch rè kim loại bằng 5 tầng DSP",
     recommended: true,
     isOffline: true,
   },
   {
-    id: "vi_VN-mailinh-medium",
-    name: "Cô Mai Linh (ONNX)",
+    id: "web_speech_neural",
+    name: "Giọng AI Tự Nhiên (Web Speech)",
     gender: "f",
-    region: "Bắc",
-    engine: "vi_VN-mailinh-medium",
-    desc: "Nữ · Ấm áp, rõ nét, rèn chính tả (MaiLinh)",
-    isOffline: true,
+    region: "Toàn quốc",
+    engine: "web_speech_neural",
+    desc: "Nữ/Nam · Giọng Neural cao cấp tích hợp sẵn trên Chrome/Edge (Studio 10/10)",
+    isWebSpeech: true,
   },
   {
     id: "vi_VN-25hours_single-low",
-    name: "Cô Trúc Ly (Light)",
+    name: "Cô Trúc Ly (Light + DSP)",
     gender: "f",
     region: "Bắc",
     engine: "vi_VN-25hours_single-low",
@@ -304,6 +321,62 @@ export default function TeacherDictationPage() {
   const [showProjector, setShowProjector] = useState(false)
   const [isTextHidden, setIsTextHidden] = useState(false)
 
+  // ─── Qwen 2.5 Director & Pedagogical Prosody State (Pipeline 3 Tầng) ───────
+  const [directedClauses, setDirectedClauses] = useState<DirectedClause[] | null>(null)
+  const [isDirectingProsody, setIsDirectingProsody] = useState(false)
+  const [prosodySource, setProsodySource] = useState<string>("heuristic")
+  const [isQwenActive, setIsQwenActive] = useState(false)
+
+  // Đạo diễn nhịp đọc sư phạm thông minh qua Qwen 2.5 Director
+  const directProsodyWithQwen = useCallback(async (manualPassage?: string): Promise<DirectedClause[] | null> => {
+    const textToDirect = typeof manualPassage === "string" ? manualPassage.trim() : passageText.trim()
+    if (!textToDirect) return null
+
+    setIsDirectingProsody(true)
+    try {
+      const diffList = difficultWords
+        .split(/[,;\n]+/)
+        .map(w => w.trim())
+        .filter(Boolean)
+
+      const gradeMatch = selectedClass.match(/\d+/)
+      const currentGrade = gradeMatch ? parseInt(gradeMatch[0], 10) : 3
+
+      const res = await fetch("/api/dictation/qwen-director", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "direct_prosody",
+          passage: textToDirect,
+          difficult_words: diffList,
+          grade: currentGrade,
+          chunk_mode: chunkMode,
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data.clauses) && data.clauses.length > 0) {
+          setDirectedClauses(data.clauses)
+          setProsodySource(data.source || "qwen2.5_0.5b+piper_vits")
+          setIsQwenActive(Boolean(data.qwen_active))
+          return data.clauses
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ Không thể gọi Qwen Director, tự động sử dụng giải thuật sư phạm cục bộ:", err)
+    } finally {
+      setIsDirectingProsody(false)
+    }
+    return null
+  }, [passageText, difficultWords, selectedClass, chunkMode])
+
+  // Tự động giải phóng kịch bản đạo diễn cũ khi người dùng thay đổi văn bản
+  useEffect(() => {
+    setDirectedClauses(null)
+    setProsodySource("heuristic")
+  }, [passageText, chunkMode, difficultWords])
+
   // ─── Textbook Corpus & History States ───────────────────────────────────────
   const [passages, setPassages] = useState<TextbookPassage[]>([])
   const [loadingPassages, setLoadingPassages] = useState(false)
@@ -350,8 +423,11 @@ export default function TeacherDictationPage() {
 
   // ─── Clause Segmentation & Statistics Calculation ───────────────────────────
   const previewClauseList = useMemo(() => {
+    if (directedClauses && directedClauses.length > 0) {
+      return directedClauses.map(c => c.text)
+    }
     return splitIntoPedagogicalClauses(passageText, chunkMode)
-  }, [passageText, chunkMode])
+  }, [passageText, chunkMode, directedClauses])
 
   const difficultWordsList = useMemo(() => {
     return difficultWords
@@ -532,7 +608,12 @@ export default function TeacherDictationPage() {
     })
   }
 
-  const speakClause = (clause: string, sessionToken: number, customRateStr?: string): Promise<boolean> => {
+  const speakClause = (
+    clause: string,
+    sessionToken: number,
+    customRateStr?: string,
+    customStyle?: string
+  ): Promise<boolean> => {
     return new Promise(resolve => {
       if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) {
         resolve(false)
@@ -550,9 +631,27 @@ export default function TeacherDictationPage() {
       const speedNum = parseFloat(speedRate) || 0.85
       const percentDiff = Math.round((speedNum - 1.0) * 100)
       const rateStr = customRateStr || `${percentDiff >= 0 ? "+" : ""}${percentDiff}%`
+      const effectiveStyle = customStyle || "standard"
 
-      // ── PHÁT ÂM THANH OFFLINE ĐƠN TẦNG (PIPER VITS ONNX) ──
-      if (audioOutputDest === "rpi_local") {
+      // ── PHÁT ÂM THANH: WEB SPEECH AI HOẶC PIPER VITS OFFLINE DSP ──
+      if (voiceEngine === "web_speech_neural" && typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(clause)
+        utterance.lang = "vi-VN"
+        const speedNum = parseFloat(speedRate) || 0.85
+        utterance.rate = Math.max(0.5, Math.min(1.5, speedNum))
+        
+        const voices = window.speechSynthesis.getVoices()
+        const viVoice = voices.find(v => v.lang.startsWith("vi") || v.lang.includes("VN"))
+        if (viVoice) utterance.voice = viVoice
+
+        utterance.onend = () => cleanupAndResolve(true)
+        utterance.onerror = (e) => {
+          console.warn("Web Speech error:", e)
+          cleanupAndResolve(false)
+        }
+        window.speechSynthesis.speak(utterance)
+      } else if (audioOutputDest === "rpi_local") {
         // Chế độ 1: Phát trực tiếp ra Loa phần cứng cắm trên Raspberry Pi
         fetch("/api/dictation/play-local", {
           method: "POST",
@@ -561,6 +660,7 @@ export default function TeacherDictationPage() {
             text: clause,
             voice: voiceEngine,
             rate: rateStr,
+            style: effectiveStyle,
           }),
         })
           .then(res => res.json())
@@ -572,8 +672,9 @@ export default function TeacherDictationPage() {
             cleanupAndResolve(false)
           })
       } else {
-        // Chế độ 2: Stream WAV về Web Audio trình duyệt giáo viên
-        const ttsUrl = `/api/dictation/tts?text=${encodeURIComponent(clause)}&voice=${encodeURIComponent(voiceEngine)}&rate=${encodeURIComponent(rateStr)}`
+        // Chế độ 2: Stream WAV về Web Audio trình duyệt giáo viên (Piper VITS + Zero-Phase DSP)
+        const styleParam = effectiveStyle ? `&style=${encodeURIComponent(effectiveStyle)}` : ""
+        const ttsUrl = `/api/dictation/tts?text=${encodeURIComponent(clause)}&voice=${encodeURIComponent(voiceEngine)}&rate=${encodeURIComponent(rateStr)}${styleParam}`
         const audio = new Audio(ttsUrl)
         currentAudioRef.current = audio
 
@@ -584,7 +685,21 @@ export default function TeacherDictationPage() {
 
         audio.onerror = () => {
           currentAudioRef.current = null
-          console.error("❌ Không thể nạp âm thanh từ trạm TTS Raspberry Pi. Đảm bảo python_service đang chạy.")
+          console.warn("⚠️ Không thể tải luồng âm thanh Raspberry Pi TTS. Tự động chuyển tiếp sang Web Speech AI...")
+          if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            try {
+              window.speechSynthesis.cancel()
+              const utterance = new SpeechSynthesisUtterance(clause)
+              utterance.lang = "vi-VN"
+              utterance.rate = 0.85
+              utterance.onend = () => cleanupAndResolve(true)
+              utterance.onerror = () => cleanupAndResolve(false)
+              window.speechSynthesis.speak(utterance)
+              return
+            } catch (synthErr) {
+              console.warn("Web Speech fallback error:", synthErr)
+            }
+          }
           cleanupAndResolve(false)
         }
 
@@ -609,13 +724,13 @@ export default function TeacherDictationPage() {
     setStepStatusMessage("Bước 1: Đang đọc mẫu toàn bài · Học sinh chú ý lắng nghe để hiểu nội dung và nhịp điệu.")
 
     const sessionToken = playbackIdRef.current
-    await speakClause(`Các em hãy lắng nghe cô đọc mẫu bài chính tả: ${title || "bài đọc hôm nay"}.`, sessionToken, "-10%")
+    await speakClause(`Các em hãy lắng nghe cô đọc mẫu bài chính tả: ${title || "bài đọc hôm nay"}.`, sessionToken, "-10%", "warm_story")
     if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
 
-    await speakClause(passageText, sessionToken, "-10%")
+    await speakClause(passageText, sessionToken, "-10%", "warm_story")
     if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
 
-    await speakClause("Đã kết thúc phần đọc mẫu. Bây giờ chúng ta cùng chuyển sang Bước 2: Luyện viết từ khó trên bảng con.", sessionToken, "-10%")
+    await speakClause("Đã kết thúc phần đọc mẫu. Bây giờ chúng ta cùng chuyển sang Bước 2: Luyện viết từ khó trên bảng con.", sessionToken, "-10%", "standard")
     if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
 
     setIsPlaying(false)
@@ -650,17 +765,17 @@ export default function TeacherDictationPage() {
     const word = difficultWordsList[targetIdx]
     setStepStatusMessage(`Bước 2: Luyện từ khó (${targetIdx + 1}/${difficultWordsList.length}): "${word}"`)
 
-    await speakClause(`Từ khó thứ ${targetIdx + 1}: ${word}.`, sessionToken, "-15%")
+    await speakClause(`Từ khó thứ ${targetIdx + 1}: ${word}.`, sessionToken, "-15%", "standard")
     if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
 
-    await speakClause(word, sessionToken, "-20%")
+    await speakClause(word, sessionToken, "-20%", "emphasis")
     if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
 
     setStepStatusMessage(`✍️ Các em viết từ "${word}" vào bảng con`)
     const finishedWait = await sleepWithCountdown(12, sessionToken)
     if (!finishedWait || playbackIdRef.current !== sessionToken || !isPlayingRef.current) return
 
-    await speakClause("Các em giơ bảng con để cô kiểm tra!", sessionToken, "-10%")
+    await speakClause("Các em giơ bảng con để cô kiểm tra!", sessionToken, "-10%", "standard")
     await sleepWithCountdown(4, sessionToken)
 
     setIsPlaying(false)
@@ -685,7 +800,17 @@ export default function TeacherDictationPage() {
     stopPlayback()
 
     setPedagogicalStep(3)
-    const preparedClauses = splitIntoPedagogicalClauses(passageText, chunkMode)
+
+    // Tự động kiểm tra kịch bản Qwen Director đã có sẵn hay cần kích hoạt
+    let activeClausesData: DirectedClause[] | null = directedClauses
+    if (!activeClausesData) {
+      activeClausesData = await directProsodyWithQwen(passageText)
+    }
+
+    const preparedClauses = activeClausesData && activeClausesData.length > 0
+      ? activeClausesData.map(c => c.text)
+      : splitIntoPedagogicalClauses(passageText, chunkMode)
+
     if (preparedClauses.length === 0) return
 
     setClauses(preparedClauses)
@@ -700,13 +825,20 @@ export default function TeacherDictationPage() {
     const sessionToken = playbackIdRef.current
     const maxRepeat = parseInt(repeatCount, 10) || 2
 
-    await speakClause("Bây giờ cả lớp mở vở và bắt đầu viết bài. Các em chú ý lắng nghe và ngồi thẳng lưng.", sessionToken, "-10%")
+    await speakClause("Bây giờ cả lớp mở vở và bắt đầu viết bài. Các em chú ý lắng nghe và ngồi thẳng lưng.", sessionToken, "-10%", "warm_story")
 
     for (let i = 0; i < preparedClauses.length; i++) {
       if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
 
+      const clauseMeta = activeClausesData ? activeClausesData[i] : null
+      const clauseStyle = clauseMeta?.style || "standard"
+      const clauseRate = clauseMeta?.rate || undefined
+
       setCurrentClauseIndex(i)
-      setStepStatusMessage(`Bước 3: Đang đọc cụm ${i + 1}/${preparedClauses.length} (${stats.words} từ)`)
+      const diffWordTag = clauseMeta?.matched_difficult_words?.length
+        ? ` · ⚠️ Chứa từ khó: ${clauseMeta.matched_difficult_words.join(", ")}`
+        : ""
+      setStepStatusMessage(`Bước 3: Đang đọc cụm ${i + 1}/${preparedClauses.length} (${clauseMeta?.style_label || "Chuẩn mực"}${diffWordTag})`)
 
       for (let r = 1; r <= maxRepeat; r++) {
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
@@ -716,12 +848,14 @@ export default function TeacherDictationPage() {
         }
 
         setCurrentRepeat(r)
-        await speakClause(preparedClauses[i], sessionToken)
+        await speakClause(preparedClauses[i], sessionToken, clauseRate, clauseStyle)
 
         if (playbackIdRef.current !== sessionToken || !isPlayingRef.current) break
 
         let pauseTime = 10
-        if (pauseSetting === "auto") {
+        if (clauseMeta?.pause_sec) {
+          pauseTime = Math.round(clauseMeta.pause_sec)
+        } else if (pauseSetting === "auto") {
           const wCount = preparedClauses[i].split(/\s+/).filter(Boolean).length
           pauseTime = Math.max(5, Math.round(wCount * 1.6))
         } else {
@@ -862,8 +996,20 @@ export default function TeacherDictationPage() {
 
   const testVoiceSpecific = (voiceDef: VoiceCardDef) => {
     stopPlayback()
-    const sample = `Xin chào các em. Tôi là ${voiceDef.name}, giọng đọc chính tả ngoại tuyến của hệ sinh thái ViHand Grade.`
+    const sample = `Xin chào các em. Tôi là ${voiceDef.name}, giọng đọc chính tả của hệ sinh thái ViHand Grade.`
     
+    if (voiceDef.isWebSpeech && typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel()
+      const utterance = new SpeechSynthesisUtterance(sample)
+      utterance.lang = "vi-VN"
+      utterance.rate = 0.85
+      const voices = window.speechSynthesis.getVoices()
+      const viVoice = voices.find(v => v.lang.startsWith("vi") || v.lang.includes("VN"))
+      if (viVoice) utterance.voice = viVoice
+      window.speechSynthesis.speak(utterance)
+      return
+    }
+
     if (audioOutputDest === "rpi_local") {
       fetch("/api/dictation/play-local", {
         method: "POST",
@@ -1080,8 +1226,11 @@ export default function TeacherDictationPage() {
               <div className="flex items-center justify-between p-3.5 md:p-4 border-b border-border/60 gap-3 flex-wrap bg-muted/20">
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <span className="material-symbols-rounded text-muted-foreground text-lg shrink-0">edit_note</span>
+                  <label htmlFor="title-input" className="sr-only">Tiêu đề bài đọc chính tả</label>
                   <input
                     id="title-input"
+                    name="title"
+                    aria-label="Tiêu đề bài đọc chính tả"
                     type="text"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
@@ -1113,6 +1262,30 @@ export default function TeacherDictationPage() {
                   </Button>
                   <Button
                     size="sm"
+                    variant={directedClauses ? "default" : "outline"}
+                    onClick={() => directProsodyWithQwen()}
+                    disabled={isDirectingProsody || !passageText.trim()}
+                    className={`h-8 px-2.5 text-xs font-semibold rounded-lg cursor-pointer gap-1 transition-all ${
+                      directedClauses
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                        : "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
+                    }`}
+                    title="Phân tích ngữ cảnh, ngắt nhịp và gán sắc thái đọc bằng Qwen Director"
+                  >
+                    {isDirectingProsody ? (
+                      <>
+                        <span className="material-symbols-rounded text-base animate-spin">refresh</span>
+                        <span>Đang đạo diễn...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-rounded text-base">auto_fix_high</span>
+                        <span>{directedClauses ? "Đã đạo diễn Qwen" : "Đạo diễn Qwen"}</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={async () => {
                       try {
@@ -1140,8 +1313,11 @@ export default function TeacherDictationPage() {
 
               {/* Textarea trang vở */}
               <div className="p-4 md:p-5">
+                <label htmlFor="tx" className="sr-only">Nội dung đoạn văn bài đọc chính tả</label>
                 <textarea
                   id="tx"
+                  name="passageText"
+                  aria-label="Nội dung đoạn văn bài đọc chính tả"
                   spellCheck={false}
                   value={passageText}
                   onChange={e => setPassageText(e.target.value)}
@@ -1205,7 +1381,11 @@ export default function TeacherDictationPage() {
                       </button>
                     </span>
                   ))}
+                  <label htmlFor="difficult-words-input" className="sr-only">Thêm từ khó luyện viết</label>
                   <Input
+                    id="difficult-words-input"
+                    name="difficultWords"
+                    aria-label="Thêm từ khó luyện viết"
                     value={difficultWords}
                     onChange={e => setDifficultWords(e.target.value)}
                     placeholder="+ Thêm từ khó (cách nhau dấu phẩy)..."
@@ -1215,10 +1395,20 @@ export default function TeacherDictationPage() {
               </div>
 
               {/* Thống kê bài đọc */}
-              <div className="px-4 py-2.5 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground font-mono bg-muted/20">
-                <div className="flex items-center gap-2">
+              <div className="px-4 py-2.5 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground font-mono bg-muted/20 flex-wrap gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="material-symbols-rounded text-base text-muted-foreground">analytics</span>
-                  <span>{stats.words} từ · {stats.sentences} câu · {previewClauseList.length} cụm câu</span>
+                  <span>{stats.words} từ · {stats.sentences} câu · {previewClauseList.length} cụm</span>
+                  {directedClauses ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+                      <span className="material-symbols-rounded text-xs">neurology</span>
+                      <span>{isQwenActive ? "Pipeline 3 tầng AI: Qwen 2.5 + Piper VITS + DSP" : "Đạo diễn Sư phạm Chuẩn mực"}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border/60">
+                      <span>Ngắt cụm Heuristic</span>
+                    </span>
+                  )}
                 </div>
                 <span>Thời gian ước tính: {stats.duration}</span>
               </div>
@@ -1359,7 +1549,11 @@ export default function TeacherDictationPage() {
                   >
                     −
                   </button>
+                  <label htmlFor="speed-rate-range" className="sr-only">Tốc độ đọc chính tả</label>
                   <input
+                    id="speed-rate-range"
+                    name="speedRate"
+                    aria-label="Tốc độ đọc chính tả"
                     type="range"
                     min={65}
                     max={110}
@@ -1518,6 +1712,9 @@ export default function TeacherDictationPage() {
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
+                    id="search-passage-query"
+                    name="searchPassageQuery"
+                    aria-label="Tìm kiếm bài đọc SGK"
                     placeholder="Tìm kiếm bài đọc..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
@@ -1615,6 +1812,9 @@ export default function TeacherDictationPage() {
                 <div className="relative w-full sm:w-72">
                   <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
+                    id="search-session-query"
+                    name="searchSessionQuery"
+                    aria-label="Tìm theo tên bài đã đọc"
                     placeholder="Tìm theo tên bài đã đọc..."
                     value={searchSession}
                     onChange={e => setSearchSession(e.target.value)}
@@ -2217,8 +2417,10 @@ export default function TeacherDictationPage() {
 
           <div className="space-y-3.5 py-2">
             <div className="space-y-1">
-              <Label className="text-xs font-bold">Chủ đề bài đọc</Label>
+              <Label htmlFor="ai-topic-input" className="text-xs font-bold">Chủ đề bài đọc</Label>
               <Input
+                id="ai-topic-input"
+                name="aiTopic"
                 value={aiTopic}
                 onChange={e => setAiTopic(e.target.value)}
                 placeholder="VD: Mùa hè quê em, Tình bạn, Bảo vệ môi trường..."
@@ -2366,8 +2568,10 @@ export default function TeacherDictationPage() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs font-bold">Tuần/Bài</Label>
+                <Label htmlFor="new-passage-unit" className="text-xs font-bold">Tuần/Bài</Label>
                 <Input
+                  id="new-passage-unit"
+                  name="unit"
                   value={newPassage.unit}
                   onChange={e => setNewPassage(p => ({ ...p, unit: e.target.value }))}
                   placeholder="Tuần 1"
@@ -2377,8 +2581,10 @@ export default function TeacherDictationPage() {
             </div>
 
             <div>
-              <Label className="text-xs font-bold">Tiêu đề bài đọc</Label>
+              <Label htmlFor="new-passage-title" className="text-xs font-bold">Tiêu đề bài đọc</Label>
               <Input
+                id="new-passage-title"
+                name="title"
                 value={newPassage.title}
                 onChange={e => setNewPassage(p => ({ ...p, title: e.target.value }))}
                 placeholder="VD: Cánh én tuổi thơ"
@@ -2387,8 +2593,10 @@ export default function TeacherDictationPage() {
             </div>
 
             <div>
-              <Label className="text-xs font-bold">Nội dung đoạn văn</Label>
+              <Label htmlFor="new-passage-content" className="text-xs font-bold">Nội dung đoạn văn</Label>
               <Textarea
+                id="new-passage-content"
+                name="content"
                 rows={4}
                 value={newPassage.content}
                 onChange={e => setNewPassage(p => ({ ...p, content: e.target.value }))}
@@ -2398,8 +2606,10 @@ export default function TeacherDictationPage() {
             </div>
 
             <div>
-              <Label className="text-xs font-bold">Từ khó (cách nhau dấu phẩy)</Label>
+              <Label htmlFor="new-passage-difficult-words" className="text-xs font-bold">Từ khó (cách nhau dấu phẩy)</Label>
               <Input
+                id="new-passage-difficult-words"
+                name="difficultWords"
                 value={newPassage.difficultWords}
                 onChange={e => setNewPassage(p => ({ ...p, difficultWords: e.target.value }))}
                 placeholder="VD: sứt chỉ, hối hận..."

@@ -1,12 +1,12 @@
-# BRIEFING — 2026-10-05T15:01:07Z
+# BRIEFING — 2026-10-18T18:59:10Z
 
 ## Mission
-Rà soát toàn diện toàn bộ hệ sinh thái dự án ViHand Grade (Next.js 16 Web Studio BFF, Python AI Core ViT5 + YOLOv8, Android Native App Kotlin/Compose, Trạm biên Raspberry Pi và cơ sở dữ liệu SQLite Prisma/Room DB) và biên soạn bộ 2 tài liệu đặc tả kiến trúc và kỹ thuật end-to-end hoàn chỉnh, chuẩn mực nhất bằng định dạng Markdown.
+Complete the Semantic-Acoustic Decoupled Pipeline (`Qwen2.5-0.5B-Instruct` SLM + `Piper VITS ONNX` Acoustic Engine) for the **ViHand Grade** educational platform, specifically optimized for **Raspberry Pi 4 (4GB RAM)** using Staged On-Demand Activation & Auto-Unload (`ON_DEMAND_UNLOAD`), Prosody Script Caching, VITS Expressive Tuning (`noise_scale`, `noise_w_scale`, spoken Vietnamese punctuation), and multi-surface audio playback across Teacher Dictation, Teacher Grading, and Student Portal views.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\
-- Orchestrator: 18c248ba-19cd-491f-bb1c-a47796deb34c
+- Orchestrator: 0516b259-befc-4fac-baa8-b10ce65a612b
 - Victory Auditor: [to be spawned on victory claim]
 
 ## 🔒 Key Constraints
@@ -15,18 +15,19 @@ Rà soát toàn diện toàn bộ hệ sinh thái dự án ViHand Grade (Next.js
 - Must not write code, analyze problems, or make technical decisions
 
 ## User Context
-- **Last user request**: Rà soát toàn diện hệ sinh thái ViHand Grade và biên soạn bộ 2 tài liệu đặc tả kiến trúc & kỹ thuật end-to-end (`01_Tong_Quan_Kien_Truc_He_Thong_ViHandGrade.md` và `02_Dac_Ta_Ky_Thuat_End2End_ViHandGrade.md`).
+- **Last user request**: Complete the Semantic-Acoustic Decoupled Pipeline (Qwen2.5-0.5B on-demand unload + Piper VITS ONNX expressive presets) for ViHand Grade on Raspberry Pi 4.
 - **Pending clarifications**: none
 - **Delivered results**: [none for current mission]
 
 ## Project Status
-- **Phase**: in progress
-- **Cron 1 (Progress Reporting)**: task-20 (`*/8 * * * *`)
-- **Cron 2 (Liveness Check)**: task-22 (`*/10 * * * *`)
+- **Phase**: in progress (orchestrator running)
+- **Active Orchestrator Dir**: .agents/teamwork/orchestrator_4/
+- **Cron 1 (Progress Reporting)**: task-32 (`*/8 * * * *`)
+- **Cron 2 (Liveness Check)**: task-34 (`*/10 * * * *`)
 
 ## Routing Decision
 - **Path**: General (`teamwork_preview_orchestrator`)
-- **Rationale**: Full ecosystem audit and multi-component technical documentation covering Next.js, Android Native, Python AI Core, Raspberry Pi edge, and SQLite Prisma/Room DB.
+- **Rationale**: Multi-component SWE project spanning Python backend, Next.js API gateway, and 3 React front-end surfaces.
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -36,4 +37,4 @@ Rà soát toàn diện toàn bộ hệ sinh thái dự án ViHand Grade (Next.js
 ## Artifact Index
 - ORIGINAL_REQUEST.md — Original verbatim user request log
 - BRIEFING.md — Persistent sentinel memory
-- orchestrator_3/DISPATCH.md — Orchestrator 3 dispatch prompt and records
+- orchestrator_4/DISPATCH.md — Orchestrator 4 dispatch prompt and records

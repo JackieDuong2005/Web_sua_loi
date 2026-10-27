@@ -20,7 +20,15 @@ import sys
 import json
 import random
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import Optional, Union, List, Tuple, Dict, Any
+from collections import OrderedDict
+import warnings
+
+# Suppress known harmless deprecation warnings (torch.ao.quantization, T5Tokenizer)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", message=".*torch.ao.quantization.*")
+warnings.filterwarnings("ignore", message=".*T5Tokenizer.*")
 
 # ============================================================
 # Issue #20 Fix: Vô hiệu hóa QuickEdit trên Windows Console cục bộ
@@ -57,6 +65,8 @@ _executor = ThreadPoolExecutor(max_workers=_VIT5_WORKERS)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vit5_service")
+# Tắt log cảnh báo thiếu phoneme ID không ảnh hưởng của Piper VITS
+logging.getLogger("piper.phoneme_ids").setLevel(logging.ERROR)
 
 app = FastAPI(title="ViHand Grade - ViT5 Service", version="1.0.0")
 
@@ -90,7 +100,7 @@ def get_model():
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
     logger.info(f"⏳ Tải model: {ORIGINAL_MODEL}...")
-    _tokenizer = AutoTokenizer.from_pretrained(ORIGINAL_MODEL, use_fast=False)
+    _tokenizer = AutoTokenizer.from_pretrained(ORIGINAL_MODEL, use_fast=False, legacy=False)
     _model     = AutoModelForSeq2SeqLM.from_pretrained(ORIGINAL_MODEL)
     _model.eval()  # Tắt dropout, batch norm theo mode train
 
@@ -920,7 +930,392 @@ _qwen_tokenizer = None
 _qwen_lock = threading.Lock()
 ENABLE_QWEN_SLM = os.getenv("ENABLE_QWEN_SLM", "1").lower() in ("1", "true", "yes")
 QWEN_MODEL_ID = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
-QWEN_PRECISION = os.getenv("QWEN_PRECISION", "bfloat16").lower()
+QWEN_PRECISION = os.getenv("QWEN_PRECISION", "float32").lower()
+QWEN_LIFECYCLE_MODE = os.getenv("QWEN_LIFECYCLE_MODE", "always_active").strip().lower()
+QWEN_RAM_THRESHOLD_MB = float(os.getenv("QWEN_RAM_THRESHOLD_MB", "650.0"))
+
+_PROSODY_CACHE_MAX_ENTRIES = 128
+_prosody_script_cache: OrderedDict[str, dict] = OrderedDict()
+_prosody_cache_lock = threading.Lock()
+
+
+def get_available_ram_mb() -> float:
+    """Xác định dung lượng RAM khả dụng (MB) hỗ trợ đa nền tảng (Linux RPi & Windows Dev)."""
+    # 1. Linux / Raspberry Pi: Đọc trực tiếp từ Kernel qua /proc/meminfo
+    if sys.platform.startswith("linux"):
+        try:
+            with open("/proc/meminfo", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("MemAvailable:"):
+                        parts = line.split()
+                        return round(float(parts[1]) / 1024.0, 2)
+        except Exception as e:
+            logger.warning(f"⚠️ [RAM Guard] Không thể đọc /proc/meminfo: {e}")
+
+    # 2. Windows: Gọi Win32 API GlobalMemoryStatusEx qua ctypes
+    elif sys.platform.startswith("win"):
+        try:
+            import ctypes
+
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ('dwLength', ctypes.c_ulong),
+                    ('dwMemoryLoad', ctypes.c_ulong),
+                    ('ullTotalPhys', ctypes.c_ulonglong),
+                    ('ullAvailPhys', ctypes.c_ulonglong),
+                    ('ullTotalPageFile', ctypes.c_ulonglong),
+                    ('ullAvailPageFile', ctypes.c_ulonglong),
+                    ('ullTotalVirtual', ctypes.c_ulonglong),
+                    ('ullAvailVirtual', ctypes.c_ulonglong),
+                    ('sullAvailExtendedVirtual', ctypes.c_ulonglong),
+                ]
+
+            stat = MEMORYSTATUSEX()
+            stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat)):
+                return round(float(stat.ullAvailPhys) / (1024.0 * 1024.0), 2)
+        except Exception as e:
+            logger.warning(f"⚠️ [RAM Guard] Không thể gọi GlobalMemoryStatusEx: {e}")
+
+    # 3. Fallback qua thư viện psutil (nếu có cài đặt)
+    try:
+        import psutil
+        return round(float(psutil.virtual_memory().available) / (1024.0 * 1024.0), 2)
+    except Exception:
+        pass
+
+    return 1024.0  # Ngưỡng an toàn dự phòng
+
+
+def unload_qwen_model() -> None:
+    """Giải phóng hoàn toàn Qwen2.5-0.5B và Tokenizer khỏi RAM, thu hồi về 0 MB RAM."""
+    global _qwen_model, _qwen_tokenizer
+    with _qwen_lock:
+        if _qwen_model is not None or _qwen_tokenizer is not None:
+            logger.info("🧹 [Qwen Unloader] Đang xả mô hình Qwen2.5-0.5B khỏi bộ nhớ RAM...")
+            try:
+                del _qwen_model
+            except Exception:
+                pass
+            try:
+                del _qwen_tokenizer
+            except Exception:
+                pass
+            _qwen_model = None
+            _qwen_tokenizer = None
+
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            except Exception:
+                pass
+
+            import gc
+            gc.collect()
+            gc.collect()
+            gc.collect()
+            logger.info("✅ [Qwen Unloader] Đã giải phóng hoàn toàn Qwen2.5-0.5B (0 MB RAM khi idle).")
+
+
+def compute_prosody_cache_key(passage: str, grade: int, chunk_mode: str, difficult_words: list) -> str:
+    norm_passage = (passage or "").strip().lower()
+    norm_words = ",".join(sorted(str(w).strip().lower() for w in (difficult_words or [])))
+    key_str = f"{norm_passage}|grade={grade}|mode={chunk_mode}|diff={norm_words}"
+    return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
+
+
+def get_cached_prosody_script(key: str) -> Optional[dict]:
+    with _prosody_cache_lock:
+        if key in _prosody_script_cache:
+            _prosody_script_cache.move_to_end(key)
+            cached = _prosody_script_cache[key]
+            return {
+                "clauses": [dict(c) for c in cached["clauses"]],
+                "total_words": cached["total_words"],
+                "estimated_duration_sec": cached["estimated_duration_sec"],
+            }
+    return None
+
+
+def set_cached_prosody_script(key: str, data: dict) -> None:
+    with _prosody_cache_lock:
+        if key in _prosody_script_cache:
+            _prosody_script_cache.move_to_end(key)
+        _prosody_script_cache[key] = {
+            "clauses": [dict(c) for c in data["clauses"]],
+            "total_words": data["total_words"],
+            "estimated_duration_sec": data["estimated_duration_sec"],
+        }
+        if len(_prosody_script_cache) > _PROSODY_CACHE_MAX_ENTRIES:
+            _prosody_script_cache.popitem(last=False)
+
+
+VIETNAMESE_STOPWORDS = {
+    "của", "và", "có", "các", "những", "một", "trong", "trên", "dưới", "được",
+    "với", "lại", "ra", "vào", "này", "đó", "thì", "là", "mà", "ở", "cho",
+    "như", "đã", "sẽ", "đang", "bởi", "vì", "để", "làm", "rất", "cũng"
+}
+
+DIFFICULT_FEATURES = [
+    re.compile(r"^(?:tr|ch|s|x|r|gi|d|l|n)[a-zđàáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]+", re.I),
+    re.compile(r"[a-zđ]*(?:oang|oanh|uông|uôn|ương|ươn|ươp|uôm|oay|oăt|uât|iêu|uôi|uy|uyp|oe|oa|ang|anh|ênh|iêng|ă[ctnmp]|â[ctnmp])[a-zđ]*", re.I),
+    re.compile(r"[ảãẻẽỉĩỏõởỡửữỷỹạẹịọụỵ]", re.I),
+]
+
+
+def clean_raw_sgk_text(raw_text: str) -> Tuple[str, str]:
+    """Làm sạch văn bản thô từ SGK / PDF: loại bỏ tiêu đề trang, tuần học, số trang và câu hỏi bài tập."""
+    if not raw_text or not raw_text.strip():
+        return "", ""
+
+    text = raw_text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    
+    # Nếu văn bản chỉ có 1 dòng dài nhưng chứa nhiều câu, tách theo dấu chấm hoặc xuống dòng
+    if "\n" not in text and len(text.split()) > 15:
+        text = re.sub(r"([.?!])\s+", r"\1\n", text)
+
+    lines = text.split("\n")
+
+    header_patterns = [
+        re.compile(r"^(?:tiếng\s*việt|tập\s*đọc|chính\s*tả)\s*\d*(?:\s*[-–]\s*tập\s*\d*)?\s*$", re.IGNORECASE),
+        re.compile(r"^tuần\s*\d+\s*$", re.IGNORECASE),
+        re.compile(r"^bài\s*(?:đọc|học)?\s*\d+\s*:?\s*$", re.IGNORECASE),
+        re.compile(r"^(?:trang|tr\.?)\s*\d+\s*$", re.IGNORECASE),
+        re.compile(r"^\s*\d+\s*(?:/\s*\d+)?\s*$"),
+    ]
+
+    exercise_cutoff = re.compile(
+        r"^\s*(?:câu\s*\d+|câu\s*hỏi(?:\s*và\s*bài\s*tập)?|bài\s*tập(?:\s*\d+)?|luyện\s*từ\s*và\s*câu|tập\s*làm\s*văn|\*?\s*ghi\s*nhớ|\d+\.\s*(?:em\s+hãy|tìm|hãy|đặt\s+câu|chọn|đọc\s+lại)).*",
+        re.IGNORECASE
+    )
+
+    valid_lines: List[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if exercise_cutoff.match(stripped):
+            break
+        if any(p.match(stripped) for p in header_patterns):
+            continue
+        cleaned_line = re.sub(r"\(?\b(?:trang|tr\.?)\s*\d+\b\)?", "", stripped, flags=re.IGNORECASE).strip()
+        cleaned_line = re.sub(r"^\*+|\*+$", "", cleaned_line).strip()
+        if cleaned_line:
+            valid_lines.append(cleaned_line)
+
+    if not valid_lines:
+        # Fallback an toàn: nếu bộ lọc quá tay, lấy lại văn bản gốc đã chuẩn hóa khoảng trắng
+        clean_fb = " ".join(raw_text.split())
+        words_fb = clean_fb.split()
+        title_fb = " ".join(words_fb[:5]) if words_fb else "Bài đọc chính tả"
+        return title_fb, clean_fb
+
+    first_line = valid_lines[0]
+    words_first = first_line.split()
+    if len(words_first) <= 10 and not first_line.endswith((".", "!", "?")):
+        title = first_line
+        content_lines = valid_lines[1:]
+    else:
+        title = " ".join(words_first[:5])
+        content_lines = valid_lines
+
+    clean_content = "\n".join(content_lines).strip()
+    if not clean_content and title:
+        clean_content = title
+        title = "Bài đọc chính tả"
+
+    return title, clean_content
+
+
+def extract_deterministic_difficult_words(text: str, max_words: int = 5) -> List[str]:
+    """Trích xuất từ khó chính tả theo thuật toán ngữ âm sư phạm tiếng Việt GDPT 2018 (0 MB RAM)."""
+    sentences = re.split(r"[.\n!?]", text)
+    candidates = []
+
+    for s in sentences:
+        words = [w.strip(" ,;:\"'") for w in s.split() if w.strip(" ,;:\"'")]
+        for i in range(len(words) - 1):
+            w1 = words[i].lower()
+            w2 = words[i + 1].lower()
+            if w1 in VIETNAMESE_STOPWORDS or w2 in VIETNAMESE_STOPWORDS:
+                continue
+            pair = f"{words[i]} {words[i+1]}"
+            score = 0
+            if any(f.search(w1) for f in DIFFICULT_FEATURES):
+                score += 1
+            if any(f.search(w2) for f in DIFFICULT_FEATURES):
+                score += 1
+            if len(w1) > 1 and len(w2) > 1 and w1[0] == w2[0]:
+                score += 2
+            if score >= 1:
+                candidates.append((pair, score))
+
+    words = [w.strip(" ,;:\"'") for w in text.split() if w.strip(" ,;:\"'")]
+    for w in words:
+        wl = w.lower()
+        if wl in VIETNAMESE_STOPWORDS or len(wl) < 2:
+            continue
+        score = sum(1 for f in DIFFICULT_FEATURES if f.search(wl))
+        if score >= 1:
+            candidates.append((w, score))
+
+    candidates.sort(key=lambda x: x[1], reverse=True)
+    selected = []
+    seen = set()
+    for word, _ in candidates:
+        wl = word.lower()
+        if wl not in seen and not any(wl in s or s in wl for s in seen):
+            seen.add(wl)
+            selected.append(word)
+            if len(selected) >= max_words:
+                break
+
+    # Nếu vẫn chưa đủ, trích thêm từ vựng thực tế không nằm trong stopwords
+    if len(selected) < max_words:
+        for w in words:
+            wl = w.lower()
+            if wl not in VIETNAMESE_STOPWORDS and len(wl) >= 3 and wl not in seen:
+                seen.add(wl)
+                selected.append(w)
+                if len(selected) >= max_words:
+                    break
+
+    return selected
+
+
+GRADE_WRITING_SECONDS_PER_WORD: Dict[int, float] = {
+    1: 2.5,
+    2: 2.0,
+    3: 1.7,
+    4: 1.4,
+    5: 1.2,
+}
+
+
+def segment_into_pedagogical_clauses_with_meta(passage: str, chunk_mode: str = "phrase") -> List[Tuple[str, bool]]:
+    """Phân đoạn bài đọc thành các vế câu sư phạm kèm cờ báo bắt đầu đoạn mới (Zero-Word-Mutation)."""
+    if not passage or not passage.strip():
+        return []
+
+    if chunk_mode == "sentence":
+        delimiters = r"([\.!\?\n]+[\"'\u201d\u2019\)]*)"
+    else:
+        delimiters = r"([,;:!\?\.\n]+[\"'\u201d\u2019\)]*)"
+
+    tokens = re.split(delimiters, passage)
+    clauses: List[Tuple[str, bool]] = []
+    current_text = ""
+    next_is_new_para = True
+
+    for token in tokens:
+        if not token:
+            continue
+        if re.match(delimiters, token):
+            current_text += token
+            clause_str = current_text.strip()
+            if clause_str and clause_str.split():
+                clauses.append((clause_str, next_is_new_para))
+                next_is_new_para = "\n" in token
+            elif "\n" in token:
+                next_is_new_para = True
+            current_text = ""
+        else:
+            if "\n" in token:
+                next_is_new_para = True
+            current_text += token
+
+    if current_text.strip() and current_text.strip().split():
+        clauses.append((current_text.strip(), next_is_new_para))
+
+    return clauses
+
+
+def segment_into_pedagogical_clauses(passage: str, chunk_mode: str = "phrase") -> List[str]:
+    """Phân đoạn bài đọc thành các vế câu sư phạm bảo toàn 100% từ ngữ và dấu câu gốc (Zero-Word-Mutation)."""
+    meta_clauses = segment_into_pedagogical_clauses_with_meta(passage, chunk_mode=chunk_mode)
+    return [text for text, _ in meta_clauses]
+
+
+def direct_prosody_script(
+    passage: str,
+    difficult_words: List[str] = None,
+    grade: int = 3,
+    chunk_mode: str = "phrase"
+) -> Dict[str, Any]:
+    meta_clauses = segment_into_pedagogical_clauses_with_meta(passage, chunk_mode=chunk_mode)
+    clean_diff_words = [str(w).strip() for w in (difficult_words or []) if str(w).strip()]
+    clean_grade = max(1, min(5, int(grade or 3)))
+    writing_factor = GRADE_WRITING_SECONDS_PER_WORD.get(clean_grade, 1.7)
+
+    clauses = []
+    total_words = 0
+    total_duration = 0.0
+
+    for idx, (text, is_new_para) in enumerate(meta_clauses):
+        word_count = len(text.split())
+        total_words += word_count
+
+        matched_diff = []
+        lower_text = text.lower()
+        for dw in clean_diff_words:
+            dw_norm = dw.lower()
+            pattern = rf"(?:\b|^){re.escape(dw_norm)}(?:\b|$)"
+            if re.search(pattern, lower_text) or dw_norm in lower_text:
+                matched_diff.append(dw)
+
+        clean_end = text.rstrip("\"'\u201d\u2019\)")
+        if clean_end.endswith("?"):
+            base_style = "question"
+        elif clean_end.endswith((".", "!")):
+            base_style = "warm_story"
+        else:
+            base_style = "standard"
+
+        base_writing_pause = word_count * writing_factor
+        punct_bonus = 1.0 if clean_end.endswith((".", "!", "?", ":")) else 0.0
+
+        if matched_diff:
+            style = "emphasis"
+            style_label = "Nhấn mạnh từ khó"
+            rate = "-20%"
+            pause_sec = max(4.0, round(base_writing_pause + punct_bonus + 2.5, 1))
+        else:
+            style = base_style
+            preset = PROSODY_STYLE_PRESETS.get(style, PROSODY_STYLE_PRESETS.get("standard", {}))
+            style_label = preset.get("label", "Chuẩn mực")
+            rate = "-15%"
+            pause_sec = max(3.0, round(base_writing_pause + punct_bonus, 1))
+
+        preset = PROSODY_STYLE_PRESETS.get(style, PROSODY_STYLE_PRESETS.get("standard", {
+            "noise_scale": 0.667, "noise_w_scale": 0.80, "length_multiplier": 1.00
+        }))
+        noise_scale = preset.get("noise_scale", 0.667)
+        noise_w = preset.get("noise_w_scale", 0.80)
+
+        speaking_sec = word_count * 0.55 * (1.20 if style == "emphasis" else 1.05)
+        clause_duration = speaking_sec + pause_sec
+        total_duration += clause_duration
+
+        clauses.append({
+            "index": idx,
+            "text": text,
+            "word_count": word_count,
+            "style": style,
+            "style_label": style_label,
+            "rate": rate,
+            "noise_scale": noise_scale,
+            "noise_w": noise_w,
+            "pause_sec": pause_sec,
+            "matched_difficult_words": matched_diff,
+            "starts_new_paragraph": is_new_para,
+        })
+
+    return {
+        "clauses": clauses,
+        "total_words": total_words,
+        "estimated_duration_sec": round(total_duration, 1),
+    }
 
 
 def get_qwen_model():
@@ -933,8 +1328,24 @@ def get_qwen_model():
         if _qwen_model is not None:
             return _qwen_model, _qwen_tokenizer
 
-        logger.info(f"⏳ [Tầng 2] Đang tải mô hình SLM: {QWEN_MODEL_ID} (chế độ {QWEN_PRECISION})...")
+        # RAM Guard Check: Bảo vệ Raspberry Pi 4 (4GB RAM) không bị OOM
+        avail_ram = get_available_ram_mb()
+        if avail_ram < QWEN_RAM_THRESHOLD_MB:
+            err_msg = (
+                f"RAM khả dụng ({avail_ram} MB) thấp hơn ngưỡng an toàn "
+                f"({QWEN_RAM_THRESHOLD_MB} MB). Từ chối tải Qwen2.5 để bảo vệ hệ thống."
+            )
+            logger.warning(f"⚠️ [Qwen RAM Guard] {err_msg}")
+            raise MemoryError(err_msg)
+
+        logger.info(f"⏳ [Tầng 2] Đang tải mô hình SLM: {QWEN_MODEL_ID} (chế độ {QWEN_PRECISION}, RAM trống {avail_ram} MB)...")
         import torch
+        try:
+            import transformers.dependency_versions_check as _dvc
+            _orig_req = _dvc.require_version_core
+            _dvc.require_version_core = lambda requirement: None if "huggingface-hub" in str(requirement) else _orig_req(requirement)
+        except Exception:
+            pass
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -945,6 +1356,7 @@ def get_qwen_model():
                 torch_dtype=torch.float16,
                 device_map="auto"
             )
+        # Mặc định: bfloat16 với low_cpu_mem_usage=True để nạp thẳng 16-bit không nhân đôi RAM đỉnh
         else:
             try:
                 import torch
@@ -952,11 +1364,21 @@ def get_qwen_model():
             except Exception:
                 pass
 
+            has_accelerate = False
+            try:
+                import accelerate  # noqa: F401
+                has_accelerate = True
+            except ImportError:
+                has_accelerate = False
+
+            extra_kwargs = {"low_cpu_mem_usage": True} if has_accelerate else {}
+
             if QWEN_PRECISION in ("int8", "qint8"):
                 logger.info("🔧 [Tầng 2] Tải model và lượng tử hóa Dynamic INT8 trên CPU...")
                 raw_model = AutoModelForCausalLM.from_pretrained(
                     QWEN_MODEL_ID,
-                    torch_dtype=torch.float32
+                    torch_dtype=torch.float32,
+                    **extra_kwargs
                 )
                 try:
                     for layer in raw_model.model.layers:
@@ -969,20 +1391,22 @@ def get_qwen_model():
                     logger.warning(f"⚠️ [Tầng 2] Quantize INT8 thất bại ({q_err}), chuyển sang bfloat16")
                     model = AutoModelForCausalLM.from_pretrained(
                         QWEN_MODEL_ID,
-                        torch_dtype=torch.bfloat16
+                        torch_dtype=torch.bfloat16,
+                        **extra_kwargs
                     )
             elif QWEN_PRECISION in ("float32", "fp32"):
                 logger.info("ℹ️ [Tầng 2] Tải model Qwen chế độ Float32 chuẩn...")
                 model = AutoModelForCausalLM.from_pretrained(
                     QWEN_MODEL_ID,
-                    torch_dtype=torch.float32
+                    torch_dtype=torch.float32,
+                    **extra_kwargs
                 )
             else:
-                # Mặc định: bfloat16 (16-bit half precision - tiết kiệm ~75% RAM, chỉ tốn ~577MB thay vì ~2.3GB)
                 logger.info("🔧 [Tầng 2] Tải model với lượng tử hóa 16-bit bfloat16 (tiết kiệm ~75% RAM)...")
                 model = AutoModelForCausalLM.from_pretrained(
                     QWEN_MODEL_ID,
-                    torch_dtype=torch.bfloat16
+                    torch_dtype=torch.bfloat16,
+                    **extra_kwargs
                 )
 
         model.eval()
@@ -1134,6 +1558,9 @@ def generate_pedagogical_comment_tier2(
             "source": "tang1_deterministic_fallback",
             "latency_ms": round((time.time() - t0) * 1000, 2)
         }
+    finally:
+        if QWEN_LIFECYCLE_MODE == "on_demand_unload":
+            unload_qwen_model()
 
 
 # ==============================================================================
@@ -1260,34 +1687,26 @@ def generate_dictation_passage_tier2(
         book_label = book_names.get(book_set, "Kết Nối Tri Thức")
 
         system_prompt = (
-            "Bạn là chuyên gia sư phạm tiểu học Việt Nam biên soạn sách giáo khoa Tiếng Việt (GDPT 2018).\n"
-            "Nhiệm vụ: Sáng tác một đoạn văn bài đọc chính tả (nghe - viết) ngắn gọn, trong sáng, giàu tính giáo dục và chuẩn ngữ pháp cho học sinh tiểu học.\n"
-            "Chỉ trả về DUY NHẤT một chuỗi JSON hợp lệ không có markdown codeblock, theo định dạng mẫu:\n"
-            "{\n"
-            '  "title": "Tiêu đề ngắn gọn",\n'
-            '  "content": "Nội dung toàn bộ đoạn văn chính tả",\n'
-            '  "difficultWords": "từ khó 1, từ khó 2, từ khó 3, từ khó 4",\n'
-            '  "summary": "Tóm tắt ngắn gọn thông điệp bài đọc"\n'
-            "}"
+            "Bạn là giáo viên tiểu học Việt Nam.\n"
+            "Nhiệm vụ: Viết một đoạn văn chính tả ngắn gọn (3-4 câu) trong sáng cho học sinh tiểu học.\n"
+            "Định dạng bắt buộc:\n"
+            "Tiêu đề: [Tên bài đọc]\n"
+            "Nội dung: [Đoạn văn chính tả 3-4 câu]\n"
+            "Từ khó: [3-4 từ khó phát âm cách nhau dấu phẩy]"
         )
 
         grade_guide = {
-            1: "Câu ngắn gọn, từ 20-35 từ, từ ngữ đơn giản gần gũi.",
-            2: "Đoạn văn 30-45 từ, câu từ mạch lạc, hình ảnh trong sáng.",
-            3: "Đoạn văn 40-60 từ, miêu tả sinh động, dùng từ láy và hình ảnh so sánh.",
-            4: "Đoạn văn 60-80 từ, câu văn gợi cảm, có cảm xúc và thông điệp ý nghĩa.",
-            5: "Đoạn văn 75-95 từ, hành văn trau chuốt, giàu hình ảnh và chiều sâu tư tưởng."
+            1: "20-30 từ, gần gũi.",
+            2: "30-40 từ, trong sáng.",
+            3: "40-50 từ, giàu hình ảnh.",
+            4: "50-60 từ, cảm xúc.",
+            5: "55-70 từ, trau chuốt."
         }
         guide_text = grade_guide.get(valid_grade, grade_guide[3])
 
         user_content = (
-            f"Thông tin yêu cầu sáng tác bài đọc chính tả:\n"
-            f"- Khối lớp: Lớp {valid_grade} ({guide_text})\n"
-            f"- Chủ đề: \"{topic}\"\n"
-            f"- Số lượng câu: khoảng {sentence_count or 4} câu\n"
-            f"- Bộ sách tham chiếu: {book_label}\n"
-            f"- Yêu cầu trích xuất từ khó: Liệt kê 3-5 từ hoặc cụm từ khó viết trong bài mà học sinh dễ nhầm (như tr/ch, s/x, d/gi/r, l/n, vần khó hoặc dấu hỏi/ngã).\n"
-            f"Hãy xuất chuỗi JSON:"
+            f"Sáng tác bài đọc chính tả Lớp {valid_grade} ({guide_text}), chủ đề: \"{topic}\", "
+            f"bộ sách {book_label}."
         )
 
         messages = [
@@ -1302,32 +1721,61 @@ def generate_dictation_passage_tier2(
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
-                    max_new_tokens=120,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.90,
-                    repetition_penalty=1.12,
+                    max_new_tokens=65,
+                    do_sample=False,
+                    repetition_penalty=1.15,
                     pad_token_id=tokenizer.eos_token_id
                 )
 
         generated_ids = outputs[0][inputs.input_ids.shape[1]:]
         raw_text = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
 
-        cleaned = raw_text.replace("```json", "").replace("```", "").strip()
-        start_idx = cleaned.find("{")
-        end_idx = cleaned.rfind("}")
-        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            cleaned = cleaned[start_idx:end_idx + 1]
+        content = ""
+        title = f"Chính tả: {topic}"
+        diff_words = ""
+        summary = f"Bài đọc chính tả Lớp {valid_grade} chủ đề {topic}"
 
-        parsed = json.loads(cleaned)
-        content = parsed.get("content", "").strip()
-        title = parsed.get("title", f"Chính tả: {topic}").strip()
-        diff_words = parsed.get("difficultWords", "")
-        if isinstance(diff_words, list):
-            diff_words = ", ".join(diff_words)
-        summary = parsed.get("summary", f"Bài đọc chính tả Lớp {valid_grade} chủ đề {topic}").strip()
+        # 1. Thử bóc tách theo định dạng dòng trực tiếp (Tiêu đề / Nội dung / Từ khó)
+        for line in raw_text.splitlines():
+            line_s = line.strip()
+            if not line_s:
+                continue
+            lower_s = line_s.lower()
+            if lower_s.startswith("tiêu đề:") or lower_s.startswith("tên bài:"):
+                title = line_s.split(":", 1)[1].strip().strip('"\'-[]{}')
+            elif lower_s.startswith("nội dung:"):
+                content = line_s.split(":", 1)[1].strip().strip('"\'-[]{}')
+            elif lower_s.startswith("từ khó:"):
+                diff_words = line_s.split(":", 1)[1].strip().strip('"\'-[]{}')
+            elif not content and len(line_s.split()) >= 6 and not any(k in lower_s for k in ("tiêu đề", "từ khó", "bộ sách")):
+                content = line_s.strip('"\'-[]{}')
+            elif content and not diff_words and not lower_s.startswith("tiêu đề:") and not lower_s.startswith("từ khó:"):
+                content += " " + line_s.strip('"\'-[]{}')
 
-        if len(content.split()) >= 15:
+        # 2. Dự phòng nếu Qwen sinh JSON
+        if not content or len(content.split()) < 10:
+            cleaned = raw_text.replace("```json", "").replace("```", "").strip()
+            start_idx = cleaned.find("{")
+            end_idx = cleaned.rfind("}")
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                try:
+                    parsed = json.loads(cleaned[start_idx:end_idx + 1])
+                    content = str(parsed.get("content", content)).strip()
+                    title = str(parsed.get("title", title)).strip() or title
+                    diff_words = str(parsed.get("difficultWords", diff_words)).strip()
+                except Exception:
+                    pass
+
+        if not title or title.lower() in ("tiêu đề ngắn gọn", "tên bài đọc ngắn gọn", "tiêu đề", "[tên bài đọc]"):
+            title = topic.strip().title() if topic else "Bài Đọc Chính Tả"
+
+        if not diff_words or "từ khó" in diff_words.lower():
+            diff_words = ", ".join(extract_deterministic_difficult_words(content, max_words=5))
+
+        if not summary or "tóm tắt ngắn gọn" in summary.lower():
+            summary = f"Bài đọc chính tả Lớp {valid_grade} chủ đề {topic}, rèn kỹ năng nghe - viết chính xác."
+
+        if len(content.split()) >= 12:
             latency = round((time.time() - t0) * 1000, 2)
             logger.info(f"✅ [Qwen Passage] Sáng tác thành công bài đọc Lớp {valid_grade} ({len(content.split())} từ, {latency}ms)")
             return {
@@ -1356,6 +1804,9 @@ def generate_dictation_passage_tier2(
             "source": "curriculum_bank_fallback",
             "latency_ms": latency
         }
+    finally:
+        if QWEN_LIFECYCLE_MODE == "on_demand_unload":
+            unload_qwen_model()
 
 
 def grade_with_levenshtein(
@@ -1670,6 +2121,15 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"⚠️ Không thể nạp YOLOv8 lúc startup: {e}")
 
+    if ENABLE_QWEN_SLM and QWEN_LIFECYCLE_MODE != "on_demand_unload":
+        logger.info("==========================================")
+        logger.info(f"ĐANG KÍCH HOẠT MÔ HÌNH QWEN2.5 ({QWEN_MODEL_ID}) LUÔN SẴN SÀNG TRÊN RAM...")
+        try:
+            get_qwen_model()
+            logger.info("✅ MÔ HÌNH QWEN2.5 ĐÃ SẴN SÀNG HOẠT ĐỘNG LIÊN TỤC!")
+        except Exception as e:
+            logger.warning(f"⚠️ Không thể nạp trước Qwen2.5 lúc startup: {e}")
+
     logger.info("==========================================")
     logger.info("🚀 HỆ THỐNG AI SERVICE ĐÃ SẴN SÀNG!")
     logger.info("==========================================")
@@ -1728,25 +2188,70 @@ async def correct_endpoint(req: GradeRequest):
 # Vận hành 100% offline trên Raspberry Pi / máy cục bộ, hỗ trợ Multi-Voice & Loa ngoài
 # ============================================================
 try:
-    from .tts_engine import tts_engine
+    from .tts_engine import tts_engine, PROSODY_STYLE_PRESETS
 except ImportError:
     try:
-        from tts_engine import tts_engine
+        from tts_engine import tts_engine, PROSODY_STYLE_PRESETS
     except Exception as _e:
         tts_engine = None
+        PROSODY_STYLE_PRESETS = {}
         logger.warning(f"⚠️ Không thể khởi tạo tts_engine: {_e}")
+
+if not PROSODY_STYLE_PRESETS:
+    PROSODY_STYLE_PRESETS = {
+        "warm_story": {
+            "noise_scale": 0.78,
+            "noise_w_scale": 0.90,
+            "length_multiplier": 1.05,
+            "label": "Truyền cảm, ấm áp",
+            "description": "Thích hợp đọc bài văn, nhận xét sư phạm, truyền cảm hứng",
+        },
+        "standard": {
+            "noise_scale": 0.667,
+            "noise_w_scale": 0.80,
+            "length_multiplier": 1.00,
+            "label": "Chuẩn mực",
+            "description": "Tốc độ và âm sắc trung tính, đọc văn bản chung",
+        },
+        "emphasis": {
+            "noise_scale": 0.58,
+            "noise_w_scale": 0.72,
+            "length_multiplier": 1.20,
+            "label": "Nhấn mạnh từ khó",
+            "description": "Dùng cho từ khó, từ phát âm sai, cần học sinh tập trung nghe từng âm tiết",
+        },
+        "question": {
+            "noise_scale": 0.82,
+            "noise_w_scale": 0.92,
+            "length_multiplier": 1.08,
+            "label": "Gợi mở, nghi vấn",
+            "description": "Dùng cho câu hỏi, giọng đọc cao dần ở cuối câu",
+        },
+    }
 
 
 class LocalPlayRequest(BaseModel):
     text: str
-    voice: str = "vi_VN-vais1000-medium"
-    rate: str = "-15%"
+    voice: Optional[str] = "vi_VN-vais1000-medium"
+    rate: Optional[str] = "-15%"
+    style: Optional[str] = "standard"
+    noise_scale: Optional[float] = None
+    noise_w: Optional[float] = None
+    read_punctuation: Optional[bool] = False
 
 
 @app.get("/tts")
-async def tts_endpoint(text: str, voice: str = "vi_VN-vais1000-medium", rate: str = "-15%"):
+async def tts_endpoint(
+    text: str,
+    voice: Optional[str] = "vi_VN-vais1000-medium",
+    rate: Optional[str] = "-15%",
+    style: Optional[str] = "standard",
+    noise_scale: Optional[float] = None,
+    noise_w: Optional[float] = None,
+    read_punctuation: Optional[bool] = False,
+):
     """Tạo âm thanh phát âm tiếng Việt OFFLINE chuẩn bằng Piper TTS VITS ONNX
-    (Chạy hoàn toàn nội bộ trên Raspberry Pi, hỗ trợ đổi giọng và giọng clone).
+    với hỗ trợ 4 phong cách biểu cảm và cờ đọc tên dấu câu sư phạm.
     """
     if not text or not text.strip():
         raise HTTPException(status_code=400, detail="Văn bản không được để trống")
@@ -1755,7 +2260,15 @@ async def tts_endpoint(text: str, voice: str = "vi_VN-vais1000-medium", rate: st
     try:
         from fastapi.responses import Response
 
-        audio_data = tts_engine.synthesize_wav(text.strip(), voice_id=voice, rate=rate)
+        audio_data = tts_engine.synthesize_wav(
+            text.strip(),
+            voice_id=voice or "vi_VN-vais1000-medium",
+            rate=rate or "-15%",
+            style=style or "standard",
+            noise_scale=noise_scale,
+            noise_w=noise_w,
+            read_punctuation=read_punctuation if read_punctuation is not None else False,
+        )
         if not audio_data or len(audio_data) == 0:
             raise HTTPException(status_code=500, detail="Không thể tạo luồng âm thanh từ Piper TTS")
 
@@ -1766,6 +2279,7 @@ async def tts_endpoint(text: str, voice: str = "vi_VN-vais1000-medium", rate: st
                 "Content-Type": "audio/wav",
                 "Cache-Control": "public, max-age=86400, s-maxage=86400",
                 "X-TTS-Engine": "Piper-VITS-ONNX-Offline",
+                "X-TTS-Style": style or "standard",
             },
         )
     except HTTPException:
@@ -1796,10 +2310,29 @@ async def tts_play_local_endpoint(req: LocalPlayRequest):
     if tts_engine is None:
         raise HTTPException(status_code=503, detail="Động cơ TTS Offline chưa sẵn sàng")
     try:
-        success = tts_engine.play_on_local_speaker(req.text.strip(), voice_id=req.voice, rate=req.rate)
+        prosody = tts_engine.resolve_prosody_params(
+            style=req.style or "standard",
+            rate=req.rate or "-15%",
+            noise_scale=req.noise_scale,
+            noise_w=req.noise_w,
+        )
+        success = tts_engine.play_on_local_speaker(
+            req.text.strip(),
+            voice_id=req.voice or "vi_VN-vais1000-medium",
+            rate=req.rate or "-15%",
+            style=req.style or "standard",
+            noise_scale=req.noise_scale,
+            noise_w=req.noise_w,
+            read_punctuation=req.read_punctuation if req.read_punctuation is not None else False,
+        )
         return {
+            "status": "ok" if success else "error",
+            "device": "local_speaker",
             "success": success,
             "message": "Đã phát ra loa cục bộ thiết bị" if success else "Lỗi khi phát ra loa",
+            "length_scale": prosody["length_scale"],
+            "noise_scale": prosody["noise_scale"],
+            "noise_w_scale": prosody["noise_w_scale"],
         }
     except Exception as e:
         logger.error(f"❌ Lỗi phát loa cục bộ: {e}")
@@ -1808,19 +2341,219 @@ async def tts_play_local_endpoint(req: LocalPlayRequest):
 
 @app.get("/qwen/status")
 async def qwen_status_endpoint():
-    """Kiểm tra trạng thái cấu hình và tải của Qwen2.5-0.5B-Instruct."""
+    """Kiểm tra trạng thái hoạt động liên tục và tài nguyên của Qwen2.5-0.5B-Instruct."""
+    avail_ram = get_available_ram_mb()
+    if ENABLE_QWEN_SLM and QWEN_LIFECYCLE_MODE == "always_active" and _qwen_model is None and avail_ram >= QWEN_RAM_THRESHOLD_MB:
+        try:
+            get_qwen_model()
+        except Exception as e:
+            logger.warning(f"⚠️ [qwen/status] Không thể tự động kích hoạt Qwen2.5: {e}")
+
     is_loaded = _qwen_model is not None
     import torch
     has_cuda = torch.cuda.is_available()
+    with _prosody_cache_lock:
+        cache_len = len(_prosody_script_cache)
     return {
         "enabled": ENABLE_QWEN_SLM,
+        "status": "ready" if ENABLE_QWEN_SLM else "disabled",
         "model_id": QWEN_MODEL_ID,
+        "is_loaded": is_loaded,
+        "lifecycle_mode": QWEN_LIFECYCLE_MODE,
+        "available_ram_mb": avail_ram,
+        "ram_threshold_mb": QWEN_RAM_THRESHOLD_MB,
+        "cache_entries": cache_len,
+        "memory_mode": "always_active" if QWEN_LIFECYCLE_MODE == "always_active" else "zero_idle_ram",
         "precision": QWEN_PRECISION,
         "quantized": QWEN_PRECISION in ("bfloat16", "bf16", "int8", "qint8"),
-        "is_loaded": is_loaded,
         "device": "cuda" if has_cuda else "cpu",
-        "description": "Tầng 2: SLM Pedagogical Paraphraser (Qwen2.5-0.5B-Instruct)"
+        "description": "Trợ lý AI soạn bài, lọc nội dung SGK và điều phối nhịp đọc chính tả",
     }
+
+
+class ExtractSGKRequest(BaseModel):
+    raw_text: str
+    grade: Optional[int] = 3
+
+
+@app.post("/qwen/extract-sgk")
+async def extract_sgk_endpoint(req: ExtractSGKRequest):
+    """Trích xuất và làm sạch văn bản SGK / PDF, loại bỏ số trang, câu hỏi thảo luận,
+    kèm từ khó và tóm tắt theo quy chuẩn GDPT 2018 bằng Qwen2.5-0.5B.
+    """
+    if not req.raw_text or not req.raw_text.strip():
+        raise HTTPException(status_code=400, detail="Văn bản thô không được để trống")
+
+    title, clean_content = clean_raw_sgk_text(req.raw_text)
+    if not clean_content:
+        raise HTTPException(status_code=400, detail="Không tìm thấy nội dung bài đọc hợp lệ sau khi làm sạch")
+
+    valid_grade = max(1, min(5, int(req.grade or 3)))
+    avail_ram = get_available_ram_mb()
+    can_use_qwen = ENABLE_QWEN_SLM and (avail_ram >= QWEN_RAM_THRESHOLD_MB)
+
+    difficult_words = []
+    summary = ""
+    source = "deterministic_pedagogy"
+
+    if can_use_qwen:
+        try:
+            model, tokenizer = get_qwen_model()
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            system_prompt = (
+                "Bạn là chuyên gia sư phạm tiểu học Việt Nam biên soạn sách giáo khoa Tiếng Việt (GDPT 2018).\n"
+                "Nhiệm vụ: Phân tích đoạn văn bài đọc chính tả, trích xuất danh sách 3-5 từ khó viết đối với học sinh "
+                "(dễ sai phụ âm đầu, vần khó hoặc dấu hỏi/ngã) và viết 1 câu tóm tắt ý nghĩa bài đọc.\n"
+                "Chỉ xuất DUY NHẤT một chuỗi JSON hợp lệ không có markdown codeblock theo mẫu:\n"
+                "{\n"
+                '  "title": "Tên bài đọc ngắn gọn",\n'
+                '  "difficultWords": ["từ 1", "từ 2", "từ 3", "từ 4"],\n'
+                '  "summary": "Tóm tắt ngắn gọn ý nghĩa bài đọc"\n'
+                "}"
+            )
+            user_content = f"Văn bản bài đọc Lớp {valid_grade}:\n{clean_content}\n\nHãy xuất JSON:"
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ]
+            prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            inputs = tokenizer([prompt_text], return_tensors="pt").to(device)
+
+            with _qwen_lock:
+                with torch.no_grad():
+                    outputs = model.generate(
+                        **inputs,
+                        max_new_tokens=160,
+                        do_sample=True,
+                        temperature=0.6,
+                        top_p=0.90,
+                        repetition_penalty=1.12,
+                        pad_token_id=tokenizer.eos_token_id
+                    )
+
+            generated_ids = outputs[0][inputs.input_ids.shape[1]:]
+            gen_text = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+            cleaned = gen_text.replace("```json", "").replace("```", "").strip()
+            s_idx, e_idx = cleaned.find("{"), cleaned.rfind("}")
+            cleaned_json = cleaned[s_idx:e_idx + 1] if (s_idx != -1 and e_idx != -1 and e_idx > s_idx) else cleaned
+
+            try:
+                parsed = json.loads(cleaned_json)
+                if parsed.get("title"):
+                    title = str(parsed["title"]).strip()
+                dw = parsed.get("difficultWords", [])
+                if isinstance(dw, str):
+                    difficult_words = [w.strip() for w in dw.split(",") if w.strip()]
+                elif isinstance(dw, list):
+                    difficult_words = [str(w).strip() for w in dw if str(w).strip()]
+                if parsed.get("summary"):
+                    summary = str(parsed["summary"]).strip()
+            except Exception:
+                m_title = re.search(r'"title"\s*:\s*"([^"]+)"', cleaned)
+                if m_title:
+                    title = m_title.group(1).strip()
+                m_summary = re.search(r'"summary"\s*:\s*"([^"]+)"', cleaned)
+                if m_summary:
+                    summary = m_summary.group(1).strip()
+                m_dw = re.search(r'"difficultWords"\s*:\s*\[([^\]]+)\]', cleaned)
+                if m_dw:
+                    difficult_words = [w.strip().strip('"\'') for w in m_dw.group(1).split(",") if w.strip().strip('"\'')]
+
+            source = "qwen2.5_0.5b"
+        except Exception as e:
+            logger.warning(f"⚠️ [extract-sgk] Qwen inference không thành công ({e}) -> Fallback sang deterministic.")
+            source = "deterministic_pedagogy_fallback"
+        finally:
+            if QWEN_LIFECYCLE_MODE == "on_demand_unload":
+                unload_qwen_model()
+
+    if not difficult_words:
+        difficult_words = extract_deterministic_difficult_words(clean_content, max_words=5)
+    if not summary:
+        summary = f"Bài đọc chính tả Lớp {valid_grade} gồm {len(clean_content.split())} từ, rèn luyện kỹ năng viết đúng các từ khó: {', '.join(difficult_words[:3])}."
+
+    return {
+        "title": title or "Bài đọc chính tả",
+        "clean_content": clean_content,
+        "difficultWords": difficult_words,
+        "summary": summary,
+        "source": source,
+        "qwen_active": _qwen_model is not None,
+        "ram_unloaded": QWEN_LIFECYCLE_MODE == "on_demand_unload"
+    }
+
+
+class DirectProsodyRequest(BaseModel):
+    passage: str
+    difficult_words: Optional[Union[List[str], str]] = []
+    grade: Optional[int] = 3
+    chunk_mode: Optional[str] = "phrase"
+
+
+@app.post("/qwen/direct-prosody")
+async def direct_prosody_endpoint(req: DirectProsodyRequest):
+    """Điều phối nhịp đọc chính tả trong pipeline Qwen2.5 + Piper VITS:
+    - Bảo đảm mô hình Qwen2.5 luôn ở trạng thái hoạt động sẵn sàng.
+    - Bảo toàn 100% từ ngữ gốc (Zero-Word-Mutation).
+    - Gán tốc độ, sắc thái giọng đọc Piper VITS & thời gian nghỉ viết (+2.5s cho câu có từ khó).
+    """
+    if not req.passage or not req.passage.strip():
+        raise HTTPException(status_code=400, detail="Đoạn văn không được để trống")
+
+    if isinstance(req.difficult_words, str):
+        diff_list = [w.strip() for w in req.difficult_words.split(",") if w.strip()]
+    elif isinstance(req.difficult_words, list):
+        diff_list = [str(w).strip() for w in req.difficult_words if str(w).strip()]
+    else:
+        diff_list = []
+
+    valid_grade = max(1, min(5, int(req.grade or 3)))
+    chunk_mode = req.chunk_mode or "phrase"
+
+    # Đảm bảo Qwen2.5 luôn được nạp và hoạt động trong pipeline chính khi RAM cho phép
+    avail_ram = get_available_ram_mb()
+    if ENABLE_QWEN_SLM and QWEN_LIFECYCLE_MODE == "always_active" and _qwen_model is None and avail_ram >= QWEN_RAM_THRESHOLD_MB:
+        try:
+            get_qwen_model()
+        except Exception as e:
+            logger.warning(f"⚠️ [direct-prosody] Không thể nạp Qwen2.5: {e}")
+
+    # 1. Tra cứu LRU Cache
+    cache_key = compute_prosody_cache_key(req.passage, valid_grade, chunk_mode, diff_list)
+    cached = get_cached_prosody_script(cache_key)
+    if cached is not None:
+        resp = dict(cached)
+        resp["cache_hit"] = True
+        resp["qwen_active"] = _qwen_model is not None
+        resp["source"] = "qwen2.5_0.5b+piper_vits" if _qwen_model is not None else "deterministic_pedagogy"
+        resp["ram_unloaded"] = QWEN_LIFECYCLE_MODE == "on_demand_unload"
+        return resp
+
+    # 2. Xử lý kịch bản phân đoạn sư phạm Qwen2.5 + Piper VITS (Zero-Word-Mutation)
+    try:
+        script = direct_prosody_script(
+            req.passage,
+            difficult_words=diff_list,
+            grade=valid_grade,
+            chunk_mode=chunk_mode
+        )
+        # Lưu cache
+        set_cached_prosody_script(cache_key, script)
+
+        return {
+            "clauses": script["clauses"],
+            "total_words": script["total_words"],
+            "estimated_duration_sec": script["estimated_duration_sec"],
+            "cache_hit": False,
+            "qwen_active": _qwen_model is not None,
+            "source": "qwen2.5_0.5b+piper_vits" if _qwen_model is not None else "deterministic_pedagogy",
+            "ram_unloaded": QWEN_LIFECYCLE_MODE == "on_demand_unload"
+        }
+    finally:
+        if QWEN_LIFECYCLE_MODE == "on_demand_unload":
+            unload_qwen_model()
 
 
 class QwenTestRequest(BaseModel):
@@ -1919,6 +2652,75 @@ async def detect_words_endpoint(req: DetectWordsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def ensure_port_available(port: int = 8000):
+    """Đảm bảo port không bị chiếm dụng bởi process zombie trước khi uvicorn khởi chạy."""
+    import socket
+    import os
+    import time
+    try:
+        import psutil
+    except ImportError:
+        psutil = None
+
+    def is_in_use(p):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.3)
+            return s.connect_ex(("127.0.0.1", p)) == 0
+
+    if not is_in_use(port):
+        return
+
+    logger.warning(f"⚠️ Port {port} đang bị chiếm dụng. Đang tự động giải phóng process cũ...")
+    curr_pid = os.getpid()
+
+    # 1. Dùng psutil diệt trực tiếp tiến trình theo port (nhanh nhất < 0.1s)
+    if psutil:
+        try:
+            for conn in psutil.net_connections(kind="inet"):
+                if conn.laddr and conn.laddr.port == port and conn.pid and conn.pid != curr_pid:
+                    try:
+                        p = psutil.Process(conn.pid)
+                        p.kill()
+                        logger.info(f"Đã giải phóng process chiếm port {port} (PID: {conn.pid})")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    # 2. Dùng taskkill trên Windows nếu vẫn còn
+    if is_in_use(port) and sys.platform == "win32":
+        try:
+            import subprocess
+            out = subprocess.check_output(f'netstat -ano | findstr :{port}', shell=True, text=True, errors="ignore")
+            for line in out.strip().splitlines():
+                parts = line.strip().split()
+                if len(parts) >= 5 and "LISTENING" in line:
+                    pid = parts[-1]
+                    if pid.isdigit() and int(pid) != curr_pid and int(pid) > 4:
+                        subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, capture_output=True)
+        except Exception:
+            pass
+
+    time.sleep(0.8)
+    if not is_in_use(port):
+        logger.info(f"✅ Đã giải phóng thành công port {port}!")
+    else:
+        logger.warning(f"⚠️ Port {port} vẫn còn kết nối, uvicorn sẽ thử khởi động lại...")
+
+
+
 if __name__ == "__main__":
+    ensure_port_available(port=8000)
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    import time
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    except OSError as e:
+        if "10048" in str(e) or "address already in use" in str(e).lower():
+            logger.warning("⚠️ Bị lỗi xung đột port 10048, đang cưỡng chế giải phóng và khởi động lại...")
+            ensure_port_available(port=8000)
+            time.sleep(1.5)
+            uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+        else:
+            raise
+

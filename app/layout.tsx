@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const roboto = Roboto({ 
@@ -57,6 +58,7 @@ export default function RootLayout({
       </head>
       <body className={`${roboto.variable} font-sans antialiased`}>
         {children}
+        <Toaster />
         {Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV) && <Analytics />}
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

@@ -18,6 +18,8 @@ import urllib.request
 from typing import Dict, List, Optional, Tuple, Any
 
 logger = logging.getLogger("vihand.tts_engine")
+# Tắt cảnh báo thiếu phoneme id (như số thanh điệu 1-6 hay dấu nha âm) không cần thiết của Piper VITS
+logging.getLogger("piper.phoneme_ids").setLevel(logging.ERROR)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "models", "tts")
@@ -27,35 +29,92 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 HF_BASE_URL = "https://huggingface.co/rhasspy/piper-voices/resolve/main/vi/vi_VN"
 OFFICIAL_MODELS_MAP = {
     "vi_VN-vais1000-medium": {
-        "name": "Cô Hoài My (ONNX)",
+        "name": "Cô Hoài My",
         "gender": "f",
         "region": "Bắc",
-        "desc": "Nữ · Truyền cảm, ấm áp, chuẩn mực sư phạm (VAIS1000 22kHz)",
+        "desc": "Giọng nữ · Truyền cảm, ấm áp, chuẩn sư phạm tiểu học",
         "onnx_url": f"{HF_BASE_URL}/vais1000/medium/vi_VN-vais1000-medium.onnx",
         "json_url": f"{HF_BASE_URL}/vais1000/medium/vi_VN-vais1000-medium.onnx.json",
         "file_base": "vi_VN-vais1000-medium",
         "recommended": True,
     },
     "vi_VN-25hours_single-low": {
-        "name": "Cô Trúc Ly (Light)",
+        "name": "Cô Trúc Ly",
         "gender": "f",
         "region": "Bắc",
-        "desc": "Nữ · Nhẹ nhàng, siêu tiết kiệm tài nguyên Pi (25h Single)",
+        "desc": "Giọng nữ · Nhẹ nhàng, trong trẻo, nhịp đọc thư thả",
         "onnx_url": f"{HF_BASE_URL}/25hours_single/low/vi_VN-25hours_single-low.onnx",
         "json_url": f"{HF_BASE_URL}/25hours_single/low/vi_VN-25hours_single-low.onnx.json",
         "file_base": "vi_VN-25hours_single-low",
         "recommended": False,
     },
-    "vi_VN-vivos-x_low": {
-        "name": "Thầy Nam Minh (VIVOS)",
-        "gender": "m",
-        "region": "Bắc",
-        "desc": "Nam · Dõng dạc, rõ ràng, tập trung vào trọng âm",
-        "onnx_url": f"{HF_BASE_URL}/vivos/x_low/vi_VN-vivos-x_low.onnx",
-        "json_url": f"{HF_BASE_URL}/vivos/x_low/vi_VN-vivos-x_low.onnx.json",
-        "file_base": "vi_VN-vivos-x_low",
-        "recommended": False,
+}
+
+# ==============================================================================
+# CẤU HÌNH PROSODY & PHONG CÁCH ÂM HỌC VITS CHO BẬC TIỂU HỌC
+# ==============================================================================
+
+PROSODY_STYLE_PRESETS: Dict[str, Dict[str, Any]] = {
+    "warm_story": {
+        "noise_scale": 0.33,
+        "noise_w_scale": 0.52,
+        "length_multiplier": 1.18,
+        "label": "Truyền cảm, ấm áp",
+        "description": "Thích hợp đọc bài văn, nhận xét sư phạm, truyền cảm hứng (khử rè kim loại)",
     },
+    "standard": {
+        "noise_scale": 0.35,
+        "noise_w_scale": 0.55,
+        "length_multiplier": 1.15,
+        "label": "Chuẩn mực",
+        "description": "Tốc độ và âm sắc trung tính, đọc văn bản chung, trong trẻo rõ âm",
+    },
+    "emphasis": {
+        "noise_scale": 0.28,
+        "noise_w_scale": 0.45,
+        "length_multiplier": 1.25,
+        "label": "Nhấn mạnh, rõ ràng",
+        "description": "Dùng cho từ khó, từ phát âm sai, cần học sinh tập trung nghe từng âm tiết",
+    },
+    "question": {
+        "noise_scale": 0.38,
+        "noise_w_scale": 0.58,
+        "length_multiplier": 1.12,
+        "label": "Gợi mở, nghi vấn",
+        "description": "Dùng cho câu hỏi, giọng đọc cao dần ở cuối câu",
+    },
+}
+
+_CUE_PATTERN = (
+    r'[ \t]*(?:,[ \t]*)?(?:phẩy|chấm(?:\s+(?:hỏi|than|phẩy|lửng))?|hai\s+chấm|xuống\s+dòng|'
+    r'mở\s+ngoặc\s+kép|đóng\s+ngoặc\s+kép|gạch\s+đầu\s+dòng)(?:[ \t]*[,.])[ \t]*'
+)
+_DECIMAL_OR_TIME = r'\b\d+(?:[.,:]\d+)+\b'
+_ELLIPSIS = r'[ \t]*(?:\.{2,}|…)'
+_ABBREVIATION = (
+    r'\b(?:(?:TP|GS|TS|PGS|ThS|BS|Q|TX|H|TW|TƯ|UBND|HĐND|BCH|CAND|QĐND)\.[ \t]*(?=[A-ZĐa-z\d])|'
+    r'[A-Za-zĐđĂăÂâÊêÔôƠơƯư]{1,4}\.(?=[A-Za-zĐđĂăÂâÊêÔôƠơƯư\d])|'
+    r'[A-ZĐ]{1,4}\.[ \t]+(?=[A-ZĐ]{1,4}))'
+)
+_PUNCTUATION = r'[ \t]*([,.:?!;]|，|。|：|？|！|；)[ \t]*'
+
+_PEDAGOGICAL_COMBINED_REGEX = re.compile(
+    rf'({_CUE_PATTERN})|({_DECIMAL_OR_TIME})|({_ELLIPSIS})|({_ABBREVIATION})|{_PUNCTUATION}'
+)
+
+PEDAGOGICAL_PUNCTUATION_MAP: Dict[str, str] = {
+    ",": ", phẩy, ",
+    "，": ", phẩy, ",
+    ".": ", chấm. ",
+    "。": ", chấm. ",
+    "?": ", chấm hỏi. ",
+    "？": ", chấm hỏi. ",
+    "!": ", chấm than. ",
+    "！": ", chấm than. ",
+    ":": ", hai chấm, ",
+    "：": ", hai chấm, ",
+    ";": ", chấm phẩy, ",
+    "；": ", chấm phẩy, ",
 }
 
 # ==============================================================================
@@ -178,7 +237,23 @@ def normalize_vietnamese_text(text: str) -> str:
     for pat, rep in abbreviations.items():
         t = re.sub(pat, rep, t, flags=re.IGNORECASE)
 
-    # 4. Chuẩn hóa các số còn lại thành chữ
+    # 4. Chuẩn hóa mốc thời gian (giờ:phút): 08:30 -> tám giờ ba mươi
+    def _sub_time(m):
+        h = number_to_vietnamese(int(m.group(1)))
+        mi = number_to_vietnamese(int(m.group(2)))
+        return f"{h} giờ {mi}"
+
+    t = re.sub(r"\b(\d{1,2}):(\d{2})\b", _sub_time, t)
+
+    # 5. Chuẩn hóa số thập phân: 9.5 hoặc 8,5 -> chín phẩy năm, tám phẩy năm
+    def _sub_decimal(m):
+        int_part = number_to_vietnamese(int(m.group(1)))
+        dec_part = number_to_vietnamese(int(m.group(2)))
+        return f"{int_part} phẩy {dec_part}"
+
+    t = re.sub(r"\b(\d+)[.,](\d+)\b", _sub_decimal, t)
+
+    # 6. Chuẩn hóa các số nguyên còn lại thành chữ
     def _sub_nums(m):
         try:
             val = int(m.group(0))
@@ -188,11 +263,83 @@ def normalize_vietnamese_text(text: str) -> str:
 
     t = re.sub(r"\b\d+\b", _sub_nums, t)
 
-    # 5. Dọn dẹp khoảng trắng và dấu câu
+    # 7. Dọn dẹp khoảng trắng và dấu câu
     t = re.sub(r'["“”«»]', '', t)
     t = re.sub(r"\s+", " ", t).strip()
 
     return t
+
+
+def inject_pedagogical_punctuation(text: str, enabled: bool = False) -> str:
+    """Chuyển đổi các dấu câu thành khẩu lệnh đọc chính tả tiếng Việt sư phạm.
+    - Dấu phẩy (,) -> ', phẩy, '
+    - Dấu chấm (.) -> ', chấm. '
+    - Dấu chấm hỏi (?) -> ', chấm hỏi. '
+    - Dấu chấm than (!) -> ', chấm than. '
+    - Dấu hai chấm (:) -> ', hai chấm, '
+    - Dấu chấm phẩy (;) -> ', chấm phẩy, '
+    - Dấu ba chấm (...) -> ', chấm lửng. '
+    - Dấu ngoặc kép ("...") -> ', mở ngoặc kép, ' ... ', đóng ngoặc kép, '
+    - Dấu gạch đầu dòng (- ) -> ', gạch đầu dòng, '
+    - Xuống dòng (\n) -> '\n, xuống dòng. '
+    Bảo vệ số thập phân, mốc giờ, từ viết tắt và ngăn ngừa thay thế đệ quy.
+    Sử dụng cơ chế single-pass tokenized regex để đảm bảo tính lũy đẳng (idempotent).
+    """
+    if not enabled or not text:
+        return text
+
+    # 1. Rút gọn các chuỗi dấu lặp thô bất thường trước khi gắn khẩu lệnh
+    t = re.sub(r'(?:[!?]*\?[!?]+|[!?]+\?[!?]*)', '?', text)
+    t = re.sub(r'!{2,}', '!', t)
+    t = re.sub(r'\?{2,}', '?', t)
+    t = re.sub(r':{2,}', ':', t)
+    t = re.sub(r',{2,}', ',', t)
+    t = re.sub(r';{2,}', ';', t)
+
+    # 2. Xử lý gạch đầu dòng ở đầu dòng
+    t = re.sub(r'(?m)^[ \t]*-[ \t]+', ', gạch đầu dòng, ', t)
+
+    # 3. Xử lý ngoặc kép: mở ngoặc kép & đóng ngoặc kép (nếu chưa chuyển đổi)
+    if "mở ngoặc kép" not in t and "đóng ngoặc kép" not in t:
+        t = re.sub(r'“', ', mở ngoặc kép, ', t)
+        t = re.sub(r'”', ', đóng ngoặc kép, ', t)
+        if '"' in t:
+            parts = t.split('"')
+            new_parts = [parts[0]]
+            for i in range(1, len(parts)):
+                sep = ', mở ngoặc kép, ' if (i % 2 == 1) else ', đóng ngoặc kép, '
+                new_parts.append(sep + parts[i])
+            t = ''.join(new_parts)
+
+    def _repl(m: re.Match) -> str:
+        cue, dec_time, ell, abbr, punct = m.groups()
+        if cue:
+            return cue.strip() + ' '
+        if dec_time:
+            return dec_time
+        if ell:
+            return ell
+        if abbr:
+            return abbr
+        return PEDAGOGICAL_PUNCTUATION_MAP.get(punct, m.group(0))
+
+    res = _PEDAGOGICAL_COMBINED_REGEX.sub(_repl, t)
+
+    # 4. Xử lý xuống dòng đoạn văn: thêm khẩu lệnh xuống dòng ở đầu các đoạn mới
+    lines = res.split('\n')
+    processed_lines = []
+    for idx, line in enumerate(lines):
+        line_clean = re.sub(r'[ \t]+', ' ', line).strip()
+        if not line_clean:
+            continue
+        if idx > 0 and not line_clean.startswith(", xuống dòng") and not line_clean.startswith("xuống dòng"):
+            line_clean = f", xuống dòng. {line_clean}"
+        processed_lines.append(line_clean)
+
+    final_res = '\n'.join(processed_lines).strip()
+    final_res = re.sub(r'[ \t]+', ' ', final_res)
+    final_res = re.sub(r',[ \t]*,', ',', final_res)
+    return final_res
 
 
 # ==============================================================================
@@ -264,7 +411,7 @@ class OfflineTTSEngine:
                         "name": f"Giọng: {base_name.replace('_', ' ').title()}",
                         "gender": "f",
                         "region": "Tùy biến",
-                        "desc": "Giọng nhân bản (Voice Cloning) nạp từ file ONNX giáo viên",
+                        "desc": "Giọng đọc cá nhân của giáo viên",
                         "isOffline": True,
                         "isDownloaded": True,
                         "recommended": False,
@@ -341,26 +488,163 @@ class OfflineTTSEngine:
 
         return None
 
-    def synthesize_wav(self, text: str, voice_id: str = "vi_VN-vais1000-medium", rate: str = "-15%") -> bytes:
-        """Tổng hợp chuỗi văn bản thành dữ liệu âm thanh định dạng WAV."""
-        norm_text = normalize_vietnamese_text(text)
+    @staticmethod
+    def resolve_prosody_params(
+        style: str = "standard",
+        rate: str = "-15%",
+        noise_scale: Optional[float] = None,
+        noise_w: Optional[float] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Tính toán tham số âm học kết hợp giữa style preset và override từ người dùng."""
+        chosen_style = (style or "standard").lower().strip()
+        preset = PROSODY_STYLE_PRESETS.get(chosen_style, PROSODY_STYLE_PRESETS["standard"])
+
+        # 1. length_scale
+        if kwargs.get("length_scale") is not None:
+            eff_length_scale = float(kwargs["length_scale"])
+        else:
+            base_length_scale = 1.15
+            if rate:
+                try:
+                    clean_rate = str(rate).replace("%", "").strip()
+                    rate_val = float(clean_rate)
+                    if rate_val < 0:
+                        base_length_scale = 1.0 + abs(rate_val) / 100.0
+                    else:
+                        base_length_scale = max(0.5, 1.0 - rate_val / 100.0)
+                except Exception:
+                    base_length_scale = 1.15
+
+            length_mult = preset.get("length_multiplier", 1.0)
+            eff_length_scale = round(base_length_scale * length_mult, 3)
+            eff_length_scale = max(0.5, min(3.0, eff_length_scale))
+
+        # 2. noise_scale (clamp an toàn [0.0, 2.5] bảo vệ bộ giải mã VITS)
+        eff_noise_scale = preset["noise_scale"]
+        if noise_scale is not None:
+            try:
+                eff_noise_scale = max(0.0, min(2.5, float(noise_scale)))
+            except (ValueError, TypeError):
+                pass
+
+        # 3. noise_w_scale (clamp an toàn [0.0, 2.5] tránh tràn bộ nhớ ONNX ConvTranspose)
+        eff_noise_w_scale = preset["noise_w_scale"]
+        raw_noise_w = noise_w if noise_w is not None else kwargs.get("noise_w_scale")
+        if raw_noise_w is not None:
+            try:
+                eff_noise_w_scale = max(0.0, min(2.5, float(raw_noise_w)))
+            except (ValueError, TypeError):
+                pass
+
+        return {
+            "length_scale": eff_length_scale,
+            "noise_scale": round(eff_noise_scale, 3),
+            "noise_w_scale": round(eff_noise_w_scale, 3),
+        }
+
+    @staticmethod
+    def apply_pedagogical_zero_phase_dsp(wav_bytes: bytes, sample_rate: int = 22050) -> bytes:
+        """Tầng hậu kỳ âm thanh Zero-Phase DSP (Kế thừa từ nghiên cứu Test_TTS_Vihandgrade.ipynb):
+        - High-pass 85Hz: Khử ù trầm / sub-bass rumble
+        - Peaking EQ 185Hz (+0.15 gain): Tăng độ ấm cho giọng đọc (Warmth Presence)
+        - Dual Notch Filter (3100Hz & 4400Hz): Triệt tiêu 2 điểm cộng hưởng kim loại của Vocoder VITS
+        - Low-pass 6800Hz: Cắt tạp âm xè tần số cao
+        - Soft Saturation (tanh) & Peak Normalization: Chuẩn hóa biên độ âm lượng chuẩn phát sóng
+        """
+        if not wav_bytes or len(wav_bytes) <= 44:
+            return wav_bytes
+        try:
+            import numpy as np
+            from scipy import signal
+
+            with wave.open(io.BytesIO(wav_bytes), "rb") as wr:
+                sr = wr.getframerate()
+                n_frames = wr.getnframes()
+                frames = wr.readframes(n_frames)
+                audio_int16 = np.frombuffer(frames, dtype=np.int16)
+
+            if len(audio_int16) < 100:
+                return wav_bytes
+
+            audio = np.ascontiguousarray(audio_int16, dtype=np.float64) / 32768.0
+            nyq = sr / 2.0
+
+            # 1. High-pass 85Hz
+            b_hp, a_hp = signal.butter(2, 85.0 / nyq, btype="highpass")
+            audio = signal.filtfilt(b_hp, a_hp, audio)
+
+            # 2. Tăng độ ấm 185Hz
+            b_warm, a_warm = signal.iirpeak(185.0 / nyq, Q=1.5)
+            audio = audio + 0.15 * signal.filtfilt(b_warm, a_warm, audio)
+
+            # 3. Dual-Notch: 3100Hz & 4400Hz (khử rè kim loại)
+            b_n1, a_n1 = signal.iirnotch(3100.0 / nyq, Q=3.5)
+            audio = signal.filtfilt(b_n1, a_n1, audio)
+
+            b_n2, a_n2 = signal.iirnotch(4400.0 / nyq, Q=4.0)
+            audio = signal.filtfilt(b_n2, a_n2, audio)
+
+            # 4. Low-pass 6800Hz (cắt tạp âm xè cao tần)
+            b_lp, a_lp = signal.butter(3, 6800.0 / nyq, btype="lowpass")
+            audio = signal.filtfilt(b_lp, a_lp, audio)
+
+            # 5. Soft Saturation & Peak Normalization
+            audio = np.tanh(audio * 1.25)
+            peak = np.max(np.abs(audio))
+            if peak > 1e-5:
+                audio = (audio / peak) * 0.92
+
+            dsp_int16 = np.clip(audio * 32767.0, -32767, 32767).astype(np.int16)
+
+            out_io = io.BytesIO()
+            with wave.open(out_io, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(sr)
+                wf.writeframes(dsp_int16.tobytes())
+
+            return out_io.getvalue()
+        except Exception as e:
+            logger.warning(f"⚠️ Không thể áp dụng Zero-Phase DSP (giữ nguyên âm thanh gốc): {e}")
+            return wav_bytes
+
+    def synthesize_wav(
+        self,
+        text: str,
+        voice_id: str = "vi_VN-vais1000-medium",
+        rate: str = "-15%",
+        style: str = "standard",
+        noise_scale: Optional[float] = None,
+        noise_w: Optional[float] = None,
+        read_punctuation: bool = False,
+        **kwargs,
+    ) -> bytes:
+        """Tổng hợp chuỗi văn bản thành dữ liệu âm thanh định dạng WAV với hỗ trợ Prosody và Đọc dấu câu."""
+        read_punct_flag = (
+            read_punctuation
+            if isinstance(read_punctuation, bool)
+            else str(read_punctuation).lower() in ("true", "1", "yes")
+        )
+        if read_punct_flag:
+            text_punct = inject_pedagogical_punctuation(text, enabled=True)
+            norm_text = normalize_vietnamese_text(text_punct)
+        else:
+            norm_text = normalize_vietnamese_text(text)
+
         if not norm_text:
             raise ValueError("Văn bản sau khi chuẩn hóa bị rỗng")
 
-        # Quy đổi tốc độ đọc sang length_scale (tốc độ chậm -> length_scale > 1.0)
-        # rate = "-15%" -> chậm hơn 15% -> length_scale = 1.15
-        # rate = "-25%" -> chậm hơn 25% -> length_scale = 1.25
-        # rate = "+10%" -> nhanh hơn 10% -> length_scale = 0.90
-        length_scale = 1.15  # Mặc định chuẩn sư phạm
-        try:
-            clean_rate = rate.replace("%", "").strip()
-            rate_val = float(clean_rate)
-            if rate_val < 0:
-                length_scale = 1.0 + abs(rate_val) / 100.0
-            else:
-                length_scale = max(0.5, 1.0 - rate_val / 100.0)
-        except Exception:
-            length_scale = 1.15
+        prosody = self.resolve_prosody_params(
+            style=style,
+            rate=rate,
+            noise_scale=noise_scale,
+            noise_w=noise_w,
+            **kwargs,
+        )
+        eff_length_scale = prosody["length_scale"]
+        eff_noise_scale = prosody["noise_scale"]
+        eff_noise_w_scale = prosody["noise_w_scale"]
 
         PiperVoice = self._get_piper_class()
         if PiperVoice is not None:
@@ -369,14 +653,76 @@ class OfflineTTSEngine:
                 syn_config = None
                 try:
                     from piper import SynthesisConfig
-                    syn_config = SynthesisConfig(length_scale=length_scale)
-                except Exception:
-                    pass
+                    syn_config = SynthesisConfig(
+                        length_scale=eff_length_scale,
+                        noise_scale=eff_noise_scale,
+                        noise_w_scale=eff_noise_w_scale,
+                    )
+                except ImportError:
+                    try:
+                        from piper.voice import SynthesisConfig
+                        syn_config = SynthesisConfig(
+                            length_scale=eff_length_scale,
+                            noise_scale=eff_noise_scale,
+                            noise_w_scale=eff_noise_w_scale,
+                        )
+                    except Exception as e:
+                        logger.warning(f"⚠️ Không thể khởi tạo SynthesisConfig: {e}")
 
+                sample_rate = getattr(getattr(voice, "config", None), "sample_rate", 22050)
                 wav_io = io.BytesIO()
-                with wave.open(wav_io, "wb") as wav_file:
-                    voice.synthesize_wav(norm_text, wav_file, syn_config=syn_config)
-                return wav_io.getvalue()
+                try:
+                    import numpy as np
+                    # Tách câu và vế câu theo dấu câu sư phạm để chèn khoảng lặng ngắt nghỉ tự nhiên
+                    # Dấu phẩy / chấm phẩy / hai chấm: 320ms nghỉ lấy hơi
+                    # Dấu chấm / chấm hỏi / chấm than: 600ms ngắt nghỉ trọn câu
+                    # Dấu xuống dòng: 750ms chuyển đoạn
+                    tokens = re.split(r'([,.;:!?\n]+)', norm_text)
+                    audio_raw_bytes = bytearray()
+
+                    def _make_silence(duration_sec: float) -> bytes:
+                        num_samples = int(sample_rate * max(0.05, duration_sec))
+                        return np.zeros(num_samples, dtype=np.int16).tobytes()
+
+                    for token in tokens:
+                        if not token:
+                            continue
+                        if re.match(r'^[,.;:!?\n]+$', token):
+                            if '\n' in token:
+                                audio_raw_bytes.extend(_make_silence(0.85))
+                            elif any(p in token for p in ('.', '!', '?')):
+                                audio_raw_bytes.extend(_make_silence(0.70))
+                            elif any(p in token for p in (';', ':')):
+                                audio_raw_bytes.extend(_make_silence(0.45))
+                            elif ',' in token:
+                                audio_raw_bytes.extend(_make_silence(0.40))
+                        else:
+                            phrase = token.strip()
+                            if phrase:
+                                for chunk in voice.synthesize(phrase, syn_config=syn_config):
+                                    audio_raw_bytes.extend(chunk.audio_int16_bytes)
+
+                    with wave.open(wav_io, "wb") as wav_file:
+                        wav_file.setnchannels(1)
+                        wav_file.setsampwidth(2)
+                        wav_file.setframerate(sample_rate)
+                        wav_file.writeframes(bytes(audio_raw_bytes))
+                    wav_bytes = wav_io.getvalue()
+                except wave.Error as we:
+                    logger.warning(f"⚠️ wave.Error khi tổng hợp âm thanh cho '{norm_text[:30]}': {we}")
+                    wav_bytes = b""
+                except Exception as e:
+                    logger.warning(f"⚠️ Lỗi âm vị Piper: {e}")
+                    wav_bytes = b""
+
+                if len(wav_bytes) <= 44:
+                    logger.info(f"ℹ️ Chuỗi '{norm_text[:30]}' không phát sinh âm vị, tạo khoảng lặng chuẩn ({sample_rate}Hz, 0.25s)")
+                    return self._generate_silence_wav(duration_sec=0.25, sample_rate=sample_rate)
+
+                if kwargs.get("apply_dsp", True):
+                    wav_bytes = self.apply_pedagogical_zero_phase_dsp(wav_bytes, sample_rate=sample_rate)
+
+                return wav_bytes
 
         # Nếu chưa có thư viện piper trong python, thử gọi lệnh piper CLI nếu có
         import shutil
@@ -388,23 +734,49 @@ class OfflineTTSEngine:
                 piper_bin,
                 "--model", onnx_path,
                 "--config", json_path,
-                "--length_scale", str(length_scale),
-                "--output_file", "-"
+                "--length_scale", str(eff_length_scale),
+                "--noise_scale", str(eff_noise_scale),
+                "--noise_w", str(eff_noise_w_scale),
+                "--output_file", "-",
             ]
             proc = subprocess.run(cmd, input=norm_text.encode("utf-8"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if proc.returncode == 0 and len(proc.stdout) > 44:
-                return proc.stdout
+            if proc.returncode == 0:
+                if len(proc.stdout) > 44:
+                    if kwargs.get("apply_dsp", True):
+                        return self.apply_pedagogical_zero_phase_dsp(proc.stdout, sample_rate=22050)
+                    return proc.stdout
+                elif len(proc.stdout) == 44:
+                    return self._generate_silence_wav(duration_sec=0.25, sample_rate=22050)
 
         # Nếu hoàn toàn chưa tải được model ONNX hoặc piper, sinh một file WAV thông báo
         logger.warning(f"⚠️ Chưa có Piper engine hoặc file model. Tạo âm thanh dự phòng cho '{norm_text[:30]}...'")
         return self._generate_beeps_wav(norm_text)
 
-    def play_on_local_speaker(self, text: str, voice_id: str = "vi_VN-vais1000-medium", rate: str = "-15%") -> bool:
+    def play_on_local_speaker(
+        self,
+        text: str,
+        voice_id: str = "vi_VN-vais1000-medium",
+        rate: str = "-15%",
+        style: str = "standard",
+        noise_scale: Optional[float] = None,
+        noise_w: Optional[float] = None,
+        read_punctuation: bool = False,
+        **kwargs,
+    ) -> bool:
         """Phát âm thanh trực tiếp ra Loa phần cứng cắm trên Raspberry Pi (3.5mm AUX / USB Speaker)."""
         import tempfile
         import subprocess
 
-        audio_bytes = self.synthesize_wav(text, voice_id=voice_id, rate=rate)
+        audio_bytes = self.synthesize_wav(
+            text,
+            voice_id=voice_id,
+            rate=rate,
+            style=style,
+            noise_scale=noise_scale,
+            noise_w=noise_w,
+            read_punctuation=read_punctuation,
+            **kwargs,
+        )
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
@@ -421,11 +793,25 @@ class OfflineTTSEngine:
             else:
                 res = subprocess.run(["afplay", tmp_path], check=False)
                 return res.returncode == 0
+        except Exception as e:
+            logger.error(f"❌ Lỗi khi phát âm thanh ra loa cục bộ: {e}")
+            return False
         finally:
             try:
                 os.remove(tmp_path)
             except Exception:
                 pass
+
+    def _generate_silence_wav(self, duration_sec: float = 0.25, sample_rate: int = 22050) -> bytes:
+        """Tạo bộ đệm âm thanh WAV khoảng lặng (silence PCM 16-bit) hợp lệ phòng khi đầu vào không có âm vị."""
+        n_samples = int(sample_rate * max(0.05, duration_sec))
+        wav_io = io.BytesIO()
+        with wave.open(wav_io, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sample_rate)
+            wf.writeframes(b"\x00\x00" * n_samples)
+        return wav_io.getvalue()
 
     def _generate_beeps_wav(self, text: str) -> bytes:
         """Tạo sóng âm thanh PCM 16-bit cơ bản phòng trường hợp máy chưa nạp xong model."""

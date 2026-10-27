@@ -1,33 +1,28 @@
-## 2026-10-05T15:06:55Z
-You are a teamwork_preview_explorer specializing in Android Native App architecture for ViHand Grade.
-Your working directory is: c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2
-Project root: c:\Users\Jackie Duong\Desktop\Web_sua_loi
+## 2026-10-18T19:02:34Z
+You are an Explorer surveying the Frontend Multi-Surface UI for ViHand Grade.
+Read the authoritative requirements at:
+`c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\ORIGINAL_REQUEST.md` (section `## 2026-10-18T18:59:10Z`) and
+`c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\orchestrator_4\DISPATCH.md`.
 
-MANDATORY FIRST STEP:
-Read c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\ORIGINAL_REQUEST.md (specifically the section ## 2026-10-05T15:01:07Z) before doing anything else.
+Your working directory is:
+`c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2`
 
-YOUR MISSION:
-Conduct an exhaustive, deep code-level investigation into the Android Native App (`android_app/`):
-1. Client Mobile Architecture & Jetpack Compose:
-   - Architecture patterns (MVVM, State hoisting, Compose UI components).
-   - Screens: `HistoryScreen.kt`, `StudentHomeScreen.kt`, `PhotoBoundingBoxViewer.kt`, Grading screens, Dictation screens.
-   - Bounding Box co-transformation touch gestures: Pinch-to-zoom (1x - 4x) and pan (drag), `Modifier.pointerInput`, `detectTransformGestures`, `graphicsLayer`.
-2. Local Database & Room DB Schema v4:
-   - Room Database definition, Entities, DAOs, Migrations (specifically v4 migrations).
-   - Local caching, offline capabilities, synchronization logic with Web BFF.
-3. Networking, Camera & Multimedia:
-   - Retrofit2 API service interfaces, endpoints, DTO models, error handling.
-   - CameraX implementation, photo capture, resolution, format.
-   - Edge TTS client / speech synthesis for pedagogical dictation.
-4. Design Tokens, Resources & App Specs:
-   - `colors.xml`, `themes.xml` (e.g. `emerald_primary`, `background_cream`).
-   - APK size, minSdk, targetSdk, dependencies in `build.gradle.kts`.
-5. Testing & Verification:
-   - Unit tests in `android_app/app/src/test/`: list all test files, test methods, Robolectric SDK 36 test suite, pass count (23/23 tests).
-6. Record exact file paths, class names, method names, and line numbers. NO ASSUMPTIONS.
-
-OUTPUT REQUIREMENTS:
-- Update your progress in: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\progress.md`
-- Write your comprehensive, detailed audit findings report to: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\report.md`
-- Write your complete handoff report to: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\handoff.md`
-- Send a message back to the caller (Recipient: "18c248ba-19cd-491f-bb1c-a47796deb34c") when done.
+Your task:
+1. Initialize your BRIEFING.md and progress.md in your working directory.
+2. Inspect the multi-surface UI pages:
+   - `app/teacher/dictation/page.tsx`
+   - `app/teacher/grade/page.tsx`
+   - `app/student/page.tsx`
+   - `components/student/student-grade-detail-modal.tsx`
+3. Analyze `app/teacher/dictation/page.tsx`:
+   - Current state variables, UI layout, and dictation workflow (Step 1, Step 2, Step 3).
+   - Where and how to place the live status badge in the header (Piper ONNX readiness & Qwen RAM state: `Ngủ 0MB RAM`, `Đang bật cờ xử lý`, `Đã lưu kịch bản & Xả RAM`).
+   - How to implement the "Trích xuất SGK / PDF (Qwen2.5)" dialog (paste text / upload .txt, populate title, passageText, difficultWords).
+   - How to implement the "Qwen2.5 Đạo diễn Nhịp đọc" button and interactive Prosody Script preview showing clause styles, speaking rate, pause duration, and difficult word tags.
+   - How to add Piper VITS Acoustic Controls (Prosody Style selector: `warm_story`, `standard`, `emphasis`, `question` and "Đọc tên dấu câu" toggle).
+   - How to upgrade Step 3 (Nghe - Viết chính thức) playback loop (`speakClause` and pause timer) to use each clause's directed `style`, `rate`, `noise_scale`, `noise_w`, `pause_sec`, and `read_punctuation`.
+4. Analyze `app/teacher/grade/page.tsx`, `app/student/page.tsx`, and `components/student/student-grade-detail-modal.tsx`:
+   - Where pedagogical teacher comments are displayed and how to add the "🔊 Nghe cô giáo đọc nhận xét" button with `voice=vi_VN-vais1000-medium&style=warm_story`.
+   - Where word corrections are rendered and how to update audio pronunciation buttons to use `style=emphasis`.
+5. Write your comprehensive findings to `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\survey_frontend.md` and summarize in `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\explorer_survey_2\handoff.md`.
+6. Send a completion message back to parent.

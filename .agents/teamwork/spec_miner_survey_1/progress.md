@@ -1,18 +1,14 @@
-# Progress Tracker — Spec Miner Survey 1 (Web Studio BFF, Prisma SQLite, Security)
+# Progress — Specification Miner Survey 1
 
-Last visited: 2026-10-05T15:20:00Z
+Last visited: 2026-10-18T19:08:30Z
 
 ## Status
 - [x] Initialized DISPATCH.md and BRIEFING.md
-- [x] Phase 1: Database Inspection (`prisma/schema.prisma`, SQLite files, migrations, concurrency in `lib/prisma.ts`)
-- [x] Phase 2: Next.js 16 App Router API Routes (`app/api/**` — 24 route handlers investigated)
-- [x] Phase 3: Web Studio UI Modules & App Architecture (`app/teacher/*`, `app/student/*`, `app/admin/*`)
-- [x] Phase 4: Security, Authentication, Rate Limiting & Data Protection (`lib/api-guard.ts`, RBAC layouts, retention policy)
-- [x] Phase 5: Compile detailed `report.md`
-- [x] Phase 6: Compile 5-component `handoff.md` and notify parent
-
-## Output Artifacts
-- Report: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\report.md`
-- Handoff: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\handoff.md`
-- Dispatch log: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\DISPATCH.md`
-- Working briefing: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\BRIEFING.md`
+- [x] Inspect existing `app/api/dictation/` files (`tts`, `play-local`, `generate`, `voices`, etc.)
+- [x] Inspect existing `python_service/main.py` and `python_service/tts_engine.py`
+- [x] Inspect Qwen / Director code, models, and start scripts (`start_all.bat`)
+- [x] Analyze exact API contracts, DTO schemas, query parameters, headers, error structures
+- [x] Document edge cases, timeout handling, and fallback behavior
+- [x] Compile comprehensive `api_specs.md`
+- [x] Write 5-component `handoff.md`
+- [x] Ready to notify parent via `send_message`

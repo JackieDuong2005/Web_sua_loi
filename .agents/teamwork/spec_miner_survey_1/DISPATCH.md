@@ -1,32 +1,32 @@
-## 2026-10-05T15:06:55Z
-From: 18c248ba-19cd-491f-bb1c-a47796deb34c
-Content:
-You are a teamwork_preview_spec_miner specializing in Next.js 16 Web Studio BFF, Prisma SQLite DB, and System Security for ViHand Grade.
-Your working directory is: c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1
-Project root: c:\Users\Jackie Duong\Desktop\Web_sua_loi
+## 2026-10-18T19:02:35Z
 
-MANDATORY FIRST STEP:
-Read c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\ORIGINAL_REQUEST.md (specifically the section ## 2026-10-05T15:01:07Z) before doing anything else.
+You are a Specification Miner analyzing API contracts for the Semantic-Acoustic Decoupled Pipeline.
+Read the authoritative requirements at:
+`c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\ORIGINAL_REQUEST.md` (section `## 2026-10-18T18:59:10Z`) and
+`c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\orchestrator_4\DISPATCH.md`.
 
-YOUR MISSION:
-Conduct an exhaustive, deep code-level specification extraction and investigation into the Next.js 16 Web Studio BFF, Prisma SQLite database, API route ecosystem, and Security architecture:
-1. Examine `prisma/schema.prisma` and database files:
-   - All models, fields, types, indexes, and relations.
-   - Exact SQLite DB location and naming (`vihand.db`, etc.).
-   - Migrations and schema evolution.
-2. Examine Next.js 16 App Router architecture (`app/`):
-   - Server Actions and API Routes (`app/api/`): list every single endpoint (e.g. `/api/mobile/grade`, `/api/dictation/*`, `/api/grades/*`, `/api/users`, `/api/classes`, `/api/health`, etc.).
-   - For each endpoint: HTTP method, file path, exact request payload/DTO, response schema, status codes, error handling, validation.
-3. Examine Web Studio features and UI modules:
-   - Dashboard, grading interface, dictation interface, class/student management, analytics, history.
-4. Examine Security, Authentication, and Reliability mechanisms:
-   - RBAC / Session authentication / Cookies / JWT.
-   - Rate limiting guard implementation (`lib/` or middleware), limits, token bucket/sliding window details.
-   - Data protection and CORS settings.
-5. Record exact file paths and line numbers for all findings. NO ASSUMPTIONS, NO GUESSWORK.
+Your working directory is:
+`c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1`
 
-OUTPUT REQUIREMENTS:
-- Update your progress in: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\progress.md`
-- Write your comprehensive, detailed audit findings report to: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\report.md`
-- Write your complete handoff report to: `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\handoff.md`
-- Send a message back to the caller (Recipient: "18c248ba-19cd-491f-bb1c-a47796deb34c") when done.
+Your task:
+1. Initialize your BRIEFING.md and progress.md in your working directory.
+2. Inspect existing Next.js BFF routes and Python API routes:
+   - `app/api/dictation/tts/route.ts`
+   - `app/api/dictation/play-local/route.ts`
+   - Any other files under `app/api/dictation/`
+   - Target route to create: `app/api/dictation/qwen-director/route.ts`
+   - Python endpoints in `python_service/main.py`: `/tts`, `/tts/play-local`, `/qwen/status`, `/qwen/extract-sgk`, `/qwen/direct-prosody`.
+3. Document exact request/response schemas, query parameters, payload structures, headers, and error responses for:
+   - `GET /api/dictation/tts` forwarding `text`, `voice`, `speed`, `style`, `noise_scale`, `noise_w`, `read_punctuation` to Python service `:8000/tts`.
+   - `POST /api/dictation/play-local` forwarding `text`, `voice`, `speed`, `style`, `noise_scale`, `noise_w`, `read_punctuation` to Python service `:8000/tts/play-local`.
+   - `GET /api/dictation/qwen-director` proxying `GET :8000/qwen/status`.
+   - `POST /api/dictation/qwen-director` handling:
+     * `action: "extract_sgk"` -> proxies `POST :8000/qwen/extract-sgk` with `{ raw_text, grade }`.
+     * `action: "direct_prosody"` -> proxies `POST :8000/qwen/direct-prosody` with `{ passage, difficult_words, grade, chunk_mode }`.
+4. Specify edge cases, timeout handling (e.g. 15s-30s when Qwen model loads on-demand), and fallback error JSON formats.
+5. Write your comprehensive specification report to `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\api_specs.md` and summarize in `c:\Users\Jackie Duong\Desktop\Web_sua_loi\.agents\teamwork\spec_miner_survey_1\handoff.md`.
+6. Send a completion message back to parent.
+
+Remember:
+- TUYỆT ĐỐI KHÔNG DÙNG SƠ ĐỒ MERMAID (tuân thủ GEMINI.md).
+- Do not modify source code — document precise specifications and test criteria.
