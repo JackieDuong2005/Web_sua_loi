@@ -210,7 +210,7 @@ def normalize_vietnamese_text(text: str) -> str:
         d_str = number_to_vietnamese(int(d))
         m_str = number_to_vietnamese(int(mth))
         y_str = number_to_vietnamese(int(y))
-        prefix = "ngày " if not has_ngay else ""
+        prefix = "ngày "
         return f"{prefix}{d_str} tháng {m_str} năm {y_str}"
 
     t = re.sub(r"\b(ngày\s+)?(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b", _sub_date, t, flags=re.IGNORECASE)

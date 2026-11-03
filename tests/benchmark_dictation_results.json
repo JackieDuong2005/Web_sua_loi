@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-10-31 16:03:23",
+  "total_benchmark_time_s": 35.33,
+  "text_normalization": {
+    "accuracy": 100.0,
+    "total": 10,
+    "passed": 10,
+    "details": [
+      {
+        "input": "Lớp 1A",
+        "output": "Lớp một A",
+        "category": "Tên lớp học",
+        "latency_ms": 1.961,
+        "status": "PASS"
+      },
+      {
+        "input": "học sinh 3B",
+        "output": "học sinh ba B",
+        "category": "Tên lớp học",
+        "latency_ms": 0.061,
+        "status": "PASS"
+      },
+      {
+        "input": "lớp 5C",
+        "output": "lớp năm C",
+        "category": "Tên lớp học",
+        "latency_ms": 0.04,
+        "status": "PASS"
+      },
+      {
+        "input": "ngày 15/10/2024",
+        "output": "ngày mười lăm tháng mười năm hai nghìn không trăm hai mươi tư",
+        "category": "Ngày tháng năm",
+        "latency_ms": 0.11,
+        "status": "PASS"
+      },
+      {
+        "input": "20-11-2023",
+        "output": "ngày hai mươi tháng mười một năm hai nghìn không trăm hai mươi ba",
+        "category": "Ngày tháng năm",
+        "latency_ms": 0.09,
+        "status": "PASS"
+      },
+      {
+        "input": "Điểm 9.5",
+        "output": "Điểm chín phẩy năm",
+        "category": "Số thập phân",
+        "latency_ms": 0.042,
+        "status": "PASS"
+      },
+      {
+        "input": "cân nặng 25,5 kg",
+        "output": "cân nặng hai mươi lăm phẩy năm ki lô gam",
+        "category": "Số thập phân & Đơn vị",
+        "latency_ms": 0.055,
+        "status": "PASS"
+      },
+      {
+        "input": "tr. 45",
+        "output": "trang bốn mươi lăm",
+        "category": "Từ viết tắt SGK",
+        "latency_ms": 0.041,
+        "status": "PASS"
+      },
+      {
+        "input": "SGK GDPT 2018",
+        "output": "sách giáo khoa giáo dục phổ thông hai nghìn không trăm mười tám",
+        "category": "Từ viết tắt SGK",
+        "latency_ms": 0.062,
+        "status": "PASS"
+      },
+      {
+        "input": "lúc 08:30",
+        "output": "lúc tám giờ ba mươi",
+        "category": "Mốc thời gian",
+        "latency_ms": 0.045,
+        "status": "PASS"
+      }
+    ]
+  },
+  "pedagogical_punctuation": {
+    "accuracy": 100.0,
+    "idempotent_accuracy": 100.0
+  },
+  "pacing_matrix_samples": 20,
+  "audio_performance": {
+    "audio_benchmarks": [
+      {
+        "label": "Cụm ngắn (4 từ)",
+        "text_len": 4,
+        "elapsed_s": 32.085,
+        "duration_s": 2.26,
+        "rtf": 14.191,
+        "wav_bytes": 99752,
+        "style": "warm_story"
+      },
+      {
+        "label": "Câu đơn (8 từ)",
+        "text_len": 10,
+        "elapsed_s": 0.62,
+        "duration_s": 3.74,
+        "rtf": 0.1659,
+        "wav_bytes": 164776,
+        "style": "warm_story"
+      },
+      {
+        "label": "Đoạn văn (40 từ)",
+        "text_len": 41,
+        "elapsed_s": 2.623,
+        "duration_s": 14.24,
+        "rtf": 0.1842,
+        "wav_bytes": 627908,
+        "style": "warm_story"
+      }
+    ],
+    "ram_mb": 287.8984375
+  }
+}

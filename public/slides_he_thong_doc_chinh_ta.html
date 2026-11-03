@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide Phân Tích Hệ Thống Đọc Chính Tả Tự Động - TDTU</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --tdt-blue: #004aad;
+      --tdt-blue-dark: #003380;
+      --tdt-red: #e6192e;
+      --bg-dark: #0f172a;
+      --slide-bg: #ffffff;
+      --text-dark: #1e293b;
+      --text-muted: #475569;
+      --card-blue: #eff6ff;
+      --card-green: #f0fdf4;
+      --card-amber: #fffbeb;
+      --card-purple: #faf5ff;
+      --card-rose: #fff1f2;
+      --border-light: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #1e293b;
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 40px;
+    }
+
+    /* Top Control Bar */
+    .control-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .control-bar .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .control-bar .brand span.badge {
+      background: var(--tdt-blue);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      background: #334155;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: #475569;
+    }
+
+    .btn.primary {
+      background: var(--tdt-blue);
+      border-color: #3b82f6;
+    }
+
+    .btn.primary:hover {
+      background: #1d4ed8;
+    }
+
+    .slide-counter {
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 75px;
+      text-align: center;
+      color: #cbd5e1;
+    }
+
+    /* Slide Container */
+    .slides-wrapper {
+      width: 100%;
+      max-width: 1280px;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      padding: 0 16px;
+    }
+
+    /* Single Mode vs All Slides Mode */
+    body.single-mode .slide {
+      display: none;
+    }
+
+    body.single-mode .slide.active {
+      display: flex;
+    }
+
+    /* 16:9 Standard Slide */
+    .slide {
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      background-color: var(--slide-bg);
+      border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 34px 48px 30px 48px;
+      background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23e2e8f0' stroke-width='0.8' opacity='0.65'%3E%3Cpath d='M0 80 L120 0 L260 90 L400 20 M120 0 L160 170 L0 240 M260 90 L340 220 L400 180 M160 170 L260 90 M160 170 L220 310 L340 220 M0 240 L90 360 L220 310 M220 310 L310 400 M340 220 L400 350'/%3E%3Ccircle cx='120' cy='0' r='2.5' fill='%23cbd5e1'/%3E%3Ccircle cx='260' cy='90' r='2.5' fill='%23cbd5e1'/%3E%3Ccircle cx='160' cy='170' r='2.5' fill='%23cbd5e1'/%3E%3Ccircle cx='340' cy='220' r='2.5' fill='%23cbd5e1'/%3E%3Ccircle cx='220' cy='310' r='2.5' fill='%23cbd5e1'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* TDTU Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .tdtu-logo-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tdtu-letters {
+      display: flex;
+      align-items: baseline;
+      font-weight: 900;
+      font-size: 30px;
+      letter-spacing: -1px;
+      font-style: italic;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .tdtu-letters .t1 { color: var(--tdt-red); }
+    .tdtu-letters .d  { color: var(--tdt-blue); }
+    .tdtu-letters .t2 { color: var(--tdt-blue); }
+
+    .tdtu-sub {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--tdt-blue);
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .tdtu-divider {
+      width: 2px;
+      height: 34px;
+      background: var(--tdt-blue);
+      opacity: 0.7;
+    }
+
+    .faculty-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--tdt-blue);
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .slide-page-tag {
+      background: #eff6ff;
+      color: var(--tdt-blue);
+      border: 1px solid #bfdbfe;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Main Slide Title */
+    .slide-title-area {
+      text-align: center;
+      margin-bottom: 22px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slide-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--tdt-blue);
+      letter-spacing: -0.3px;
+    }
+
+    .slide-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Slide Body Content */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Slide 1: Overview Layout */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 28px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .diagram-frame {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .diagram-frame img {
+      width: 100%;
+      max-height: 410px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .steps-list-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid #dbeafe;
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: 0 10px 25px rgba(0, 74, 173, 0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .steps-list-card h3 {
+      font-size: 18px;
+      color: var(--tdt-blue);
+      font-weight: 800;
+      border-bottom: 2px solid #eff6ff;
+      padding-bottom: 8px;
+    }
+
+    .step-pill {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border-left: 4px solid var(--tdt-blue);
+      transition: transform 0.2s;
+    }
+
+    .step-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--tdt-blue);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .step-text p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* Slide 2: Two Columns Input */
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .info-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 26px 28px;
+      border: 2px solid var(--border-light);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .info-card.green-theme {
+      border-color: #bbf7d0;
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 45%);
+    }
+
+    .info-card.purple-theme {
+      border-color: #e9d5ff;
+      background: linear-gradient(180deg, #faf5ff 0%, #ffffff 45%);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .icon-badge {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .green-theme .icon-badge { background: #dcfce7; }
+    .purple-theme .icon-badge { background: #f3e8ff; }
+    .blue-theme .icon-badge { background: #dbeafe; }
+    .amber-theme .icon-badge { background: #fef3c7; }
+    .rose-theme .icon-badge { background: #ffe4e6; }
+
+    .card-header h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .card-header span.tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-top: 4px;
+    }
+
+    .green-theme .tag { background: #dcfce7; color: #15803d; }
+    .purple-theme .tag { background: #f3e8ff; color: #7e22ce; }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      line-height: 1.5;
+      color: #334155;
+    }
+
+    .bullet-list li .dot {
+      color: var(--tdt-blue);
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .example-box {
+      margin-top: auto;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      color: #334155;
+    }
+
+    .example-box strong {
+      color: var(--tdt-blue);
+    }
+
+    /* Slide 3: Three Columns Customization */
+    .three-col-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .info-card.blue-theme {
+      border-color: #bfdbfe;
+      background: linear-gradient(180deg, #eff6ff 0%, #ffffff 40%);
+    }
+
+    .info-card.amber-theme {
+      border-color: #fde68a;
+      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 40%);
+    }
+
+    .info-card.rose-theme {
+      border-color: #fecdd3;
+      background: linear-gradient(180deg, #fff1f2 0%, #ffffff 40%);
+    }
+
+    /* Slide 4: TTS Pipeline 3 Blocks */
+    .pipeline-container {
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border: 2.5px dashed #10b981;
+      border-radius: 20px;
+      padding: 26px;
+      position: relative;
+    }
+
+    .pipeline-badge {
+      position: absolute;
+      top: -14px;
+      left: 32px;
+      background: #059669;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 16px;
+      border-radius: 99px;
+      letter-spacing: 0.4px;
+    }
+
+    .pipeline-steps {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 14px;
+      align-items: stretch;
+      margin-top: 6px;
+    }
+
+    .pipe-box {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1.5px solid #d1fae5;
+      box-shadow: 0 6px 18px rgba(5, 150, 105, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pipe-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pipe-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      flex-shrink: 0;
+    }
+
+    .pipe-top h4 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #065f46;
+    }
+
+    .pipe-top span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #059669;
+    }
+
+    .pipe-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 900;
+      color: #059669;
+    }
+
+    /* Slide Footer */
+    .slide-footer {
+      margin-top: 16px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #64748b;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Bottom Summary Banner */
+    .bottom-banner {
+      margin-top: 18px;
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .bottom-banner .flow-chain {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--tdt-blue);
+    }
+
+    .flow-chip {
+      background: #ffffff;
+      border: 1px solid #93c5fd;
+      padding: 6px 14px;
+      border-radius: 8px;
+      color: var(--text-dark);
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .control-bar {
+        display: none !important;
+      }
+      .slides-wrapper {
+        margin: 0;
+        padding: 0;
+        gap: 0;
+      }
+      .slide {
+        display: flex !important;
+        box-shadow: none;
+        border-radius: 0;
+        page-break-after: always;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="all-mode">
+
+  <!-- Thanh công cụ điều khiển trình chiếu -->
+  <div class="control-bar">
+    <div class="brand">
+      <span class="badge">TDTU</span>
+      <span>Bộ Slide Phân Tích: Luồng 2 — Hệ Thống Đọc Chính Tả Tự Động</span>
+    </div>
+    <div class="nav-controls">
+      <button class="btn" id="toggleModeBtn" onclick="toggleViewMode()">
+        🖥️ Chế độ Trình chiếu (Từng Slide)
+      </button>
+      <button class="btn" id="prevBtn" onclick="changeSlide(-1)" style="display:none;">◀ Trước</button>
+      <span class="slide-counter" id="slideCounter" style="display:none;">1 / 4</span>
+      <button class="btn" id="nextBtn" onclick="changeSlide(1)" style="display:none;">Tiếp ▶</button>
+      <button class="btn primary" onclick="window.print()">🖨️ Xuất PDF / In</button>
+    </div>
+  </div>
+
+  <div class="slides-wrapper">
+
+    <!-- ==========================================
+         SLIDE 1: TỔNG QUAN SƠ ĐỒ HỆ THỐNG ĐỌC CHÍNH TẢ
+         ========================================== -->
+    <section class="slide active">
+      <div class="slide-header">
+        <div class="tdtu-logo-box">
+          <div>
+            <div class="tdtu-letters"><span class="t1">T</span><span class="d">D</span><span class="t2">T</span></div>
+            <div class="tdtu-sub">ĐẠI HỌC TÔN ĐỨC THẮNG</div>
+          </div>
+          <div class="tdtu-divider"></div>
+          <div class="faculty-name">KHOA<br/>ĐIỆN - ĐIỆN TỬ</div>
+        </div>
+        <div class="slide-page-tag">Slide 1 / 4 • Tổng quan luồng hoạt động</div>
+      </div>
+
+      <div class="slide-title-area">
+        <h1 class="slide-title">Luồng 2: Hệ thống đọc chính tả tự động</h1>
+        <p class="slide-subtitle">Quy trình khép kín giúp giáo viên chuẩn bị bài và phát âm tự động cho học sinh chép bài</p>
+      </div>
+
+      <div class="slide-body">
+        <div class="overview-grid">
+          <div class="diagram-frame">
+            <img src="images/luong_doc_chinh_ta.png" alt="Sơ đồ hệ thống đọc chính tả" />
+          </div>
+
+          <div class="steps-list-card">
+            <h3>5 Bước vận hành chính</h3>
+
+            <div class="step-pill">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <h4>Soạn & nạp bài đọc</h4>
+                <p>Lấy bài mẫu có sẵn hoặc dùng AI tạo bài mới</p>
+              </div>
+            </div>
+
+            <div class="step-pill">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <h4>Tinh chỉnh cách đọc</h4>
+                <p>Chọn giọng đọc, cắt cụm ngắn, chỉnh tốc độ & nghỉ</p>
+              </div>
+            </div>
+
+            <div class="step-pill">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <h4>Tiền xử lý văn bản (Qwen 2.5)</h4>
+                <p>Đổi số thành chữ, ngắt cụm và thêm lệnh dấu câu</p>
+              </div>
+            </div>
+
+            <div class="step-pill">
+              <div class="step-num">4</div>
+              <div class="step-text">
+                <h4>Tổng hợp tiếng nói TTS (Piper)</h4>
+                <p>Chuyển văn bản thành giọng đọc Offline trên thiết bị</p>
+              </div>
+            </div>
+
+            <div class="step-pill">
+              <div class="step-num">5</div>
+              <div class="step-text">
+                <h4>Hậu kỳ & phát audio</h4>
+                <p>Khử tiếng rè, làm ấm giọng và phát ra loa lớp học</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Đồ án chuyên ngành — Hệ thống trợ lý đọc và chấm chính tả tiểu học</span>
+        <span>Luồng 2: Hệ thống đọc chính tả tự động</span>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 2: PHÂN TÍCH ĐẦU VÀO GIÁO VIÊN LỰA CHỌN
+         ========================================== -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="tdtu-logo-box">
+          <div>
+            <div class="tdtu-letters"><span class="t1">T</span><span class="d">D</span><span class="t2">T</span></div>
+            <div class="tdtu-sub">ĐẠI HỌC TÔN ĐỨC THẮNG</div>
+          </div>
+          <div class="tdtu-divider"></div>
+          <div class="faculty-name">KHOA<br/>ĐIỆN - ĐIỆN TỬ</div>
+        </div>
+        <div class="slide-page-tag">Slide 2 / 4 • Phân tích khối Đầu vào & Database</div>
+      </div>
+
+      <div class="slide-title-area">
+        <h1 class="slide-title">1. Đầu vào bài đọc: Giáo viên lựa chọn gì?</h1>
+        <p class="slide-subtitle">Giáo viên linh hoạt chọn bài đọc từ kho dữ liệu có sẵn hoặc nhờ AI tự động biên soạn</p>
+      </div>
+
+      <div class="slide-body">
+        <div class="two-col-grid">
+          <!-- Nguồn 1 -->
+          <div class="info-card green-theme">
+            <div class="card-header">
+              <div class="icon-badge">📖</div>
+              <div>
+                <h3>Cách 1: Văn mẫu soạn trước</h3>
+                <span class="tag">Lấy trực tiếp từ Database</span>
+              </div>
+            </div>
+
+            <ul class="bullet-list">
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Kho bài đọc chuẩn SGK:</strong> Chọn nhanh các bài chính tả có sẵn theo từng khối lớp (Lớp 1 đến Lớp 5).</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Giáo viên tự soạn:</strong> Cho phép giáo viên tự gõ hoặc dán đoạn văn bản chuẩn bị trước ở nhà và lưu vào hệ thống.</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Dùng lại nhiều lần:</strong> Bài đọc đã lưu trong Database có thể mở lại bất cứ lúc nào cho các lớp khác nhau.</span>
+              </li>
+            </ul>
+
+            <div class="example-box">
+              💡 <strong>Ví dụ thực tế:</strong> Giáo viên mở lại bài <em>"Ngày đầu tuần đi học"</em> đã soạn sẵn trong danh sách để đọc ngay cho cả lớp.
+            </div>
+          </div>
+
+          <!-- Nguồn 2 -->
+          <div class="info-card purple-theme">
+            <div class="card-header">
+              <div class="icon-badge">🤖</div>
+              <div>
+                <h3>Cách 2: Dùng AI tạo bài chính tả</h3>
+                <span class="tag">Tạo mới tự động bằng AI</span>
+              </div>
+            </div>
+
+            <ul class="bullet-list">
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Chỉ cần nhập Chủ đề & Lớp:</strong> Giáo viên chọn khối lớp và gõ chủ đề mong muốn (VD: <em>Quê hương, Mái trường, Gia đình</em>).</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>AI tự viết đoạn văn:</strong> Tạo ra đoạn văn mới có độ dài vừa sức với học sinh tiểu học chỉ trong vài giây.</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Tự động lọc "Từ khó":</strong> AI chỉ ra sẵn các từ dễ viết sai (như <em>tr/ch, s/x, hỏi/ngã</em>) để giáo viên lưu ý cho học sinh.</span>
+              </li>
+            </ul>
+
+            <div class="example-box">
+              💡 <strong>Lợi ích:</strong> Giúp giáo viên có ngay bài đọc mới để học sinh luyện viết thêm mà không tốn thời gian tìm kiếm.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Đồ án chuyên ngành — Hệ thống trợ lý đọc và chấm chính tả tiểu học</span>
+        <span>Phần 1: Đầu vào bài đọc chính tả</span>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 3: PHÂN TÍCH KHỐI TINH CHỈNH CÁCH ĐỌC
+         ========================================== -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="tdtu-logo-box">
+          <div>
+            <div class="tdtu-letters"><span class="t1">T</span><span class="d">D</span><span class="t2">T</span></div>
+            <div class="tdtu-sub">ĐẠI HỌC TÔN ĐỨC THẮNG</div>
+          </div>
+          <div class="tdtu-divider"></div>
+          <div class="faculty-name">KHOA<br/>ĐIỆN - ĐIỆN TỬ</div>
+        </div>
+        <div class="slide-page-tag">Slide 3 / 4 • Phân tích khối Tinh chỉnh cách đọc</div>
+      </div>
+
+      <div class="slide-title-area">
+        <h1 class="slide-title">2. Tinh chỉnh cách đọc gồm những gì?</h1>
+        <p class="slide-subtitle">3 nhóm cài đặt giúp máy đọc chậm rãi, ngắt nghỉ giống hệt giáo viên đang đọc trên lớp</p>
+      </div>
+
+      <div class="slide-body">
+        <div class="three-col-grid">
+          <!-- Icon 1: Giọng đọc -->
+          <div class="info-card blue-theme">
+            <div class="card-header">
+              <div class="icon-badge">🗣️</div>
+              <div>
+                <h3>1. Giọng đọc & Cảm xúc</h3>
+              </div>
+            </div>
+            <ul class="bullet-list">
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Chọn giọng cô giáo:</strong> Hỗ trợ nhiều giọng nữ truyền cảm, phát âm tròn vành rõ chữ (Cô Hoài My, Cô Trúc Ly).</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Chọn kiểu đọc:</strong> Đọc chuẩn mực, đọc kể chuyện ấm áp, hoặc đọc nhấn mạnh rõ từng chữ khi gặp từ khó.</span>
+              </li>
+            </ul>
+            <div class="example-box">
+              🎯 <strong>Mục đích:</strong> Tạo sự gần gũi, dễ nghe cho học sinh tiểu học.
+            </div>
+          </div>
+
+          <!-- Icon 2: Cắt cụm -->
+          <div class="info-card amber-theme">
+            <div class="card-header">
+              <div class="icon-badge">✂️</div>
+              <div>
+                <h3>2. Ngắt cụm từ ngắn</h3>
+              </div>
+            </div>
+            <ul class="bullet-list">
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Chia nhỏ câu văn dài:</strong> Học sinh nhỏ không thể nhớ cả câu dài 15–20 chữ cùng lúc.</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Cắt theo cụm 4 – 6 chữ:</strong> Hệ thống tự cắt câu thành từng cụm ngắn vừa đủ một nhịp nghe – viết.</span>
+              </li>
+            </ul>
+            <div class="example-box">
+              🎯 <strong>Ví dụ:</strong> <em>"Mỗi buổi sáng thứ Hai / em thức dậy thật sớm / để chuẩn bị đến trường."</em>
+            </div>
+          </div>
+
+          <!-- Icon 3: Tốc độ & Nghỉ -->
+          <div class="info-card rose-theme">
+            <div class="card-header">
+              <div class="icon-badge">⏱️</div>
+              <div>
+                <h3>3. Tốc độ & Thời gian chờ</h3>
+              </div>
+            </div>
+            <ul class="bullet-list">
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Tốc độ đọc chậm rãi:</strong> Giảm tốc độ phát âm vừa phải để học sinh nghe rõ dấu thanh.</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Thời gian dừng chờ viết:</strong> Tự nghỉ <strong>3 – 6 giây</strong> sau mỗi cụm từ để học sinh kịp viết vào vở.</span>
+              </li>
+              <li>
+                <span class="dot">●</span>
+                <span><strong>Số lần đọc lặp lại:</strong> Cài đặt đọc 1, 2 hoặc 3 lần cho mỗi cụm từ.</span>
+              </li>
+            </ul>
+            <div class="example-box">
+              🎯 <strong>Mục đích:</strong> Đảm bảo không em nào bị chép sót chữ.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Đồ án chuyên ngành — Hệ thống trợ lý đọc và chấm chính tả tiểu học</span>
+        <span>Phần 2: Tinh chỉnh thông số đọc bài</span>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 4: PHÂN TÍCH HỆ THỐNG TTS 3 BƯỚC
+         ========================================== -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="tdtu-logo-box">
+          <div>
+            <div class="tdtu-letters"><span class="t1">T</span><span class="d">D</span><span class="t2">T</span></div>
+            <div class="tdtu-sub">ĐẠI HỌC TÔN ĐỨC THẮNG</div>
+          </div>
+          <div class="tdtu-divider"></div>
+          <div class="faculty-name">KHOA<br/>ĐIỆN - ĐIỆN TỬ</div>
+        </div>
+        <div class="slide-page-tag">Slide 4 / 4 • Phân tích bên trong Hệ thống TTS</div>
+      </div>
+
+      <div class="slide-title-area">
+        <h1 class="slide-title">3. Hệ thống TTS xử lý qua 3 bước nào?</h1>
+        <p class="slide-subtitle">Quy trình biến văn bản trên màn hình thành giọng đọc trong trẻo phát ra loa lớp học</p>
+      </div>
+
+      <div class="slide-body">
+        <div class="pipeline-container">
+          <div class="pipeline-badge">BÊN TRONG KHỐI HỆ THỐNG TTS (MÀU XANH LÁ)</div>
+
+          <div class="pipeline-steps">
+            <!-- Bước 1: Qwen 2.5 -->
+            <div class="pipe-box">
+              <div class="pipe-top">
+                <div class="pipe-icon">🧠</div>
+                <div>
+                  <span>Bước 1</span>
+                  <h4>Qwen 2.5 Chuẩn hóa chữ</h4>
+                </div>
+              </div>
+              <ul class="bullet-list">
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Đổi số & ký hiệu thành chữ:</strong> Ví dụ <code>20/11</code> đổi thành <em>"hai mươi tháng mười một"</em>, <code>Lớp 3A</code> thành <em>"lớp ba A"</em>.</span>
+                </li>
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Ngắt cụm theo ý nghĩa:</strong> Chia câu sao cho tự nhiên, không làm đứt nghĩa của từ ghép.</span>
+                </li>
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Thêm lệnh đọc dấu câu:</strong> Tự chèn chữ <em>"phẩy"</em>, <em>"chấm"</em>, <em>"xuống dòng"</em> để nhắc học sinh.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pipe-arrow">➔</div>
+
+            <!-- Bước 2: Piper TTS -->
+            <div class="pipe-box">
+              <div class="pipe-top">
+                <div class="pipe-icon">🔊</div>
+                <div>
+                  <span>Bước 2</span>
+                  <h4>Xử lý TTS (Piper)</h4>
+                </div>
+              </div>
+              <ul class="bullet-list">
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Chuyển chữ thành giọng nói:</strong> Đọc từng cụm từ đã chuẩn hóa thành âm thanh tiếng Việt.</span>
+                </li>
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Chèn khoảng lặng tự động:</strong> Tạo các khoảng nghỉ đúng bằng số giây giáo viên đã cài đặt.</span>
+                </li>
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Chạy Offline 100%:</strong> Hoạt động mượt ngay trên thiết bị nhúng mà không cần mạng Internet.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pipe-arrow">➔</div>
+
+            <!-- Bước 3: Hậu kỳ -->
+            <div class="pipe-box">
+              <div class="pipe-top">
+                <div class="pipe-icon">🎧</div>
+                <div>
+                  <span>Bước 3</span>
+                  <h4>Xử lý hậu kỳ âm thanh</h4>
+                </div>
+              </div>
+              <ul class="bullet-list">
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Khử tiếng rè máy móc:</strong> Lọc bỏ âm thanh chói tai, rè điện tử của giọng đọc máy.</span>
+                </li>
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Làm ấm & đều âm lượng:</strong> Giúp giọng cô giáo trầm ấm, to rõ đồng đều từ đầu đến cuối bài.</span>
+                </li>
+                <li>
+                  <span class="dot">●</span>
+                  <span><strong>Phát ra loa lớp học:</strong> Học sinh cả lớp nghe rõ ràng và chép bài chính xác vào vở.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-banner">
+          <div class="flow-chain">
+            <span>Tóm tắt luồng:</span>
+            <span class="flow-chip">1. Chọn bài đọc</span> ➔
+            <span class="flow-chip">2. Cài đặt giọng & nhịp nghỉ</span> ➔
+            <span class="flow-chip">3. Qwen chuẩn hóa chữ</span> ➔
+            <span class="flow-chip">4. Piper tạo giọng nói</span> ➔
+            <span class="flow-chip">5. Lọc âm & Phát loa cho học sinh chép</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Đồ án chuyên ngành — Hệ thống trợ lý đọc và chấm chính tả tiểu học</span>
+        <span>Phần 3: Chi tiết khối xử lý TTS & Hậu kỳ âm thanh</span>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    let isSingleMode = false;
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    const toggleBtn = document.getElementById('toggleModeBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const counter = document.getElementById('slideCounter');
+
+    function updateSlideView() {
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlideIndex);
+      });
+      counter.textContent = `${currentSlideIndex + 1} / ${slides.length}`;
+    }
+
+    function toggleViewMode() {
+      isSingleMode = !isSingleMode;
+      document.body.classList.toggle('single-mode', isSingleMode);
+      prevBtn.style.display = isSingleMode ? 'inline-flex' : 'none';
+      nextBtn.style.display = isSingleMode ? 'inline-flex' : 'none';
+      counter.style.display = isSingleMode ? 'inline-block' : 'none';
+      toggleBtn.innerHTML = isSingleMode
+        ? '📋 Xem tất cả Slide cùng lúc'
+        : '🖥️ Chế độ Trình chiếu (Từng Slide)';
+      if (isSingleMode) {
+        updateSlideView();
+      }
+    }
+
+    function changeSlide(delta) {
+      currentSlideIndex = (currentSlideIndex + delta + slides.length) % slides.length;
+      updateSlideView();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!isSingleMode) return;
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        changeSlide(1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        changeSlide(-1);
+      }
+    });
+  </script>
+</body>
+</html>
